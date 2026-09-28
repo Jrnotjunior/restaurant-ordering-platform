@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getRestaurantOrders, updateOrderStatus, type RestaurantOrder, type RestaurantOrderStatus } from '../services/restaurantOrderRepository';
+import {
+  getRestaurantOrders,
+  updateOrderStatus,
+  type RestaurantOrder,
+  type RestaurantOrderStatus,
+} from '../services/restaurantOrderRepository';
 
 type Props = { restaurantId: string };
 
@@ -18,6 +23,20 @@ const nextStatus: Partial<Record<RestaurantOrderStatus, RestaurantOrderStatus>> 
   preparing: 'ready',
   ready: 'completed',
 };
+
+function paymentLabel(order: RestaurantOrder) {
+  if (order.paymentMethod === 'gcash') {
+    if (order.paymentStatus === 'paid') return 'GCash • Paid';
+    if (order.paymentStatus === 'failed') return 'GCash • Failed';
+    if (order.paymentStatus === 'refunded') return 'GCash • Refunded';
+    return 'GCash • Awaiting payment';
+  }
+
+  if (order.paymentStatus === 'paid') return 'Cash • Paid';
+  if (order.paymentStatus === 'failed') return 'Cash • Failed';
+  if (order.paymentStatus === 'refunded') return 'Cash • Refunded';
+  return 'Cash • Unpaid';
+}
 
 export function RestaurantOrdersPage({ restaurantId }: Props) {
   const [orders, setOrders] = useState<RestaurantOrder[]>([]);
@@ -44,9 +63,12 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
     return () => window.clearInterval(timer);
   }, [restaurantId]);
 
-  const visibleOrders = useMemo(() => filter === 'active'
-    ? orders.filter((order) => !['completed', 'cancelled'].includes(order.status))
-    : orders, [orders, filter]);
+  const visibleOrders = useMemo(
+    () => filter === 'active'
+      ? orders.filter((order) => !['completed', 'cancelled'].includes(order.status))
+      : orders,
+    [orders, filter],
+  );
 
   async function advance(order: RestaurantOrder) {
     const status = nextStatus[order.status];
@@ -96,16 +118,32 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
         <div className="restaurant-order-list">
           {visibleOrders.map((order) => {
             const next = nextStatus[order.status];
+            const paymentClass = order.paymentStatus === 'paid' ? 'is-paid' : order.paymentStatus === 'failed' ? 'is-failed' : order.paymentStatus === 'refunded' ? 'is-refunded' : 'is-pending';
             return (
               <article className={`restaurant-order-card status-${order.status}`} key={order.orderId}>
                 <div className="restaurant-order-top">
-                  <div><span className="restaurant-order-number">{order.orderNumber}</span><span className="restaurant-order-status">{statusLabels[order.status]}</span></div>
+                  <div>
+                    <span className="restaurant-order-number">{order.orderNumber}</span>
+                    <span className="restaurant-order-status">{statusLabels[order.status]}</span>
+                  </div>
                   <strong>₱{order.total.toFixed(2)}</strong>
                 </div>
-                <div className="restaurant-order-meta"><span>{order.orderType === 'dine_in' ? 'Dine-in' : order.orderType === 'pickup' ? 'Pickup / Take-out' : 'Delivery'}</span><span>{order.paymentMethod === 'gcash' ? 'GCash' : 'Cash'}</span><span>{new Date(order.createdAt).toLocaleString()}</span></div>
-                <div className="restaurant-order-items">
-                  {order.items.map((item) => <div className="restaurant-order-item" key={item.id}><span><strong>{item.quantity}×</strong> {item.productName}</span><span>₱{item.lineTotal.toFixed(2)}</span></div>)}
+
+                <div className="restaurant-order-meta">
+                  <span>{order.orderType === 'dine_in' ? 'Dine-in' : order.orderType === 'pickup' ? 'Pickup / Take-out' : 'Delivery'}</span>
+                  <span className={`restaurant-payment-status ${paymentClass}`}>{paymentLabel(order)}</span>
+                  <span>{new Date(order.createdAt).toLocaleString()}</span>
                 </div>
+
+                <div className="restaurant-order-items">
+                  {order.items.map((item) => (
+                    <div className="restaurant-order-item" key={item.id}>
+                      <span><strong>{item.quantity}×</strong> {item.productName}</span>
+                      <span>₱{item.lineTotal.toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+
                 <div className="restaurant-order-actions">
                   {next && <button className="button button-primary" type="button" disabled={updating === order.orderId} onClick={() => void advance(order)}>{updating === order.orderId ? 'Updating…' : `Mark ${statusLabels[next]}`}</button>}
                   {order.status !== 'completed' && order.status !== 'cancelled' && <button className="button button-secondary" type="button" disabled={updating === order.orderId} onClick={() => void cancel(order)}>Cancel</button>}
