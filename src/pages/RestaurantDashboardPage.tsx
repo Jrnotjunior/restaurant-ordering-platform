@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getRestaurantOrders, type RestaurantOrder } from '../services/restaurantOrderRepository';
+import { supabase } from '../services/supabaseClient';
 
 type Props = { restaurantId: string };
 
@@ -28,6 +29,7 @@ export function RestaurantDashboardPage({ restaurantId }: Props) {
   const [orders, setOrders] = useState<RestaurantOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
 
   async function loadOrders() {
     try {
@@ -42,8 +44,32 @@ export function RestaurantDashboardPage({ restaurantId }: Props) {
 
   useEffect(() => {
     void loadOrders();
-    const timer = window.setInterval(() => void loadOrders(), 10000);
-    return () => window.clearInterval(timer);
+
+    if (!supabase) {
+      setRealtimeStatus('error');
+      return;
+    }
+
+    const channel = supabase
+      .channel(`restaurant-orders:${restaurantId}`)
+      .on(
+        'broadcast',
+        { event: 'restaurant_order_changed' },
+        () => {
+          void loadOrders();
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          setRealtimeStatus('live');
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          setRealtimeStatus('error');
+        }
+      });
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   }, [restaurantId]);
 
   const todayOrders = useMemo(() => orders.filter((order) => isToday(order.createdAt)), [orders]);
@@ -61,7 +87,10 @@ export function RestaurantDashboardPage({ restaurantId }: Props) {
           <h1>Dashboard</h1>
           <p>See what is happening with your restaurant at a glance.</p>
         </div>
-        <button className="button button-secondary" type="button" onClick={() => void loadOrders()}>Refresh</button>
+        <span className={`restaurant-dashboard-live-status is-${realtimeStatus}`} aria-live="polite">
+          <span className="restaurant-dashboard-live-dot" aria-hidden="true" />
+          {realtimeStatus === 'live' ? 'Live' : realtimeStatus === 'connecting' ? 'Connecting…' : 'Reconnecting…'}
+        </span>
       </div>
 
       <nav className="restaurant-dashboard-nav" aria-label="Restaurant navigation">
