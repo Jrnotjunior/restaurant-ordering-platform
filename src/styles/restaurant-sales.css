@@ -1,0 +1,160 @@
+.restaurant-sales-page {
+  width: min(var(--restaurant-content-width), calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 32px 0 56px;
+}
+
+.restaurant-sales-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 22px;
+}
+
+.restaurant-sales-header h1 {
+  margin: 4px 0 6px;
+}
+
+.restaurant-sales-header p:not(.eyebrow) {
+  margin: 0;
+  max-width: 620px;
+  color: #64748b;
+}
+
+.restaurant-sales-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.restaurant-sales-stat,
+.restaurant-sales-panel {
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.restaurant-sales-stat {
+  padding: 18px;
+}
+
+.restaurant-sales-stat span,
+.restaurant-sales-stat small {
+  display: block;
+  color: #64748b;
+}
+
+.restaurant-sales-stat span {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.restaurant-sales-stat strong {
+  display: block;
+  margin: 8px 0 4px;
+  color: #0f172a;
+  font-size: 25px;
+}
+
+.restaurant-sales-stat small {
+  font-size: 12px;
+}
+
+.restaurant-sales-panel {
+  padding: 20px;
+}
+
+.restaurant-sales-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.restaurant-sales-panel-header h2 {
+  margin: 4px 0 0;
+  font-size: 20px;
+}
+
+.restaurant-sales-panel-header > span {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.restaurant-sales-table-wrap {
+  overflow-x: auto;
+}
+
+.restaurant-sales-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.restaurant-sales-table th,
+.restaurant-sales-table td {
+  padding: 14px 12px;
+  border-top: 1px solid #edf0f3;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.restaurant-sales-table th {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.restaurant-sales-table th:first-child,
+.restaurant-sales-table td:first-child {
+  padding-left: 4px;
+}
+
+.restaurant-sales-table .is-number {
+  text-align: right;
+}
+
+.restaurant-sales-table td:not(.is-number) {
+  color: #475569;
+}
+
+.restaurant-sales-error {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.restaurant-sales-empty {
+  padding: 32px 20px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 16px;
+  color: #64748b;
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .restaurant-sales-page {
+    width: min(100% - 1rem, var(--restaurant-content-width));
+    padding: 24px 0 40px;
+  }
+
+  .restaurant-sales-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .restaurant-sales-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .restaurant-sales-panel {
+    padding: 16px;
+  }
+}
