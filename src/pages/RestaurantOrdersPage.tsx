@@ -11,8 +11,8 @@ type Props = { restaurantId: string };
 type BoardColumn = 'new' | 'kitchen' | 'ready' | 'completed';
 
 const statusLabels: Record<RestaurantOrderStatus, string> = { pending: 'New Order', confirmed: 'In the Kitchen', preparing: 'In the Kitchen', ready: 'Ready', completed: 'Completed', cancelled: 'Cancelled' };
-const actionLabels: Partial<Record<RestaurantOrderStatus, string>> = { pending: 'Send to Kitchen', confirmed: 'Start Preparing', preparing: 'Mark Ready', ready: 'Complete Order' };
-const nextStatus: Partial<Record<RestaurantOrderStatus, RestaurantOrderStatus>> = { pending: 'confirmed', confirmed: 'preparing', preparing: 'ready', ready: 'completed' };
+const actionLabels: Partial<Record<RestaurantOrderStatus, string>> = { pending: 'Send to Kitchen', confirmed: 'Mark Ready', preparing: 'Mark Ready', ready: 'Complete Order' };
+const nextStatus: Partial<Record<RestaurantOrderStatus, RestaurantOrderStatus>> = { pending: 'confirmed', confirmed: 'ready', preparing: 'ready', ready: 'completed' };
 function paymentLabel(order: RestaurantOrder) { if (order.paymentMethod === 'gcash') { if (order.paymentStatus === 'paid') return 'GCash • Paid'; if (order.paymentStatus === 'failed') return 'GCash • Failed'; if (order.paymentStatus === 'refunded') return 'GCash • Refunded'; return 'GCash • Awaiting payment'; } if (order.paymentStatus === 'paid') return 'Cash • Paid'; if (order.paymentStatus === 'failed') return 'Cash • Failed'; if (order.paymentStatus === 'refunded') return 'Cash • Refunded'; return 'Cash • Unpaid'; }
 function isPaymentReady(order: RestaurantOrder) { return order.paymentMethod !== 'gcash' || order.paymentStatus === 'paid'; }
 function columnFor(order: RestaurantOrder): BoardColumn { if (order.status === 'pending') return 'new'; if (order.status === 'confirmed' || order.status === 'preparing') return 'kitchen'; if (order.status === 'ready') return 'ready'; return 'completed'; }
