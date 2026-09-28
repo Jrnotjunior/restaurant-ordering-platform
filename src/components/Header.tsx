@@ -28,7 +28,30 @@ export function Header() {
         ))}
       </nav>
 
-      <a className="header-cart" href={withBasePath('/cart')}>Cart</a>
+      <a
+        className="header-cart"
+        href={withBasePath('/cart')}
+        aria-label="View cart"
+        title="Cart"
+      >
+        <svg
+          className="header-cart-icon"
+          viewBox="0 0 24 24"
+          width="24"
+          height="24"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path
+            d="M3 4h2l2.1 10.1a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.6L20.5 7H6.2M9 19.5h.01M17 19.5h.01"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </a>
     </header>
   );
 }
