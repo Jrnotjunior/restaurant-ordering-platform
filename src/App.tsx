@@ -11,6 +11,12 @@ import type { RestaurantConfig } from './types/restaurant';
 
 const restaurantRepository = new SupabaseRestaurantRepository();
 
+function withBasePath(path: string) {
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+  if (path === '/') return `${base}/`;
+  return `${base}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
 export function App() {
   const [restaurant, setRestaurant] = useState<RestaurantConfig>(defaultRestaurant);
   const isMenuPage = window.location.pathname.endsWith('/menu') || window.location.pathname.endsWith('/menu/');
@@ -52,8 +58,8 @@ export function App() {
                 Browse the menu, choose pickup or delivery, and place your order directly.
               </p>
               <div className="hero-actions">
-                <a className="button button-primary" href="/menu">View Menu</a>
-                <a className="button button-secondary" href="/cart">View Cart</a>
+                <a className="button button-primary" href={withBasePath('/menu')}>View Menu</a>
+                <a className="button button-secondary" href={withBasePath('/cart')}>View Cart</a>
               </div>
             </section>
           )}
