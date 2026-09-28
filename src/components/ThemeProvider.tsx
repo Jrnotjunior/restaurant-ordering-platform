@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, useContext, useMemo } from 'react';
+import { createContext, type ReactNode, useContext, useEffect, useMemo } from 'react';
 import type { RestaurantConfig, RestaurantTheme } from '../types/restaurant';
 
 type ThemeContextValue = RestaurantTheme;
@@ -14,7 +14,9 @@ function applyTheme(theme: RestaurantTheme) {
 
   root.style.setProperty('--color-primary', theme.colors.primary);
   root.style.setProperty('--color-primary-hover', theme.colors.primaryHover);
+  root.style.setProperty('--color-primary-text', theme.colors.primaryText);
   root.style.setProperty('--color-secondary', theme.colors.secondary);
+  root.style.setProperty('--color-secondary-text', theme.colors.secondaryText);
   root.style.setProperty('--color-background', theme.colors.background);
   root.style.setProperty('--color-surface', theme.colors.surface);
   root.style.setProperty('--color-text', theme.colors.text);
@@ -32,7 +34,10 @@ type ThemeProviderProps = {
 
 export function ThemeProvider({ restaurant, children }: ThemeProviderProps) {
   const theme = useMemo(() => restaurant.theme, [restaurant.theme]);
-  applyTheme(theme);
+
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
 
   return <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>;
 }
