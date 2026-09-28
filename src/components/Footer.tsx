@@ -1,10 +1,8 @@
-import type { RestaurantConfig } from '../types/restaurant';
+import { useRestaurant } from './RestaurantProvider';
 
-type FooterProps = {
-  restaurant: RestaurantConfig;
-};
+export function Footer() {
+  const restaurant = useRestaurant();
 
-export function Footer({ restaurant }: FooterProps) {
   return (
     <footer className="site-footer">
       <div>
