@@ -99,3 +99,22 @@
     font-size: 0.86rem;
   }
 }
+
+/* Keep the subtotal label and amount separated on narrow screens. */
+.checkout-summary .cart-summary-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: center;
+  column-gap: 1rem;
+}
+
+.checkout-summary .cart-summary-row span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.checkout-summary .cart-summary-row strong {
+  min-width: max-content;
+  white-space: nowrap;
+  text-align: right;
+}
