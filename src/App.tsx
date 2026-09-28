@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { RestaurantProvider } from './components/RestaurantProvider';
 import { ThemeProvider } from './components/ThemeProvider';
 import { RestaurantLayout } from './layouts/RestaurantLayout';
+import { MenuPage } from './pages/MenuPage';
 import { defaultRestaurant } from './config/defaultRestaurant';
 import { currentRestaurantLookup } from './config/restaurant';
 import { SupabaseRestaurantRepository } from './services/supabaseRestaurantRepository';
@@ -12,6 +13,7 @@ const restaurantRepository = new SupabaseRestaurantRepository();
 
 export function App() {
   const [restaurant, setRestaurant] = useState<RestaurantConfig>(defaultRestaurant);
+  const isMenuPage = window.location.pathname.endsWith('/menu') || window.location.pathname.endsWith('/menu/');
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -40,17 +42,21 @@ export function App() {
     <RestaurantProvider restaurant={restaurant}>
       <ThemeProvider restaurant={restaurant}>
         <RestaurantLayout>
-          <section className="hero">
-            <p className="eyebrow">Direct online ordering</p>
-            <h1>Order from your favorite local restaurant.</h1>
-            <p className="hero-copy">
-              Browse the menu, choose pickup or delivery, and place your order directly.
-            </p>
-            <div className="hero-actions">
-              <a className="button button-primary" href="/menu">View Menu</a>
-              <a className="button button-secondary" href="/cart">View Cart</a>
-            </div>
-          </section>
+          {isMenuPage ? (
+            <MenuPage />
+          ) : (
+            <section className="hero">
+              <p className="eyebrow">Direct online ordering</p>
+              <h1>Order from your favorite local restaurant.</h1>
+              <p className="hero-copy">
+                Browse the menu, choose pickup or delivery, and place your order directly.
+              </p>
+              <div className="hero-actions">
+                <a className="button button-primary" href="/menu">View Menu</a>
+                <a className="button button-secondary" href="/cart">View Cart</a>
+              </div>
+            </section>
+          )}
         </RestaurantLayout>
       </ThemeProvider>
     </RestaurantProvider>
