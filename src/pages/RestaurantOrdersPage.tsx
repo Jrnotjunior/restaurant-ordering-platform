@@ -13,8 +13,8 @@ type BoardColumn = 'new' | 'kitchen' | 'ready' | 'completed';
 const statusLabels: Record<RestaurantOrderStatus, string> = {
   pending: 'New Order', confirmed: 'In the Kitchen', preparing: 'In the Kitchen', ready: 'Ready', completed: 'Completed', cancelled: 'Cancelled',
 };
-const actionLabels: Partial<Record<RestaurantOrderStatus, string>> = { pending: 'Send to Kitchen', confirmed: 'Start Preparing', preparing: 'Mark Ready', ready: 'Complete Order' };
-const nextStatus: Partial<Record<RestaurantOrderStatus, RestaurantOrderStatus>> = { pending: 'confirmed', confirmed: 'preparing', preparing: 'ready', ready: 'completed' };
+const actionLabels: Partial<Record<RestaurantOrderStatus, string>> = { confirmed: 'Start Preparing', preparing: 'Mark Ready', ready: 'Complete Order' };
+const nextStatus: Partial<Record<RestaurantOrderStatus, RestaurantOrderStatus>> = { confirmed: 'preparing', preparing: 'ready', ready: 'completed' };
 
 function paymentLabel(order: RestaurantOrder) {
   if (order.paymentMethod === 'gcash') {
@@ -28,7 +28,6 @@ function paymentLabel(order: RestaurantOrder) {
   if (order.paymentStatus === 'refunded') return 'Cash • Refunded';
   return 'Cash • Unpaid';
 }
-function isPaymentReady(order: RestaurantOrder) { return order.paymentMethod !== 'gcash' || order.paymentStatus === 'paid'; }
 function columnFor(order: RestaurantOrder): BoardColumn { if (order.status === 'pending') return 'new'; if (order.status === 'confirmed' || order.status === 'preparing') return 'kitchen'; if (order.status === 'ready') return 'ready'; return 'completed'; }
 
 const columns: Array<{ key: BoardColumn; title: string; description: string }> = [
@@ -66,30 +65,7 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
 
   async function advance(order: RestaurantOrder) {
     const status = nextStatus[order.status]; if (!status) return;
-    if (order.status === 'pending' && !isPaymentReady(order)) { setError('This online order cannot be sent to the kitchen until the payment is completed.'); return; }
     try { setError(''); setUpdating(order.orderId); await updateOrderStatus(order.orderId, status); const updated = { ...order, status }; setOrders((current) => current.map((item) => item.orderId === order.orderId ? updated : item)); setSelectedOrder(updated); }
-    catch (err) { setError(err instanceof Error ? err.message : 'Unable to update order.'); }
-    finally { setUpdating(null); }
-  }
-
-  async function printAndSendToKitchen(order: RestaurantOrder) {
-    if (!isPaymentReady(order)) { setError('This online order cannot be sent to the kitchen until the payment is completed.'); return; }
-    try {
-      setError('');
-      setUpdating(order.orderId);
-      setSelectedOrder(order);
-      window.setTimeout(() => window.print(), 100);
-      await updateOrderStatus(order.orderId, 'confirmed');
-      const updated = { ...order, status: 'confirmed' as RestaurantOrderStatus };
-      setOrders((current) => current.map((item) => item.orderId === order.orderId ? updated : item));
-      setSelectedOrder(updated);
-    } catch (err) { setError(err instanceof Error ? err.message : 'Unable to send order to the kitchen.'); }
-    finally { setUpdating(null); }
-  }
-
-  async function cancel(order: RestaurantOrder) {
-    if (!window.confirm(`Cancel order ${order.orderNumber}?`)) return;
-    try { setError(''); setUpdating(order.orderId); await updateOrderStatus(order.orderId, 'cancelled'); setOrders((current) => current.map((item) => item.orderId === order.orderId ? { ...item, status: 'cancelled' } : item)); setSelectedOrder(null); }
     catch (err) { setError(err instanceof Error ? err.message : 'Unable to update order.'); }
     finally { setUpdating(null); }
   }
@@ -127,11 +103,10 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
           <div className="restaurant-order-meta"><span>{selectedOrder.orderType === 'dine_in' ? 'Dine-in' : selectedOrder.orderType === 'pickup' ? 'Pickup / Take-out' : 'Delivery'}</span><span className={`restaurant-payment-status ${selectedOrder.paymentStatus === 'paid' ? 'is-paid' : selectedOrder.paymentStatus === 'failed' ? 'is-failed' : selectedOrder.paymentStatus === 'refunded' ? 'is-refunded' : 'is-pending'}`}>{paymentLabel(selectedOrder)}</span></div>
           <div className="restaurant-order-items" style={{ marginTop: 18 }}>{selectedOrder.items.map((item) => <div className="restaurant-order-item" key={item.id}><span><strong>{item.quantity}×</strong> {item.productName}</span><span>₱{item.lineTotal.toFixed(2)}</span></div>)}</div>
           <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #e2e8f0', marginTop: 12, paddingTop: 14 }}><strong>Total</strong><strong className="restaurant-order-modal-total">₱{selectedOrder.total.toFixed(2)}</strong></div>
-          {selectedOrder.status === 'pending' && !isPaymentReady(selectedOrder) && <p className="restaurant-order-payment-warning" style={{ marginTop: 16 }}>Online payment is required before this order can enter the kitchen.</p>}
+          {selectedOrder.status === 'pending' && selectedOrder.paymentMethod === 'gcash' && selectedOrder.paymentStatus !== 'paid' && <p className="restaurant-order-payment-warning" style={{ marginTop: 16 }}>Online payment is required before this order can enter the kitchen.</p>}
           <div className="restaurant-order-modal-actions">
-            {selectedOrder.status === 'pending' ? <button className="button button-primary" type="button" disabled={updating === selectedOrder.orderId || !isPaymentReady(selectedOrder)} onClick={() => void printAndSendToKitchen(selectedOrder)}>{updating === selectedOrder.orderId ? 'Printing & Sending…' : 'Print Order & Send to Kitchen'}</button> : nextStatus[selectedOrder.status] && <button className="button button-primary" type="button" disabled={updating === selectedOrder.orderId} onClick={() => void advance(selectedOrder)}>{updating === selectedOrder.orderId ? 'Updating…' : actionLabels[selectedOrder.status]}</button>}
-            {selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled' && <button className="button button-secondary" type="button" disabled={updating === selectedOrder.orderId} onClick={() => void cancel(selectedOrder)}>Cancel</button>}
-            {selectedOrder.status !== 'pending' && <button className="button button-secondary restaurant-print-button" type="button" onClick={() => printOrder(selectedOrder)}>Print Order</button>}
+            <button className="button button-primary" type="button" onClick={() => printOrder(selectedOrder)}>Print Order</button>
+            {selectedOrder.status !== 'pending' && nextStatus[selectedOrder.status] && <button className="button button-primary" type="button" disabled={updating === selectedOrder.orderId} onClick={() => void advance(selectedOrder)}>{updating === selectedOrder.orderId ? 'Updating…' : actionLabels[selectedOrder.status]}</button>}
           </div>
         </div>
       </div>}
