@@ -1,7 +1,19 @@
+import { createClient } from '@supabase/supabase-js';
+
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+
+export const supabase = isSupabaseConfigured
+  ? createClient(supabaseUrl!, supabaseAnonKey!, {
+      realtime: {
+        params: {
+          eventsPerSecond: 10,
+        },
+      },
+    })
+  : null;
 
 export async function supabaseGet<T>(path: string, params: Record<string, string>): Promise<T[]> {
   if (!supabaseUrl || !supabaseAnonKey) {
@@ -11,8 +23,6 @@ export async function supabaseGet<T>(path: string, params: Record<string, string
   const searchParams = new URLSearchParams(params);
   const response = await fetch(`${supabaseUrl}/rest/v1/${path}?${searchParams.toString()}`, {
     headers: {
-      // Supabase publishable keys belong in the apikey header.
-      // Do not send the publishable key as a Bearer token.
       apikey: supabaseAnonKey,
       Accept: 'application/json'
     }
