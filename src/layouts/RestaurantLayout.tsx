@@ -1,19 +1,20 @@
 import type { ReactNode } from 'react';
-import type { RestaurantConfig } from '../types/restaurant';
-import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
+import { Header } from '../components/Header';
+import { useRestaurant } from '../components/RestaurantProvider';
 
 type RestaurantLayoutProps = {
-  restaurant: RestaurantConfig;
   children: ReactNode;
 };
 
-export function RestaurantLayout({ restaurant, children }: RestaurantLayoutProps) {
+export function RestaurantLayout({ children }: RestaurantLayoutProps) {
+  useRestaurant();
+
   return (
     <div className="app-shell">
-      <Header restaurant={restaurant} />
+      <Header />
       <main>{children}</main>
-      <Footer restaurant={restaurant} />
+      <Footer />
     </div>
   );
 }
