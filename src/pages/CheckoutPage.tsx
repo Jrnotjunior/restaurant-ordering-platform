@@ -170,9 +170,9 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
           ) : (
             <fieldset className="checkout-section" id="payment-section">
               <legend>Payment method</legend>
-              <div className="payment-method-grid">
+              <div className="order-type-grid">
                 {paymentMethods.map((method) => (
-                  <label className={`payment-method-card ${paymentMethod === method.value ? 'is-selected' : ''}`} key={method.value}>
+                  <label className={`order-type-card ${paymentMethod === method.value ? 'is-selected' : ''}`} key={method.value}>
                     <input
                       type="radio"
                       name="paymentMethod"
