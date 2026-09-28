@@ -31,6 +31,7 @@ export class SupabaseRestaurantRepository implements RestaurantRepository {
 
     return {
       ...defaultRestaurant,
+      id: restaurant.id,
       name: restaurant.name,
       tagline: restaurant.tagline,
       logoUrl: restaurant.logo_url ?? undefined,
