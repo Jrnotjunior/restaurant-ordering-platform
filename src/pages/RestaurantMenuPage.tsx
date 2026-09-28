@@ -5,9 +5,9 @@ import { saveProductImage, uploadProductImage } from '../services/productImageRe
 import type { RestaurantCategory, RestaurantProduct } from '../types/menu';
 
 type Props = { restaurantId: string };
-type ProductForm = { name: string; description: string; price: string; categoryId: string };
+type ProductForm = { name: string; description: string; price: string; categoryName: string };
 
-const emptyForm: ProductForm = { name: '', description: '', price: '', categoryId: '' };
+const emptyForm: ProductForm = { name: '', description: '', price: '', categoryName: '' };
 
 export function RestaurantMenuPage({ restaurantId }: Props) {
   const [categories, setCategories] = useState<RestaurantCategory[]>([]);
@@ -60,7 +60,8 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
 
   function openEdit(product: RestaurantProduct) {
     setEditingProduct(product);
-    setForm({ name: product.name, description: product.description, price: String(product.price), categoryId: product.categoryId });
+    const category = categories.find((item) => item.id === product.categoryId);
+    setForm({ name: product.name, description: product.description, price: String(product.price), categoryName: category?.name ?? '' });
     setImageFile(null);
     setImagePreview(product.imageUrl || '');
     setError('');
@@ -94,10 +95,17 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
     if (!editingProduct) return;
     const name = form.name.trim();
     const description = form.description.trim();
+    const categoryName = form.categoryName.trim();
     const price = Number(form.price);
     if (!name) { setError('Product name is required.'); return; }
     if (!Number.isFinite(price) || price < 0) { setError('Enter a valid price.'); return; }
-    if (!form.categoryId) { setError('Select a category.'); return; }
+    if (!categoryName) { setError('Category is required.'); return; }
+
+    const category = categories.find((item) => item.name.trim().toLowerCase() === categoryName.toLowerCase());
+    if (!category) {
+      setError('That category does not exist yet. Please enter one of the existing category names.');
+      return;
+    }
 
     setSavingForm(true);
     setError('');
@@ -107,9 +115,9 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
         imageUrl = await uploadProductImage(restaurantId, editingProduct.id, imageFile);
         await saveProductImage(editingProduct.id, imageUrl);
       }
-      await updateProduct(editingProduct, { name, description, price, categoryId: form.categoryId });
+      await updateProduct(editingProduct, { name, description, price, categoryId: category.id });
       setProducts((current) => current.map((item) => item.id === editingProduct.id
-        ? { ...item, name, description, price, categoryId: form.categoryId, imageUrl, updatedAt: new Date().toISOString() }
+        ? { ...item, name, description, price, categoryId: category.id, imageUrl, updatedAt: new Date().toISOString() }
         : item));
       closeEdit();
     } catch (err) {
@@ -150,7 +158,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
         .restaurant-product-modal-close{position:absolute;right:14px;top:14px;width:38px;height:38px;border:0;border-radius:999px;background:#f1f5f9;font-size:22px;cursor:pointer}
         .restaurant-product-form{display:grid;gap:14px}
         .restaurant-product-form label{display:grid;gap:6px;font-weight:600;font-size:14px}
-        .restaurant-product-form input,.restaurant-product-form textarea,.restaurant-product-form select{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:10px;padding:11px 12px;font:inherit;color:#0f172a;background:#fff}
+        .restaurant-product-form input,.restaurant-product-form textarea{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:10px;padding:11px 12px;font:inherit;color:#0f172a;background:#fff}
         .restaurant-product-form textarea{min-height:90px;resize:vertical}
         .restaurant-product-image-picker{display:grid;gap:10px}
         .restaurant-product-image-preview{display:block;width:100%;aspect-ratio:1 / 1;height:auto;object-fit:cover;border-radius:12px;border:1px solid #dbe2ea;background:#f8fafc}
@@ -159,6 +167,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
         .restaurant-product-image-picker .button{justify-self:center}
         .restaurant-product-form-actions{display:flex;justify-content:center;gap:10px;margin-top:4px}
         .restaurant-product-form-actions .button{min-width:130px}
+        .restaurant-product-category-hint{font-size:12px;font-weight:400;color:#64748b}
         @media(max-width:600px){.restaurant-product-modal-backdrop{padding:10px;align-items:flex-end}.restaurant-product-modal{max-height:92vh;border-radius:18px 18px 12px 12px;padding:20px}.restaurant-product-form-actions .button{flex:1}}
       `}</style>
 
@@ -247,7 +256,19 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
               <label>Product name<input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} /></label>
               <label>Description<textarea value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} /></label>
               <label>Price<input type="number" min="0" step="0.01" value={form.price} onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))} /></label>
-              <label>Category<select value={form.categoryId} onChange={(event) => setForm((current) => ({ ...current, categoryId: event.target.value }))}><option value="">Select category</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
+              <label>
+                Category
+                <input
+                  value={form.categoryName}
+                  list="restaurant-product-category-options"
+                  placeholder="Enter category"
+                  onChange={(event) => setForm((current) => ({ ...current, categoryName: event.target.value }))}
+                />
+                <span className="restaurant-product-category-hint">Type the category name. Existing categories will appear as suggestions.</span>
+                <datalist id="restaurant-product-category-options">
+                  {categories.map((category) => <option key={category.id} value={category.name} />)}
+                </datalist>
+              </label>
               <div className="restaurant-product-form-actions">
                 <button className="button button-secondary" type="button" disabled={savingForm} onClick={closeEdit}>Cancel</button>
                 <button className="button button-primary" type="submit" disabled={savingForm}>{savingForm ? 'Saving…' : 'Save Changes'}</button>
