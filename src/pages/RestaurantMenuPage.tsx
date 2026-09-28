@@ -8,7 +8,7 @@ type ProductForm = { name: string; description: string; price: string; categoryI
 
 const emptyForm: ProductForm = { name: '', description: '', price: '', categoryId: '' };
 
-export function RestaurantMenuPage({ restaurantId }: Props }) {
+export function RestaurantMenuPage({ restaurantId }: Props) {
   const [categories, setCategories] = useState<RestaurantCategory[]>([]);
   const [products, setProducts] = useState<RestaurantProduct[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -65,15 +65,19 @@ export function RestaurantMenuPage({ restaurantId }: Props }) {
     event.preventDefault();
     if (!editingProduct) return;
     const name = form.name.trim();
+    const description = form.description.trim();
     const price = Number(form.price);
     if (!name) { setError('Product name is required.'); return; }
     if (!Number.isFinite(price) || price < 0) { setError('Enter a valid price.'); return; }
     if (!form.categoryId) { setError('Select a category.'); return; }
+
     setSavingForm(true);
     setError('');
     try {
-      await updateProduct(editingProduct, { name, description: form.description, price, categoryId: form.categoryId });
-      setProducts((current) => current.map((item) => item.id === editingProduct.id ? { ...item, name, description: form.description.trim(), price, categoryId: form.categoryId, updatedAt: new Date().toISOString() } : item));
+      await updateProduct(editingProduct, { name, description, price, categoryId: form.categoryId });
+      setProducts((current) => current.map((item) => item.id === editingProduct.id
+        ? { ...item, name, description, price, categoryId: form.categoryId, updatedAt: new Date().toISOString() }
+        : item));
       setEditingProduct(null);
       setForm(emptyForm);
     } catch (err) {
@@ -84,8 +88,11 @@ export function RestaurantMenuPage({ restaurantId }: Props }) {
   }
 
   async function removeProduct(product: RestaurantProduct) {
-    const confirmed = window.confirm(`Delete ${product.name}?\n\nThis will remove the product from the restaurant products list.`);
+    const confirmed = window.confirm(
+      `Delete ${product.name}?\n\nThis will remove the product from the restaurant products list.`
+    );
     if (!confirmed) return;
+
     setDeletingId(product.id);
     setError('');
     try {
@@ -98,13 +105,15 @@ export function RestaurantMenuPage({ restaurantId }: Props }) {
     }
   }
 
+  const baseUrl = import.meta.env.BASE_URL;
+
   return (
     <section className="restaurant-menu-page">
       <style>{`
         .restaurant-menu-card-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px}
         .restaurant-menu-card-actions .button{min-height:38px}
         .restaurant-product-modal-backdrop{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.55);backdrop-filter:blur(3px)}
-        .restaurant-product-modal{position:relative;width:min(520px,100%);background:#fff;border-radius:18px;box-shadow:0 24px 70px rgba(15,23,42,.28);padding:24px;color:#0f172a}
+        .restaurant-product-modal{position:relative;width:min(520px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:18px;box-shadow:0 24px 70px rgba(15,23,42,.28);padding:24px;color:#0f172a}
         .restaurant-product-modal h2{margin:0 42px 18px 0}
         .restaurant-product-modal-close{position:absolute;right:14px;top:14px;width:38px;height:38px;border:0;border-radius:999px;background:#f1f5f9;font-size:22px;cursor:pointer}
         .restaurant-product-form{display:grid;gap:14px}
@@ -113,7 +122,7 @@ export function RestaurantMenuPage({ restaurantId }: Props }) {
         .restaurant-product-form textarea{min-height:90px;resize:vertical}
         .restaurant-product-form-actions{display:flex;justify-content:center;gap:10px;margin-top:4px}
         .restaurant-product-form-actions .button{min-width:130px}
-        @media(max-width:600px){.restaurant-product-modal-backdrop{padding:10px;align-items:flex-end}.restaurant-product-modal{max-height:92vh;overflow:auto;border-radius:18px 18px 12px 12px;padding:20px}.restaurant-product-form-actions .button{flex:1}}
+        @media(max-width:600px){.restaurant-product-modal-backdrop{padding:10px;align-items:flex-end}.restaurant-product-modal{max-height:92vh;border-radius:18px 18px 12px 12px;padding:20px}.restaurant-product-form-actions .button{flex:1}}
       `}</style>
 
       <header className="restaurant-menu-header">
@@ -126,9 +135,9 @@ export function RestaurantMenuPage({ restaurantId }: Props }) {
       </header>
 
       <nav className="restaurant-dashboard-nav" aria-label="Restaurant navigation">
-        <a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/#restaurant/dashboard`}>Dashboard</a>
-        <a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/#restaurant/orders`}>Orders</a>
-        <a className="is-active" href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/#restaurant/menu`}>Products</a>
+        <a href={`${baseUrl}#restaurant/dashboard`}>Dashboard</a>
+        <a href={`${baseUrl}#restaurant/orders`}>Orders</a>
+        <a className="is-active" href={`${baseUrl}#restaurant/menu`}>Products</a>
       </nav>
 
       {error && <div className="restaurant-dashboard-error" role="alert">{error}</div>}
@@ -136,7 +145,11 @@ export function RestaurantMenuPage({ restaurantId }: Props }) {
       <div className="restaurant-menu-toolbar">
         <div className="restaurant-menu-categories" aria-label="Product categories">
           <button className={selectedCategory === 'all' ? 'is-active' : ''} type="button" onClick={() => setSelectedCategory('all')}>All</button>
-          {categories.map((category) => <button key={category.id} className={selectedCategory === category.id ? 'is-active' : ''} type="button" onClick={() => setSelectedCategory(category.id)}>{category.name}</button>)}
+          {categories.map((category) => (
+            <button key={category.id} className={selectedCategory === category.id ? 'is-active' : ''} type="button" onClick={() => setSelectedCategory(category.id)}>
+              {category.name}
+            </button>
+          ))}
         </div>
         <label className="restaurant-menu-toggle">
           <input type="checkbox" checked={showUnavailable} onChange={(event) => setShowUnavailable(event.target.checked)} />
@@ -144,25 +157,35 @@ export function RestaurantMenuPage({ restaurantId }: Props }) {
         </label>
       </div>
 
-      {loading ? <div className="restaurant-dashboard-empty">Loading products…</div> : filteredProducts.length === 0 ? <div className="restaurant-dashboard-empty">No products match this filter.</div> : (
+      {loading ? (
+        <div className="restaurant-dashboard-empty">Loading products…</div>
+      ) : filteredProducts.length === 0 ? (
+        <div className="restaurant-dashboard-empty">No products match this filter.</div>
+      ) : (
         <div className="restaurant-menu-grid">
           {filteredProducts.map((product) => (
             <article className={`restaurant-menu-card ${product.isAvailable ? '' : 'is-unavailable'}`} key={product.id}>
-              {product.imageUrl ? <img src={product.imageUrl} alt="" className="restaurant-menu-image" /> : <div className="restaurant-menu-image-placeholder" aria-hidden="true">{product.name.charAt(0).toUpperCase()}</div>}
+              {product.imageUrl
+                ? <img src={product.imageUrl} alt="" className="restaurant-menu-image" />
+                : <div className="restaurant-menu-image-placeholder" aria-hidden="true">{product.name.charAt(0).toUpperCase()}</div>}
               <div className="restaurant-menu-card-content">
                 <div className="restaurant-menu-card-heading">
                   <div><h2>{product.name}</h2><p>{product.description || 'No description.'}</p></div>
                   <strong>₱{product.price.toFixed(2)}</strong>
                 </div>
                 <div className="restaurant-menu-card-footer">
-                  <span className={`restaurant-menu-status ${product.isAvailable ? 'is-available' : 'is-unavailable'}`}>{product.isAvailable ? 'Available' : 'Unavailable'}</span>
+                  <span className={`restaurant-menu-status ${product.isAvailable ? 'is-available' : 'is-unavailable'}`}>
+                    {product.isAvailable ? 'Available' : 'Unavailable'}
+                  </span>
                   <button className="button button-secondary" type="button" disabled={savingId === product.id} onClick={() => void toggleAvailability(product)}>
                     {savingId === product.id ? 'Saving…' : product.isAvailable ? 'Mark unavailable' : 'Make available'}
                   </button>
                 </div>
                 <div className="restaurant-menu-card-actions">
                   <button className="button button-secondary" type="button" disabled={deletingId === product.id} onClick={() => openEdit(product)}>Edit</button>
-                  <button className="button button-secondary" type="button" disabled={deletingId === product.id} onClick={() => void removeProduct(product)}>{deletingId === product.id ? 'Deleting…' : 'Delete'}</button>
+                  <button className="button button-secondary" type="button" disabled={deletingId === product.id} onClick={() => void removeProduct(product)}>
+                    {deletingId === product.id ? 'Deleting…' : 'Delete'}
+                  </button>
                 </div>
               </div>
             </article>
