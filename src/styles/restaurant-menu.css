@@ -1,4 +1,4 @@
-.restaurant-menu-page { width: min(1120px, calc(100% - 2rem)); margin: 0 auto; padding: 1.5rem 0 3rem; }
+.restaurant-menu-page { width: min(var(--restaurant-content-width), calc(100% - 2rem)); margin: 0 auto; padding: 1.5rem 0 3rem; }
 .restaurant-menu-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
 .restaurant-menu-header h1 { margin: 0; font-family: var(--font-heading); font-size: clamp(2rem, 6vw, 3.5rem); letter-spacing: -0.04em; }
 .restaurant-menu-header p:last-child { margin: .5rem 0 0; color: var(--color-muted); line-height: 1.5; }
@@ -26,7 +26,7 @@
 .restaurant-menu-status.is-unavailable { color: var(--color-muted); }
 .restaurant-menu-card-footer .button { min-height: 42px; padding-inline: .8rem; font-size: .8rem; }
 @media (max-width: 760px) {
-  .restaurant-menu-page { width: min(100% - 1rem, 1120px); padding-top: 1rem; }
+  .restaurant-menu-page { width: min(100% - 1rem, var(--restaurant-content-width)); padding-top: 1rem; }
   .restaurant-menu-toolbar { align-items: flex-start; flex-direction: column; }
   .restaurant-menu-grid { grid-template-columns: 1fr; }
 }
