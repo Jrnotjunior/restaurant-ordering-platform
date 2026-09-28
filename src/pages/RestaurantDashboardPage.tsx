@@ -89,25 +89,21 @@ export function RestaurantDashboardPage({ restaurantId }: Props) {
         <div className="restaurant-dashboard-stats">
           <a className="restaurant-dashboard-stat" href="#restaurant/orders">
             <span>Orders</span>
-            <strong>{todayOrders.length}</strong>
             <small>Today's orders</small>
           </a>
 
           <a className="restaurant-dashboard-stat" href="#restaurant/menu">
             <span>Product</span>
-            <strong>Menu</strong>
             <small>Manage your menu</small>
           </a>
 
           <a className="restaurant-dashboard-stat restaurant-dashboard-stat-link" href="#restaurant/shipping-fee">
             <span>Shipping fee</span>
-            <strong>₱{shippingFee.toFixed(2)}</strong>
             <small>Manage your delivery fee</small>
           </a>
 
           <article className="restaurant-dashboard-stat">
             <span>Sales</span>
-            <strong>₱{todaySales.toFixed(2)}</strong>
             <small>Completed sales today</small>
           </article>
         </div>
