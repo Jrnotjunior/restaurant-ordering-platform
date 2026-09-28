@@ -11,10 +11,33 @@ export function Footer({ restaurant }: FooterProps) {
         <strong>{restaurant.name}</strong>
         <p>{restaurant.tagline}</p>
       </div>
+
       <div>
         {restaurant.locationText ? <p>{restaurant.locationText}</p> : null}
         {restaurant.contactNumber ? <p>{restaurant.contactNumber}</p> : null}
+        {restaurant.email ? <p>{restaurant.email}</p> : null}
       </div>
+
+      {restaurant.footerLinks.length > 0 ? (
+        <nav aria-label="Footer navigation">
+          {restaurant.footerLinks.map((link) => (
+            <a key={`${link.href}-${link.label}`} href={link.href}>
+              {link.label}
+            </a>
+          ))}
+        </nav>
+      ) : null}
+
+      {restaurant.socialLinks && restaurant.socialLinks.length > 0 ? (
+        <nav aria-label="Social links">
+          {restaurant.socialLinks.map((link) => (
+            <a key={`${link.href}-${link.label}`} href={link.href} target="_blank" rel="noreferrer">
+              {link.label}
+            </a>
+          ))}
+        </nav>
+      ) : null}
+
       <small>© {new Date().getFullYear()} {restaurant.name}. All rights reserved.</small>
     </footer>
   );
