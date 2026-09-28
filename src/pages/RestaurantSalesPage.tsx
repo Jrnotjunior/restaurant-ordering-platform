@@ -118,16 +118,15 @@ export function RestaurantSalesPage({ restaurantId }: Props) {
       'Order Total': order.total,
     }));
 
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    XLSX.utils.sheet_add_aoa(worksheet, [
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.aoa_to_sheet([
       ['Daily Sales Report'],
       ['Date', day.dateLabel],
       ['Total Sales', day.total],
       ['Completed Orders', day.orders.length],
       [],
-    ], { origin: 'A1' });
-
-    const workbook = XLSX.utils.book_new();
+    ]);
+    XLSX.utils.sheet_add_json(worksheet, rows, { origin: 'A6' });
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Daily Sales');
     XLSX.writeFile(workbook, `sales-${day.dateKey}.xlsx`);
   }
