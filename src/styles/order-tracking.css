@@ -1,0 +1,27 @@
+.order-tracking-page { width: min(760px, calc(100% - 2rem)); margin: 0 auto; padding: clamp(2rem, 7vw, 5rem) 0; }
+.order-tracking-card { padding: clamp(1.25rem, 5vw, 2.5rem); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-background); }
+.order-tracking-card h1 { margin: 0; font-family: var(--font-heading); font-size: clamp(1.9rem, 6vw, 3rem); line-height: 1.05; }
+.order-tracking-card > p:not(.eyebrow) { color: var(--color-muted); line-height: 1.6; }
+.order-tracking-total { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 1.5rem 0 2rem; padding: 1rem; border-radius: var(--radius-md); background: var(--color-secondary); }
+.order-tracking-total span { color: var(--color-muted); }
+.order-tracking-total strong { white-space: nowrap; }
+.order-status-timeline { display: grid; gap: 0; }
+.order-status-step { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 1rem; position: relative; padding-bottom: 1.5rem; }
+.order-status-step:not(:last-child)::before { content: ''; position: absolute; left: 19px; top: 40px; bottom: 0; width: 2px; background: var(--color-border); }
+.order-status-step.is-complete:not(:last-child)::before { background: var(--color-primary); }
+.order-status-marker { position: relative; z-index: 1; width: 40px; height: 40px; display: grid; place-items: center; border: 2px solid var(--color-border); border-radius: 50%; background: var(--color-background); color: var(--color-muted); font-weight: 800; }
+.order-status-step.is-complete .order-status-marker { border-color: var(--color-primary); background: var(--color-primary); color: var(--color-primary-text); }
+.order-status-step strong { display: block; margin-top: .45rem; font-family: var(--font-heading); }
+.order-status-step p { margin: .35rem 0 0; color: var(--color-muted); font-size: .9rem; line-height: 1.5; }
+.order-status-step.is-current strong { color: var(--color-primary); }
+.order-tracking-meta { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .5rem; padding-top: 1.25rem; border-top: 1px solid var(--color-border); color: var(--color-muted); font-size: .9rem; }
+.order-tracking-meta span { padding: .45rem .7rem; border: 1px solid var(--color-border); border-radius: 999px; }
+.order-tracking-cancelled { display: grid; gap: .4rem; margin-top: 1.5rem; padding: 1rem; border: 1px solid var(--color-error); border-radius: var(--radius-md); color: var(--color-error); }
+.order-tracking-cancelled span { line-height: 1.5; }
+@media (max-width: 560px) {
+  .order-tracking-page { width: min(100% - 1rem, 760px); padding-top: 1.5rem; }
+  .order-tracking-card { padding: 1rem; }
+  .order-status-step { grid-template-columns: 36px minmax(0, 1fr); gap: .75rem; }
+  .order-status-marker { width: 36px; height: 36px; }
+  .order-status-step:not(:last-child)::before { left: 17px; top: 36px; }
+}
