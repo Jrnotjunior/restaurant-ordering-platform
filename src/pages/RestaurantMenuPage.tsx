@@ -119,10 +119,13 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
       setProducts((current) => current.map((item) => item.id === editingProduct.id
         ? { ...item, name, description, price, categoryId: category.id, imageUrl, updatedAt: new Date().toISOString() }
         : item));
-      closeEdit();
+      setSavingForm(false);
+      setEditingProduct(null);
+      setForm(emptyForm);
+      setImageFile(null);
+      setImagePreview('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to update product.');
-    } finally {
       setSavingForm(false);
     }
   }
@@ -260,14 +263,10 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
                 Category
                 <input
                   value={form.categoryName}
-                  list="restaurant-product-category-options"
                   placeholder="Enter category"
                   onChange={(event) => setForm((current) => ({ ...current, categoryName: event.target.value }))}
                 />
-                <span className="restaurant-product-category-hint">Type the category name. Existing categories will appear as suggestions.</span>
-                <datalist id="restaurant-product-category-options">
-                  {categories.map((category) => <option key={category.id} value={category.name} />)}
-                </datalist>
+                <span className="restaurant-product-category-hint">Type the category name.</span>
               </label>
               <div className="restaurant-product-form-actions">
                 <button className="button button-secondary" type="button" disabled={savingForm} onClick={closeEdit}>Cancel</button>
