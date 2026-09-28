@@ -2,9 +2,10 @@ import type { RestaurantProduct } from '../types/menu';
 
 type ProductCardProps = {
   product: RestaurantProduct;
+  onAddToCart: (product: RestaurantProduct) => void;
 };
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   return (
     <article className="product-card">
       {product.imageUrl ? (
@@ -20,8 +21,13 @@ export function ProductCard({ product }: ProductCardProps) {
           <span className="product-card-price">₱{product.price.toFixed(2)}</span>
         </div>
         {product.description ? <p>{product.description}</p> : null}
-        <button className="button button-primary product-card-action" type="button">
-          Add to Cart
+        <button
+          className="button button-primary product-card-action"
+          type="button"
+          onClick={() => onAddToCart(product)}
+          disabled={!product.isAvailable}
+        >
+          {product.isAvailable ? 'Add to Cart' : 'Unavailable'}
         </button>
       </div>
     </article>
