@@ -1,5 +1,5 @@
 import type { RestaurantCategory, RestaurantProduct } from '../types/menu';
-import { supabaseGet, supabaseRpc } from './supabaseClient';
+import { supabase, supabaseGet, supabaseRpc } from './supabaseClient';
 
 type CategoryRow = {
   id: string;
@@ -57,13 +57,17 @@ export async function setProductAvailability(productId: string, isAvailable: boo
 }
 
 export async function updateProduct(product: RestaurantProduct, values: { name: string; description: string; price: number; categoryId: string }) {
-  await supabaseRpc('update_restaurant_product', {
+  if (!supabase) throw new Error('Supabase environment variables are not configured.');
+
+  const { error } = await supabase.rpc('update_restaurant_product', {
     p_product_id: product.id,
     p_name: values.name.trim(),
     p_description: values.description.trim(),
     p_price: values.price,
     p_category_id: values.categoryId
   });
+
+  if (error) throw new Error(`Unable to update product: ${error.message}`);
 }
 
 export async function deleteProduct(productId: string) {
