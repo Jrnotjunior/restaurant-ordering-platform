@@ -34,6 +34,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
   async function loadSettings() {
     setLoading(true);
@@ -57,6 +58,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
       ...current,
       { id: '', barangay: '', shippingFee: '0', isSupported: true, outOfScopeMessage: DEFAULT_OUT_OF_SCOPE_MESSAGE },
     ]);
+    setEditingIndex(zones.length);
     setMessage('');
     setError('');
   }
@@ -65,6 +67,15 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
     setZones((current) => current.map((zone, zoneIndex) => zoneIndex === index ? { ...zone, ...patch } : zone));
     setMessage('');
     setError('');
+  }
+
+  function closeEditor() {
+    if (saving) return;
+    const zone = editingIndex === null ? null : zones[editingIndex];
+    if (zone && !zone.id && !zone.barangay.trim()) {
+      setZones((current) => current.filter((_, index) => index !== editingIndex));
+    }
+    setEditingIndex(null);
   }
 
   async function handleSaveZone(index: number) {
@@ -91,6 +102,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
         outOfScopeMessage: zone.outOfScopeMessage,
       });
       await loadSettings();
+      setEditingIndex(null);
       setMessage(`${zone.barangay.trim()} delivery setting saved.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to save delivery area.');
@@ -104,6 +116,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
     if (!zone) return;
     if (!zone.id) {
       setZones((current) => current.filter((_, zoneIndex) => zoneIndex !== index));
+      setEditingIndex(null);
       return;
     }
     if (!window.confirm(`Remove ${zone.barangay} from your delivery areas?`)) return;
@@ -113,6 +126,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
     try {
       await deleteRestaurantDeliveryZone(restaurantId, zone.id);
       await loadSettings();
+      setEditingIndex(null);
       setMessage('Delivery area removed.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to remove delivery area.');
@@ -127,6 +141,8 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
     return zones.filter((zone) => zone.barangay.toLowerCase().includes(query));
   }, [zones, searchBarangay]);
 
+  const editingZone = editingIndex === null ? null : zones[editingIndex];
+
   return (
     <section className="restaurant-shipping-page">
       <style>{`
@@ -137,7 +153,31 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
         .restaurant-shipping-search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:28px;height:28px;border:0;border-radius:999px;background:#f1f5f9;color:#475569;font-size:18px;line-height:1;cursor:pointer}
         .restaurant-shipping-search-label{font-size:14px;font-weight:600;color:#475569;white-space:nowrap}
         .restaurant-shipping-search-empty{padding:18px 0;color:#64748b}
-        @media(max-width:600px){.restaurant-shipping-search{align-items:stretch;flex-direction:column}.restaurant-shipping-search-label{white-space:normal}.restaurant-shipping-search-input-wrap{max-width:none}}
+        .restaurant-delivery-zone-list{display:grid;gap:8px}
+        .restaurant-delivery-zone-row{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(130px,.65fr) minmax(190px,.9fr) 28px;align-items:center;gap:18px;width:100%;box-sizing:border-box;padding:14px 16px;border:1px solid #e1e5eb;border-radius:10px;background:#fff;cursor:pointer;text-align:left;transition:border-color .15s ease,box-shadow .15s ease,background .15s ease}
+        .restaurant-delivery-zone-row:hover{border-color:#cbd5e1;box-shadow:0 3px 12px rgba(15,23,42,.06);background:#fcfdff}
+        .restaurant-delivery-zone-cell{min-width:0}
+        .restaurant-delivery-zone-cell-label{display:block;margin-bottom:3px;font-size:11px;font-weight:600;color:#64748b}
+        .restaurant-delivery-zone-cell-value{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;font-weight:600;color:#0f172a}
+        .restaurant-delivery-zone-fee{font-variant-numeric:tabular-nums}
+        .restaurant-delivery-zone-coverage{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:600;color:#0f172a}
+        .restaurant-delivery-zone-dot{width:8px;height:8px;border-radius:999px;background:#0f172a;flex:0 0 auto}
+        .restaurant-delivery-zone-dot.is-out{background:#94a3b8}
+        .restaurant-delivery-zone-chevron{font-size:22px;color:#94a3b8;text-align:right}
+        .restaurant-shipping-modal-backdrop{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.55);backdrop-filter:blur(3px)}
+        .restaurant-shipping-modal{position:relative;width:min(520px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:18px;box-shadow:0 24px 70px rgba(15,23,42,.28);padding:24px;color:#0f172a}
+        .restaurant-shipping-modal h2{margin:0 42px 18px 0}
+        .restaurant-shipping-modal-close{position:absolute;right:14px;top:14px;width:38px;height:38px;border:0;border-radius:999px;background:#f1f5f9;font-size:22px;cursor:pointer}
+        .restaurant-shipping-form{display:grid;gap:14px}
+        .restaurant-shipping-form label{display:grid;gap:6px;font-weight:600;font-size:14px}
+        .restaurant-shipping-form input[type=text],.restaurant-shipping-form input[type=number],.restaurant-shipping-form textarea{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:10px;padding:11px 12px;font:inherit;color:#0f172a;background:#fff}
+        .restaurant-shipping-form input:focus,.restaurant-shipping-form textarea:focus{outline:none;border-color:#94a3b8;box-shadow:0 0 0 3px rgba(148,163,184,.18)}
+        .restaurant-shipping-form textarea{min-height:90px;resize:vertical}
+        .restaurant-shipping-coverage{display:flex;align-items:center;gap:9px;font-weight:600}
+        .restaurant-shipping-coverage input{width:18px;height:18px}
+        .restaurant-shipping-modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:6px}
+        .restaurant-shipping-delete{margin-right:auto}
+        @media(max-width:700px){.restaurant-delivery-zone-row{grid-template-columns:1fr auto;gap:10px}.restaurant-delivery-zone-row .restaurant-delivery-zone-cell:nth-child(2),.restaurant-delivery-zone-row .restaurant-delivery-zone-cell:nth-child(3){grid-column:1}.restaurant-delivery-zone-chevron{grid-column:2;grid-row:1 / span 3;align-self:center}.restaurant-shipping-modal-backdrop{padding:10px;align-items:flex-end}.restaurant-shipping-modal{max-height:92vh;border-radius:18px 18px 12px 12px;padding:20px}.restaurant-shipping-modal-actions{flex-wrap:wrap}.restaurant-shipping-modal-actions .button{flex:1}.restaurant-shipping-delete{flex-basis:100%;margin-right:0}}
       `}</style>
 
       <div className="restaurant-shipping-header">
@@ -155,7 +195,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
         <div className="restaurant-shipping-section-header">
           <div>
             <h2>Delivery by Barangay</h2>
-            <p className="restaurant-shipping-help">Your restaurant's configured delivery areas are shown here. The restaurant owner can edit the shipping fee for each area.</p>
+            <p className="restaurant-shipping-help">Your restaurant's configured delivery areas are shown here. Click an area to edit its shipping settings.</p>
           </div>
           <button type="button" className="button" onClick={addZone} disabled={loading || saving}>+ Add Barangay</button>
         </div>
@@ -163,16 +203,8 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
         <div className="restaurant-shipping-search">
           <label className="restaurant-shipping-search-label" htmlFor="restaurant-barangay-search">Search barangay</label>
           <div className="restaurant-shipping-search-input-wrap">
-            <input
-              id="restaurant-barangay-search"
-              type="search"
-              value={searchBarangay}
-              onChange={(event) => setSearchBarangay(event.target.value)}
-              placeholder="Search by barangay name"
-            />
-            {searchBarangay && (
-              <button type="button" className="restaurant-shipping-search-clear" onClick={() => setSearchBarangay('')} aria-label="Clear barangay search">×</button>
-            )}
+            <input id="restaurant-barangay-search" type="search" value={searchBarangay} onChange={(event) => setSearchBarangay(event.target.value)} placeholder="Search by barangay name" />
+            {searchBarangay && <button type="button" className="restaurant-shipping-search-clear" onClick={() => setSearchBarangay('')} aria-label="Clear barangay search">×</button>}
           </div>
         </div>
 
@@ -185,60 +217,61 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
             {filteredZones.map((zone) => {
               const index = zones.findIndex((item) => item === zone);
               return (
-                <div className="restaurant-delivery-zone" key={zone.id || `new-${index}`}>
-                  <div className="restaurant-delivery-zone-grid">
-                    <label>
-                      <span>Barangay</span>
-                      <input
-                        type="text"
-                        value={zone.barangay}
-                        readOnly={Boolean(zone.id)}
-                        onChange={(event) => updateZone(index, { barangay: event.target.value })}
-                        placeholder="e.g. Barangay Bagbag"
-                        aria-label={`Barangay ${zone.barangay || index + 1}`}
-                      />
-                    </label>
-                    <label>
-                      <span>Shipping fee</span>
-                      <div className="restaurant-shipping-input">
-                        <span>₱</span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={zone.shippingFee}
-                          onChange={(event) => updateZone(index, { shippingFee: event.target.value })}
-                          aria-label={`Shipping fee for ${zone.barangay || 'barangay'}`}
-                        />
-                      </div>
-                    </label>
-                    <label className="restaurant-delivery-zone-toggle">
-                      <span>Delivery coverage</span>
-                      <span className="restaurant-delivery-zone-toggle-row">
-                        <input type="checkbox" checked={zone.isSupported} onChange={(event) => updateZone(index, { isSupported: event.target.checked })} />
-                        <strong>{zone.isSupported ? 'Within our delivery' : 'Out of our delivery area'}</strong>
-                      </span>
-                    </label>
-                  </div>
-
-                  {!zone.isSupported && (
-                    <label>
-                      <span>Customer message</span>
-                      <textarea rows={3} value={zone.outOfScopeMessage} onChange={(event) => updateZone(index, { outOfScopeMessage: event.target.value })} />
-                      <small>Suggested: This area is outside our delivery coverage. If you want to proceed, please book your own courier like Lalamove or Grab Express.</small>
-                    </label>
-                  )}
-
-                  <div className="restaurant-delivery-zone-actions">
-                    <button type="button" className="button button-primary" onClick={() => void handleSaveZone(index)} disabled={saving || !zone.barangay.trim()}>{saving ? 'Saving…' : 'Save'}</button>
-                    <button type="button" className="button" onClick={() => void handleDeleteZone(index)} disabled={saving}>Delete</button>
-                  </div>
-                </div>
+                <button type="button" className="restaurant-delivery-zone-row" key={zone.id || `new-${index}`} onClick={() => setEditingIndex(index)}>
+                  <span className="restaurant-delivery-zone-cell">
+                    <span className="restaurant-delivery-zone-cell-label">Barangay</span>
+                    <span className="restaurant-delivery-zone-cell-value">{zone.barangay || 'New barangay'}</span>
+                  </span>
+                  <span className="restaurant-delivery-zone-cell">
+                    <span className="restaurant-delivery-zone-cell-label">Shipping fee</span>
+                    <span className="restaurant-delivery-zone-cell-value restaurant-delivery-zone-fee">₱ {Number(zone.shippingFee || 0).toFixed(2)}</span>
+                  </span>
+                  <span className="restaurant-delivery-zone-cell">
+                    <span className="restaurant-delivery-zone-cell-label">Delivery coverage</span>
+                    <span className="restaurant-delivery-zone-coverage"><span className={`restaurant-delivery-zone-dot ${zone.isSupported ? '' : 'is-out'}`} />{zone.isSupported ? 'Within our delivery' : 'Outside delivery area'}</span>
+                  </span>
+                  <span className="restaurant-delivery-zone-chevron" aria-hidden="true">›</span>
+                </button>
               );
             })}
           </div>
         )}
       </div>
+
+      {editingZone && editingIndex !== null && (
+        <div className="restaurant-shipping-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) closeEditor(); }}>
+          <div className="restaurant-shipping-modal" role="dialog" aria-modal="true" aria-labelledby="shipping-zone-modal-title">
+            <button className="restaurant-shipping-modal-close" type="button" disabled={saving} onClick={closeEditor}>×</button>
+            <h2 id="shipping-zone-modal-title">{editingZone.id ? `Edit ${editingZone.barangay}` : 'Add Barangay'}</h2>
+            <form className="restaurant-shipping-form" onSubmit={(event) => { event.preventDefault(); void handleSaveZone(editingIndex); }}>
+              <label>
+                Barangay
+                <input type="text" value={editingZone.barangay} readOnly={Boolean(editingZone.id)} onChange={(event) => updateZone(editingIndex, { barangay: event.target.value })} placeholder="e.g. Barangay Bagbag" autoFocus={!editingZone.id} />
+              </label>
+              <label>
+                Shipping fee
+                <input type="number" min="0" step="0.01" value={editingZone.shippingFee} onChange={(event) => updateZone(editingIndex, { shippingFee: event.target.value })} />
+              </label>
+              <label className="restaurant-shipping-coverage">
+                <input type="checkbox" checked={editingZone.isSupported} onChange={(event) => updateZone(editingIndex, { isSupported: event.target.checked })} />
+                <span>{editingZone.isSupported ? 'Within our delivery' : 'Outside our delivery area'}</span>
+              </label>
+              {!editingZone.isSupported && (
+                <label>
+                  Customer message
+                  <textarea rows={3} value={editingZone.outOfScopeMessage} onChange={(event) => updateZone(editingIndex, { outOfScopeMessage: event.target.value })} />
+                  <small>Suggested: This area is outside our delivery coverage. If you want to proceed, please book your own courier like Lalamove or Grab Express.</small>
+                </label>
+              )}
+              <div className="restaurant-shipping-modal-actions">
+                <button type="button" className="button restaurant-shipping-delete" onClick={() => void handleDeleteZone(editingIndex)} disabled={saving}>Delete</button>
+                <button type="button" className="button" onClick={closeEditor} disabled={saving}>Cancel</button>
+                <button type="submit" className="button button-primary" disabled={saving || !editingZone.barangay.trim()}>{saving ? 'Saving…' : 'Save'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
