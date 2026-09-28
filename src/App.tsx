@@ -7,7 +7,7 @@ export function App() {
   return (
     <RestaurantProvider restaurant={defaultRestaurant}>
       <ThemeProvider restaurant={defaultRestaurant}>
-        <RestaurantLayout restaurant={defaultRestaurant}>
+        <RestaurantLayout>
           <section className="hero">
             <p className="eyebrow">Direct online ordering</p>
             <h1>Order from your favorite local restaurant.</h1>
