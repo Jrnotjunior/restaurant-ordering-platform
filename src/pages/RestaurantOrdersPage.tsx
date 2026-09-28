@@ -105,7 +105,6 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
           <h1>Orders</h1>
           <p>Manage incoming orders and move them through the kitchen workflow.</p>
         </div>
-        <button className="button button-secondary" type="button" onClick={() => void loadOrders()}>Refresh</button>
       </div>
 
       <div className="restaurant-orders-tabs" role="tablist" aria-label="Order filters">
