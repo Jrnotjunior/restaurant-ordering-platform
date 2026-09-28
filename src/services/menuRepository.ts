@@ -63,6 +63,22 @@ export async function setProductAvailability(productId: string, isAvailable: boo
   if (error) throw new Error(`Unable to update product availability: ${error.message}`);
 }
 
+export async function createProduct(values: { restaurantId: string; name: string; description: string; price: number; categoryId: string }) {
+  if (!supabase) throw new Error('Supabase environment variables are not configured.');
+
+  const { data, error } = await supabase.rpc('create_restaurant_product', {
+    p_restaurant_id: values.restaurantId,
+    p_name: values.name.trim(),
+    p_description: values.description.trim(),
+    p_price: values.price,
+    p_category_id: values.categoryId
+  });
+
+  if (error) throw new Error(`Unable to create product: ${error.message}`);
+  if (!data) throw new Error('Product was created but no product ID was returned.');
+  return String(data);
+}
+
 export async function updateProduct(product: RestaurantProduct, values: { name: string; description: string; price: number; categoryId: string }) {
   if (!supabase) throw new Error('Supabase environment variables are not configured.');
 
