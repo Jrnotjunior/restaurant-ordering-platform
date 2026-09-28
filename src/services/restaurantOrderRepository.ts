@@ -11,6 +11,7 @@ export type RestaurantOrder = {
   paymentStatus: RestaurantPaymentStatus;
   status: RestaurantOrderStatus;
   total: number;
+  shippingFee: number;
   createdAt: string;
   items: { id: string; productName: string; quantity: number; unitPrice: number; lineTotal: number }[];
 };
@@ -34,6 +35,7 @@ type Row = {
   payment_status?: RestaurantPaymentStatus | null;
   status: RestaurantOrderStatus;
   total: number | string;
+  shipping_fee?: number | string | null;
   created_at: string;
   items?: RawOrderItem[] | null;
 };
@@ -49,6 +51,7 @@ export async function getRestaurantOrders(restaurantId: string): Promise<Restaur
     paymentStatus: row.payment_status ?? 'pending',
     status: row.status,
     total: Number(row.total),
+    shippingFee: Number(row.shipping_fee ?? 0),
     createdAt: row.created_at,
     items: (row.items ?? []).map((item) => ({
       id: item.id,
