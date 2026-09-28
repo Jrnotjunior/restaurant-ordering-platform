@@ -153,8 +153,8 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
         .restaurant-product-form input,.restaurant-product-form textarea,.restaurant-product-form select{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:10px;padding:11px 12px;font:inherit;color:#0f172a;background:#fff}
         .restaurant-product-form textarea{min-height:90px;resize:vertical}
         .restaurant-product-image-picker{display:grid;gap:10px}
-        .restaurant-product-image-preview{width:100%;height:190px;object-fit:cover;border-radius:12px;border:1px solid #dbe2ea;background:#f8fafc}
-        .restaurant-product-image-placeholder{display:flex;align-items:center;justify-content:center;width:100%;height:190px;border:1px dashed #cbd5e1;border-radius:12px;background:#f8fafc;color:#64748b}
+        .restaurant-product-image-preview{display:block;width:100%;aspect-ratio:1 / 1;height:auto;object-fit:cover;border-radius:12px;border:1px solid #dbe2ea;background:#f8fafc}
+        .restaurant-product-image-placeholder{display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:1 / 1;height:auto;border:1px dashed #cbd5e1;border-radius:12px;background:#f8fafc;color:#64748b}
         .restaurant-product-image-picker input[type=file]{display:none}
         .restaurant-product-image-picker .button{justify-self:center}
         .restaurant-product-form-actions{display:flex;justify-content:center;gap:10px;margin-top:4px}
