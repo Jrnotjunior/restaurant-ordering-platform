@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
-import { deleteProduct, getMenu, setProductAvailability, updateProduct } from '../services/menuRepository';
+import { createProduct, deleteProduct, getMenu, setProductAvailability, updateProduct } from '../services/menuRepository';
 import { saveProductImage, uploadProductImage } from '../services/productImageRepository';
 import type { RestaurantCategory, RestaurantProduct } from '../types/menu';
 
@@ -19,6 +19,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [editingProduct, setEditingProduct] = useState<RestaurantProduct | null>(null);
+  const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [form, setForm] = useState<ProductForm>(emptyForm);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState('');
@@ -67,7 +68,17 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
     }
   }
 
+  function openAdd() {
+    setEditingProduct(null);
+    setIsAddingProduct(true);
+    setForm({ ...emptyForm, categoryName: categories[0]?.name ?? '' });
+    setImageFile(null);
+    setImagePreview('');
+    setError('');
+  }
+
   function openEdit(product: RestaurantProduct) {
+    setIsAddingProduct(false);
     setEditingProduct(product);
     const category = categories.find((item) => item.id === product.categoryId);
     setForm({ name: product.name, description: product.description, price: String(product.price), categoryName: category?.name ?? '' });
@@ -76,9 +87,10 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
     setError('');
   }
 
-  function closeEdit() {
+  function closeProductModal() {
     if (savingForm) return;
     setEditingProduct(null);
+    setIsAddingProduct(false);
     setForm(emptyForm);
     setImageFile(null);
     setImagePreview('');
@@ -99,13 +111,13 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
     setImagePreview(URL.createObjectURL(file));
   }
 
-  async function saveEdit(event: FormEvent<HTMLFormElement>) {
+  async function saveProduct(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!editingProduct) return;
     const name = form.name.trim();
     const description = form.description.trim();
     const categoryName = form.categoryName.trim();
     const price = Number(form.price);
+
     if (!name) { setError('Product name is required.'); return; }
     if (!Number.isFinite(price) || price < 0) { setError('Enter a valid price.'); return; }
     if (!categoryName) { setError('Category is required.'); return; }
@@ -119,22 +131,26 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
     setSavingForm(true);
     setError('');
     try {
-      let imageUrl = editingProduct.imageUrl;
-      if (imageFile) {
-        imageUrl = await uploadProductImage(restaurantId, editingProduct.id, imageFile);
-        await saveProductImage(editingProduct.id, imageUrl);
+      if (isAddingProduct) {
+        const productId = await createProduct({ restaurantId, name, description, price, categoryId: category.id });
+        if (imageFile) {
+          const imageUrl = await uploadProductImage(restaurantId, productId, imageFile);
+          await saveProductImage(productId, imageUrl);
+        }
+      } else if (editingProduct) {
+        let imageUrl = editingProduct.imageUrl;
+        if (imageFile) {
+          imageUrl = await uploadProductImage(restaurantId, editingProduct.id, imageFile);
+          await saveProductImage(editingProduct.id, imageUrl);
+        }
+        await updateProduct(editingProduct, { name, description, price, categoryId: category.id });
       }
-      await updateProduct(editingProduct, { name, description, price, categoryId: category.id });
-      setProducts((current) => current.map((item) => item.id === editingProduct.id
-        ? { ...item, name, description, price, categoryId: category.id, imageUrl, updatedAt: new Date().toISOString() }
-        : item));
+
+      await loadMenu();
       setSavingForm(false);
-      setEditingProduct(null);
-      setForm(emptyForm);
-      setImageFile(null);
-      setImagePreview('');
+      closeProductModal();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to update product.');
+      setError(err instanceof Error ? err.message : isAddingProduct ? 'Unable to add product.' : 'Unable to update product.');
       setSavingForm(false);
     }
   }
@@ -166,6 +182,11 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
         .restaurant-menu-search input:focus{outline:none;border-color:#94a3b8;box-shadow:0 0 0 3px rgba(148,163,184,.18)}
         .restaurant-menu-search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:28px;height:28px;border:0;border-radius:999px;background:#f1f5f9;color:#475569;font-size:18px;line-height:1;cursor:pointer}
         .restaurant-menu-search-label{font-size:14px;font-weight:600;color:#475569;white-space:nowrap}
+        .restaurant-menu-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
+        .restaurant-menu-header > div{min-width:0}
+        .restaurant-menu-header-actions{display:flex;align-items:center;gap:10px;flex-shrink:0;padding-top:28px}
+        .restaurant-menu-count{font-size:14px;color:#64748b;white-space:nowrap;padding-top:36px}
+        .restaurant-menu-add-button{min-height:42px;white-space:nowrap}
         .restaurant-menu-card-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px}
         .restaurant-menu-card-actions .button{min-height:38px}
         .restaurant-product-modal-backdrop{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.55);backdrop-filter:blur(3px)}
@@ -184,7 +205,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
         .restaurant-product-form-actions{display:flex;justify-content:center;gap:10px;margin-top:4px}
         .restaurant-product-form-actions .button{min-width:130px}
         .restaurant-product-category-hint{font-size:12px;font-weight:400;color:#64748b}
-        @media(max-width:600px){.restaurant-menu-search{align-items:stretch;flex-direction:column}.restaurant-menu-search-label{white-space:normal}.restaurant-menu-search-input-wrap{max-width:none}.restaurant-product-modal-backdrop{padding:10px;align-items:flex-end}.restaurant-product-modal{max-height:92vh;border-radius:18px 18px 12px 12px;padding:20px}.restaurant-product-form-actions .button{flex:1}}
+        @media(max-width:600px){.restaurant-menu-header{flex-direction:column}.restaurant-menu-header-actions,.restaurant-menu-count{padding-top:0}.restaurant-menu-search{align-items:stretch;flex-direction:column}.restaurant-menu-search-label{white-space:normal}.restaurant-menu-search-input-wrap{max-width:none}.restaurant-product-modal-backdrop{padding:10px;align-items:flex-end}.restaurant-product-modal{max-height:92vh;border-radius:18px 18px 12px 12px;padding:20px}.restaurant-product-form-actions .button{flex:1}}
       `}</style>
 
       <header className="restaurant-menu-header">
@@ -193,7 +214,10 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
           <h1>Products</h1>
           <p>Manage the products customers can order from your restaurant.</p>
         </div>
-        <span className="restaurant-menu-count">{products.length} products</span>
+        <div className="restaurant-menu-header-actions">
+          <span className="restaurant-menu-count">{products.length} products</span>
+          <button className="button button-primary restaurant-menu-add-button" type="button" onClick={openAdd}>+ Add Product</button>
+        </div>
       </header>
 
       {error && <div className="restaurant-dashboard-error" role="alert">{error}</div>}
@@ -265,35 +289,39 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
         </div>
       )}
 
-      {editingProduct && (
-        <div className="restaurant-product-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !savingForm) closeEdit(); }}>
-          <div className="restaurant-product-modal" role="dialog" aria-modal="true" aria-labelledby="edit-product-title">
-            <button className="restaurant-product-modal-close" type="button" disabled={savingForm} onClick={closeEdit}>×</button>
-            <h2 id="edit-product-title">Edit Product</h2>
-            <form className="restaurant-product-form" onSubmit={(event) => void saveEdit(event)}>
+      {(editingProduct || isAddingProduct) && (
+        <div className="restaurant-product-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !savingForm) closeProductModal(); }}>
+          <div className="restaurant-product-modal" role="dialog" aria-modal="true" aria-labelledby="product-modal-title">
+            <button className="restaurant-product-modal-close" type="button" disabled={savingForm} onClick={closeProductModal}>×</button>
+            <h2 id="product-modal-title">{isAddingProduct ? 'Add Product' : 'Edit Product'}</h2>
+            <form className="restaurant-product-form" onSubmit={(event) => void saveProduct(event)}>
               <div className="restaurant-product-image-picker">
                 {imagePreview
                   ? <img src={imagePreview} alt="Product preview" className="restaurant-product-image-preview" />
                   : <div className="restaurant-product-image-placeholder">No product image</div>}
-                <label className="button button-secondary" htmlFor="product-image-input">Add / Change Image</label>
+                <label className="button button-secondary" htmlFor="product-image-input">{imagePreview ? 'Change Image' : 'Add Image'}</label>
                 <input id="product-image-input" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => handleImageChange(event.target.files?.[0])} disabled={savingForm} />
                 <small>JPG, PNG, or WEBP · maximum 5 MB</small>
               </div>
-              <label>Product name<input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} /></label>
+              <label>Product name<input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} autoFocus /></label>
               <label>Description<textarea value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} /></label>
               <label>Price<input type="number" min="0" step="0.01" value={form.price} onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))} /></label>
               <label>
                 Category
                 <input
+                  list="restaurant-product-categories"
                   value={form.categoryName}
                   placeholder="Enter category"
                   onChange={(event) => setForm((current) => ({ ...current, categoryName: event.target.value }))}
                 />
-                <span className="restaurant-product-category-hint">Type the category name.</span>
+                <datalist id="restaurant-product-categories">
+                  {categories.map((category) => <option key={category.id} value={category.name} />)}
+                </datalist>
+                <span className="restaurant-product-category-hint">Choose one of the existing categories.</span>
               </label>
               <div className="restaurant-product-form-actions">
-                <button className="button button-secondary" type="button" disabled={savingForm} onClick={closeEdit}>Cancel</button>
-                <button className="button button-primary" type="submit" disabled={savingForm}>{savingForm ? 'Saving…' : 'Save Changes'}</button>
+                <button className="button button-secondary" type="button" disabled={savingForm} onClick={closeProductModal}>Cancel</button>
+                <button className="button button-primary" type="submit" disabled={savingForm}>{savingForm ? 'Saving…' : isAddingProduct ? 'Add Product' : 'Save Changes'}</button>
               </div>
             </form>
           </div>
