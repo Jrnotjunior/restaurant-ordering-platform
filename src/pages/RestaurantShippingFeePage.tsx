@@ -138,7 +138,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
         <div className="restaurant-shipping-section-header">
           <div>
             <h2>Delivery by Barangay</h2>
-            <p className="restaurant-shipping-help">Set a different fee for each barangay. Areas that are not listed will be treated as outside your delivery coverage.</p>
+            <p className="restaurant-shipping-help">Your restaurant's configured delivery areas are shown here. The restaurant owner can edit the shipping fee for each area.</p>
           </div>
           <button type="button" className="button" onClick={addZone} disabled={loading || saving}>+ Add Barangay</button>
         </div>
@@ -152,13 +152,27 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
                 <div className="restaurant-delivery-zone-grid">
                   <label>
                     <span>Barangay</span>
-                    <input type="text" value={zone.barangay} onChange={(event) => updateZone(index, { barangay: event.target.value })} placeholder="e.g. Barangay Bagbag" />
+                    <input
+                      type="text"
+                      value={zone.barangay}
+                      readOnly={Boolean(zone.id)}
+                      onChange={(event) => updateZone(index, { barangay: event.target.value })}
+                      placeholder="e.g. Barangay Bagbag"
+                      aria-label={`Barangay ${zone.barangay || index + 1}`}
+                    />
                   </label>
                   <label>
                     <span>Shipping fee</span>
                     <div className="restaurant-shipping-input">
                       <span>₱</span>
-                      <input type="number" min="0" step="0.01" value={zone.shippingFee} onChange={(event) => updateZone(index, { shippingFee: event.target.value })} />
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={zone.shippingFee}
+                        onChange={(event) => updateZone(index, { shippingFee: event.target.value })}
+                        aria-label={`Shipping fee for ${zone.barangay || 'barangay'}`}
+                      />
                     </div>
                   </label>
                   <label className="restaurant-delivery-zone-toggle">
