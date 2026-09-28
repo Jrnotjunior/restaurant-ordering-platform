@@ -53,7 +53,14 @@ export async function getMenu(restaurantId: string, includeUnavailable = false):
 }
 
 export async function setProductAvailability(productId: string, isAvailable: boolean) {
-  await supabaseRpc('update_product_availability', { p_product_id: productId, p_is_available: isAvailable });
+  if (!supabase) throw new Error('Supabase environment variables are not configured.');
+
+  const { error } = await supabase.rpc('update_product_availability', {
+    p_product_id: productId,
+    p_is_available: isAvailable
+  });
+
+  if (error) throw new Error(`Unable to update product availability: ${error.message}`);
 }
 
 export async function updateProduct(product: RestaurantProduct, values: { name: string; description: string; price: number; categoryId: string }) {
