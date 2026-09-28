@@ -5,6 +5,7 @@ import {
   type RestaurantOrder,
   type RestaurantOrderStatus,
 } from '../services/restaurantOrderRepository';
+import { supabase } from '../services/supabaseClient';
 
 type Props = { restaurantId: string };
 
@@ -17,12 +18,21 @@ const statusLabels: Record<RestaurantOrderStatus, string> = {
   cancelled: 'Cancelled',
 };
 
+const actionLabels: Partial<Record<RestaurantOrderStatus, string>> = {
+  pending: 'Confirm Order',
+  confirmed: 'Start Preparing',
+  preparing: 'Mark Ready',
+  ready: 'Complete Order',
+};
+
 const nextStatus: Partial<Record<RestaurantOrderStatus, RestaurantOrderStatus>> = {
   pending: 'confirmed',
   confirmed: 'preparing',
   preparing: 'ready',
   ready: 'completed',
 };
+
+const workflowSteps: RestaurantOrderStatus[] = ['pending', 'confirmed', 'preparing', 'ready', 'completed'];
 
 function paymentLabel(order: RestaurantOrder) {
   if (order.paymentMethod === 'gcash') {
@@ -38,12 +48,22 @@ function paymentLabel(order: RestaurantOrder) {
   return 'Cash • Unpaid';
 }
 
+function isPaymentReady(order: RestaurantOrder) {
+  // Cash orders may be confirmed by the restaurant. Online orders must be paid first.
+  return order.paymentMethod !== 'gcash' || order.paymentStatus === 'paid';
+}
+
+function workflowIndex(status: RestaurantOrderStatus) {
+  return workflowSteps.indexOf(status);
+}
+
 export function RestaurantOrdersPage({ restaurantId }: Props) {
   const [orders, setOrders] = useState<RestaurantOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [updating, setUpdating] = useState<string | null>(null);
   const [filter, setFilter] = useState<'active' | 'all'>('active');
+  const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
 
   async function loadOrders() {
     try {
@@ -59,8 +79,33 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
 
   useEffect(() => {
     void loadOrders();
-    const timer = window.setInterval(() => void loadOrders(), 10000);
-    return () => window.clearInterval(timer);
+
+    const client = supabase;
+    if (!client) {
+      setRealtimeStatus('error');
+      return;
+    }
+
+    const channel = client
+      .channel(`restaurant-orders-page:${restaurantId}`)
+      .on(
+        'broadcast',
+        { event: 'restaurant_order_changed' },
+        () => {
+          void loadOrders();
+        },
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          setRealtimeStatus('live');
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          setRealtimeStatus('error');
+        }
+      });
+
+    return () => {
+      void client.removeChannel(channel);
+    };
   }, [restaurantId]);
 
   const visibleOrders = useMemo(
@@ -73,7 +118,14 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
   async function advance(order: RestaurantOrder) {
     const status = nextStatus[order.status];
     if (!status) return;
+
+    if (order.status === 'pending' && !isPaymentReady(order)) {
+      setError('This online order cannot be confirmed until the payment is completed.');
+      return;
+    }
+
     try {
+      setError('');
       setUpdating(order.orderId);
       await updateOrderStatus(order.orderId, status);
       setOrders((current) => current.map((item) => item.orderId === order.orderId ? { ...item, status } : item));
@@ -87,6 +139,7 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
   async function cancel(order: RestaurantOrder) {
     if (!window.confirm(`Cancel order ${order.orderNumber}?`)) return;
     try {
+      setError('');
       setUpdating(order.orderId);
       await updateOrderStatus(order.orderId, 'cancelled');
       setOrders((current) => current.map((item) => item.orderId === order.orderId ? { ...item, status: 'cancelled' } : item));
@@ -105,6 +158,10 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
           <h1>Orders</h1>
           <p>Manage incoming orders and move them through the kitchen workflow.</p>
         </div>
+        <span className={`restaurant-dashboard-live-status is-${realtimeStatus}`} aria-live="polite">
+          <span className="restaurant-dashboard-live-dot" aria-hidden="true" />
+          {realtimeStatus === 'live' ? 'Live' : realtimeStatus === 'connecting' ? 'Connecting…' : 'Reconnecting…'}
+        </span>
       </div>
 
       <div className="restaurant-orders-tabs" role="tablist" aria-label="Order filters">
@@ -118,6 +175,10 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
           {visibleOrders.map((order) => {
             const next = nextStatus[order.status];
             const paymentClass = order.paymentStatus === 'paid' ? 'is-paid' : order.paymentStatus === 'failed' ? 'is-failed' : order.paymentStatus === 'refunded' ? 'is-refunded' : 'is-pending';
+            const paymentReady = isPaymentReady(order);
+            const actionBlocked = order.status === 'pending' && !paymentReady;
+            const currentStep = workflowIndex(order.status);
+
             return (
               <article className={`restaurant-order-card status-${order.status}`} key={order.orderId}>
                 <div className="restaurant-order-top">
@@ -134,6 +195,16 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
                   <span>{new Date(order.createdAt).toLocaleString()}</span>
                 </div>
 
+                {order.status !== 'cancelled' && (
+                  <div className="restaurant-order-workflow" aria-label={`Order status: ${statusLabels[order.status]}`}>
+                    {workflowSteps.map((step, index) => (
+                      <span key={step} className={index <= currentStep ? 'is-complete' : ''}>
+                        {statusLabels[step]}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
                 <div className="restaurant-order-items">
                   {order.items.map((item) => (
                     <div className="restaurant-order-item" key={item.id}>
@@ -143,9 +214,28 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
                   ))}
                 </div>
 
+                {actionBlocked && (
+                  <p className="restaurant-order-payment-warning">
+                    Online payment is required before this order can be confirmed and sent to the kitchen.
+                  </p>
+                )}
+
                 <div className="restaurant-order-actions">
-                  {next && <button className="button button-primary" type="button" disabled={updating === order.orderId} onClick={() => void advance(order)}>{updating === order.orderId ? 'Updating…' : `Mark ${statusLabels[next]}`}</button>}
-                  {order.status !== 'completed' && order.status !== 'cancelled' && <button className="button button-secondary" type="button" disabled={updating === order.orderId} onClick={() => void cancel(order)}>Cancel</button>}
+                  {next && (
+                    <button
+                      className="button button-primary"
+                      type="button"
+                      disabled={updating === order.orderId || actionBlocked}
+                      onClick={() => void advance(order)}
+                    >
+                      {updating === order.orderId ? 'Updating…' : actionLabels[order.status]}
+                    </button>
+                  )}
+                  {order.status !== 'completed' && order.status !== 'cancelled' && (
+                    <button className="button button-secondary" type="button" disabled={updating === order.orderId} onClick={() => void cancel(order)}>
+                      Cancel
+                    </button>
+                  )}
                 </div>
               </article>
             );
