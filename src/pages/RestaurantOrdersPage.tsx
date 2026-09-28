@@ -39,7 +39,7 @@ const columns: Array<{ key: BoardColumn; title: string; description: string }> =
 ];
 
 export function RestaurantOrdersPage({ restaurantId }: Props) {
-  const [orders, setOrders] = useState<RestaurantOrder[]>([]); const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [updating, setUpdating] = useState<string | null>(null); const [filter, setFilter] = useState<'active' | 'all'>('active'); const [openColumn, setOpenColumn] = useState<BoardColumn | null>(null); const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
+  const [orders, setOrders] = useState<RestaurantOrder[]>([]); const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [updating, setUpdating] = useState<string | null>(null); const [filter, setFilter] = useState<'active' | 'all'>('active'); const [openColumn, setOpenColumn] = useState<BoardColumn | null>(null); const [expandedOrder, setExpandedOrder] = useState<string | null>(null); const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
 
   async function loadOrders() {
     try {
@@ -79,6 +79,11 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
     finally { setUpdating(null); }
   }
 
+  function printOrder(order: RestaurantOrder) {
+    setExpandedOrder(order.orderId);
+    window.setTimeout(() => window.print(), 0);
+  }
+
   return (
     <section className="restaurant-orders-page">
       <div className="restaurant-orders-header"><div><p className="eyebrow">Restaurant operations</p><h1>Orders</h1><p>Track every order from payment confirmation to completion.</p></div><span className={`restaurant-dashboard-live-status is-${realtimeStatus}`} aria-live="polite"><span className="restaurant-dashboard-live-dot" aria-hidden="true" />{realtimeStatus === 'live' ? 'Live' : realtimeStatus === 'connecting' ? 'Connecting…' : 'Reconnecting…'}</span></div>
@@ -90,18 +95,22 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
             const columnOrders = visibleOrders.filter((order) => columnFor(order) === column.key);
             const isOpen = openColumn === column.key;
             return <section className={`restaurant-order-column is-${column.key} ${isOpen ? 'is-open' : ''}`} key={column.key} aria-label={column.title}>
-              <button className="restaurant-order-column-header" type="button" aria-expanded={isOpen} onClick={() => setOpenColumn(isOpen ? null : column.key)}>
+              <button className="restaurant-order-column-header" type="button" aria-expanded={isOpen} onClick={() => { setOpenColumn(isOpen ? null : column.key); setExpandedOrder(null); }}>
                 <div><h2>{column.title}</h2><p>{column.description}</p></div><span>{columnOrders.length}</span>
               </button>
               {isOpen && <div className="restaurant-order-column-list">
                 {columnOrders.length === 0 ? <div className="restaurant-order-column-empty">No orders</div> : columnOrders.map((order) => {
-                  const next = nextStatus[order.status]; const paymentClass = order.paymentStatus === 'paid' ? 'is-paid' : order.paymentStatus === 'failed' ? 'is-failed' : order.paymentStatus === 'refunded' ? 'is-refunded' : 'is-pending'; const paymentReady = isPaymentReady(order); const actionBlocked = order.status === 'pending' && !paymentReady;
-                  return <article className={`restaurant-order-card status-${order.status}`} key={order.orderId}>
-                    <div className="restaurant-order-top"><div><span className="restaurant-order-number">{order.orderNumber}</span><span className="restaurant-order-status">{statusLabels[order.status]}</span></div><strong>₱{order.total.toFixed(2)}</strong></div>
-                    <div className="restaurant-order-meta"><span>{order.orderType === 'dine_in' ? 'Dine-in' : order.orderType === 'pickup' ? 'Pickup / Take-out' : 'Delivery'}</span><span className={`restaurant-payment-status ${paymentClass}`}>{paymentLabel(order)}</span><span>{new Date(order.createdAt).toLocaleString()}</span></div>
-                    <div className="restaurant-order-items">{order.items.map((item) => <div className="restaurant-order-item" key={item.id}><span><strong>{item.quantity}×</strong> {item.productName}</span><span>₱{item.lineTotal.toFixed(2)}</span></div>)}</div>
-                    {actionBlocked && <p className="restaurant-order-payment-warning">Online payment is required before this order can enter the kitchen.</p>}
-                    <div className="restaurant-order-actions">{next && <button className="button button-primary" type="button" disabled={updating === order.orderId || actionBlocked} onClick={() => void advance(order)}>{updating === order.orderId ? 'Updating…' : actionLabels[order.status]}</button>}{order.status !== 'completed' && order.status !== 'cancelled' && <button className="button button-secondary" type="button" disabled={updating === order.orderId} onClick={() => void cancel(order)}>Cancel</button>}</div>
+                  const next = nextStatus[order.status]; const paymentClass = order.paymentStatus === 'paid' ? 'is-paid' : order.paymentStatus === 'failed' ? 'is-failed' : order.paymentStatus === 'refunded' ? 'is-refunded' : 'is-pending'; const paymentReady = isPaymentReady(order); const actionBlocked = order.status === 'pending' && !paymentReady; const isExpanded = expandedOrder === order.orderId;
+                  return <article className={`restaurant-order-card status-${order.status} ${isExpanded ? 'is-expanded' : ''}`} key={order.orderId}>
+                    <button className="restaurant-order-summary-button" type="button" aria-expanded={isExpanded} onClick={() => setExpandedOrder(isExpanded ? null : order.orderId)}>
+                      <span className="restaurant-order-number">{order.orderNumber}</span><span className="restaurant-order-summary-right"><span className="restaurant-order-status">{statusLabels[order.status]}</span><strong>₱{order.total.toFixed(2)}</strong></span>
+                    </button>
+                    {isExpanded && <div className="restaurant-order-details">
+                      <div className="restaurant-order-meta"><span>{order.orderType === 'dine_in' ? 'Dine-in' : order.orderType === 'pickup' ? 'Pickup / Take-out' : 'Delivery'}</span><span className={`restaurant-payment-status ${paymentClass}`}>{paymentLabel(order)}</span><span>{new Date(order.createdAt).toLocaleString()}</span></div>
+                      <div className="restaurant-order-items">{order.items.map((item) => <div className="restaurant-order-item" key={item.id}><span><strong>{item.quantity}×</strong> {item.productName}</span><span>₱{item.lineTotal.toFixed(2)}</span></div>)}</div>
+                      {actionBlocked && <p className="restaurant-order-payment-warning">Online payment is required before this order can enter the kitchen.</p>}
+                      <div className="restaurant-order-actions">{next && <button className="button button-primary" type="button" disabled={updating === order.orderId || actionBlocked} onClick={() => void advance(order)}>{updating === order.orderId ? 'Updating…' : actionLabels[order.status]}</button>}{order.status !== 'completed' && order.status !== 'cancelled' && <button className="button button-secondary" type="button" disabled={updating === order.orderId} onClick={() => void cancel(order)}>Cancel</button>}<button className="button button-secondary restaurant-print-button" type="button" onClick={() => printOrder(order)}>Print Order</button></div>
+                    </div>}
                   </article>;
                 })}
               </div>}
