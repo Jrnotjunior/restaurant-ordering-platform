@@ -74,11 +74,7 @@ export function RestaurantDashboardPage({ restaurantId }: Props) {
     };
   }, [restaurantId]);
 
-  const todayOrders = useMemo(() => orders.filter((order) => isToday(order.createdAt)), [orders]);
-  const todaySales = useMemo(
-    () => todayOrders.filter((order) => order.status === 'completed').reduce((sum, order) => sum + order.total, 0),
-    [todayOrders],
-  );
+  useMemo(() => orders.filter((order) => isToday(order.createdAt)), [orders]);
 
   return (
     <section className="restaurant-dashboard-page">
@@ -137,7 +133,6 @@ export function RestaurantDashboardPage({ restaurantId }: Props) {
           <a className="restaurant-dashboard-stat restaurant-dashboard-stat-button" href="#restaurant/sales" aria-label="Open sales">
             <span>Sales</span>
             <small>Completed sales today</small>
-            <strong>₱{todaySales.toFixed(2)}</strong>
           </a>
         </div>
       )}
