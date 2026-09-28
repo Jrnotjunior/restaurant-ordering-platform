@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { RestaurantProduct } from '../types/menu';
+import '../styles/checkout-mobile.css';
 
 type CartItem = {
   product: RestaurantProduct;
