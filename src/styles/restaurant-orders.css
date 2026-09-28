@@ -7,14 +7,17 @@
 .restaurant-orders-tabs button.is-active { border-bottom-color: var(--color-primary); color: var(--color-text); }
 .restaurant-orders-error { margin-bottom: var(--space-5); padding: 1rem; border: 1px solid color-mix(in srgb, var(--color-error) 30%, var(--color-border)); border-radius: var(--radius-md); color: var(--color-error); background: color-mix(in srgb, var(--color-error) 5%, var(--color-background)); }
 .restaurant-orders-empty { padding: 2rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg); text-align: center; color: var(--color-muted); }
-.restaurant-order-board { display: grid; grid-template-columns: repeat(4, minmax(240px, 1fr)); gap: 1rem; align-items: start; }
-.restaurant-order-column { min-width: 0; padding: .75rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--color-secondary) 45%, var(--color-background)); }
-.restaurant-order-column-header { display: flex; justify-content: space-between; gap: .75rem; align-items: flex-start; padding: .25rem .25rem .75rem; }
+.restaurant-order-board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; align-items: start; }
+.restaurant-order-column { min-width: 0; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--color-secondary) 45%, var(--color-background)); overflow: hidden; }
+.restaurant-order-column.is-open { box-shadow: 0 4px 14px rgba(0,0,0,.05); }
+.restaurant-order-column-header { width: 100%; min-height: 96px; display: flex; justify-content: space-between; gap: .75rem; align-items: center; padding: 1rem; border: 0; background: transparent; color: var(--color-text); text-align: left; cursor: pointer; }
+.restaurant-order-column-header:hover { background: color-mix(in srgb, var(--color-secondary) 35%, transparent); }
+.restaurant-order-column-header:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
 .restaurant-order-column-header h2 { margin: 0; font-size: 1rem; font-weight: 800; }
-.restaurant-order-column-header p { margin: .25rem 0 0; color: var(--color-muted); font-size: .78rem; line-height: 1.35; }
-.restaurant-order-column-header > span { display: grid; min-width: 28px; height: 28px; place-items: center; border-radius: 999px; background: var(--color-background); font-size: .78rem; font-weight: 800; }
-.restaurant-order-column-list { display: grid; gap: .75rem; min-height: 120px; }
-.restaurant-order-column-empty { display: grid; min-height: 100px; place-items: center; border: 1px dashed var(--color-border); border-radius: var(--radius-md); color: var(--color-muted); font-size: .85rem; }
+.restaurant-order-column-header p { margin: .3rem 0 0; color: var(--color-muted); font-size: .78rem; line-height: 1.35; }
+.restaurant-order-column-header > span { display: grid; min-width: 32px; height: 32px; place-items: center; flex: 0 0 auto; border-radius: 999px; background: var(--color-background); font-size: .78rem; font-weight: 800; }
+.restaurant-order-column-list { display: grid; gap: .75rem; padding: 0 .75rem .75rem; }
+.restaurant-order-column-empty { display: grid; min-height: 100px; place-items: center; border: 1px dashed var(--color-border); border-radius: var(--radius-md); color: var(--color-muted); font-size: .85rem; background: var(--color-background); }
 .restaurant-order-card { padding: 1rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-background); box-shadow: 0 1px 2px rgba(0,0,0,.03); }
 .restaurant-order-top { display: flex; justify-content: space-between; align-items: flex-start; gap: .75rem; }
 .restaurant-order-top > div { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; min-width: 0; }
@@ -38,12 +41,12 @@
 .restaurant-order-payment-warning { margin: .75rem 0 0; padding: .65rem; border-radius: var(--radius-sm); background: color-mix(in srgb, var(--color-warning) 8%, var(--color-background)); color: var(--color-warning); font-size: .78rem; line-height: 1.4; }
 .restaurant-order-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: .75rem; }
 .restaurant-order-actions .button { width: 100%; min-height: 40px; padding-inline: .5rem; font-size: .78rem; }
-@media (max-width: 980px) { .restaurant-order-board { grid-template-columns: repeat(2, minmax(250px, 1fr)); } }
+@media (max-width: 980px) { .restaurant-order-board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) {
   .restaurant-orders-page { width: min(100% - 1rem, 1400px); padding-top: 1.25rem; }
   .restaurant-orders-header { align-items: stretch; flex-direction: column; gap: 1rem; }
   .restaurant-orders-tabs { margin-top: 1.25rem; }
-  .restaurant-order-board { display: flex; overflow-x: auto; align-items: stretch; gap: .75rem; padding-bottom: .5rem; scroll-snap-type: x mandatory; }
-  .restaurant-order-column { flex: 0 0 min(86vw, 330px); scroll-snap-align: start; }
+  .restaurant-order-board { display: grid; grid-template-columns: 1fr; gap: .75rem; }
+  .restaurant-order-column-header { min-height: 82px; padding: .9rem; }
   .restaurant-order-card { padding: .85rem; }
 }
