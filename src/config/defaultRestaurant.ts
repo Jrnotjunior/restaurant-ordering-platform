@@ -22,7 +22,9 @@ export const defaultRestaurant: RestaurantConfig = {
     colors: {
       primary: '#111827',
       primaryHover: '#1f2937',
+      primaryText: '#ffffff',
       secondary: '#f3f4f6',
+      secondaryText: '#111827',
       background: '#ffffff',
       surface: '#ffffff',
       text: '#111827',
