@@ -1,3 +1,8 @@
+export type RestaurantNavigationItem = {
+  label: string;
+  href: string;
+};
+
 export type RestaurantTheme = {
   fontHeading: string;
   fontBody: string;
@@ -23,5 +28,6 @@ export type RestaurantConfig = {
   logoUrl?: string;
   contactNumber?: string;
   locationText?: string;
+  navigation: RestaurantNavigationItem[];
   theme: RestaurantTheme;
 };
