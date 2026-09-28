@@ -22,21 +22,10 @@
   color: #64748b;
 }
 
-.restaurant-sales-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
-  gap: 18px;
-  align-items: start;
-}
-
-.restaurant-sales-panel,
-.restaurant-sales-detail {
+.restaurant-sales-panel {
   border: 1px solid var(--border, #e5e7eb);
   border-radius: 16px;
   background: #fff;
-}
-
-.restaurant-sales-panel {
   padding: 20px;
 }
 
@@ -48,16 +37,9 @@
   margin-bottom: 14px;
 }
 
-.restaurant-sales-panel-header h2,
-.restaurant-sales-detail h2 {
+.restaurant-sales-panel-header h2 {
   margin: 4px 0 0;
   font-size: 20px;
-}
-
-.restaurant-sales-panel-header > span {
-  color: #64748b;
-  font-size: 13px;
-  font-weight: 700;
 }
 
 .restaurant-sales-day-list {
@@ -87,71 +69,78 @@
   background: #f8fafc;
 }
 
-.restaurant-sales-day.is-selected {
-  border-color: #0f172a;
-  background: #f8fafc;
+.restaurant-sales-day:focus-visible {
+  outline: 2px solid #0f172a;
+  outline-offset: 2px;
 }
 
-.restaurant-sales-day > span {
-  min-width: 0;
-}
-
-.restaurant-sales-day span,
-.restaurant-sales-day small {
-  display: block;
-}
-
-.restaurant-sales-day span strong {
-  display: block;
+.restaurant-sales-day strong {
   font-size: 14px;
 }
 
-.restaurant-sales-day small {
-  margin-top: 4px;
+.restaurant-sales-day > span {
   color: #64748b;
-  font-size: 12px;
+  font-size: 24px;
+  line-height: 1;
 }
 
-.restaurant-sales-day > strong {
-  flex: 0 0 auto;
-  font-size: 16px;
+.restaurant-sales-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.42);
 }
 
-.restaurant-sales-detail {
+.restaurant-sales-modal {
+  width: min(100%, 460px);
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
   padding: 24px;
 }
 
-.restaurant-sales-detail > div:first-child p:not(.eyebrow) {
-  margin: 8px 0 0;
-  color: #64748b;
-  line-height: 1.5;
+.restaurant-sales-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
 }
 
-.restaurant-sales-detail-stats {
-  display: grid;
-  gap: 10px;
-  margin: 22px 0;
+.restaurant-sales-modal-header h2 {
+  margin: 4px 0 0;
+  color: #0f172a;
+  font-size: 22px;
 }
 
-.restaurant-sales-detail-stats > div {
-  padding: 14px;
-  border: 1px solid #edf0f3;
-  border-radius: 12px;
+.restaurant-sales-modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 50%;
+  background: #fff;
+  color: #0f172a;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.restaurant-sales-modal-close:hover {
   background: #f8fafc;
 }
 
-.restaurant-sales-detail-stats span {
-  display: block;
+.restaurant-sales-modal-description {
+  margin: 16px 0 22px;
   color: #64748b;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.restaurant-sales-detail-stats strong {
-  display: block;
-  margin-top: 5px;
-  color: #0f172a;
-  font-size: 22px;
+  line-height: 1.5;
 }
 
 .restaurant-sales-export {
@@ -175,12 +164,6 @@
   text-align: center;
 }
 
-@media (max-width: 860px) {
-  .restaurant-sales-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 760px) {
   .restaurant-sales-page {
     width: min(100% - 1rem, var(--restaurant-content-width));
@@ -193,11 +176,7 @@
   }
 
   .restaurant-sales-panel,
-  .restaurant-sales-detail {
+  .restaurant-sales-modal {
     padding: 16px;
-  }
-
-  .restaurant-sales-day {
-    align-items: flex-start;
   }
 }
