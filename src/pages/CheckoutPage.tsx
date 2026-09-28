@@ -7,6 +7,7 @@ type CartItem = {
 };
 
 type OrderType = 'delivery' | 'pickup' | 'dine_in';
+type PaymentMethod = 'cash' | 'gcash';
 
 type CheckoutPageProps = {
   items: CartItem[];
@@ -18,6 +19,11 @@ const orderTypes: Array<{ value: OrderType; label: string; description: string }
   { value: 'dine_in', label: 'Dine-in', description: 'Order from your phone while eating at the restaurant.' },
 ];
 
+const paymentMethods: Array<{ value: PaymentMethod; label: string; description: string }> = [
+  { value: 'cash', label: 'Cash', description: 'Pay in cash when your order is received or collected.' },
+  { value: 'gcash', label: 'GCash', description: 'Pay using GCash. Payment instructions will be shown before final submission.' },
+];
+
 export function CheckoutPage({ items }: CheckoutPageProps) {
   const [orderType, setOrderType] = useState<OrderType>('delivery');
   const [customerName, setCustomerName] = useState('');
@@ -25,6 +31,8 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const [tableNumber, setTableNumber] = useState('');
   const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('');
+  const [showPayment, setShowPayment] = useState(false);
 
   const subtotal = useMemo(
     () => items.reduce((total, item) => total + item.product.price * item.quantity, 0),
@@ -36,6 +44,14 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const canContinue = Boolean(customerName.trim() && mobileNumber.trim())
     && (!isDineIn || tableNumber.trim())
     && (!isDelivery || address.trim());
+
+  function handleContinueToPayment() {
+    if (!canContinue) return;
+    setShowPayment(true);
+    window.requestAnimationFrame(() => {
+      document.getElementById('payment-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
 
   return (
     <section className="checkout-page">
@@ -57,7 +73,10 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
                     name="orderType"
                     value={type.value}
                     checked={orderType === type.value}
-                    onChange={() => setOrderType(type.value)}
+                    onChange={() => {
+                      setOrderType(type.value);
+                      setShowPayment(false);
+                    }}
                   />
                   <span className="order-type-content">
                     <strong>{type.label}</strong>
@@ -89,6 +108,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
                   value={mobileNumber}
                   onChange={(event) => setMobileNumber(event.target.value)}
                   autoComplete="tel"
+                  inputMode="tel"
                   placeholder="09XXXXXXXXX"
                   required
                 />
@@ -122,6 +142,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
                   type="text"
                   value={tableNumber}
                   onChange={(event) => setTableNumber(event.target.value)}
+                  inputMode="numeric"
                   placeholder="e.g. 12"
                   required
                 />
@@ -142,9 +163,36 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             </label>
           </fieldset>
 
-          <button className="button button-primary checkout-submit" type="submit" disabled={!canContinue}>
-            Continue to Payment
-          </button>
+          {!showPayment ? (
+            <button className="button button-primary checkout-submit" type="button" disabled={!canContinue} onClick={handleContinueToPayment}>
+              Continue to Payment
+            </button>
+          ) : (
+            <fieldset className="checkout-section" id="payment-section">
+              <legend>Payment method</legend>
+              <div className="payment-method-grid">
+                {paymentMethods.map((method) => (
+                  <label className={`payment-method-card ${paymentMethod === method.value ? 'is-selected' : ''}`} key={method.value}>
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value={method.value}
+                      checked={paymentMethod === method.value}
+                      onChange={() => setPaymentMethod(method.value)}
+                    />
+                    <span className="order-type-content">
+                      <strong>{method.label}</strong>
+                      <span>{method.description}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <button className="button button-primary checkout-submit" type="button" disabled={!paymentMethod}>
+                Place Order
+              </button>
+              <p className="checkout-hint">Final order submission and payment processing will be connected after this checkout flow is tested.</p>
+            </fieldset>
+          )}
         </form>
 
         <aside className="checkout-summary">
