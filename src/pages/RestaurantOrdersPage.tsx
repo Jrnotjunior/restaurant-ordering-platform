@@ -72,6 +72,21 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
     finally { setUpdating(null); }
   }
 
+  async function printAndSendToKitchen(order: RestaurantOrder) {
+    if (!isPaymentReady(order)) { setError('This online order cannot be sent to the kitchen until the payment is completed.'); return; }
+    try {
+      setError('');
+      setUpdating(order.orderId);
+      setSelectedOrder(order);
+      window.setTimeout(() => window.print(), 100);
+      await updateOrderStatus(order.orderId, 'confirmed');
+      const updated = { ...order, status: 'confirmed' as RestaurantOrderStatus };
+      setOrders((current) => current.map((item) => item.orderId === order.orderId ? updated : item));
+      setSelectedOrder(updated);
+    } catch (err) { setError(err instanceof Error ? err.message : 'Unable to send order to the kitchen.'); }
+    finally { setUpdating(null); }
+  }
+
   async function cancel(order: RestaurantOrder) {
     if (!window.confirm(`Cancel order ${order.orderNumber}?`)) return;
     try { setError(''); setUpdating(order.orderId); await updateOrderStatus(order.orderId, 'cancelled'); setOrders((current) => current.map((item) => item.orderId === order.orderId ? { ...item, status: 'cancelled' } : item)); setSelectedOrder(null); }
@@ -79,10 +94,7 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
     finally { setUpdating(null); }
   }
 
-  function printOrder(order: RestaurantOrder) {
-    setSelectedOrder(order);
-    window.setTimeout(() => window.print(), 100);
-  }
+  function printOrder(order: RestaurantOrder) { setSelectedOrder(order); window.setTimeout(() => window.print(), 100); }
 
   return (
     <section className="restaurant-orders-page">
@@ -100,14 +112,7 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
                 <div><h2>{column.title}</h2><p>{column.description}</p></div><span>{columnOrders.length}</span>
               </button>
               {isOpen && <div className="restaurant-order-column-list">
-                {columnOrders.length === 0 ? <div className="restaurant-order-column-empty">No orders</div> : columnOrders.map((order) => {
-                  const isSelected = selectedOrder?.orderId === order.orderId;
-                  return <article className={`restaurant-order-card status-${order.status}`} key={order.orderId}>
-                    <button className="restaurant-order-summary-button" type="button" aria-label={`View order ${order.orderNumber}`} onClick={() => setSelectedOrder(isSelected ? null : order)}>
-                      <span className="restaurant-order-number">{order.orderNumber}</span><span className="restaurant-order-summary-right"><span className="restaurant-order-status">{statusLabels[order.status]}</span><strong>₱{order.total.toFixed(2)}</strong></span>
-                    </button>
-                  </article>;
-                })}
+                {columnOrders.length === 0 ? <div className="restaurant-order-column-empty">No orders</div> : columnOrders.map((order) => <article className={`restaurant-order-card status-${order.status}`} key={order.orderId}><button className="restaurant-order-summary-button" type="button" aria-label={`View order ${order.orderNumber}`} onClick={() => setSelectedOrder(order)}><span className="restaurant-order-number">{order.orderNumber}</span><span className="restaurant-order-summary-right"><span className="restaurant-order-status">{statusLabels[order.status]}</span><strong>₱{order.total.toFixed(2)}</strong></span></button></article>)}
               </div>}
             </section>;
           })}
@@ -124,9 +129,9 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
           <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #e2e8f0', marginTop: 12, paddingTop: 14 }}><strong>Total</strong><strong className="restaurant-order-modal-total">₱{selectedOrder.total.toFixed(2)}</strong></div>
           {selectedOrder.status === 'pending' && !isPaymentReady(selectedOrder) && <p className="restaurant-order-payment-warning" style={{ marginTop: 16 }}>Online payment is required before this order can enter the kitchen.</p>}
           <div className="restaurant-order-modal-actions">
-            {nextStatus[selectedOrder.status] && <button className="button button-primary" type="button" disabled={updating === selectedOrder.orderId || (selectedOrder.status === 'pending' && !isPaymentReady(selectedOrder))} onClick={() => void advance(selectedOrder)}>{updating === selectedOrder.orderId ? 'Updating…' : actionLabels[selectedOrder.status]}</button>}
+            {selectedOrder.status === 'pending' ? <button className="button button-primary" type="button" disabled={updating === selectedOrder.orderId || !isPaymentReady(selectedOrder)} onClick={() => void printAndSendToKitchen(selectedOrder)}>{updating === selectedOrder.orderId ? 'Printing & Sending…' : 'Print Order & Send to Kitchen'}</button> : nextStatus[selectedOrder.status] && <button className="button button-primary" type="button" disabled={updating === selectedOrder.orderId} onClick={() => void advance(selectedOrder)}>{updating === selectedOrder.orderId ? 'Updating…' : actionLabels[selectedOrder.status]}</button>}
             {selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled' && <button className="button button-secondary" type="button" disabled={updating === selectedOrder.orderId} onClick={() => void cancel(selectedOrder)}>Cancel</button>}
-            <button className="button button-secondary restaurant-print-button" type="button" onClick={() => printOrder(selectedOrder)}>Print Order</button>
+            {selectedOrder.status !== 'pending' && <button className="button button-secondary restaurant-print-button" type="button" onClick={() => printOrder(selectedOrder)}>Print Order</button>}
           </div>
         </div>
       </div>}
