@@ -42,6 +42,67 @@
   font-size: 20px;
 }
 
+.restaurant-sales-search {
+  margin-bottom: 14px;
+}
+
+.restaurant-sales-search label {
+  display: block;
+  margin-bottom: 7px;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.restaurant-sales-search-input-wrap {
+  position: relative;
+}
+
+.restaurant-sales-search input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 42px 11px 13px;
+  border: 1px solid #dbe1e8;
+  border-radius: 10px;
+  background: #fff;
+  color: #0f172a;
+  font: inherit;
+  outline: none;
+}
+
+.restaurant-sales-search input::placeholder {
+  color: #94a3b8;
+}
+
+.restaurant-sales-search input:focus {
+  border-color: #0f172a;
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.08);
+}
+
+.restaurant-sales-search-clear {
+  position: absolute;
+  top: 50%;
+  right: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.restaurant-sales-search-clear:hover {
+  background: #e2e8f0;
+}
+
 .restaurant-sales-day-list {
   display: grid;
   gap: 10px;
@@ -82,6 +143,14 @@
   color: #64748b;
   font-size: 24px;
   line-height: 1;
+}
+
+.restaurant-sales-search-empty {
+  padding: 28px 20px;
+  border: 1px dashed #dbe1e8;
+  border-radius: 12px;
+  color: #64748b;
+  text-align: center;
 }
 
 .restaurant-sales-modal-backdrop {
