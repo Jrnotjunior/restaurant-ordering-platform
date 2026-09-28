@@ -148,8 +148,6 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
     }
   }
 
-  const baseUrl = import.meta.env.BASE_URL;
-
   return (
     <section className="restaurant-menu-page">
       <style>{`
@@ -182,12 +180,6 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
         </div>
         <span className="restaurant-menu-count">{products.length} products</span>
       </header>
-
-      <nav className="restaurant-dashboard-nav" aria-label="Restaurant navigation">
-        <a href={`${baseUrl}#restaurant/dashboard`}>Dashboard</a>
-        <a href={`${baseUrl}#restaurant/orders`}>Orders</a>
-        <a className="is-active" href={`${baseUrl}#restaurant/menu`}>Products</a>
-      </nav>
 
       {error && <div className="restaurant-dashboard-error" role="alert">{error}</div>}
 
