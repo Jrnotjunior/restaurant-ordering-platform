@@ -1,12 +1,14 @@
 import { supabaseRpc } from './supabaseClient';
 
 export type RestaurantOrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'completed' | 'cancelled';
+export type RestaurantPaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 
 export type RestaurantOrder = {
   orderId: string;
   orderNumber: string;
   orderType: 'delivery' | 'pickup' | 'dine_in';
   paymentMethod: 'cash' | 'gcash';
+  paymentStatus: RestaurantPaymentStatus;
   status: RestaurantOrderStatus;
   total: number;
   createdAt: string;
@@ -29,6 +31,7 @@ type Row = {
   order_number: string;
   order_type: RestaurantOrder['orderType'];
   payment_method: RestaurantOrder['paymentMethod'];
+  payment_status?: RestaurantPaymentStatus | null;
   status: RestaurantOrderStatus;
   total: number | string;
   created_at: string;
@@ -43,6 +46,7 @@ export async function getRestaurantOrders(restaurantId: string): Promise<Restaur
     orderNumber: row.order_number,
     orderType: row.order_type,
     paymentMethod: row.payment_method,
+    paymentStatus: row.payment_status ?? 'pending',
     status: row.status,
     total: Number(row.total),
     createdAt: row.created_at,
