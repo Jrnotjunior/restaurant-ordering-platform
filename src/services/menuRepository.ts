@@ -55,3 +55,17 @@ export async function getMenu(restaurantId: string, includeUnavailable = false):
 export async function setProductAvailability(productId: string, isAvailable: boolean) {
   await supabaseRpc('update_product_availability', { p_product_id: productId, p_is_available: isAvailable });
 }
+
+export async function updateProduct(product: RestaurantProduct, values: { name: string; description: string; price: number; categoryId: string }) {
+  await supabaseRpc('update_restaurant_product', {
+    p_product_id: product.id,
+    p_name: values.name.trim(),
+    p_description: values.description.trim(),
+    p_price: values.price,
+    p_category_id: values.categoryId
+  });
+}
+
+export async function deleteProduct(productId: string) {
+  await supabaseRpc('delete_restaurant_product', { p_product_id: productId });
+}
