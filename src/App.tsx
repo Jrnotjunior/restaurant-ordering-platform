@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { RestaurantProvider } from './components/RestaurantProvider';
+import { RestaurantOwnerAuthProvider, useRestaurantOwnerAuth } from './components/RestaurantOwnerAuthProvider';
 import { ThemeProvider } from './components/ThemeProvider';
 import { RestaurantLayout } from './layouts/RestaurantLayout';
 import { MenuPage } from './pages/MenuPage';
@@ -9,6 +10,7 @@ import { RestaurantDashboardPage } from './pages/RestaurantDashboardPage';
 import { RestaurantOrdersPage } from './pages/RestaurantOrdersPage';
 import { RestaurantMenuPage } from './pages/RestaurantMenuPage';
 import { RestaurantShippingFeePage } from './pages/RestaurantShippingFeePage';
+import { RestaurantOwnerLoginPage } from './pages/RestaurantOwnerLoginPage';
 import { defaultRestaurant } from './config/defaultRestaurant';
 import { currentRestaurantLookup } from './config/restaurant';
 import { SupabaseRestaurantRepository } from './services/supabaseRestaurantRepository';
@@ -38,17 +40,53 @@ function CartPage({ items, onIncrease, onDecrease, onRemove }: { items: CartItem
   return <section className="cart-page"><div className="menu-intro"><p className="eyebrow">Your order</p><h1>Your cart.</h1><p>Review your items before continuing to checkout.</p></div>{items.length === 0 ? <div className="cart-empty"><p>Your cart is empty.</p><a className="button button-primary" href={withBasePath('/menu')}>Browse Menu</a></div> : <div className="cart-layout"><div className="cart-items" aria-label="Cart items">{items.map((item) => <article className="cart-item" key={item.product.id}><div className="cart-item-main"><div><h2>{item.product.name}</h2><p>₱{item.product.price.toFixed(2)} each</p></div><strong>₱{(item.product.price * item.quantity).toFixed(2)}</strong></div><div className="cart-item-actions"><div className="quantity-control" aria-label={`Quantity for ${item.product.name}`}><button type="button" onClick={() => onDecrease(item.product.id)} aria-label={`Decrease ${item.product.name} quantity`}>−</button><span>{item.quantity}</span><button type="button" onClick={() => onIncrease(item.product.id)} aria-label={`Increase ${item.product.name} quantity`}>+</button></div><button className="cart-remove" type="button" onClick={() => onRemove(item.product.id)}>Remove</button></div></article>)}</div><aside className="cart-summary"><div className="cart-summary-row"><span>Subtotal</span><strong>₱{subtotal.toFixed(2)}</strong></div><p>Delivery fees and payment details will be calculated during checkout.</p><a className="button button-primary" href={withBasePath('/checkout')}>Continue to Checkout</a></aside></div>}</section>;
 }
 
-export function App() {
+function OwnerRestaurantConfig({ children }: { children: (restaurant: RestaurantConfig) => React.ReactNode }) {
+  const { restaurant, user } = useRestaurantOwnerAuth();
+
+  if (!user) return <RestaurantOwnerLoginPage />;
+
+  if (!restaurant) {
+    return (
+      <section className="restaurant-owner-auth-no-restaurant">
+        <div className="restaurant-owner-auth-no-restaurant-card">
+          <p className="eyebrow">Restaurant operations</p>
+          <h1>No restaurant assigned</h1>
+          <p>Your owner account is signed in, but it is not linked to an active restaurant yet. Link your Supabase Auth user to the restaurant's <code>owner_id</code>, then reload this page.</p>
+          <p><strong>Signed in as:</strong> {user.email ?? user.id}</p>
+        </div>
+      </section>
+    );
+  }
+
+  const config: RestaurantConfig = {
+    ...defaultRestaurant,
+    id: restaurant.id,
+    name: restaurant.name,
+    tagline: restaurant.tagline,
+    logoUrl: restaurant.logo_url ?? undefined,
+    locationText: restaurant.location_text ?? undefined,
+    contactNumber: restaurant.contact_number ?? undefined,
+    email: restaurant.email ?? undefined,
+  };
+
+  return children(config);
+}
+
+function AppContent() {
   const [restaurant, setRestaurant] = useState<RestaurantConfig>(defaultRestaurant);
   const [route, setRoute] = useState(() => window.location.hash || '');
   const [cartItems, setCartItems] = useState<CartItem[]>(() => { try { const stored = window.localStorage.getItem(CART_STORAGE_KEY); return stored ? JSON.parse(stored) as CartItem[] : []; } catch { return []; } });
+  const { loading: authLoading, error: authError } = useRestaurantOwnerAuth();
+
   useEffect(() => { const handleHashChange = () => setRoute(window.location.hash || ''); window.addEventListener('hashchange', handleHashChange); return () => window.removeEventListener('hashchange', handleHashChange); }, []);
   useEffect(() => { window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems)); }, [cartItems]);
   useEffect(() => { if (!isSupabaseConfigured) return; let cancelled = false; restaurantRepository.getRestaurant(currentRestaurantLookup).then((loadedRestaurant) => { if (!cancelled && loadedRestaurant) setRestaurant(loadedRestaurant); }).catch((error: unknown) => console.error('Unable to load restaurant from Supabase.', error)); return () => { cancelled = true; }; }, []);
+
   const cartCount = useMemo(() => cartItems.reduce((total, item) => total + item.quantity, 0), [cartItems]);
   function addToCart(product: RestaurantProduct) { setCartItems((current) => { const existing = current.find((item) => item.product.id === product.id); if (existing) return current.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item); return [...current, { product, quantity: 1 }]; }); }
   function changeQuantity(productId: string, delta: number) { setCartItems((current) => current.map((item) => item.product.id === productId ? { ...item, quantity: item.quantity + delta } : item).filter((item) => item.quantity > 0)); }
   function removeFromCart(productId: string) { setCartItems((current) => current.filter((item) => item.product.id !== productId)); }
+
   const isMenuPage = route === '#menu' || window.location.pathname.endsWith('/menu') || window.location.pathname.endsWith('/menu/');
   const isCartPage = route === '#cart';
   const isCheckoutPage = route === '#checkout';
@@ -58,5 +96,21 @@ export function App() {
   const isRestaurantShippingFeePage = route === '#restaurant/shipping-fee';
   const isRestaurantOperationsPage = isRestaurantDashboardPage || isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantShippingFeePage;
   const trackingMatch = route.match(/^#order\/(.+)$/);
-  return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout hideChrome={isRestaurantOperationsPage}>{isMenuPage ? <MenuPage onAddToCart={addToCart} cartCount={cartCount} /> : isCartPage ? <CartPage items={cartItems} onIncrease={(id) => changeQuantity(id, 1)} onDecrease={(id) => changeQuantity(id, -1)} onRemove={removeFromCart} /> : isCheckoutPage ? <CheckoutPage items={cartItems} /> : isRestaurantDashboardPage ? (restaurant.id ? <RestaurantDashboardPage restaurantId={restaurant.id} /> : <section className="restaurant-orders-empty"><h1>Restaurant setup required</h1><p>The restaurant ID is not available yet.</p></section>) : isRestaurantOrdersPage ? (restaurant.id ? <RestaurantOrdersPage restaurantId={restaurant.id} /> : <section className="restaurant-orders-empty"><h1>Restaurant setup required</h1><p>The restaurant ID is not available yet.</p></section>) : isRestaurantMenuPage ? (restaurant.id ? <RestaurantMenuPage restaurantId={restaurant.id} /> : <section className="restaurant-orders-empty"><h1>Restaurant setup required</h1><p>The restaurant ID is not available yet.</p></section>) : isRestaurantShippingFeePage ? (restaurant.id ? <RestaurantShippingFeePage restaurantId={restaurant.id} /> : <section className="restaurant-orders-empty"><h1>Restaurant setup required</h1><p>The restaurant ID is not available yet.</p></section>) : trackingMatch ? <OrderTrackingPage orderNumber={decodeURIComponent(trackingMatch[1])} /> : <section className="hero"><p className="eyebrow">Direct online ordering</p><h1>Order from your favorite local restaurant.</h1><p className="hero-copy">Browse the menu, choose pickup or delivery, and place your order directly.</p><div className="hero-actions"><a className="button button-primary" href={withBasePath('/menu')}>View Menu</a><a className="button button-secondary" href={withBasePath('/cart')}>View Cart{cartCount > 0 ? ` (${cartCount})` : ''}</a></div></section>}</RestaurantLayout></ThemeProvider></RestaurantProvider>;
+
+  const publicContent = isMenuPage ? <MenuPage onAddToCart={addToCart} cartCount={cartCount} /> : isCartPage ? <CartPage items={cartItems} onIncrease={(id) => changeQuantity(id, 1)} onDecrease={(id) => changeQuantity(id, -1)} onRemove={removeFromCart} /> : isCheckoutPage ? <CheckoutPage items={cartItems} /> : trackingMatch ? <OrderTrackingPage orderNumber={decodeURIComponent(trackingMatch[1])} /> : <section className="hero"><p className="eyebrow">Direct online ordering</p><h1>Order from your favorite local restaurant.</h1><p className="hero-copy">Browse the menu, choose pickup or delivery, and place your order directly.</p><div className="hero-actions"><a className="button button-primary" href={withBasePath('/menu')}>View Menu</a><a className="button button-secondary" href={withBasePath('/cart')}>View Cart{cartCount > 0 ? ` (${cartCount})` : ''}</a></div></section>;
+
+  const operationsContent = authLoading ? <section className="restaurant-owner-auth-loading">Loading owner session…</section> : authError && !isSupabaseConfigured ? <section className="restaurant-owner-auth-loading">{authError}</section> : <OwnerRestaurantConfig>{(ownerRestaurant) => isRestaurantDashboardPage ? <RestaurantDashboardPage restaurantId={ownerRestaurant.id!} /> : isRestaurantOrdersPage ? <RestaurantOrdersPage restaurantId={ownerRestaurant.id!} /> : isRestaurantMenuPage ? <RestaurantMenuPage restaurantId={ownerRestaurant.id!} /> : <RestaurantShippingFeePage restaurantId={ownerRestaurant.id!} />}</OwnerRestaurantConfig>;
+
+  const renderedContent = isRestaurantOperationsPage ? operationsContent : publicContent;
+  const activeRestaurant = isRestaurantOperationsPage ? undefined : restaurant;
+
+  if (isRestaurantOperationsPage && !authLoading) {
+    return <OwnerRestaurantConfig>{(ownerRestaurant) => <RestaurantProvider restaurant={{ ...defaultRestaurant, id: ownerRestaurant.id, name: ownerRestaurant.name, tagline: ownerRestaurant.tagline, logoUrl: ownerRestaurant.logo_url ?? undefined, locationText: ownerRestaurant.location_text ?? undefined, contactNumber: ownerRestaurant.contact_number ?? undefined, email: ownerRestaurant.email ?? undefined }}><ThemeProvider restaurant={{ ...defaultRestaurant, id: ownerRestaurant.id, name: ownerRestaurant.name, tagline: ownerRestaurant.tagline, logoUrl: ownerRestaurant.logo_url ?? undefined, locationText: ownerRestaurant.location_text ?? undefined, contactNumber: ownerRestaurant.contact_number ?? undefined, email: ownerRestaurant.email ?? undefined }}><RestaurantLayout hideChrome>{isRestaurantDashboardPage ? <RestaurantDashboardPage restaurantId={ownerRestaurant.id} /> : isRestaurantOrdersPage ? <RestaurantOrdersPage restaurantId={ownerRestaurant.id} /> : isRestaurantMenuPage ? <RestaurantMenuPage restaurantId={ownerRestaurant.id} /> : <RestaurantShippingFeePage restaurantId={ownerRestaurant.id} />}</RestaurantLayout></ThemeProvider></RestaurantProvider>}</OwnerRestaurantConfig>;
+  }
+
+  return <RestaurantProvider restaurant={activeRestaurant ?? restaurant}><ThemeProvider restaurant={activeRestaurant ?? restaurant}><RestaurantLayout>{renderedContent}</RestaurantLayout></ThemeProvider></RestaurantProvider>;
+}
+
+export function App() {
+  return <AppContent />;
 }
