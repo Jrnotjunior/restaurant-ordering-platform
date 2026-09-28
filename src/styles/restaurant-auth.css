@@ -14,3 +14,10 @@
 .restaurant-owner-auth-no-restaurant-card h1{margin:0 0 10px;color:#111827}
 .restaurant-owner-auth-no-restaurant-card p{color:#64748b;line-height:1.6}
 .restaurant-owner-auth-no-restaurant-card .button{margin-top:10px}
+.restaurant-operations-account-bar{width:min(100%,1160px);margin:0 auto;padding:14px 0;display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid #e5e7eb;color:#111827;box-sizing:border-box}
+.restaurant-operations-account-bar>div{display:flex;align-items:baseline;gap:10px;min-width:0}
+.restaurant-operations-account-bar strong{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.restaurant-operations-account-bar span{font-size:13px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.restaurant-operations-signout{border:1px solid #dbe2ea;background:#fff;color:#111827;border-radius:9px;padding:9px 13px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.restaurant-operations-signout:hover{background:#f8fafc}
+@media(max-width:640px){.restaurant-operations-account-bar{padding:12px 0}.restaurant-operations-account-bar>div{display:grid;gap:2px}.restaurant-operations-account-bar span{max-width:190px}.restaurant-operations-signout{padding:8px 10px}}
