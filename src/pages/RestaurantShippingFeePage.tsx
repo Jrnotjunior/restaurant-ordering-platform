@@ -3,9 +3,7 @@ import {
   DEFAULT_OUT_OF_SCOPE_MESSAGE,
   deleteRestaurantDeliveryZone,
   getRestaurantDeliveryZones,
-  getRestaurantShippingFee,
   type RestaurantDeliveryZone,
-  updateRestaurantShippingFee,
   upsertRestaurantDeliveryZone,
 } from '../services/restaurantSettingsRepository';
 
@@ -30,7 +28,6 @@ function toDraft(zone: RestaurantDeliveryZone): ZoneDraft {
 }
 
 export function RestaurantShippingFeePage({ restaurantId }: Props) {
-  const [shippingFee, setShippingFee] = useState('0');
   const [zones, setZones] = useState<ZoneDraft[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -41,11 +38,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
     setLoading(true);
     setError('');
     try {
-      const [fee, deliveryZones] = await Promise.all([
-        getRestaurantShippingFee(restaurantId),
-        getRestaurantDeliveryZones(restaurantId),
-      ]);
-      setShippingFee(String(fee));
+      const deliveryZones = await getRestaurantDeliveryZones(restaurantId);
       setZones(deliveryZones.map(toDraft));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to load shipping settings.');
@@ -58,31 +51,10 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
     void loadSettings();
   }, [restaurantId]);
 
-  async function handleSaveDefaultFee() {
-    const fee = Number(shippingFee);
-    if (!Number.isFinite(fee) || fee < 0) {
-      setError('Enter a valid default shipping fee of ₱0 or more.');
-      return;
-    }
-    setSaving(true);
-    setError('');
-    setMessage('');
-    try {
-      const normalizedFee = Math.round(fee * 100) / 100;
-      await updateRestaurantShippingFee(restaurantId, normalizedFee);
-      setShippingFee(String(normalizedFee));
-      setMessage('Default shipping fee saved successfully.');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to save shipping fee.');
-    } finally {
-      setSaving(false);
-    }
-  }
-
   function addZone() {
     setZones((current) => [
       ...current,
-      { id: '', barangay: '', shippingFee: shippingFee || '0', isSupported: true, outOfScopeMessage: DEFAULT_OUT_OF_SCOPE_MESSAGE },
+      { id: '', barangay: '', shippingFee: '0', isSupported: true, outOfScopeMessage: DEFAULT_OUT_OF_SCOPE_MESSAGE },
     ]);
     setMessage('');
     setError('');
@@ -162,24 +134,11 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
       {error && <div className="restaurant-shipping-message is-error" role="alert">{error}</div>}
       {message && <div className="restaurant-shipping-message is-success" role="status">{message}</div>}
 
-      <div className="restaurant-shipping-card">
-        <h2>Default delivery fee</h2>
-        <p className="restaurant-shipping-help">This is used when a customer's barangay does not have a specific fee configured.</p>
-        <label htmlFor="restaurant-shipping-fee-page">Shipping fee</label>
-        <div className="restaurant-shipping-input">
-          <span>₱</span>
-          <input id="restaurant-shipping-fee-page" type="number" min="0" step="0.01" inputMode="decimal" value={shippingFee} onChange={(event) => setShippingFee(event.target.value)} disabled={loading || saving} />
-        </div>
-        <button type="button" className="button" onClick={() => void handleSaveDefaultFee()} disabled={loading || saving}>
-          {saving ? 'Saving…' : 'Save Default Fee'}
-        </button>
-      </div>
-
       <div className="restaurant-shipping-card restaurant-delivery-zones-card">
         <div className="restaurant-shipping-section-header">
           <div>
             <h2>Delivery by Barangay</h2>
-            <p className="restaurant-shipping-help">Set a different fee for each barangay. You can mark far areas as outside your delivery coverage.</p>
+            <p className="restaurant-shipping-help">Set a different fee for each barangay. Areas that are not listed will be treated as outside your delivery coverage.</p>
           </div>
           <button type="button" className="button" onClick={addZone} disabled={loading || saving}>+ Add Barangay</button>
         </div>
