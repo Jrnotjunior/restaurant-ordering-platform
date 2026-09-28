@@ -5,10 +5,15 @@ import { useRestaurant } from '../components/RestaurantProvider';
 
 type RestaurantLayoutProps = {
   children: ReactNode;
+  hideChrome?: boolean;
 };
 
-export function RestaurantLayout({ children }: RestaurantLayoutProps) {
+export function RestaurantLayout({ children, hideChrome = false }: RestaurantLayoutProps) {
   useRestaurant();
+
+  if (hideChrome) {
+    return <main className="restaurant-operations-shell">{children}</main>;
+  }
 
   return (
     <div className="app-shell">
