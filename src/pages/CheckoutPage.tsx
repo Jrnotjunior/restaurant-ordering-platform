@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { RestaurantProduct } from '../types/menu';
+import { createOrder } from '../services/orderRepository';
 import '../styles/checkout-mobile.css';
 
 type CartItem = {
@@ -12,6 +13,7 @@ type PaymentMethod = 'cash' | 'gcash';
 
 type CheckoutPageProps = {
   items: CartItem[];
+  onOrderCreated: (order: { orderNumber: string; paymentMethod: PaymentMethod; total: number }) => void;
 };
 
 const orderTypes: Array<{ value: OrderType; label: string; description: string }> = [
@@ -22,10 +24,10 @@ const orderTypes: Array<{ value: OrderType; label: string; description: string }
 
 const paymentMethods: Array<{ value: PaymentMethod; label: string; description: string }> = [
   { value: 'cash', label: 'Cash', description: 'Pay in cash when your order is received or collected.' },
-  { value: 'gcash', label: 'GCash', description: 'Pay using GCash. Payment instructions will be shown before final submission.' },
+  { value: 'gcash', label: 'GCash', description: 'Create the order first. Payment gateway instructions will be connected next.' },
 ];
 
-export function CheckoutPage({ items }: CheckoutPageProps) {
+export function CheckoutPage({ items, onOrderCreated }: CheckoutPageProps) {
   const [orderType, setOrderType] = useState<OrderType>('delivery');
   const [customerName, setCustomerName] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
@@ -34,6 +36,8 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const [notes, setNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('');
   const [showPayment, setShowPayment] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const subtotal = useMemo(
     () => items.reduce((total, item) => total + item.product.price * item.quantity, 0),
@@ -42,16 +46,58 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
   const isDineIn = orderType === 'dine_in';
   const isDelivery = orderType === 'delivery';
-  const canContinue = Boolean(customerName.trim() && mobileNumber.trim())
+  const canContinue = items.length > 0
+    && Boolean(customerName.trim() && mobileNumber.trim())
     && (!isDineIn || tableNumber.trim())
     && (!isDelivery || address.trim());
 
   function handleContinueToPayment() {
     if (!canContinue) return;
+    setSubmitError('');
     setShowPayment(true);
     window.requestAnimationFrame(() => {
       document.getElementById('payment-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
+  }
+
+  async function handlePlaceOrder() {
+    if (!paymentMethod || items.length === 0 || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setSubmitError('');
+
+    try {
+      const restaurantIds = new Set(items.map((item) => item.product.restaurantId));
+      if (restaurantIds.size !== 1) {
+        throw new Error('Your cart contains items from different restaurants. Please clear your cart and try again.');
+      }
+
+      const restaurantId = items[0].product.restaurantId;
+      const createdOrder = await createOrder({
+        restaurantId,
+        customerName: customerName.trim(),
+        mobileNumber: mobileNumber.trim(),
+        orderType,
+        tableNumber: tableNumber.trim(),
+        deliveryAddress: address.trim(),
+        notes: notes.trim(),
+        paymentMethod,
+        items: items.map((item) => ({
+          productId: item.product.id,
+          quantity: item.quantity,
+        })),
+      });
+
+      onOrderCreated({
+        orderNumber: createdOrder.orderNumber,
+        paymentMethod,
+        total: createdOrder.total,
+      });
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'We could not create your order. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -77,6 +123,8 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
                     onChange={() => {
                       setOrderType(type.value);
                       setShowPayment(false);
+                      setPaymentMethod('');
+                      setSubmitError('');
                     }}
                   />
                   <span className="order-type-content">
@@ -179,7 +227,10 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
                       name="paymentMethod"
                       value={method.value}
                       checked={paymentMethod === method.value}
-                      onChange={() => setPaymentMethod(method.value)}
+                      onChange={() => {
+                        setPaymentMethod(method.value);
+                        setSubmitError('');
+                      }}
                     />
                     <span className="order-type-content">
                       <strong>{method.label}</strong>
@@ -188,10 +239,13 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
                   </label>
                 ))}
               </div>
-              <button className="button button-primary checkout-submit" type="button" disabled={!paymentMethod}>
-                Place Order
+
+              {submitError ? <p className="checkout-error" role="alert">{submitError}</p> : null}
+
+              <button className="button button-primary checkout-submit" type="button" disabled={!paymentMethod || isSubmitting} onClick={handlePlaceOrder}>
+                {isSubmitting ? 'Creating Order…' : 'Place Order'}
               </button>
-              <p className="checkout-hint">Final order submission and payment processing will be connected after this checkout flow is tested.</p>
+              <p className="checkout-hint">Your order is saved as pending until the restaurant confirms it. Online payment processing will be connected separately.</p>
             </fieldset>
           )}
         </form>
