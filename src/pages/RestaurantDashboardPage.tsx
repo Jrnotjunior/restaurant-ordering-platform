@@ -45,12 +45,13 @@ export function RestaurantDashboardPage({ restaurantId }: Props) {
   useEffect(() => {
     void loadOrders();
 
-    if (!supabase) {
+    const client = supabase;
+    if (!client) {
       setRealtimeStatus('error');
       return;
     }
 
-    const channel = supabase
+    const channel = client
       .channel(`restaurant-orders:${restaurantId}`)
       .on(
         'broadcast',
@@ -68,7 +69,7 @@ export function RestaurantDashboardPage({ restaurantId }: Props) {
       });
 
     return () => {
-      void supabase.removeChannel(channel);
+      void client.removeChannel(channel);
     };
   }, [restaurantId]);
 
