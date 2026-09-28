@@ -15,7 +15,9 @@ export type RestaurantTheme = {
   colors: {
     primary: string;
     primaryHover: string;
+    primaryText: string;
     secondary: string;
+    secondaryText: string;
     background: string;
     surface: string;
     text: string;
