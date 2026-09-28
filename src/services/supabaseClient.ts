@@ -15,6 +15,13 @@ export const supabase = isSupabaseConfigured
     })
   : null;
 
+async function getAuthorizationHeaders() {
+  const accessToken = supabase ? (await supabase.auth.getSession()).data.session?.access_token : undefined;
+  return accessToken
+    ? { Authorization: `Bearer ${accessToken}` }
+    : { Authorization: `Bearer ${supabaseAnonKey ?? ''}` };
+}
+
 export async function supabaseGet<T>(path: string, params: Record<string, string>): Promise<T[]> {
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error('Supabase environment variables are not configured.');
@@ -24,7 +31,8 @@ export async function supabaseGet<T>(path: string, params: Record<string, string
   const response = await fetch(`${supabaseUrl}/rest/v1/${path}?${searchParams.toString()}`, {
     headers: {
       apikey: supabaseAnonKey,
-      Accept: 'application/json'
+      Accept: 'application/json',
+      ...(await getAuthorizationHeaders()),
     }
   });
 
@@ -46,7 +54,7 @@ export async function supabaseRpc<T>(functionName: string, body: Record<string, 
     method: 'POST',
     headers: {
       apikey: supabaseAnonKey,
-      Authorization: `Bearer ${supabaseAnonKey}`,
+      ...(await getAuthorizationHeaders()),
       Accept: 'application/json',
       'Content-Type': 'application/json'
     },
