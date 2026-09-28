@@ -41,6 +41,7 @@ export function RestaurantSalesPage({ restaurantId }: Props) {
   const [error, setError] = useState('');
   const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
+  const [searchDate, setSearchDate] = useState('');
 
   async function loadOrders() {
     try {
@@ -97,6 +98,15 @@ export function RestaurantSalesPage({ restaurantId }: Props) {
       }))
       .sort((a, b) => b.dateKey.localeCompare(a.dateKey));
   }, [completedOrders]);
+
+  const filteredDailySales = useMemo(() => {
+    const query = searchDate.trim().toLowerCase();
+    if (!query) return dailySales;
+
+    return dailySales.filter((day) =>
+      day.dateLabel.toLowerCase().includes(query) || day.dateKey.includes(query),
+    );
+  }, [dailySales, searchDate]);
 
   const selectedDay = useMemo(
     () => dailySales.find((day) => day.dateKey === selectedDateKey) ?? null,
@@ -174,20 +184,49 @@ export function RestaurantSalesPage({ restaurantId }: Props) {
             </div>
           </div>
 
-          <div className="restaurant-sales-day-list">
-            {dailySales.map((day) => (
-              <button
-                key={day.dateKey}
-                type="button"
-                className="restaurant-sales-day"
-                onClick={() => openSalesModal(day.dateKey)}
-                aria-label={`Open sales for ${day.dateLabel}`}
-              >
-                <strong>{day.dateLabel}</strong>
-                <span aria-hidden="true">›</span>
-              </button>
-            ))}
+          <div className="restaurant-sales-search">
+            <label htmlFor="restaurant-sales-date-search">Search date</label>
+            <div className="restaurant-sales-search-input-wrap">
+              <input
+                id="restaurant-sales-date-search"
+                type="search"
+                value={searchDate}
+                onChange={(event) => setSearchDate(event.target.value)}
+                placeholder="Search by date, e.g. September 27 or 2026-09-27"
+              />
+              {searchDate && (
+                <button
+                  type="button"
+                  className="restaurant-sales-search-clear"
+                  onClick={() => setSearchDate('')}
+                  aria-label="Clear date search"
+                >
+                  ×
+                </button>
+              )}
+            </div>
           </div>
+
+          {filteredDailySales.length > 0 ? (
+            <div className="restaurant-sales-day-list">
+              {filteredDailySales.map((day) => (
+                <button
+                  key={day.dateKey}
+                  type="button"
+                  className="restaurant-sales-day"
+                  onClick={() => openSalesModal(day.dateKey)}
+                  aria-label={`Open sales for ${day.dateLabel}`}
+                >
+                  <strong>{day.dateLabel}</strong>
+                  <span aria-hidden="true">›</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="restaurant-sales-search-empty">
+              No sales found for “{searchDate}”.
+            </div>
+          )}
         </section>
       )}
 
