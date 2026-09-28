@@ -134,10 +134,11 @@ export function RestaurantDashboardPage({ restaurantId }: Props) {
             <small>Manage your delivery fee</small>
           </a>
 
-          <article className="restaurant-dashboard-stat">
+          <a className="restaurant-dashboard-stat restaurant-dashboard-stat-button" href="#restaurant/sales" aria-label="Open sales">
             <span>Sales</span>
             <small>Completed sales today</small>
-          </article>
+            <strong>₱{todaySales.toFixed(2)}</strong>
+          </a>
         </div>
       )}
     </section>
