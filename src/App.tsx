@@ -18,12 +18,31 @@ function withBasePath(path: string) {
   return `${base}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
-export function App() {
-  const [restaurant, setRestaurant] = useState<RestaurantConfig>(defaultRestaurant);
-  const isMenuPage =
+function getIsMenuPage() {
+  return (
     window.location.hash === '#menu' ||
     window.location.pathname.endsWith('/menu') ||
-    window.location.pathname.endsWith('/menu/');
+    window.location.pathname.endsWith('/menu/')
+  );
+}
+
+export function App() {
+  const [restaurant, setRestaurant] = useState<RestaurantConfig>(defaultRestaurant);
+  const [isMenuPage, setIsMenuPage] = useState(getIsMenuPage);
+
+  useEffect(() => {
+    const handleNavigation = () => {
+      setIsMenuPage(getIsMenuPage());
+    };
+
+    window.addEventListener('hashchange', handleNavigation);
+    window.addEventListener('popstate', handleNavigation);
+
+    return () => {
+      window.removeEventListener('hashchange', handleNavigation);
+      window.removeEventListener('popstate', handleNavigation);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
