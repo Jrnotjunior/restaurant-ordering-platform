@@ -8,6 +8,13 @@ export const defaultRestaurant: RestaurantConfig = {
     { label: 'Menu', href: '/menu' },
     { label: 'About', href: '/about' }
   ],
+  footerLinks: [
+    { label: 'Home', href: '/' },
+    { label: 'Menu', href: '/menu' },
+    { label: 'About', href: '/about' },
+    { label: 'Contact', href: '/contact' }
+  ],
+  socialLinks: [],
   theme: {
     fontHeading: 'Manrope',
     fontBody: 'Inter',
