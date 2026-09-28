@@ -1,5 +1,5 @@
 import type { RestaurantCategory, RestaurantProduct } from '../types/menu';
-import { supabaseGet } from './supabaseClient';
+import { supabaseGet, supabaseRpc } from './supabaseClient';
 
 type CategoryRow = {
   id: string;
@@ -28,10 +28,14 @@ type ProductRow = {
   updated_at: string;
 };
 
-export async function getMenu(restaurantId: string): Promise<{
-  categories: RestaurantCategory[];
-  products: RestaurantProduct[];
-}> {
+export async function getMenu(restaurantId: string, includeUnavailable = false): Promise<{ categories: RestaurantCategory[]; products: RestaurantProduct[] }> {
+  const productParams: Record<string, string> = {
+    select: 'id,restaurant_id,category_id,name,slug,description,price,image_url,sort_order,is_available,created_at,updated_at',
+    restaurant_id: `eq.${restaurantId}`,
+    order: 'sort_order.asc,name.asc'
+  };
+  if (!includeUnavailable) productParams.is_available = 'eq.true';
+
   const [categoryRows, productRows] = await Promise.all([
     supabaseGet<CategoryRow>('categories', {
       select: 'id,restaurant_id,name,slug,description,sort_order,is_active,created_at,updated_at',
@@ -39,39 +43,15 @@ export async function getMenu(restaurantId: string): Promise<{
       is_active: 'eq.true',
       order: 'sort_order.asc,name.asc'
     }),
-    supabaseGet<ProductRow>('products', {
-      select: 'id,restaurant_id,category_id,name,slug,description,price,image_url,sort_order,is_available,created_at,updated_at',
-      restaurant_id: `eq.${restaurantId}`,
-      is_available: 'eq.true',
-      order: 'sort_order.asc,name.asc'
-    })
+    supabaseGet<ProductRow>('products', productParams)
   ]);
 
   return {
-    categories: categoryRows.map((category) => ({
-      id: category.id,
-      restaurantId: category.restaurant_id,
-      name: category.name,
-      slug: category.slug,
-      description: category.description,
-      sortOrder: category.sort_order,
-      isActive: category.is_active,
-      createdAt: category.created_at,
-      updatedAt: category.updated_at
-    })),
-    products: productRows.map((product) => ({
-      id: product.id,
-      restaurantId: product.restaurant_id,
-      categoryId: product.category_id,
-      name: product.name,
-      slug: product.slug,
-      description: product.description,
-      price: Number(product.price),
-      imageUrl: product.image_url ?? undefined,
-      sortOrder: product.sort_order,
-      isAvailable: product.is_available,
-      createdAt: product.created_at,
-      updatedAt: product.updated_at
-    }))
+    categories: categoryRows.map((category) => ({ id: category.id, restaurantId: category.restaurant_id, name: category.name, slug: category.slug, description: category.description, sortOrder: category.sort_order, isActive: category.is_active, createdAt: category.created_at, updatedAt: category.updated_at })),
+    products: productRows.map((product) => ({ id: product.id, restaurantId: product.restaurant_id, categoryId: product.category_id, name: product.name, slug: product.slug, description: product.description, price: Number(product.price), imageUrl: product.image_url ?? undefined, sortOrder: product.sort_order, isAvailable: product.is_available, createdAt: product.created_at, updatedAt: product.updated_at }))
   };
+}
+
+export async function setProductAvailability(productId: string, isAvailable: boolean) {
+  await supabaseRpc('update_product_availability', { p_product_id: productId, p_is_available: isAvailable });
 }
