@@ -1,5 +1,5 @@
 .restaurant-shipping-page {
-  width: min(1120px, calc(100% - 2rem));
+  width: min(var(--restaurant-content-width), calc(100% - 2rem));
   margin: 0 auto;
   padding: 1.5rem 0 3rem;
 }
@@ -227,7 +227,7 @@
 
 @media (max-width: 760px) {
   .restaurant-shipping-page {
-    width: min(100% - 1rem, 1120px);
+    width: min(100% - 1rem, var(--restaurant-content-width));
     padding-top: 1rem;
   }
 
