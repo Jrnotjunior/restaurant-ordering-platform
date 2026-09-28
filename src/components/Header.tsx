@@ -1,11 +1,17 @@
 import { useRestaurant } from './RestaurantProvider';
 
+function withBasePath(path: string) {
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+  if (path === '/') return `${base}/`;
+  return `${base}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
 export function Header() {
   const restaurant = useRestaurant();
 
   return (
     <header className="site-header">
-      <a className="brand" href="/" aria-label={`${restaurant.name} home`}>
+      <a className="brand" href={withBasePath('/')} aria-label={`${restaurant.name} home`}>
         {restaurant.logoUrl ? (
           <img src={restaurant.logoUrl} alt="" className="brand-logo" />
         ) : null}
@@ -14,13 +20,13 @@ export function Header() {
 
       <nav aria-label="Primary navigation">
         {restaurant.navigation.map((item) => (
-          <a key={`${item.href}-${item.label}`} href={item.href}>
+          <a key={`${item.href}-${item.label}`} href={withBasePath(item.href)}>
             {item.label}
           </a>
         ))}
       </nav>
 
-      <a className="header-cart" href="/cart">Cart</a>
+      <a className="header-cart" href={withBasePath('/cart')}>Cart</a>
     </header>
   );
 }
