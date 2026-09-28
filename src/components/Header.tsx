@@ -13,11 +13,15 @@ export function Header({ restaurant }: HeaderProps) {
         ) : null}
         <span>{restaurant.name}</span>
       </a>
+
       <nav aria-label="Primary navigation">
-        <a href="/">Home</a>
-        <a href="/menu">Menu</a>
-        <a href="/about">About</a>
+        {restaurant.navigation.map((item) => (
+          <a key={item.href} href={item.href}>
+            {item.label}
+          </a>
+        ))}
       </nav>
+
       <a className="header-cart" href="/cart">Cart</a>
     </header>
   );
