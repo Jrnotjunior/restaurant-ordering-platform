@@ -30,6 +30,7 @@ export type RestaurantTheme = {
 };
 
 export type RestaurantConfig = {
+  id?: string;
   name: string;
   tagline: string;
   logoUrl?: string;
