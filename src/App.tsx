@@ -3,6 +3,7 @@ import { RestaurantProvider } from './components/RestaurantProvider';
 import { ThemeProvider } from './components/ThemeProvider';
 import { RestaurantLayout } from './layouts/RestaurantLayout';
 import { MenuPage } from './pages/MenuPage';
+import { CheckoutPage } from './pages/CheckoutPage';
 import { defaultRestaurant } from './config/defaultRestaurant';
 import { currentRestaurantLookup } from './config/restaurant';
 import { SupabaseRestaurantRepository } from './services/supabaseRestaurantRepository';
@@ -23,6 +24,7 @@ function withBasePath(path: string) {
   if (path === '/') return `${base}/`;
   if (path === '/menu') return `${base}/#menu`;
   if (path === '/cart') return `${base}/#cart`;
+  if (path === '/checkout') return `${base}/#checkout`;
   return `${base}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
@@ -89,9 +91,9 @@ function CartPage({
               <strong>₱{subtotal.toFixed(2)}</strong>
             </div>
             <p>Delivery fees and payment details will be calculated during checkout.</p>
-            <button className="button button-primary" type="button" disabled>
+            <a className="button button-primary" href={withBasePath('/checkout')}>
               Continue to Checkout
-            </button>
+            </a>
           </aside>
         </div>
       )}
@@ -122,22 +124,15 @@ export function App() {
   }, [cartItems]);
 
   useEffect(() => {
-    if (!isSupabaseConfigured) {
-      return;
-    }
+    if (!isSupabaseConfigured) return;
 
     let cancelled = false;
-
     restaurantRepository
       .getRestaurant(currentRestaurantLookup)
       .then((loadedRestaurant) => {
-        if (!cancelled && loadedRestaurant) {
-          setRestaurant(loadedRestaurant);
-        }
+        if (!cancelled && loadedRestaurant) setRestaurant(loadedRestaurant);
       })
-      .catch((error: unknown) => {
-        console.error('Unable to load restaurant from Supabase.', error);
-      });
+      .catch((error: unknown) => console.error('Unable to load restaurant from Supabase.', error));
 
     return () => {
       cancelled = true;
@@ -175,6 +170,7 @@ export function App() {
 
   const isMenuPage = route === '#menu' || window.location.pathname.endsWith('/menu') || window.location.pathname.endsWith('/menu/');
   const isCartPage = route === '#cart';
+  const isCheckoutPage = route === '#checkout';
 
   return (
     <RestaurantProvider restaurant={restaurant}>
@@ -189,6 +185,8 @@ export function App() {
               onDecrease={(productId) => changeQuantity(productId, -1)}
               onRemove={removeFromCart}
             />
+          ) : isCheckoutPage ? (
+            <CheckoutPage items={cartItems} />
           ) : (
             <section className="hero">
               <p className="eyebrow">Direct online ordering</p>
