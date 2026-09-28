@@ -98,15 +98,18 @@ export function RestaurantSalesPage({ restaurantId }: Props) {
       .sort((a, b) => b.dateKey.localeCompare(a.dateKey));
   }, [completedOrders]);
 
-  useEffect(() => {
-    if (!selectedDateKey && dailySales.length > 0) setSelectedDateKey(dailySales[0].dateKey);
-    if (selectedDateKey && !dailySales.some((day) => day.dateKey === selectedDateKey)) setSelectedDateKey(dailySales[0]?.dateKey ?? null);
-  }, [dailySales, selectedDateKey]);
-
   const selectedDay = useMemo(
     () => dailySales.find((day) => day.dateKey === selectedDateKey) ?? null,
     [dailySales, selectedDateKey],
   );
+
+  function openSalesModal(dateKey: string) {
+    setSelectedDateKey(dateKey);
+  }
+
+  function closeSalesModal() {
+    setSelectedDateKey(null);
+  }
 
   function exportDailySales(day: DailySales) {
     const rows = day.orders.map((order) => ({
@@ -131,6 +134,17 @@ export function RestaurantSalesPage({ restaurantId }: Props) {
     XLSX.writeFile(workbook, `sales-${day.dateKey}.xlsx`);
   }
 
+  useEffect(() => {
+    if (!selectedDay) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') closeSalesModal();
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [selectedDay]);
+
   return (
     <section className="restaurant-sales-page">
       <div className="restaurant-sales-header">
@@ -152,58 +166,67 @@ export function RestaurantSalesPage({ restaurantId }: Props) {
       ) : dailySales.length === 0 ? (
         <div className="restaurant-sales-empty">No completed sales yet.</div>
       ) : (
-        <div className="restaurant-sales-layout">
-          <section className="restaurant-sales-panel">
-            <div className="restaurant-sales-panel-header">
+        <section className="restaurant-sales-panel">
+          <div className="restaurant-sales-panel-header">
+            <div>
+              <p className="eyebrow">Daily sales</p>
+              <h2>Sales by day</h2>
+            </div>
+          </div>
+
+          <div className="restaurant-sales-day-list">
+            {dailySales.map((day) => (
+              <button
+                key={day.dateKey}
+                type="button"
+                className="restaurant-sales-day"
+                onClick={() => openSalesModal(day.dateKey)}
+                aria-label={`Open sales for ${day.dateLabel}`}
+              >
+                <strong>{day.dateLabel}</strong>
+                <span aria-hidden="true">›</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {selectedDay && (
+        <div className="restaurant-sales-modal-backdrop" role="presentation" onMouseDown={closeSalesModal}>
+          <div
+            className="restaurant-sales-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="restaurant-sales-modal-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="restaurant-sales-modal-header">
               <div>
                 <p className="eyebrow">Daily sales</p>
-                <h2>Sales by day</h2>
+                <h2 id="restaurant-sales-modal-title">{selectedDay.dateLabel}</h2>
               </div>
-              <span>{dailySales.length} {dailySales.length === 1 ? 'day' : 'days'}</span>
-            </div>
-
-            <div className="restaurant-sales-day-list">
-              {dailySales.map((day) => (
-                <button
-                  key={day.dateKey}
-                  type="button"
-                  className={`restaurant-sales-day ${selectedDateKey === day.dateKey ? 'is-selected' : ''}`}
-                  onClick={() => setSelectedDateKey(day.dateKey)}
-                >
-                  <span>
-                    <strong>{day.dateLabel}</strong>
-                    <small>{day.orders.length} completed {day.orders.length === 1 ? 'order' : 'orders'}</small>
-                  </span>
-                  <strong>₱{day.total.toFixed(2)}</strong>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {selectedDay && (
-            <section className="restaurant-sales-detail">
-              <div>
-                <p className="eyebrow">Selected day</p>
-                <h2>{selectedDay.dateLabel}</h2>
-                <p>Download the completed sales for this day as an Excel spreadsheet.</p>
-              </div>
-
-              <div className="restaurant-sales-detail-stats">
-                <div>
-                  <span>Total sales</span>
-                  <strong>₱{selectedDay.total.toFixed(2)}</strong>
-                </div>
-                <div>
-                  <span>Completed orders</span>
-                  <strong>{selectedDay.orders.length}</strong>
-                </div>
-              </div>
-
-              <button className="button button-primary restaurant-sales-export" type="button" onClick={() => exportDailySales(selectedDay)}>
-                Save as XLSX
+              <button
+                type="button"
+                className="restaurant-sales-modal-close"
+                onClick={closeSalesModal}
+                aria-label="Close"
+              >
+                ×
               </button>
-            </section>
-          )}
+            </div>
+
+            <p className="restaurant-sales-modal-description">
+              Save the completed sales for this date as an Excel spreadsheet.
+            </p>
+
+            <button
+              className="button button-primary restaurant-sales-export"
+              type="button"
+              onClick={() => exportDailySales(selectedDay)}
+            >
+              Save as XLSX
+            </button>
+          </div>
         </div>
       )}
     </section>
