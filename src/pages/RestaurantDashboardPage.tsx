@@ -1,23 +1,117 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getRestaurantOrders, type RestaurantOrder } from '../services/restaurantOrderRepository';
-import { getRestaurantShippingFee, updateRestaurantShippingFee } from '../services/restaurantSettingsRepository';
+import { getRestaurantShippingFee } from '../services/restaurantSettingsRepository';
 import { supabase } from '../services/supabaseClient';
 
 type Props = { restaurantId: string };
-function isToday(dateString: string) { const date = new Date(dateString); const now = new Date(); return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate(); }
+
+function isToday(dateString: string) {
+  const date = new Date(dateString);
+  const now = new Date();
+  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate();
+}
 
 export function RestaurantDashboardPage({ restaurantId }: Props) {
-  const [orders, setOrders] = useState<RestaurantOrder[]>([]); const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
-  const [shippingFee, setShippingFee] = useState(0); const [shippingFeeInput, setShippingFeeInput] = useState('0'); const [savingShippingFee, setSavingShippingFee] = useState(false); const [shippingFeeMessage, setShippingFeeMessage] = useState(''); const [isShippingFeeModalOpen, setIsShippingFeeModalOpen] = useState(false);
+  const [orders, setOrders] = useState<RestaurantOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
+  const [shippingFee, setShippingFee] = useState(0);
 
-  async function loadOrders() { try { setError(''); setOrders(await getRestaurantOrders(restaurantId)); } catch (err) { setError(err instanceof Error ? err.message : 'Unable to load dashboard data.'); } finally { setLoading(false); } }
-  async function loadShippingFee() { try { const fee = await getRestaurantShippingFee(restaurantId); setShippingFee(fee); setShippingFeeInput(String(fee)); } catch (err) { setShippingFeeMessage(err instanceof Error ? err.message : 'Unable to load shipping fee.'); } }
-  function openShippingFeeModal() { setShippingFeeInput(String(shippingFee)); setShippingFeeMessage(''); setIsShippingFeeModalOpen(true); }
-  function closeShippingFeeModal() { if (!savingShippingFee) setIsShippingFeeModalOpen(false); }
-  async function handleSaveShippingFee() { const fee = Number(shippingFeeInput); if (!Number.isFinite(fee) || fee < 0) { setShippingFeeMessage('Enter a valid shipping fee of ₱0 or more.'); return; } setSavingShippingFee(true); setShippingFeeMessage(''); try { const normalizedFee = Math.round(fee * 100) / 100; await updateRestaurantShippingFee(restaurantId, normalizedFee); setShippingFee(normalizedFee); setShippingFeeInput(String(normalizedFee)); setIsShippingFeeModalOpen(false); } catch (err) { setShippingFeeMessage(err instanceof Error ? err.message : 'Unable to save shipping fee.'); } finally { setSavingShippingFee(false); } }
+  async function loadOrders() {
+    try {
+      setError('');
+      setOrders(await getRestaurantOrders(restaurantId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to load dashboard data.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  useEffect(() => { void loadOrders(); void loadShippingFee(); const client = supabase; if (!client) { setRealtimeStatus('error'); return; } const channel = client.channel(`restaurant-orders:${restaurantId}`).on('broadcast', { event: 'restaurant_order_changed' }, () => { void loadOrders(); }).subscribe((status) => { if (status === 'SUBSCRIBED') setRealtimeStatus('live'); else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') setRealtimeStatus('error'); }); return () => { void client.removeChannel(channel); }; }, [restaurantId]);
+  async function loadShippingFee() {
+    try {
+      setShippingFee(await getRestaurantShippingFee(restaurantId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to load shipping fee.');
+    }
+  }
 
-  const todayOrders = useMemo(() => orders.filter((order) => isToday(order.createdAt)), [orders]); const todaySales = useMemo(() => todayOrders.filter((order) => order.status === 'completed').reduce((sum, order) => sum + order.total, 0), [todayOrders]);
-  return (<section className="restaurant-dashboard-page"><div className="restaurant-dashboard-header"><div><p className="eyebrow">Restaurant operations</p><h1>Dashboard</h1></div><span className={`restaurant-dashboard-live-status is-${realtimeStatus}`} aria-live="polite"><span className="restaurant-dashboard-live-dot" aria-hidden="true" />{realtimeStatus === 'live' ? 'Live' : realtimeStatus === 'connecting' ? 'Connecting…' : 'Reconnecting…'}</span></div>{error && <div className="restaurant-dashboard-error" role="alert">{error}</div>}{loading ? <div className="restaurant-dashboard-empty">Loading dashboard…</div> : <div className="restaurant-dashboard-stats"><a className="restaurant-dashboard-stat" href="#restaurant/orders"><span>Orders</span><strong>{todayOrders.length}</strong><small>Today's orders</small></a><a className="restaurant-dashboard-stat" href="#restaurant/menu"><span>Product</span><strong>Menu</strong><small>Manage your menu</small></a><button type="button" className="restaurant-dashboard-stat restaurant-dashboard-stat-button" onClick={openShippingFeeModal}><span>Shipping fee</span><strong>₱{shippingFee.toFixed(2)}</strong><small>Click to set your delivery fee</small></button><article className="restaurant-dashboard-stat"><span>Sales</span><strong>₱{todaySales.toFixed(2)}</strong><small>Completed sales today</small></article></div>}{isShippingFeeModalOpen && <div className="restaurant-dashboard-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeShippingFeeModal(); }}><div className="restaurant-dashboard-modal" role="dialog" aria-modal="true" aria-labelledby="shipping-fee-modal-title"><div className="restaurant-dashboard-modal-header"><div><p className="eyebrow">Restaurant settings</p><h2 id="shipping-fee-modal-title">Shipping fee</h2></div><button type="button" className="restaurant-dashboard-modal-close" onClick={closeShippingFeeModal} disabled={savingShippingFee} aria-label="Close">×</button></div><p className="restaurant-dashboard-modal-description">Set the delivery fee customers will pay for orders from your restaurant.</p><label htmlFor="restaurant-shipping-fee">Delivery fee</label><div className="restaurant-dashboard-modal-input"><span>₱</span><input id="restaurant-shipping-fee" type="number" min="0" step="0.01" inputMode="decimal" value={shippingFeeInput} onChange={(event) => { setShippingFeeInput(event.target.value); setShippingFeeMessage(''); }} autoFocus /></div>{shippingFeeMessage && <div className="restaurant-dashboard-modal-error" role="alert">{shippingFeeMessage}</div>}<div className="restaurant-dashboard-modal-actions"><button type="button" className="button button-secondary" onClick={closeShippingFeeModal} disabled={savingShippingFee}>Cancel</button><button type="button" className="button" onClick={() => void handleSaveShippingFee()} disabled={savingShippingFee}>{savingShippingFee ? 'Saving…' : 'Save Changes'}</button></div></div></div>}</section>);
+  useEffect(() => {
+    void loadOrders();
+    void loadShippingFee();
+
+    const client = supabase;
+    if (!client) {
+      setRealtimeStatus('error');
+      return;
+    }
+
+    const channel = client
+      .channel(`restaurant-orders:${restaurantId}`)
+      .on('broadcast', { event: 'restaurant_order_changed' }, () => {
+        void loadOrders();
+      })
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') setRealtimeStatus('live');
+        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') setRealtimeStatus('error');
+      });
+
+    return () => {
+      void client.removeChannel(channel);
+    };
+  }, [restaurantId]);
+
+  const todayOrders = useMemo(() => orders.filter((order) => isToday(order.createdAt)), [orders]);
+  const todaySales = useMemo(
+    () => todayOrders.filter((order) => order.status === 'completed').reduce((sum, order) => sum + order.total, 0),
+    [todayOrders],
+  );
+
+  return (
+    <section className="restaurant-dashboard-page">
+      <div className="restaurant-dashboard-header">
+        <div>
+          <p className="eyebrow">Restaurant operations</p>
+          <h1>Dashboard</h1>
+        </div>
+        <span className={`restaurant-dashboard-live-status is-${realtimeStatus}`} aria-live="polite">
+          <span className="restaurant-dashboard-live-dot" aria-hidden="true" />
+          {realtimeStatus === 'live' ? 'Live' : realtimeStatus === 'connecting' ? 'Connecting…' : 'Reconnecting…'}
+        </span>
+      </div>
+
+      {error && <div className="restaurant-dashboard-error" role="alert">{error}</div>}
+
+      {loading ? (
+        <div className="restaurant-dashboard-empty">Loading dashboard…</div>
+      ) : (
+        <div className="restaurant-dashboard-stats">
+          <a className="restaurant-dashboard-stat" href="#restaurant/orders">
+            <span>Orders</span>
+            <strong>{todayOrders.length}</strong>
+            <small>Today's orders</small>
+          </a>
+
+          <a className="restaurant-dashboard-stat" href="#restaurant/menu">
+            <span>Product</span>
+            <strong>Menu</strong>
+            <small>Manage your menu</small>
+          </a>
+
+          <a className="restaurant-dashboard-stat restaurant-dashboard-stat-link" href="#restaurant/shipping-fee">
+            <span>Shipping fee</span>
+            <strong>₱{shippingFee.toFixed(2)}</strong>
+            <small>Manage your delivery fee</small>
+          </a>
+
+          <article className="restaurant-dashboard-stat">
+            <span>Sales</span>
+            <strong>₱{todaySales.toFixed(2)}</strong>
+            <small>Completed sales today</small>
+          </article>
+        </div>
+      )}
+    </section>
+  );
 }
