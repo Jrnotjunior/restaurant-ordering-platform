@@ -184,9 +184,13 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
         .restaurant-menu-search-label{font-size:14px;font-weight:600;color:#475569;white-space:nowrap}
         .restaurant-menu-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
         .restaurant-menu-header > div{min-width:0}
-        .restaurant-menu-header-actions{display:flex;align-items:center;gap:10px;flex-shrink:0;padding-top:28px}
-        .restaurant-menu-count{font-size:14px;color:#64748b;white-space:nowrap;padding-top:36px}
-        .restaurant-menu-add-button{min-height:42px;white-space:nowrap}
+        .restaurant-menu-section-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
+        .restaurant-menu-section-header > div{min-width:0}
+        .restaurant-menu-section-header h2{margin:0 0 4px}
+        .restaurant-menu-section-header p{margin:0;color:#64748b}
+        .restaurant-menu-add-button{min-height:42px;white-space:nowrap;flex-shrink:0}
+        .restaurant-menu-management-card{border:1px solid #e1e5eb;border-radius:14px;padding:18px;margin-top:22px;background:#fff}
+        .restaurant-menu-management-card .restaurant-menu-search{margin-top:18px}
         .restaurant-menu-card-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px}
         .restaurant-menu-card-actions .button{min-height:38px}
         .restaurant-product-modal-backdrop{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.55);backdrop-filter:blur(3px)}
@@ -205,7 +209,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
         .restaurant-product-form-actions{display:flex;justify-content:center;gap:10px;margin-top:4px}
         .restaurant-product-form-actions .button{min-width:130px}
         .restaurant-product-category-hint{font-size:12px;font-weight:400;color:#64748b}
-        @media(max-width:600px){.restaurant-menu-header{flex-direction:column}.restaurant-menu-header-actions,.restaurant-menu-count{padding-top:0}.restaurant-menu-search{align-items:stretch;flex-direction:column}.restaurant-menu-search-label{white-space:normal}.restaurant-menu-search-input-wrap{max-width:none}.restaurant-product-modal-backdrop{padding:10px;align-items:flex-end}.restaurant-product-modal{max-height:92vh;border-radius:18px 18px 12px 12px;padding:20px}.restaurant-product-form-actions .button{flex:1}}
+        @media(max-width:600px){.restaurant-menu-section-header{flex-direction:column}.restaurant-menu-add-button{width:100%}.restaurant-menu-search{align-items:stretch;flex-direction:column}.restaurant-menu-search-label{white-space:normal}.restaurant-menu-search-input-wrap{max-width:none}.restaurant-product-modal-backdrop{padding:10px;align-items:flex-end}.restaurant-product-modal{max-height:92vh;border-radius:18px 18px 12px 12px;padding:20px}.restaurant-product-form-actions .button{flex:1}}
       `}</style>
 
       <header className="restaurant-menu-header">
@@ -214,80 +218,86 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
           <h1>Products</h1>
           <p>Manage the products customers can order from your restaurant.</p>
         </div>
-        <div className="restaurant-menu-header-actions">
-          <span className="restaurant-menu-count">{products.length} products</span>
-          <button className="button button-primary restaurant-menu-add-button" type="button" onClick={openAdd}>+ Add Product</button>
-        </div>
       </header>
 
       {error && <div className="restaurant-dashboard-error" role="alert">{error}</div>}
 
-      <div className="restaurant-menu-search">
-        <label className="restaurant-menu-search-label" htmlFor="restaurant-product-search">Search products</label>
-        <div className="restaurant-menu-search-input-wrap">
-          <input
-            id="restaurant-product-search"
-            type="search"
-            value={searchProduct}
-            onChange={(event) => setSearchProduct(event.target.value)}
-            placeholder="Search by product name, description, or category"
-          />
-          {searchProduct && (
-            <button type="button" className="restaurant-menu-search-clear" onClick={() => setSearchProduct('')} aria-label="Clear product search">×</button>
-          )}
+      <div className="restaurant-menu-management-card">
+        <div className="restaurant-menu-section-header">
+          <div>
+            <h2>Product Menu</h2>
+            <p>Manage the products customers can order from your restaurant.</p>
+          </div>
+          <button className="button restaurant-menu-add-button" type="button" onClick={openAdd} disabled={loading}>+ Add Product</button>
         </div>
-      </div>
 
-      <div className="restaurant-menu-toolbar">
-        <div className="restaurant-menu-categories" aria-label="Product categories">
-          <button className={selectedCategory === 'all' ? 'is-active' : ''} type="button" onClick={() => setSelectedCategory('all')}>All</button>
-          {categories.map((category) => (
-            <button key={category.id} className={selectedCategory === category.id ? 'is-active' : ''} type="button" onClick={() => setSelectedCategory(category.id)}>
-              {category.name}
-            </button>
-          ))}
+        <div className="restaurant-menu-search">
+          <label className="restaurant-menu-search-label" htmlFor="restaurant-product-search">Search products</label>
+          <div className="restaurant-menu-search-input-wrap">
+            <input
+              id="restaurant-product-search"
+              type="search"
+              value={searchProduct}
+              onChange={(event) => setSearchProduct(event.target.value)}
+              placeholder="Search by product name, description, or category"
+            />
+            {searchProduct && (
+              <button type="button" className="restaurant-menu-search-clear" onClick={() => setSearchProduct('')} aria-label="Clear product search">×</button>
+            )}
+          </div>
         </div>
-        <label className="restaurant-menu-toggle">
-          <input type="checkbox" checked={showUnavailable} onChange={(event) => setShowUnavailable(event.target.checked)} />
-          <span>Show unavailable</span>
-        </label>
-      </div>
 
-      {loading ? (
-        <div className="restaurant-dashboard-empty">Loading products…</div>
-      ) : filteredProducts.length === 0 ? (
-        <div className="restaurant-dashboard-empty">No products match this filter.</div>
-      ) : (
-        <div className="restaurant-menu-grid">
-          {filteredProducts.map((product) => (
-            <article className={`restaurant-menu-card ${product.isAvailable ? '' : 'is-unavailable'}`} key={product.id}>
-              {product.imageUrl
-                ? <img src={product.imageUrl} alt="" className="restaurant-menu-image" />
-                : <div className="restaurant-menu-image-placeholder" aria-hidden="true">{product.name.charAt(0).toUpperCase()}</div>}
-              <div className="restaurant-menu-card-content">
-                <div className="restaurant-menu-card-heading">
-                  <div><h2>{product.name}</h2><p>{product.description || 'No description.'}</p></div>
-                  <strong>₱{product.price.toFixed(2)}</strong>
-                </div>
-                <div className="restaurant-menu-card-footer">
-                  <span className={`restaurant-menu-status ${product.isAvailable ? 'is-available' : 'is-unavailable'}`}>
-                    {product.isAvailable ? 'Available' : 'Unavailable'}
-                  </span>
-                  <button className="button button-secondary" type="button" disabled={savingId === product.id} onClick={() => void toggleAvailability(product)}>
-                    {savingId === product.id ? 'Saving…' : product.isAvailable ? 'Mark unavailable' : 'Make available'}
-                  </button>
-                </div>
-                <div className="restaurant-menu-card-actions">
-                  <button className="button button-secondary" type="button" disabled={deletingId === product.id} onClick={() => openEdit(product)}>Edit</button>
-                  <button className="button button-secondary" type="button" disabled={deletingId === product.id} onClick={() => void removeProduct(product)}>
-                    {deletingId === product.id ? 'Deleting…' : 'Delete'}
-                  </button>
-                </div>
-              </div>
-            </article>
-          ))}
+        <div className="restaurant-menu-toolbar">
+          <div className="restaurant-menu-categories" aria-label="Product categories">
+            <button className={selectedCategory === 'all' ? 'is-active' : ''} type="button" onClick={() => setSelectedCategory('all')}>All</button>
+            {categories.map((category) => (
+              <button key={category.id} className={selectedCategory === category.id ? 'is-active' : ''} type="button" onClick={() => setSelectedCategory(category.id)}>
+                {category.name}
+              </button>
+            ))}
+          </div>
+          <label className="restaurant-menu-toggle">
+            <input type="checkbox" checked={showUnavailable} onChange={(event) => setShowUnavailable(event.target.checked)} />
+            <span>Show unavailable</span>
+          </label>
         </div>
-      )}
+
+        {loading ? (
+          <div className="restaurant-dashboard-empty">Loading products…</div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="restaurant-dashboard-empty">No products match this filter.</div>
+        ) : (
+          <div className="restaurant-menu-grid">
+            {filteredProducts.map((product) => (
+              <article className={`restaurant-menu-card ${product.isAvailable ? '' : 'is-unavailable'}`} key={product.id}>
+                {product.imageUrl
+                  ? <img src={product.imageUrl} alt="" className="restaurant-menu-image" />
+                  : <div className="restaurant-menu-image-placeholder" aria-hidden="true">{product.name.charAt(0).toUpperCase()}</div>}
+                <div className="restaurant-menu-card-content">
+                  <div className="restaurant-menu-card-heading">
+                    <div><h2>{product.name}</h2><p>{product.description || 'No description.'}</p></div>
+                    <strong>₱{product.price.toFixed(2)}</strong>
+                  </div>
+                  <div className="restaurant-menu-card-footer">
+                    <span className={`restaurant-menu-status ${product.isAvailable ? 'is-available' : 'is-unavailable'}`}>
+                      {product.isAvailable ? 'Available' : 'Unavailable'}
+                    </span>
+                    <button className="button button-secondary" type="button" disabled={savingId === product.id} onClick={() => void toggleAvailability(product)}>
+                      {savingId === product.id ? 'Saving…' : product.isAvailable ? 'Mark unavailable' : 'Make available'}
+                    </button>
+                  </div>
+                  <div className="restaurant-menu-card-actions">
+                    <button className="button button-secondary" type="button" disabled={deletingId === product.id} onClick={() => openEdit(product)}>Edit</button>
+                    <button className="button button-secondary" type="button" disabled={deletingId === product.id} onClick={() => void removeProduct(product)}>
+                      {deletingId === product.id ? 'Deleting…' : 'Delete'}
+                    </button>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </div>
 
       {(editingProduct || isAddingProduct) && (
         <div className="restaurant-product-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !savingForm) closeProductModal(); }}>
