@@ -1,5 +1,11 @@
 import { useRestaurant } from './RestaurantProvider';
 
+function withBasePath(path: string) {
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+  if (path === '/') return `${base}/`;
+  return `${base}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
 export function Footer() {
   const restaurant = useRestaurant();
 
@@ -19,7 +25,7 @@ export function Footer() {
       {restaurant.footerLinks.length > 0 ? (
         <nav aria-label="Footer navigation">
           {restaurant.footerLinks.map((link) => (
-            <a key={`${link.href}-${link.label}`} href={link.href}>
+            <a key={`${link.href}-${link.label}`} href={withBasePath(link.href)}>
               {link.label}
             </a>
           ))}
