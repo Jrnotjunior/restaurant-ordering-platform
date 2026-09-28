@@ -14,6 +14,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
   const [products, setProducts] = useState<RestaurantProduct[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showUnavailable, setShowUnavailable] = useState(true);
+  const [searchProduct, setSearchProduct] = useState('');
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -39,11 +40,19 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
 
   useEffect(() => { void loadMenu(); }, [restaurantId]);
 
-  const filteredProducts = useMemo(() => products.filter((product) => {
-    const categoryMatch = selectedCategory === 'all' || product.categoryId === selectedCategory;
-    const availabilityMatch = showUnavailable || product.isAvailable;
-    return categoryMatch && availabilityMatch;
-  }), [products, selectedCategory, showUnavailable]);
+  const filteredProducts = useMemo(() => {
+    const query = searchProduct.trim().toLowerCase();
+    return products.filter((product) => {
+      const categoryMatch = selectedCategory === 'all' || product.categoryId === selectedCategory;
+      const availabilityMatch = showUnavailable || product.isAvailable;
+      const category = categories.find((item) => item.id === product.categoryId);
+      const searchMatch = !query
+        || product.name.toLowerCase().includes(query)
+        || product.description.toLowerCase().includes(query)
+        || Boolean(category?.name.toLowerCase().includes(query));
+      return categoryMatch && availabilityMatch && searchMatch;
+    });
+  }, [products, categories, selectedCategory, showUnavailable, searchProduct]);
 
   async function toggleAvailability(product: RestaurantProduct) {
     setSavingId(product.id);
@@ -151,6 +160,12 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
   return (
     <section className="restaurant-menu-page">
       <style>{`
+        .restaurant-menu-search{display:flex;align-items:center;gap:10px;margin:18px 0 14px}
+        .restaurant-menu-search-input-wrap{position:relative;flex:1;max-width:620px}
+        .restaurant-menu-search input{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:10px;padding:11px 40px 11px 12px;font:inherit;color:#0f172a;background:#fff}
+        .restaurant-menu-search input:focus{outline:none;border-color:#94a3b8;box-shadow:0 0 0 3px rgba(148,163,184,.18)}
+        .restaurant-menu-search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:28px;height:28px;border:0;border-radius:999px;background:#f1f5f9;color:#475569;font-size:18px;line-height:1;cursor:pointer}
+        .restaurant-menu-search-label{font-size:14px;font-weight:600;color:#475569;white-space:nowrap}
         .restaurant-menu-card-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px}
         .restaurant-menu-card-actions .button{min-height:38px}
         .restaurant-product-modal-backdrop{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.55);backdrop-filter:blur(3px)}
@@ -169,7 +184,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
         .restaurant-product-form-actions{display:flex;justify-content:center;gap:10px;margin-top:4px}
         .restaurant-product-form-actions .button{min-width:130px}
         .restaurant-product-category-hint{font-size:12px;font-weight:400;color:#64748b}
-        @media(max-width:600px){.restaurant-product-modal-backdrop{padding:10px;align-items:flex-end}.restaurant-product-modal{max-height:92vh;border-radius:18px 18px 12px 12px;padding:20px}.restaurant-product-form-actions .button{flex:1}}
+        @media(max-width:600px){.restaurant-menu-search{align-items:stretch;flex-direction:column}.restaurant-menu-search-label{white-space:normal}.restaurant-menu-search-input-wrap{max-width:none}.restaurant-product-modal-backdrop{padding:10px;align-items:flex-end}.restaurant-product-modal{max-height:92vh;border-radius:18px 18px 12px 12px;padding:20px}.restaurant-product-form-actions .button{flex:1}}
       `}</style>
 
       <header className="restaurant-menu-header">
@@ -182,6 +197,22 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
       </header>
 
       {error && <div className="restaurant-dashboard-error" role="alert">{error}</div>}
+
+      <div className="restaurant-menu-search">
+        <label className="restaurant-menu-search-label" htmlFor="restaurant-product-search">Search products</label>
+        <div className="restaurant-menu-search-input-wrap">
+          <input
+            id="restaurant-product-search"
+            type="search"
+            value={searchProduct}
+            onChange={(event) => setSearchProduct(event.target.value)}
+            placeholder="Search by product name, description, or category"
+          />
+          {searchProduct && (
+            <button type="button" className="restaurant-menu-search-clear" onClick={() => setSearchProduct('')} aria-label="Clear product search">×</button>
+          )}
+        </div>
+      </div>
 
       <div className="restaurant-menu-toolbar">
         <div className="restaurant-menu-categories" aria-label="Product categories">
