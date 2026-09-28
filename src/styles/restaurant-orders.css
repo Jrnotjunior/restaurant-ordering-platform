@@ -12,17 +12,22 @@
 .restaurant-order-card { padding: 1.25rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-background); }
 .restaurant-order-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
 .restaurant-order-top > div { display: flex; flex-wrap: wrap; align-items: center; gap: .65rem; min-width: 0; }
-.restaurant-order-number { font-family: var(--font-heading); font-weight: 800; }
+.restaurant-order-number { font-family: var(--font-heading); font-weight: 800; overflow-wrap: anywhere; }
 .restaurant-order-status { display: inline-flex; align-items: center; min-height: 30px; padding: 0 .65rem; border-radius: 999px; background: var(--color-secondary); font-size: .78rem; font-weight: 800; }
 .status-pending .restaurant-order-status { background: color-mix(in srgb, var(--color-warning) 12%, var(--color-background)); color: var(--color-warning); }
 .status-preparing .restaurant-order-status { background: color-mix(in srgb, var(--color-primary) 10%, var(--color-background)); }
 .status-ready .restaurant-order-status, .status-completed .restaurant-order-status { background: color-mix(in srgb, var(--color-success) 12%, var(--color-background)); color: var(--color-success); }
 .status-cancelled .restaurant-order-status { background: color-mix(in srgb, var(--color-error) 10%, var(--color-background)); color: var(--color-error); }
 .restaurant-order-top > strong { flex: 0 0 auto; white-space: nowrap; }
-.restaurant-order-meta { display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin-top: .75rem; color: var(--color-muted); font-size: .88rem; }
+.restaurant-order-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin-top: .75rem; color: var(--color-muted); font-size: .88rem; }
+.restaurant-payment-status { display: inline-flex; align-items: center; min-height: 28px; padding: 0 .6rem; border: 1px solid var(--color-border); border-radius: 999px; font-weight: 700; }
+.restaurant-payment-status.is-paid { border-color: color-mix(in srgb, var(--color-success) 35%, var(--color-border)); color: var(--color-success); background: color-mix(in srgb, var(--color-success) 8%, var(--color-background)); }
+.restaurant-payment-status.is-failed { border-color: color-mix(in srgb, var(--color-error) 35%, var(--color-border)); color: var(--color-error); background: color-mix(in srgb, var(--color-error) 8%, var(--color-background)); }
+.restaurant-payment-status.is-refunded { border-color: color-mix(in srgb, var(--color-warning) 35%, var(--color-border)); color: var(--color-warning); background: color-mix(in srgb, var(--color-warning) 8%, var(--color-background)); }
+.restaurant-payment-status.is-pending { background: var(--color-secondary); }
 .restaurant-order-items { display: grid; gap: .6rem; margin-top: 1rem; padding: 1rem 0; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
 .restaurant-order-item { display: flex; justify-content: space-between; gap: 1rem; line-height: 1.45; }
-.restaurant-order-item > span:first-child { min-width: 0; }
+.restaurant-order-item > span:first-child { min-width: 0; overflow-wrap: anywhere; }
 .restaurant-order-item > span:last-child { flex: 0 0 auto; white-space: nowrap; }
 .restaurant-order-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; }
 @media (max-width: 560px) {
@@ -33,6 +38,8 @@
   .restaurant-order-card { padding: 1rem; }
   .restaurant-order-top { gap: .75rem; }
   .restaurant-order-top > strong { font-size: .95rem; }
+  .restaurant-order-meta { align-items: flex-start; flex-direction: column; gap: .5rem; }
+  .restaurant-payment-status { max-width: 100%; }
   .restaurant-order-actions { display: grid; grid-template-columns: 1fr 1fr; }
   .restaurant-order-actions .button { width: 100%; padding-inline: .65rem; }
 }
