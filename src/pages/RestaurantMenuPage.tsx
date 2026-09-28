@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { FormEvent } from 'react';
 import { deleteProduct, getMenu, setProductAvailability, updateProduct } from '../services/menuRepository';
 import type { RestaurantCategory, RestaurantProduct } from '../types/menu';
 
@@ -7,7 +8,7 @@ type ProductForm = { name: string; description: string; price: string; categoryI
 
 const emptyForm: ProductForm = { name: '', description: '', price: '', categoryId: '' };
 
-export function RestaurantMenuPage({ restaurantId }: Props) {
+export function RestaurantMenuPage({ restaurantId }: Props }) {
   const [categories, setCategories] = useState<RestaurantCategory[]>([]);
   const [products, setProducts] = useState<RestaurantProduct[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -60,7 +61,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
     setError('');
   }
 
-  async function saveEdit(event: React.FormEvent<HTMLFormElement>) {
+  async function saveEdit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!editingProduct) return;
     const name = form.name.trim();
