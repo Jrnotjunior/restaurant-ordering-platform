@@ -26,3 +26,29 @@ export async function supabaseGet<T>(path: string, params: Record<string, string
 
   return response.json() as Promise<T[]>;
 }
+
+export async function supabaseRpc<T>(functionName: string, body: Record<string, unknown>): Promise<T[]> {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Supabase environment variables are not configured.');
+  }
+
+  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${functionName}`, {
+    method: 'POST',
+    headers: {
+      apikey: supabaseAnonKey,
+      Authorization: `Bearer ${supabaseAnonKey}`,
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text().catch(() => '');
+    const detail = errorBody.trim() ? ` ${errorBody.trim()}` : '';
+    throw new Error(`Supabase RPC request failed with status ${response.status}.${detail}`);
+  }
+
+  const data = await response.json();
+  return Array.isArray(data) ? data as T[] : [data as T];
+}
