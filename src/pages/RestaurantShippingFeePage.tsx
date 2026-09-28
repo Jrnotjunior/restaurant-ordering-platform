@@ -124,7 +124,6 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
     <section className="restaurant-shipping-page">
       <div className="restaurant-shipping-header">
         <div>
-          <a className="restaurant-shipping-back" href="#restaurant/dashboard">← Back to Dashboard</a>
           <p className="eyebrow">Restaurant settings</p>
           <h1>Shipping Fee</h1>
           <p>Set delivery fees by barangay and choose which areas are within your delivery coverage.</p>
