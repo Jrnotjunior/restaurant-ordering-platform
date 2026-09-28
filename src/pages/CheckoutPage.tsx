@@ -206,7 +206,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
               </div>
             ))}
           </div>
-          <div className="cart-summary-row">
+          <div className="checkout-summary-row">
             <span>Subtotal</span>
             <strong>₱{subtotal.toFixed(2)}</strong>
           </div>
