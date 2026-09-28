@@ -11,16 +11,17 @@ export async function supabaseGet<T>(path: string, params: Record<string, string
   const searchParams = new URLSearchParams(params);
   const response = await fetch(`${supabaseUrl}/rest/v1/${path}?${searchParams.toString()}`, {
     headers: {
-      // The Supabase publishable key belongs in the `apikey` header.
-      // Do not send the publishable key as a Bearer token: the Authorization
-      // header is reserved for an authenticated user's access token.
+      // Supabase publishable keys belong in the apikey header.
+      // Do not send the publishable key as a Bearer token.
       apikey: supabaseAnonKey,
       Accept: 'application/json'
     }
   });
 
   if (!response.ok) {
-    throw new Error(`Supabase request failed with status ${response.status}.`);
+    const errorBody = await response.text().catch(() => '');
+    const detail = errorBody.trim() ? ` ${errorBody.trim()}` : '';
+    throw new Error(`Supabase request failed with status ${response.status}.${detail}`);
   }
 
   return response.json() as Promise<T[]>;
