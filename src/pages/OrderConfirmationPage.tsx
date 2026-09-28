@@ -1,3 +1,5 @@
+import '../styles/order-confirmation.css';
+
 type OrderConfirmationPageProps = {
   orderNumber: string;
   paymentMethod: 'cash' | 'gcash';
@@ -12,7 +14,7 @@ export function OrderConfirmationPage({
   onReturnHome,
 }: OrderConfirmationPageProps) {
   const paymentMessage = paymentMethod === 'gcash'
-    ? 'Your order is recorded as pending payment. Online payment instructions will be connected when the payment gateway is integrated.'
+    ? 'Your order is recorded as pending payment. Online payment instructions will be shown when the payment gateway is integrated.'
     : 'Your order is recorded as pending. Please pay in cash when your order is received or collected.';
 
   return (
@@ -20,9 +22,7 @@ export function OrderConfirmationPage({
       <div className="order-confirmation-card">
         <p className="eyebrow">Order received</p>
         <h1>Thank you for your order.</h1>
-        <p className="order-confirmation-copy">
-          Your order has been created and sent to the restaurant order queue.
-        </p>
+        <p className="order-confirmation-copy">Your order has been created and is now waiting for restaurant confirmation.</p>
 
         <div className="order-confirmation-number">
           <span>Order number</span>
