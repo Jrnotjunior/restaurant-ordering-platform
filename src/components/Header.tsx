@@ -1,10 +1,8 @@
-import type { RestaurantConfig } from '../types/restaurant';
+import { useRestaurant } from './RestaurantProvider';
 
-type HeaderProps = {
-  restaurant: RestaurantConfig;
-};
+export function Header() {
+  const restaurant = useRestaurant();
 
-export function Header({ restaurant }: HeaderProps) {
   return (
     <header className="site-header">
       <a className="brand" href="/" aria-label={`${restaurant.name} home`}>
@@ -16,7 +14,7 @@ export function Header({ restaurant }: HeaderProps) {
 
       <nav aria-label="Primary navigation">
         {restaurant.navigation.map((item) => (
-          <a key={item.href} href={item.href}>
+          <a key={`${item.href}-${item.label}`} href={item.href}>
             {item.label}
           </a>
         ))}
