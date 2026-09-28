@@ -14,12 +14,16 @@ const restaurantRepository = new SupabaseRestaurantRepository();
 function withBasePath(path: string) {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   if (path === '/') return `${base}/`;
+  if (path === '/menu') return `${base}/#menu`;
   return `${base}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
 export function App() {
   const [restaurant, setRestaurant] = useState<RestaurantConfig>(defaultRestaurant);
-  const isMenuPage = window.location.pathname.endsWith('/menu') || window.location.pathname.endsWith('/menu/');
+  const isMenuPage =
+    window.location.hash === '#menu' ||
+    window.location.pathname.endsWith('/menu') ||
+    window.location.pathname.endsWith('/menu/');
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
