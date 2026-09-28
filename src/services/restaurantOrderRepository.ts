@@ -13,20 +13,47 @@ export type RestaurantOrder = {
   items: { id: string; productName: string; quantity: number; unitPrice: number; lineTotal: number }[];
 };
 
+type RawOrderItem = {
+  id: string;
+  productName?: string;
+  product_name?: string;
+  quantity: number;
+  unitPrice?: number | string;
+  unit_price?: number | string;
+  lineTotal?: number | string;
+  line_total?: number | string;
+};
+
 type Row = {
   order_id: string;
   order_number: string;
   order_type: RestaurantOrder['orderType'];
   payment_method: RestaurantOrder['paymentMethod'];
   status: RestaurantOrderStatus;
-  total: number;
+  total: number | string;
   created_at: string;
-  items: RestaurantOrder['items'];
+  items?: RawOrderItem[] | null;
 };
 
 export async function getRestaurantOrders(restaurantId: string): Promise<RestaurantOrder[]> {
   const rows = await supabaseRpc<Row>('get_restaurant_orders', { p_restaurant_id: restaurantId });
-  return rows.map((row) => ({ ...row, orderId: row.order_id, orderNumber: row.order_number, createdAt: row.created_at, total: Number(row.total), items: (row.items ?? []).map((item) => ({ ...item, unitPrice: Number(item.unitPrice ?? item.unit_price), lineTotal: Number(item.lineTotal ?? item.line_total) })) }));
+
+  return rows.map((row): RestaurantOrder => ({
+    orderId: row.order_id,
+    orderNumber: row.order_number,
+    orderType: row.order_type,
+    paymentMethod: row.payment_method,
+    status: row.status,
+    total: Number(row.total),
+    createdAt: row.created_at,
+    items: (row.items ?? []).map((item) => ({
+      id: item.id,
+      productName: item.productName ?? item.product_name ?? '',
+      quantity: Number(item.quantity),
+      unitPrice: Number(item.unitPrice ?? item.unit_price ?? 0),
+      lineTotal: Number(item.lineTotal ?? item.line_total ?? 0),
+    })),
+  }));
 }
 
 export async function updateOrderStatus(orderId: string, status: RestaurantOrderStatus) {
