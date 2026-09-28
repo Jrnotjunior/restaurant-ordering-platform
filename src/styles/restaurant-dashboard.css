@@ -64,6 +64,26 @@
   padding: 18px;
 }
 
+.restaurant-dashboard-stat-button {
+  width: 100%;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+
+.restaurant-dashboard-stat-button:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, .06);
+  transform: translateY(-1px);
+}
+
+.restaurant-dashboard-stat-button:focus-visible {
+  outline: 2px solid #111827;
+  outline-offset: 2px;
+}
+
 .restaurant-dashboard-stat span,
 .restaurant-dashboard-stat small {
   display: block;
@@ -202,6 +222,104 @@
   text-align: center;
 }
 
+.restaurant-dashboard-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, .55);
+}
+
+.restaurant-dashboard-modal {
+  width: min(100%, 440px);
+  padding: 24px;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, .22);
+}
+
+.restaurant-dashboard-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.restaurant-dashboard-modal-header h2 {
+  margin: 4px 0 0;
+  font-size: 24px;
+}
+
+.restaurant-dashboard-modal-close {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #0f172a;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.restaurant-dashboard-modal-description {
+  margin: 14px 0 18px;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.restaurant-dashboard-modal label {
+  display: block;
+  margin-bottom: 7px;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.restaurant-dashboard-modal-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.restaurant-dashboard-modal-input span {
+  color: #64748b;
+  font-weight: 700;
+}
+
+.restaurant-dashboard-modal-input input {
+  width: 100%;
+  min-width: 0;
+  padding: 12px 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #0f172a;
+  font: inherit;
+}
+
+.restaurant-dashboard-modal-error {
+  margin-top: 10px;
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+.restaurant-dashboard-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
 @media (max-width: 760px) {
   .restaurant-dashboard-page {
     padding: 24px 14px 40px;
@@ -240,5 +358,17 @@
 
   .restaurant-dashboard-order {
     align-items: flex-start;
+  }
+
+  .restaurant-dashboard-modal {
+    padding: 20px;
+  }
+
+  .restaurant-dashboard-modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .restaurant-dashboard-modal-actions .button {
+    width: 100%;
   }
 }
