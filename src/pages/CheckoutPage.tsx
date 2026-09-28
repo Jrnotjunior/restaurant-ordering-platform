@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { RestaurantProduct } from '../types/menu';
 import { createOrder } from '../services/orderRepository';
+import { OrderConfirmationPage } from './OrderConfirmationPage';
 import '../styles/checkout-mobile.css';
 
 type CartItem = {
@@ -13,7 +14,12 @@ type PaymentMethod = 'cash' | 'gcash';
 
 type CheckoutPageProps = {
   items: CartItem[];
-  onOrderCreated: (order: { orderNumber: string; paymentMethod: PaymentMethod; total: number }) => void;
+};
+
+type ConfirmedOrder = {
+  orderNumber: string;
+  paymentMethod: PaymentMethod;
+  total: number;
 };
 
 const orderTypes: Array<{ value: OrderType; label: string; description: string }> = [
@@ -27,7 +33,7 @@ const paymentMethods: Array<{ value: PaymentMethod; label: string; description: 
   { value: 'gcash', label: 'GCash', description: 'Create the order first. Payment gateway instructions will be connected next.' },
 ];
 
-export function CheckoutPage({ items, onOrderCreated }: CheckoutPageProps) {
+export function CheckoutPage({ items }: CheckoutPageProps) {
   const [orderType, setOrderType] = useState<OrderType>('delivery');
   const [customerName, setCustomerName] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
@@ -38,11 +44,23 @@ export function CheckoutPage({ items, onOrderCreated }: CheckoutPageProps) {
   const [showPayment, setShowPayment] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [confirmedOrder, setConfirmedOrder] = useState<ConfirmedOrder | null>(null);
 
   const subtotal = useMemo(
     () => items.reduce((total, item) => total + item.product.price * item.quantity, 0),
     [items],
   );
+
+  if (confirmedOrder) {
+    return (
+      <OrderConfirmationPage
+        orderNumber={confirmedOrder.orderNumber}
+        paymentMethod={confirmedOrder.paymentMethod}
+        total={confirmedOrder.total}
+        onReturnHome={() => window.location.hash = ''}
+      />
+    );
+  }
 
   const isDineIn = orderType === 'dine_in';
   const isDelivery = orderType === 'delivery';
@@ -88,7 +106,7 @@ export function CheckoutPage({ items, onOrderCreated }: CheckoutPageProps) {
         })),
       });
 
-      onOrderCreated({
+      setConfirmedOrder({
         orderNumber: createdOrder.orderNumber,
         paymentMethod,
         total: createdOrder.total,
@@ -115,18 +133,7 @@ export function CheckoutPage({ items, onOrderCreated }: CheckoutPageProps) {
             <div className="order-type-grid">
               {orderTypes.map((type) => (
                 <label className={`order-type-card ${orderType === type.value ? 'is-selected' : ''}`} key={type.value}>
-                  <input
-                    type="radio"
-                    name="orderType"
-                    value={type.value}
-                    checked={orderType === type.value}
-                    onChange={() => {
-                      setOrderType(type.value);
-                      setShowPayment(false);
-                      setPaymentMethod('');
-                      setSubmitError('');
-                    }}
-                  />
+                  <input type="radio" name="orderType" value={type.value} checked={orderType === type.value} onChange={() => { setOrderType(type.value); setShowPayment(false); setPaymentMethod(''); setSubmitError(''); }} />
                   <span className="order-type-content">
                     <strong>{type.label}</strong>
                     <span>{type.description}</span>
@@ -141,26 +148,11 @@ export function CheckoutPage({ items, onOrderCreated }: CheckoutPageProps) {
             <div className="checkout-fields">
               <label>
                 <span>Full name</span>
-                <input
-                  type="text"
-                  value={customerName}
-                  onChange={(event) => setCustomerName(event.target.value)}
-                  autoComplete="name"
-                  placeholder="Your name"
-                  required
-                />
+                <input type="text" value={customerName} onChange={(event) => setCustomerName(event.target.value)} autoComplete="name" placeholder="Your name" required />
               </label>
               <label>
                 <span>Mobile number</span>
-                <input
-                  type="tel"
-                  value={mobileNumber}
-                  onChange={(event) => setMobileNumber(event.target.value)}
-                  autoComplete="tel"
-                  inputMode="tel"
-                  placeholder="09XXXXXXXXX"
-                  required
-                />
+                <input type="tel" value={mobileNumber} onChange={(event) => setMobileNumber(event.target.value)} autoComplete="tel" inputMode="tel" placeholder="09XXXXXXXXX" required />
               </label>
             </div>
           </fieldset>
@@ -170,13 +162,7 @@ export function CheckoutPage({ items, onOrderCreated }: CheckoutPageProps) {
               <legend>Delivery address</legend>
               <label>
                 <span>Complete address</span>
-                <textarea
-                  value={address}
-                  onChange={(event) => setAddress(event.target.value)}
-                  placeholder="House/building, street, barangay, city"
-                  rows={4}
-                  required
-                />
+                <textarea value={address} onChange={(event) => setAddress(event.target.value)} placeholder="House/building, street, barangay, city" rows={4} required />
               </label>
               <p className="checkout-hint">We will add the Philippine address dropdowns and delivery-radius check in the next checkout step.</p>
             </fieldset>
@@ -187,14 +173,7 @@ export function CheckoutPage({ items, onOrderCreated }: CheckoutPageProps) {
               <legend>Dine-in details</legend>
               <label>
                 <span>Table number</span>
-                <input
-                  type="text"
-                  value={tableNumber}
-                  onChange={(event) => setTableNumber(event.target.value)}
-                  inputMode="numeric"
-                  placeholder="e.g. 12"
-                  required
-                />
+                <input type="text" value={tableNumber} onChange={(event) => setTableNumber(event.target.value)} inputMode="numeric" placeholder="e.g. 12" required />
               </label>
             </fieldset>
           ) : null}
@@ -203,35 +182,19 @@ export function CheckoutPage({ items, onOrderCreated }: CheckoutPageProps) {
             <legend>Order notes <span className="optional-label">Optional</span></legend>
             <label>
               <span>Special instructions</span>
-              <textarea
-                value={notes}
-                onChange={(event) => setNotes(event.target.value)}
-                placeholder="Add a note for the restaurant"
-                rows={3}
-              />
+              <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Add a note for the restaurant" rows={3} />
             </label>
           </fieldset>
 
           {!showPayment ? (
-            <button className="button button-primary checkout-submit" type="button" disabled={!canContinue} onClick={handleContinueToPayment}>
-              Continue to Payment
-            </button>
+            <button className="button button-primary checkout-submit" type="button" disabled={!canContinue} onClick={handleContinueToPayment}>Continue to Payment</button>
           ) : (
             <fieldset className="checkout-section" id="payment-section">
               <legend>Payment method</legend>
               <div className="order-type-grid">
                 {paymentMethods.map((method) => (
                   <label className={`order-type-card ${paymentMethod === method.value ? 'is-selected' : ''}`} key={method.value}>
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value={method.value}
-                      checked={paymentMethod === method.value}
-                      onChange={() => {
-                        setPaymentMethod(method.value);
-                        setSubmitError('');
-                      }}
-                    />
+                    <input type="radio" name="paymentMethod" value={method.value} checked={paymentMethod === method.value} onChange={() => { setPaymentMethod(method.value); setSubmitError(''); }} />
                     <span className="order-type-content">
                       <strong>{method.label}</strong>
                       <span>{method.description}</span>
@@ -239,9 +202,7 @@ export function CheckoutPage({ items, onOrderCreated }: CheckoutPageProps) {
                   </label>
                 ))}
               </div>
-
               {submitError ? <p className="checkout-error" role="alert">{submitError}</p> : null}
-
               <button className="button button-primary checkout-submit" type="button" disabled={!paymentMethod || isSubmitting} onClick={handlePlaceOrder}>
                 {isSubmitting ? 'Creating Order…' : 'Place Order'}
               </button>
