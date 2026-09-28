@@ -5,6 +5,7 @@ import { RestaurantLayout } from './layouts/RestaurantLayout';
 import { MenuPage } from './pages/MenuPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { OrderTrackingPage } from './pages/OrderTrackingPage';
+import { RestaurantDashboardPage } from './pages/RestaurantDashboardPage';
 import { RestaurantOrdersPage } from './pages/RestaurantOrdersPage';
 import { defaultRestaurant } from './config/defaultRestaurant';
 import { currentRestaurantLookup } from './config/restaurant';
@@ -23,6 +24,7 @@ function withBasePath(path: string) {
   if (path === '/menu') return `${base}/#menu`;
   if (path === '/cart') return `${base}/#cart`;
   if (path === '/checkout') return `${base}/#checkout`;
+  if (path === '/restaurant/dashboard') return `${base}/#restaurant/dashboard`;
   if (path === '/restaurant/orders') return `${base}/#restaurant/orders`;
   return `${base}${path.startsWith('/') ? path : `/${path}`}`;
 }
@@ -46,7 +48,8 @@ export function App() {
   const isMenuPage = route === '#menu' || window.location.pathname.endsWith('/menu') || window.location.pathname.endsWith('/menu/');
   const isCartPage = route === '#cart';
   const isCheckoutPage = route === '#checkout';
+  const isRestaurantDashboardPage = route === '#restaurant/dashboard';
   const isRestaurantOrdersPage = route === '#restaurant/orders';
   const trackingMatch = route.match(/^#order\/(.+)$/);
-  return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout>{isMenuPage ? <MenuPage onAddToCart={addToCart} cartCount={cartCount} /> : isCartPage ? <CartPage items={cartItems} onIncrease={(id) => changeQuantity(id, 1)} onDecrease={(id) => changeQuantity(id, -1)} onRemove={removeFromCart} /> : isCheckoutPage ? <CheckoutPage items={cartItems} /> : isRestaurantOrdersPage ? (restaurant.id ? <RestaurantOrdersPage restaurantId={restaurant.id} /> : <section className="restaurant-orders-empty"><h1>Restaurant setup required</h1><p>The restaurant ID is not available yet.</p></section>) : trackingMatch ? <OrderTrackingPage orderNumber={decodeURIComponent(trackingMatch[1])} /> : <section className="hero"><p className="eyebrow">Direct online ordering</p><h1>Order from your favorite local restaurant.</h1><p className="hero-copy">Browse the menu, choose pickup or delivery, and place your order directly.</p><div className="hero-actions"><a className="button button-primary" href={withBasePath('/menu')}>View Menu</a><a className="button button-secondary" href={withBasePath('/cart')}>View Cart{cartCount > 0 ? ` (${cartCount})` : ''}</a></div></section>}</RestaurantLayout></ThemeProvider></RestaurantProvider>;
+  return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout>{isMenuPage ? <MenuPage onAddToCart={addToCart} cartCount={cartCount} /> : isCartPage ? <CartPage items={cartItems} onIncrease={(id) => changeQuantity(id, 1)} onDecrease={(id) => changeQuantity(id, -1)} onRemove={removeFromCart} /> : isCheckoutPage ? <CheckoutPage items={cartItems} /> : isRestaurantDashboardPage ? (restaurant.id ? <RestaurantDashboardPage restaurantId={restaurant.id} /> : <section className="restaurant-orders-empty"><h1>Restaurant setup required</h1><p>The restaurant ID is not available yet.</p></section>) : isRestaurantOrdersPage ? (restaurant.id ? <RestaurantOrdersPage restaurantId={restaurant.id} /> : <section className="restaurant-orders-empty"><h1>Restaurant setup required</h1><p>The restaurant ID is not available yet.</p></section>) : trackingMatch ? <OrderTrackingPage orderNumber={decodeURIComponent(trackingMatch[1])} /> : <section className="hero"><p className="eyebrow">Direct online ordering</p><h1>Order from your favorite local restaurant.</h1><p className="hero-copy">Browse the menu, choose pickup or delivery, and place your order directly.</p><div className="hero-actions"><a className="button button-primary" href={withBasePath('/menu')}>View Menu</a><a className="button button-secondary" href={withBasePath('/cart')}>View Cart{cartCount > 0 ? ` (${cartCount})` : ''}</a></div></section>}</RestaurantLayout></ThemeProvider></RestaurantProvider>;
 }
