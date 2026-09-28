@@ -5,6 +5,7 @@ import './styles/tokens.css';
 import './styles/global.css';
 import './styles/restaurant-orders.css';
 import './styles/restaurant-dashboard.css';
+import './styles/restaurant-menu.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
