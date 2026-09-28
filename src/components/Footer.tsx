@@ -3,6 +3,7 @@ import { useRestaurant } from './RestaurantProvider';
 function withBasePath(path: string) {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   if (path === '/') return `${base}/`;
+  if (path === '/menu') return `${base}/#menu`;
   return `${base}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
