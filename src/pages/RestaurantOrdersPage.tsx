@@ -39,14 +39,13 @@ const columns: Array<{ key: BoardColumn; title: string; description: string }> =
 ];
 
 export function RestaurantOrdersPage({ restaurantId }: Props) {
-  const [orders, setOrders] = useState<RestaurantOrder[]>([]); const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [updating, setUpdating] = useState<string | null>(null); const [filter, setFilter] = useState<'active' | 'all'>('active'); const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
+  const [orders, setOrders] = useState<RestaurantOrder[]>([]); const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [updating, setUpdating] = useState<string | null>(null); const [filter, setFilter] = useState<'active' | 'all'>('active'); const [openColumn, setOpenColumn] = useState<BoardColumn | null>(null); const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
 
   async function loadOrders() {
     try {
       setError('');
       const data = await getRestaurantOrders(restaurantId);
       setOrders(data);
-      // A paid online order leaves New Orders automatically and enters the kitchen queue.
       const paidNewOrders = data.filter((order) => order.status === 'pending' && order.paymentMethod === 'gcash' && order.paymentStatus === 'paid');
       if (paidNewOrders.length) {
         await Promise.all(paidNewOrders.map((order) => updateOrderStatus(order.orderId, 'confirmed')));
@@ -76,7 +75,7 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
   async function cancel(order: RestaurantOrder) {
     if (!window.confirm(`Cancel order ${order.orderNumber}?`)) return;
     try { setError(''); setUpdating(order.orderId); await updateOrderStatus(order.orderId, 'cancelled'); setOrders((current) => current.map((item) => item.orderId === order.orderId ? { ...item, status: 'cancelled' } : item)); }
-    catch (err) { setError(err instanceof Error ? err.message : 'Unable to cancel order.'); }
+    catch (err) { setError(err instanceof Error ? err.message : 'Unable to update order.'); }
     finally { setUpdating(null); }
   }
 
@@ -89,9 +88,12 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
         <div className="restaurant-order-board">
           {columns.map((column) => {
             const columnOrders = visibleOrders.filter((order) => columnFor(order) === column.key);
-            return <section className={`restaurant-order-column is-${column.key}`} key={column.key} aria-label={column.title}>
-              <header className="restaurant-order-column-header"><div><h2>{column.title}</h2><p>{column.description}</p></div><span>{columnOrders.length}</span></header>
-              <div className="restaurant-order-column-list">
+            const isOpen = openColumn === column.key;
+            return <section className={`restaurant-order-column is-${column.key} ${isOpen ? 'is-open' : ''}`} key={column.key} aria-label={column.title}>
+              <button className="restaurant-order-column-header" type="button" aria-expanded={isOpen} onClick={() => setOpenColumn(isOpen ? null : column.key)}>
+                <div><h2>{column.title}</h2><p>{column.description}</p></div><span>{columnOrders.length}</span>
+              </button>
+              {isOpen && <div className="restaurant-order-column-list">
                 {columnOrders.length === 0 ? <div className="restaurant-order-column-empty">No orders</div> : columnOrders.map((order) => {
                   const next = nextStatus[order.status]; const paymentClass = order.paymentStatus === 'paid' ? 'is-paid' : order.paymentStatus === 'failed' ? 'is-failed' : order.paymentStatus === 'refunded' ? 'is-refunded' : 'is-pending'; const paymentReady = isPaymentReady(order); const actionBlocked = order.status === 'pending' && !paymentReady;
                   return <article className={`restaurant-order-card status-${order.status}`} key={order.orderId}>
@@ -102,7 +104,7 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
                     <div className="restaurant-order-actions">{next && <button className="button button-primary" type="button" disabled={updating === order.orderId || actionBlocked} onClick={() => void advance(order)}>{updating === order.orderId ? 'Updating…' : actionLabels[order.status]}</button>}{order.status !== 'completed' && order.status !== 'cancelled' && <button className="button button-secondary" type="button" disabled={updating === order.orderId} onClick={() => void cancel(order)}>Cancel</button>}</div>
                   </article>;
                 })}
-              </div>
+              </div>}
             </section>;
           })}
         </div>
