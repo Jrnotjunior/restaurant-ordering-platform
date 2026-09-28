@@ -21,6 +21,83 @@
   max-width: 620px;
 }
 
+.restaurant-dashboard-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.restaurant-dashboard-account {
+  position: relative;
+}
+
+.restaurant-dashboard-account-button {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 50%;
+  background: #fff;
+  color: #0f172a;
+  cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+}
+
+.restaurant-dashboard-account-button:hover,
+.restaurant-dashboard-account-button[aria-expanded="true"] {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, .08);
+}
+
+.restaurant-dashboard-account-button:focus-visible {
+  outline: 2px solid #111827;
+  outline-offset: 2px;
+}
+
+.restaurant-dashboard-account-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  width: 220px;
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, .14);
+}
+
+.restaurant-dashboard-account-email {
+  display: block;
+  padding: 8px 10px 10px;
+  overflow: hidden;
+  color: #64748b;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-bottom: 1px solid #edf0f3;
+}
+
+.restaurant-dashboard-account-menu button {
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #0f172a;
+  text-align: left;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.restaurant-dashboard-account-menu button:hover {
+  background: #f8fafc;
+}
+
 .restaurant-dashboard-nav {
   display: flex;
   gap: 8px;
@@ -328,6 +405,10 @@
   .restaurant-dashboard-header {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .restaurant-dashboard-header-actions {
+    justify-content: flex-end;
   }
 
   .restaurant-dashboard-header .button {
