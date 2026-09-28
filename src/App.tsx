@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { RestaurantProvider } from './components/RestaurantProvider';
 import { ThemeProvider } from './components/ThemeProvider';
 import { RestaurantLayout } from './layouts/RestaurantLayout';
@@ -8,41 +8,118 @@ import { currentRestaurantLookup } from './config/restaurant';
 import { SupabaseRestaurantRepository } from './services/supabaseRestaurantRepository';
 import { isSupabaseConfigured } from './services/supabaseClient';
 import type { RestaurantConfig } from './types/restaurant';
+import type { RestaurantProduct } from './types/menu';
 
 const restaurantRepository = new SupabaseRestaurantRepository();
+const CART_STORAGE_KEY = 'restaurant-ordering-cart';
+
+type CartItem = {
+  product: RestaurantProduct;
+  quantity: number;
+};
 
 function withBasePath(path: string) {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   if (path === '/') return `${base}/`;
   if (path === '/menu') return `${base}/#menu`;
+  if (path === '/cart') return `${base}/#cart`;
   return `${base}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
-function getIsMenuPage() {
+function CartPage({
+  items,
+  onIncrease,
+  onDecrease,
+  onRemove,
+}: {
+  items: CartItem[];
+  onIncrease: (productId: string) => void;
+  onDecrease: (productId: string) => void;
+  onRemove: (productId: string) => void;
+}) {
+  const subtotal = items.reduce((total, item) => total + item.product.price * item.quantity, 0);
+
   return (
-    window.location.hash === '#menu' ||
-    window.location.pathname.endsWith('/menu') ||
-    window.location.pathname.endsWith('/menu/')
+    <section className="cart-page">
+      <div className="menu-intro">
+        <p className="eyebrow">Your order</p>
+        <h1>Your cart.</h1>
+        <p>Review your items before continuing to checkout.</p>
+      </div>
+
+      {items.length === 0 ? (
+        <div className="cart-empty">
+          <p>Your cart is empty.</p>
+          <a className="button button-primary" href={withBasePath('/menu')}>Browse Menu</a>
+        </div>
+      ) : (
+        <div className="cart-layout">
+          <div className="cart-items" aria-label="Cart items">
+            {items.map((item) => (
+              <article className="cart-item" key={item.product.id}>
+                <div className="cart-item-main">
+                  <div>
+                    <h2>{item.product.name}</h2>
+                    <p>₱{item.product.price.toFixed(2)} each</p>
+                  </div>
+                  <strong>₱{(item.product.price * item.quantity).toFixed(2)}</strong>
+                </div>
+
+                <div className="cart-item-actions">
+                  <div className="quantity-control" aria-label={`Quantity for ${item.product.name}`}>
+                    <button type="button" onClick={() => onDecrease(item.product.id)} aria-label={`Decrease ${item.product.name} quantity`}>
+                      −
+                    </button>
+                    <span>{item.quantity}</span>
+                    <button type="button" onClick={() => onIncrease(item.product.id)} aria-label={`Increase ${item.product.name} quantity`}>
+                      +
+                    </button>
+                  </div>
+                  <button className="cart-remove" type="button" onClick={() => onRemove(item.product.id)}>
+                    Remove
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <aside className="cart-summary">
+            <div className="cart-summary-row">
+              <span>Subtotal</span>
+              <strong>₱{subtotal.toFixed(2)}</strong>
+            </div>
+            <p>Delivery fees and payment details will be calculated during checkout.</p>
+            <button className="button button-primary" type="button" disabled>
+              Continue to Checkout
+            </button>
+          </aside>
+        </div>
+      )}
+    </section>
   );
 }
 
 export function App() {
   const [restaurant, setRestaurant] = useState<RestaurantConfig>(defaultRestaurant);
-  const [isMenuPage, setIsMenuPage] = useState(getIsMenuPage);
+  const [route, setRoute] = useState(() => window.location.hash || '');
+  const [cartItems, setCartItems] = useState<CartItem[]>(() => {
+    try {
+      const stored = window.localStorage.getItem(CART_STORAGE_KEY);
+      return stored ? JSON.parse(stored) as CartItem[] : [];
+    } catch {
+      return [];
+    }
+  });
 
   useEffect(() => {
-    const handleNavigation = () => {
-      setIsMenuPage(getIsMenuPage());
-    };
-
-    window.addEventListener('hashchange', handleNavigation);
-    window.addEventListener('popstate', handleNavigation);
-
-    return () => {
-      window.removeEventListener('hashchange', handleNavigation);
-      window.removeEventListener('popstate', handleNavigation);
-    };
+    const handleHashChange = () => setRoute(window.location.hash || '');
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
+  }, [cartItems]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -67,12 +144,51 @@ export function App() {
     };
   }, []);
 
+  const cartCount = useMemo(
+    () => cartItems.reduce((total, item) => total + item.quantity, 0),
+    [cartItems],
+  );
+
+  function addToCart(product: RestaurantProduct) {
+    setCartItems((current) => {
+      const existing = current.find((item) => item.product.id === product.id);
+      if (existing) {
+        return current.map((item) => item.product.id === product.id
+          ? { ...item, quantity: item.quantity + 1 }
+          : item);
+      }
+      return [...current, { product, quantity: 1 }];
+    });
+  }
+
+  function changeQuantity(productId: string, delta: number) {
+    setCartItems((current) => current
+      .map((item) => item.product.id === productId
+        ? { ...item, quantity: item.quantity + delta }
+        : item)
+      .filter((item) => item.quantity > 0));
+  }
+
+  function removeFromCart(productId: string) {
+    setCartItems((current) => current.filter((item) => item.product.id !== productId));
+  }
+
+  const isMenuPage = route === '#menu' || window.location.pathname.endsWith('/menu') || window.location.pathname.endsWith('/menu/');
+  const isCartPage = route === '#cart';
+
   return (
     <RestaurantProvider restaurant={restaurant}>
       <ThemeProvider restaurant={restaurant}>
         <RestaurantLayout>
           {isMenuPage ? (
-            <MenuPage />
+            <MenuPage onAddToCart={addToCart} cartCount={cartCount} />
+          ) : isCartPage ? (
+            <CartPage
+              items={cartItems}
+              onIncrease={(productId) => changeQuantity(productId, 1)}
+              onDecrease={(productId) => changeQuantity(productId, -1)}
+              onRemove={removeFromCart}
+            />
           ) : (
             <section className="hero">
               <p className="eyebrow">Direct online ordering</p>
@@ -82,7 +198,7 @@ export function App() {
               </p>
               <div className="hero-actions">
                 <a className="button button-primary" href={withBasePath('/menu')}>View Menu</a>
-                <a className="button button-secondary" href={withBasePath('/cart')}>View Cart</a>
+                <a className="button button-secondary" href={withBasePath('/cart')}>View Cart{cartCount > 0 ? ` (${cartCount})` : ''}</a>
               </div>
             </section>
           )}
