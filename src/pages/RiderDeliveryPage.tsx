@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { DeliveryNavigation } from '../components/DeliveryNavigation';
 import { CustomerContactActions } from '../components/CustomerContactActions';
 
@@ -6,7 +7,6 @@ const previewDelivery = {
   customerName: 'Juan Dela Cruz',
   mobileNumber: '0917 123 4567',
   address: 'Blk 12 Lot 8, Dalandanan, Valenzuela City',
-  restaurantPickupPoint: 'DATIHAN.PH Restaurant, Valenzuela City',
   total: 350,
   items: [
     { quantity: 2, name: 'Chicken Meal', total: 240 },
@@ -15,15 +15,21 @@ const previewDelivery = {
   ],
 };
 
-const deliverySteps = [
-  { label: 'Assigned to you', detail: 'Dispatcher sent this delivery to you.', done: true },
-  { label: 'Start delivery', detail: 'Begin your delivery route.', done: false },
-  { label: 'Picked up', detail: 'Confirm that the order is with you.', done: false },
-  { label: 'Out for delivery', detail: 'You are heading to the customer.', done: false },
-  { label: 'Delivered', detail: 'Complete the delivery.', done: false },
+const deliveryStatuses = [
+  { label: 'Assigned', detail: 'Dispatcher assigned this delivery to you.' },
+  { label: 'Out for delivery', detail: 'You are heading to the customer.' },
+  { label: 'Delivered', detail: 'The order was delivered to the customer.' },
 ];
 
 export function RiderDeliveryPage() {
+  const [statusIndex, setStatusIndex] = useState(0);
+  const currentStatus = deliveryStatuses[statusIndex];
+  const isDelivered = statusIndex === deliveryStatuses.length - 1;
+
+  function advanceStatus() {
+    if (!isDelivered) setStatusIndex((current) => current + 1);
+  }
+
   return (
     <section className="rider-delivery-page">
       <div className="rider-delivery-preview-banner">
@@ -37,7 +43,7 @@ export function RiderDeliveryPage() {
           <h1>{previewDelivery.orderNumber}</h1>
           <p>Deliver this order to the customer.</p>
         </div>
-        <span className="rider-delivery-status">Assigned</span>
+        <span className="rider-delivery-status">{currentStatus.label}</span>
       </header>
 
       <div className="rider-delivery-layout">
@@ -71,8 +77,6 @@ export function RiderDeliveryPage() {
             <p className="rider-delivery-helper">Tap the address to open Google Maps or Waze.</p>
           </section>
 
-
-
           <section className="rider-delivery-card">
             <div className="rider-delivery-card-heading">
               <div>
@@ -97,23 +101,28 @@ export function RiderDeliveryPage() {
 
         <aside className="rider-delivery-sidebar">
           <section className="rider-delivery-card rider-delivery-progress-card">
-            <p className="rider-delivery-label">Delivery progress</p>
-            <h2>Follow these steps</h2>
+            <p className="rider-delivery-label">Delivery status</p>
+            <h2>{currentStatus.label}</h2>
             <div className="rider-delivery-steps">
-              {deliverySteps.map((step, index) => (
-                <div className="rider-delivery-step" key={step.label}>
-                  <span className={`rider-delivery-step-marker ${step.done ? 'is-done' : ''}`}>
-                    {step.done ? '✓' : index + 1}
+              {deliveryStatuses.map((status, index) => (
+                <div className="rider-delivery-step" key={status.label}>
+                  <span className={`rider-delivery-step-marker ${index <= statusIndex ? 'is-done' : ''}`}>
+                    {index <= statusIndex ? '✓' : index + 1}
                   </span>
                   <div>
-                    <strong>{step.label}</strong>
-                    <p>{step.detail}</p>
+                    <strong>{status.label}</strong>
+                    <p>{status.detail}</p>
                   </div>
                 </div>
               ))}
             </div>
-            <button className="button button-primary rider-delivery-primary-action" type="button">
-              Start Delivery
+            <button
+              className="button button-primary rider-delivery-primary-action"
+              type="button"
+              onClick={advanceStatus}
+              disabled={isDelivered}
+            >
+              {statusIndex === 0 ? 'Start Delivery' : isDelivered ? 'Delivered' : 'Mark Delivered'}
             </button>
           </section>
 
