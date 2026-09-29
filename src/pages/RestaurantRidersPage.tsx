@@ -84,38 +84,44 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
       return;
     }
 
-    const formElement = event.currentTarget;
     setSaving(true);
     setError('');
 
-    const form = new FormData(formElement);
+    const form = new FormData(event.currentTarget);
     const name = String(form.get('name') || '').trim();
     const mobileNumber = String(form.get('mobileNumber') || '').trim();
     const email = String(form.get('email') || '').trim();
     const scopes = parseScopes(String(form.get('scope') || ''));
 
     try {
-      const { data: rider, error: riderError } = await supabase
-        .from('restaurant_riders')
-        .insert({
-          restaurant_id: restaurantId,
+      const { data, error: functionError } = await supabase.functions.invoke('create-rider', {
+        body: {
+          restaurantId,
           name,
-          mobile_number: mobileNumber,
-          email: email || null,
-        })
-        .select('id,name,mobile_number,email')
-        .single();
+          mobileNumber,
+          email,
+          scopes,
+        },
+      });
 
-      if (riderError) throw riderError;
-
-      if (scopes.length) {
-        const { error: scopeError } = await supabase
-          .from('rider_delivery_scopes')
-          .insert(scopes.map((scope_name) => ({ rider_id: rider.id, scope_name })));
-        if (scopeError) throw scopeError;
+      if (functionError) {
+        let message = functionError.message || 'Unable to create rider account.';
+        if (functionError.context instanceof Response) {
+          try {
+            const payload = await functionError.context.clone().json();
+            if (payload?.error) message = payload.error;
+          } catch {
+            // Keep the function error message when the response is not JSON.
+          }
+        }
+        throw new Error(message);
       }
 
-      formElement.reset();
+      if (!data?.rider?.auth_user_id) {
+        throw new Error('Rider was created, but the Supabase Auth account was not linked.');
+      }
+
+      event.currentTarget.reset();
       setShowForm(false);
       await loadRiders();
     } catch (saveError) {
@@ -225,7 +231,7 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
               <p className="eyebrow">New rider</p>
               <h2>Add rider</h2>
             </div>
-            <p>The restaurant owner creates the rider record and assigns the delivery scope.</p>
+            <p>The restaurant owner creates the rider record and sends the rider an Auth invitation.</p>
           </div>
 
           <div className="restaurant-rider-form-grid">
@@ -239,7 +245,7 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
             </label>
             <label>
               Login email
-              <input name="email" type="email" placeholder="rider@example.com" />
+              <input name="email" type="email" placeholder="rider@example.com" required />
             </label>
             <label>
               Delivery scope
@@ -247,11 +253,11 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
             </label>
           </div>
 
-          <p className="restaurant-rider-form-help">Separate multiple delivery areas with commas. Rider login will be connected to Supabase Auth separately.</p>
+          <p className="restaurant-rider-form-help">A Supabase Auth account is created automatically and an invitation email is sent to the rider so they can set their password.</p>
 
           <div className="restaurant-rider-form-actions">
             <button className="button button-secondary" type="button" onClick={() => setShowForm(false)} disabled={saving}>Cancel</button>
-            <button className="button button-primary" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Add Rider'}</button>
+            <button className="button button-primary" type="submit" disabled={saving}>{saving ? 'Creating…' : 'Add Rider'}</button>
           </div>
         </form>
       ) : null}
