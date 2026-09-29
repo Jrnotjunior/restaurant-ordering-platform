@@ -6,7 +6,6 @@ import { RestaurantLayout } from './layouts/RestaurantLayout';
 import { MenuPage } from './pages/MenuPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { OrderTrackingPage } from './pages/OrderTrackingPage';
-import { RestaurantDashboardPage } from './pages/RestaurantDashboardPage';
 import { RestaurantOrdersPage } from './pages/RestaurantOrdersPage';
 import { RestaurantMenuPage } from './pages/RestaurantMenuPage';
 import { RestaurantShippingFeePage } from './pages/RestaurantShippingFeePage';
@@ -34,7 +33,6 @@ function withBasePath(path: string) {
   if (path === '/menu') return `${base}/#menu`;
   if (path === '/cart') return `${base}/#cart`;
   if (path === '/checkout') return `${base}/#checkout`;
-  if (path === '/restaurant/dashboard') return `${base}/#restaurant/dashboard`;
   if (path === '/restaurant/orders') return `${base}/#restaurant/orders`;
   if (path === '/restaurant/menu') return `${base}/#restaurant/menu`;
   if (path === '/restaurant/shipping-fee') return `${base}/#restaurant/shipping-fee`;
@@ -111,7 +109,6 @@ function AppContent() {
   const isMenuPage = route === '#menu' || window.location.pathname.endsWith('/menu') || window.location.pathname.endsWith('/menu/');
   const isCartPage = route === '#cart';
   const isCheckoutPage = route === '#checkout';
-  const isRestaurantDashboardPage = route === '#restaurant/dashboard';
   const isRestaurantOrdersPage = route === '#restaurant/orders';
   const isRestaurantMenuPage = route === '#restaurant/menu';
   const isRestaurantShippingFeePage = route === '#restaurant/shipping-fee';
@@ -119,7 +116,7 @@ function AppContent() {
   const isRestaurantRidersPage = route === '#restaurant/riders';
   const isRestaurantDeliveryDispatchPage = route === '#restaurant/delivery-dispatch';
   const isRiderDeliveryPreviewPage = route === '#rider/delivery-preview';
-  const isRestaurantOperationsPage = isRestaurantDashboardPage || isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantShippingFeePage || isRestaurantSalesPage || isRestaurantRidersPage || isRestaurantDeliveryDispatchPage;
+  const isRestaurantOperationsPage = isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantShippingFeePage || isRestaurantSalesPage || isRestaurantRidersPage || isRestaurantDeliveryDispatchPage;
   const trackingMatch = route.match(/^#order\/(.+)$/);
 
   const publicContent = isMenuPage || (!isCartPage && !isCheckoutPage && !trackingMatch) ? <MenuPage onAddToCart={addToCart} cartCount={cartCount} /> : isCartPage ? <CartPage items={cartItems} onIncrease={(id) => changeQuantity(id, 1)} onDecrease={(id) => changeQuantity(id, -1)} onRemove={(id) => removeFromCart(id)} /> : isCheckoutPage ? <CheckoutPage items={cartItems} /> : <OrderTrackingPage orderNumber={decodeURIComponent(trackingMatch![1])} />;
@@ -136,7 +133,7 @@ function AppContent() {
           <RestaurantProvider restaurant={ownerRestaurant}>
             <ThemeProvider restaurant={ownerRestaurant}>
               <RestaurantLayout hideChrome>
-                {isRestaurantDashboardPage ? <RestaurantDashboardPage restaurantId={ownerRestaurant.id!} /> : isRestaurantOrdersPage ? <RestaurantOrdersPage restaurantId={ownerRestaurant.id!} /> : isRestaurantMenuPage ? <RestaurantMenuPage restaurantId={ownerRestaurant.id!} /> : isRestaurantShippingFeePage ? <RestaurantShippingFeePage restaurantId={ownerRestaurant.id!} /> : isRestaurantRidersPage ? <RestaurantRidersPage /> : isRestaurantDeliveryDispatchPage ? <RestaurantDeliveryDispatchPage /> : <RestaurantSalesPage restaurantId={ownerRestaurant.id!} />}
+                {isRestaurantOrdersPage ? <RestaurantOrdersPage restaurantId={ownerRestaurant.id!} /> : isRestaurantMenuPage ? <RestaurantMenuPage restaurantId={ownerRestaurant.id!} /> : isRestaurantShippingFeePage ? <RestaurantShippingFeePage restaurantId={ownerRestaurant.id!} /> : isRestaurantRidersPage ? <RestaurantRidersPage /> : isRestaurantDeliveryDispatchPage ? <RestaurantDeliveryDispatchPage /> : <RestaurantSalesPage restaurantId={ownerRestaurant.id!} />}
               </RestaurantLayout>
             </ThemeProvider>
           </RestaurantProvider>
