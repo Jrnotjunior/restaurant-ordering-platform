@@ -115,6 +115,49 @@
   white-space: nowrap;
 }
 
+/* Delivery address: keep both fields aligned and give the section a cleaner visual rhythm. */
+.checkout-section:has(.barangay-input-wrap) {
+  position: relative;
+  overflow: visible;
+}
+
+.checkout-section:has(.barangay-input-wrap) .checkout-fields {
+  align-items: start;
+  column-gap: 1.25rem;
+  row-gap: 1rem;
+}
+
+.checkout-section:has(.barangay-input-wrap) .checkout-fields > label {
+  min-width: 0;
+}
+
+.checkout-section:has(.barangay-input-wrap) .checkout-fields input,
+.checkout-section:has(.barangay-input-wrap) .checkout-fields textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.checkout-section:has(.barangay-input-wrap) .checkout-fields input {
+  min-height: 3.25rem;
+}
+
+.checkout-section:has(.barangay-input-wrap) .checkout-fields textarea {
+  min-height: 7.5rem;
+  resize: vertical;
+}
+
+.checkout-section:has(.barangay-input-wrap) > .checkout-error,
+.checkout-section:has(.barangay-input-wrap) > .checkout-hint {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0.9rem 0 0;
+}
+
+.checkout-section:has(.barangay-input-wrap) > .checkout-error {
+  padding: 0.7rem 0.85rem;
+  border-radius: 0.65rem;
+}
+
 @media (max-width: 560px) {
   .checkout-summary {
     padding: 1rem;
@@ -175,6 +218,14 @@
 
   .barangay-suggestion small {
     white-space: normal;
+  }
+
+  .checkout-section:has(.barangay-input-wrap) .checkout-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .checkout-section:has(.barangay-input-wrap) .checkout-fields textarea {
+    min-height: 6.5rem;
   }
 }
 
