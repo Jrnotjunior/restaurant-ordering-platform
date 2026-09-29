@@ -139,7 +139,7 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
       await updateOrderStatus(order.orderId, status);
       const updated = { ...order, status };
       setOrders((current) => current.map((item) => (item.orderId === order.orderId ? updated : item)));
-      setSelectedOrder(updated);
+      closeOrderList();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to update order.');
     } finally {
@@ -160,7 +160,7 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
       await updateOrderStatus(order.orderId, 'confirmed');
       const updated = { ...order, status: 'confirmed' as RestaurantOrderStatus };
       setOrders((current) => current.map((item) => (item.orderId === order.orderId ? updated : item)));
-      setSelectedOrder(updated);
+      closeOrderList();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to send order to the kitchen.');
     } finally {
