@@ -1,14 +1,11 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { supabase, supabaseGet } from '../services/supabaseClient';
-
-type RiderStatus = 'available' | 'delivering' | 'offline';
 
 type RiderAccount = {
   id: string;
   name: string;
   mobileNumber: string;
   email: string;
-  status: RiderStatus;
   scopes: string[];
 };
 
@@ -17,19 +14,12 @@ type RiderRow = {
   name: string;
   mobile_number: string;
   email: string | null;
-  status: RiderStatus;
 };
 
 type ScopeRow = {
   rider_id: string;
   scope_name: string;
 };
-
-function displayStatus(status: RiderStatus) {
-  if (status === 'available') return 'Available';
-  if (status === 'delivering') return 'Delivering';
-  return 'Offline';
-}
 
 export function RestaurantRidersPage({ restaurantId }: { restaurantId: string }) {
   const [riders, setRiders] = useState<RiderAccount[]>([]);
@@ -40,11 +30,6 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
   const [error, setError] = useState('');
   const [riderToDelete, setRiderToDelete] = useState<RiderAccount | null>(null);
 
-  const availableCount = useMemo(
-    () => riders.filter((rider) => rider.status === 'available').length,
-    [riders],
-  );
-
   async function loadRiders() {
     setLoading(true);
     setError('');
@@ -52,7 +37,7 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
     try {
       const [riderRows, scopeRows] = await Promise.all([
         supabaseGet<RiderRow>('restaurant_riders', {
-          select: 'id,name,mobile_number,email,status',
+          select: 'id,name,mobile_number,email',
           restaurant_id: `eq.${restaurantId}`,
           order: 'created_at.asc',
         }),
@@ -74,7 +59,6 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
         name: rider.name,
         mobileNumber: rider.mobile_number,
         email: rider.email ?? '',
-        status: rider.status,
         scopes: scopesByRider.get(rider.id) ?? [],
       })));
     } catch (loadError) {
@@ -116,7 +100,7 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
           email: email || null,
           status: 'available',
         })
-        .select('id,name,mobile_number,email,status')
+        .select('id,name,mobile_number,email')
         .single();
 
       if (riderError) throw riderError;
@@ -169,21 +153,13 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
           <p className="eyebrow">Delivery team</p>
           <h1>Riders</h1>
           <p>Manage the in-house riders who deliver this restaurant's orders.</p>
+          <p className="restaurant-riders-count">
+            {riders.length} {riders.length === 1 ? 'rider' : 'riders'}
+          </p>
         </div>
         <button className="button button-primary" type="button" onClick={() => setShowForm((current) => !current)}>
           {showForm ? 'Close' : 'Add Rider'}
         </button>
-      </div>
-
-      <div className="restaurant-riders-summary" aria-label="Rider summary">
-        <div>
-          <strong>{availableCount}</strong>
-          <span>Available now</span>
-        </div>
-        <div>
-          <strong>{riders.length}</strong>
-          <span>Total riders</span>
-        </div>
       </div>
 
       {error ? <div className="restaurant-riders-error" role="alert">{error}</div> : null}
@@ -233,9 +209,6 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
             <div className="restaurant-rider-details">
               <div className="restaurant-rider-name-row">
                 <h2>{rider.name}</h2>
-                <span className={`restaurant-rider-status restaurant-rider-status-${rider.status}`}>
-                  {displayStatus(rider.status)}
-                </span>
               </div>
               <p>{rider.mobileNumber}</p>
               {rider.email ? <p>{rider.email}</p> : null}
