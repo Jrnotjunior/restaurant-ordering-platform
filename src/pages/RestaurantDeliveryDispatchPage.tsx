@@ -1,36 +1,174 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { supabase } from '../services/supabaseClient';
 
-type ReadyOrder = { id: string; orderNumber: string; customerName: string; address: string; total: number; readyAt: string };
+type ReadyOrder = {
+  id: string;
+  orderNumber: string;
+  customerName: string;
+  address: string;
+  total: number;
+  readyAt: string;
+};
+
 type Rider = {
   id: string;
   name: string;
+  mobileNumber: string;
   status: 'available' | 'delivering' | 'returning' | 'offline';
   activeDeliveries: number;
   deliveredToday: number;
   scope: string[];
 };
 
-const previewOrders: ReadyOrder[] = [
-  { id: 'order-1001', orderNumber: '#1001', customerName: 'Juan Dela Cruz', address: 'Dalandanan, Valenzuela City', total: 350, readyAt: '10:12 AM' },
-  { id: 'order-1002', orderNumber: '#1002', customerName: 'Maria Santos', address: 'Malinta, Valenzuela City', total: 420, readyAt: '10:18 AM' },
-  { id: 'order-1003', orderNumber: '#1003', customerName: 'Carlo Reyes', address: 'Arkong Bato, Valenzuela City', total: 285, readyAt: '10:21 AM' },
-  { id: 'order-1004', orderNumber: '#1004', customerName: 'Ana Garcia', address: 'Gen. T. de Leon, Valenzuela City', total: 510, readyAt: '10:24 AM' },
-];
+type OrderRow = {
+  id: string;
+  order_number: string;
+  customer_name: string;
+  delivery_address: string | null;
+  delivery_barangay: string | null;
+  total: number | string;
+  created_at: string;
+};
 
-const previewRiders: Rider[] = [
-  { id: 'rider-john', name: 'John Santos', status: 'available', activeDeliveries: 0, deliveredToday: 8, scope: ['Dalandanan', 'Malinta', 'Arkong Bato'] },
-  { id: 'rider-mark', name: 'Mark Reyes', status: 'delivering', activeDeliveries: 1, deliveredToday: 5, scope: ['Gen. T. de Leon', 'Karuhatan', 'Paso de Blas'] },
-];
+type RiderRow = {
+  id: string;
+  name: string;
+  mobile_number: string;
+  status: Rider['status'];
+};
 
-export function RestaurantDeliveryDispatchPage() {
-  const [assignedOrderIds, setAssignedOrderIds] = useState<string[]>([]);
+type ScopeRow = {
+  rider_id: string;
+  scope_name: string;
+};
+
+type AssignmentRow = {
+  rider_id: string;
+  status: 'assigned' | 'picked_up' | 'delivering' | 'delivered' | 'cancelled';
+  assigned_at: string;
+  delivered_at: string | null;
+};
+
+type Props = { restaurantId: string };
+
+function formatReadyTime(value: string) {
+  return new Intl.DateTimeFormat('en-PH', {
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(value));
+}
+
+function todayStartIso() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+}
+
+export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
+  const [orders, setOrders] = useState<ReadyOrder[]>([]);
+  const [riders, setRiders] = useState<Rider[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<ReadyOrder | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [assigning, setAssigning] = useState(false);
   const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
 
-  const availableOrders = useMemo(
-    () => previewOrders.filter((order) => !assignedOrderIds.includes(order.id)),
-    [assignedOrderIds],
-  );
+  async function loadDispatchData() {
+    if (!supabase) {
+      setError('Supabase is not configured.');
+      setLoading(false);
+      return;
+    }
+
+    setError('');
+
+    try {
+      const [orderResult, riderResult, scopeResult, assignmentResult] = await Promise.all([
+        supabase
+          .from('orders')
+          .select('id,order_number,customer_name,delivery_address,delivery_barangay,total,created_at')
+          .eq('restaurant_id', restaurantId)
+          .eq('order_type', 'delivery')
+          .eq('status', 'ready')
+          .eq('delivery_status', 'unassigned')
+          .order('created_at', { ascending: true }),
+        supabase
+          .from('restaurant_riders')
+          .select('id,name,mobile_number,status')
+          .eq('restaurant_id', restaurantId)
+          .order('name', { ascending: true }),
+        supabase
+          .from('rider_delivery_scopes')
+          .select('rider_id,scope_name')
+          .order('scope_name', { ascending: true }),
+        supabase
+          .from('delivery_assignments')
+          .select('rider_id,status,assigned_at,delivered_at')
+          .eq('restaurant_id', restaurantId),
+      ]);
+
+      if (orderResult.error) throw orderResult.error;
+      if (riderResult.error) throw riderResult.error;
+      if (scopeResult.error) throw scopeResult.error;
+      if (assignmentResult.error) throw assignmentResult.error;
+
+      const scopesByRider = new Map<string, string[]>();
+      for (const row of (scopeResult.data ?? []) as ScopeRow[]) {
+        const scopes = scopesByRider.get(row.rider_id) ?? [];
+        scopes.push(row.scope_name);
+        scopesByRider.set(row.rider_id, scopes);
+      }
+
+      const assignments = (assignmentResult.data ?? []) as AssignmentRow[];
+      const activeStatuses = new Set(['assigned', 'picked_up', 'delivering']);
+      const startOfToday = todayStartIso();
+
+      const activeByRider = new Map<string, number>();
+      const deliveredTodayByRider = new Map<string, number>();
+
+      for (const assignment of assignments) {
+        if (activeStatuses.has(assignment.status)) {
+          activeByRider.set(assignment.rider_id, (activeByRider.get(assignment.rider_id) ?? 0) + 1);
+        }
+
+        if (assignment.status === 'delivered' && assignment.delivered_at && assignment.delivered_at >= startOfToday) {
+          deliveredTodayByRider.set(
+            assignment.rider_id,
+            (deliveredTodayByRider.get(assignment.rider_id) ?? 0) + 1,
+          );
+        }
+      }
+
+      setOrders(((orderResult.data ?? []) as OrderRow[]).map((order) => ({
+        id: order.id,
+        orderNumber: order.order_number,
+        customerName: order.customer_name,
+        address: order.delivery_address ?? order.delivery_barangay ?? 'Delivery address not provided',
+        total: Number(order.total),
+        readyAt: formatReadyTime(order.created_at),
+      })));
+
+      setRiders(((riderResult.data ?? []) as RiderRow[]).map((rider) => ({
+        id: rider.id,
+        name: rider.name,
+        mobileNumber: rider.mobile_number,
+        status: rider.status,
+        activeDeliveries: activeByRider.get(rider.id) ?? 0,
+        deliveredToday: deliveredTodayByRider.get(rider.id) ?? 0,
+        scope: scopesByRider.get(rider.id) ?? [],
+      })));
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Unable to load delivery dispatch data.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    setLoading(true);
+    void loadDispatchData();
+  }, [restaurantId]);
+
+  const availableOrders = useMemo(() => orders, [orders]);
 
   const statusLabel = (status: Rider['status']) => ({
     available: 'Available',
@@ -41,20 +179,56 @@ export function RestaurantDeliveryDispatchPage() {
 
   const orderArea = selectedOrder?.address.split(',')[0].trim() ?? '';
 
-  function assignOrder(rider: Rider) {
-    if (!selectedOrder || rider.status !== 'available') return;
-    setAssignedOrderIds((current) => [...current, selectedOrder.id]);
-    setSelectedOrder(null);
-    setMessage(selectedOrder.orderNumber + ' assigned to ' + rider.name + '.');
+  async function assignOrder(rider: Rider) {
+    if (!supabase || !selectedOrder || assigning) return;
+
+    const canAssign = rider.status === 'available' && rider.activeDeliveries === 0 && rider.scope.includes(orderArea);
+    if (!canAssign) return;
+
+    setAssigning(true);
+    setError('');
+    setMessage('');
+
+    try {
+      const { error: assignmentError } = await supabase
+        .from('delivery_assignments')
+        .insert({
+          order_id: selectedOrder.id,
+          rider_id: rider.id,
+          restaurant_id: restaurantId,
+          status: 'assigned',
+        });
+
+      if (assignmentError) throw assignmentError;
+
+      const { error: orderError } = await supabase
+        .from('orders')
+        .update({
+          rider_id: rider.id,
+          delivery_status: 'assigned',
+          rider_assigned_at: new Date().toISOString(),
+        })
+        .eq('id', selectedOrder.id)
+        .eq('restaurant_id', restaurantId)
+        .eq('delivery_status', 'unassigned');
+
+      if (orderError) {
+        await supabase.from('delivery_assignments').delete().eq('order_id', selectedOrder.id).eq('rider_id', rider.id).eq('status', 'assigned');
+        throw orderError;
+      }
+
+      setSelectedOrder(null);
+      setMessage(`${selectedOrder.orderNumber} assigned to ${rider.name}.`);
+      await loadDispatchData();
+    } catch (assignError) {
+      setError(assignError instanceof Error ? assignError.message : 'Unable to assign this delivery.');
+    } finally {
+      setAssigning(false);
+    }
   }
 
   return (
     <section className="restaurant-dispatch-page">
-      <div className="restaurant-dispatch-preview-banner">
-        <strong>UI PREVIEW</strong>
-        <span>No Supabase data is changed. This screen prepares the dispatcher workflow before live assignment is connected.</span>
-      </div>
-
       <header className="restaurant-dispatch-header">
         <div>
           <p className="eyebrow">Restaurant operations</p>
@@ -63,7 +237,8 @@ export function RestaurantDeliveryDispatchPage() {
         </div>
       </header>
 
-      {message && <div className="restaurant-dispatch-message" role="status">{message}</div>}
+      {message ? <div className="restaurant-dispatch-message" role="status">{message}</div> : null}
+      {error ? <div className="restaurant-dispatch-message" role="alert">{error}</div> : null}
 
       <main className="restaurant-dispatch-workflow">
         <section className="restaurant-dispatch-card restaurant-dispatch-ready-card">
@@ -76,7 +251,9 @@ export function RestaurantDeliveryDispatchPage() {
           </div>
 
           <div className="restaurant-dispatch-order-list">
-            {availableOrders.length === 0 ? (
+            {loading ? (
+              <div className="restaurant-dispatch-empty">Loading ready orders…</div>
+            ) : availableOrders.length === 0 ? (
               <div className="restaurant-dispatch-empty">There are no ready orders waiting for rider assignment.</div>
             ) : availableOrders.map((order) => (
               <article className="restaurant-dispatch-order" key={order.id}>
@@ -92,7 +269,7 @@ export function RestaurantDeliveryDispatchPage() {
                 <button
                   className="restaurant-dispatch-assign-button"
                   type="button"
-                  onClick={() => { setSelectedOrder(order); setMessage(''); }}
+                  onClick={() => { setSelectedOrder(order); setMessage(''); setError(''); }}
                 >
                   Assign to Rider
                 </button>
@@ -102,10 +279,14 @@ export function RestaurantDeliveryDispatchPage() {
         </section>
       </main>
 
-      {selectedOrder && (
-        <div className="restaurant-dispatch-modal-backdrop" role="presentation" onMouseDown={(event) => {
-          if (event.target === event.currentTarget) setSelectedOrder(null);
-        }}>
+      {selectedOrder ? (
+        <div
+          className="restaurant-dispatch-modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !assigning) setSelectedOrder(null);
+          }}
+        >
           <section className="restaurant-dispatch-modal" role="dialog" aria-modal="true" aria-labelledby="dispatch-modal-title">
             <div className="restaurant-dispatch-modal-header">
               <div>
@@ -113,7 +294,7 @@ export function RestaurantDeliveryDispatchPage() {
                 <h2 id="dispatch-modal-title">{selectedOrder.orderNumber} · {selectedOrder.customerName}</h2>
                 <p>{selectedOrder.address}</p>
               </div>
-              <button type="button" className="restaurant-dispatch-modal-close" onClick={() => setSelectedOrder(null)} aria-label="Close">×</button>
+              <button type="button" className="restaurant-dispatch-modal-close" onClick={() => setSelectedOrder(null)} aria-label="Close" disabled={assigning}>×</button>
             </div>
 
             <div className="restaurant-dispatch-modal-order">
@@ -122,9 +303,10 @@ export function RestaurantDeliveryDispatchPage() {
             </div>
 
             <div className="restaurant-dispatch-modal-riders">
-              {previewRiders.map((rider) => {
+              {riders.filter((rider) => rider.status !== 'offline').map((rider) => {
                 const inScope = rider.scope.includes(orderArea);
-                const canAssign = rider.status === 'available' && inScope;
+                const canAssign = rider.status === 'available' && rider.activeDeliveries === 0 && inScope;
+
                 return (
                   <article className="restaurant-dispatch-modal-rider" key={rider.id}>
                     <div>
@@ -137,7 +319,7 @@ export function RestaurantDeliveryDispatchPage() {
                         <span>{rider.deliveredToday} delivered today</span>
                       </div>
                       <div className="restaurant-dispatch-rider-scope">
-                        <strong>Delivery scope:</strong> {rider.scope.join(' · ')}
+                        <strong>Delivery scope:</strong> {rider.scope.length ? rider.scope.join(' · ') : 'Not assigned'}
                       </div>
                       <div className={'restaurant-dispatch-match ' + (inScope ? 'is-match' : '')}>
                         {inScope ? '✓ Destination is within this rider’s scope' : 'Destination is outside this rider’s scope'}
@@ -146,18 +328,22 @@ export function RestaurantDeliveryDispatchPage() {
                     <button
                       className="restaurant-dispatch-rider-select"
                       type="button"
-                      disabled={!canAssign}
-                      onClick={() => assignOrder(rider)}
+                      disabled={!canAssign || assigning}
+                      onClick={() => void assignOrder(rider)}
                     >
-                      {rider.status === 'available' && inScope ? 'Assign' : rider.status === 'delivering' ? 'Currently delivering' : rider.status === 'returning' ? 'Returning' : 'Unavailable'}
+                      {assigning ? 'Assigning…' : canAssign ? 'Assign' : rider.status === 'delivering' ? 'Currently delivering' : rider.status === 'returning' ? 'Returning' : inScope ? 'Unavailable' : 'Outside scope'}
                     </button>
                   </article>
                 );
               })}
+
+              {!riders.some((rider) => rider.status !== 'offline') ? (
+                <div className="restaurant-dispatch-empty">No riders are currently available to view.</div>
+              ) : null}
             </div>
           </section>
         </div>
-      )}
+      ) : null}
     </section>
   );
 }
