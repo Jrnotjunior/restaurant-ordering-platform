@@ -79,7 +79,23 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
       </div>
 
       {categories.length > 0 ? (
-        <div className="menu-category-select" ref={categorySelectRef}>
+        <div className="menu-category-select menu-category-desktop">
+          <label htmlFor="menu-category-desktop">Category</label>
+          <select
+            id="menu-category-desktop"
+            value={selectedCategory}
+            onChange={(event) => setSelectedCategory(event.target.value)}
+          >
+            <option value="all">All products</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="menu-category-select menu-category-mobile" ref={categorySelectRef}>
           <span className="menu-category-label">Category</span>
           <div className="menu-category-dropdown">
             <button
