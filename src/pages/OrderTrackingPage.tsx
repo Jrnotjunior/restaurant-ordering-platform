@@ -92,8 +92,18 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
   return (
     <section className="order-tracking-page">
       <div className="order-tracking-card">
-        <p className="eyebrow">Order tracking</p>
-        <h1>Order #{order.orderNumber}</h1>
+        <div className="order-tracking-header">
+          <div>
+            <p className="eyebrow">Order tracking</p>
+            <h1>Order #{order.orderNumber}</h1>
+            <p className="order-tracking-subtitle">Track your order from confirmation to completion.</p>
+          </div>
+          <span className={`order-tracking-live-status is-${realtimeStatus}`}>
+            <span className="order-tracking-live-dot" />
+            {realtimeStatus === 'live' ? 'Live' : realtimeStatus === 'connecting' ? 'Connecting…' : 'Reconnecting…'}
+          </span>
+        </div>
+
         <div className="order-tracking-total"><span>Total</span><strong>₱{Number(order.total).toFixed(2)}</strong></div>
 
         {isCancelled ? (
@@ -136,7 +146,6 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
         <div className="order-tracking-meta">
           <span>{order.orderType === 'dine_in' ? 'Dine-in' : order.orderType === 'pickup' ? 'Pickup / Take-out' : 'Delivery'}</span>
           <span>{order.paymentMethod === 'gcash' ? 'GCash' : 'Cash'}</span>
-          <span>{realtimeStatus === 'live' ? '● Live' : realtimeStatus === 'connecting' ? '● Connecting…' : '● Reconnecting…'}</span>
         </div>
       </div>
     </section>
