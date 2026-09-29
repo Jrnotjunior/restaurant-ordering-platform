@@ -7,9 +7,10 @@ import { useRestaurant } from '../components/RestaurantProvider';
 type RestaurantLayoutProps = {
   children: ReactNode;
   hideChrome?: boolean;
+  cartCount?: number;
 };
 
-export function RestaurantLayout({ children, hideChrome = false }: RestaurantLayoutProps) {
+export function RestaurantLayout({ children, hideChrome = false, cartCount = 0 }: RestaurantLayoutProps) {
   useRestaurant();
 
   if (hideChrome) {
@@ -23,7 +24,7 @@ export function RestaurantLayout({ children, hideChrome = false }: RestaurantLay
 
   return (
     <div className="app-shell">
-      <Header />
+      <Header cartCount={cartCount} />
       <main>{children}</main>
       <Footer />
     </div>
