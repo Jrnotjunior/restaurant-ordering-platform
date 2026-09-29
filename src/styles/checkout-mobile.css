@@ -115,13 +115,15 @@
   white-space: nowrap;
 }
 
-/* Delivery address: keep both fields aligned and give the section a cleaner visual rhythm. */
+/* Delivery address: explicitly keep Barangay on the left and Complete address on the right. */
 .checkout-section:has(.barangay-input-wrap) {
   position: relative;
   overflow: visible;
 }
 
 .checkout-section:has(.barangay-input-wrap) .checkout-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: start;
   column-gap: 1.25rem;
   row-gap: 1rem;
