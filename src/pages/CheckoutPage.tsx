@@ -34,6 +34,8 @@ const paymentMethods: Array<{ value: PaymentMethod; label: string; description: 
   { value: 'gcash', label: 'GCash', description: 'Create the order first. Payment gateway instructions will be connected next.' },
 ];
 
+const outsideDeliveryAreaMessage = 'The address is not within the store delivery area. If you want to proceed, please book your own delivery courier like Lalamove or Grab Express.';
+
 function normalizeBarangay(value: string): string {
   return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
 }
@@ -155,7 +157,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       }
 
       if (isDelivery && (!selectedDeliveryZone || !selectedDeliveryZone.isSupported)) {
-        throw new Error('Please enter a barangay within the restaurant\'s delivery coverage.');
+        throw new Error(outsideDeliveryAreaMessage);
       }
 
       const restaurantId = items[0].product.restaurantId;
@@ -278,8 +280,8 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
               </div>
               {loadingDeliveryZones ? <p className="checkout-hint">Loading delivery areas…</p> : null}
               {!loadingDeliveryZones && !deliveryZonesError && deliveryZones.length === 0 ? <p className="checkout-error" role="alert">This restaurant has not configured any delivery areas yet.</p> : null}
-              {!loadingDeliveryZones && deliveryBarangay.trim() && !selectedDeliveryZone ? <p className="checkout-error" role="alert">This barangay is not within the restaurant's configured delivery areas.</p> : null}
-              {selectedDeliveryZone && !selectedDeliveryZone.isSupported ? <p className="checkout-error" role="alert">{selectedDeliveryZone.outOfScopeMessage}</p> : null}
+              {!loadingDeliveryZones && deliveryBarangay.trim() && !selectedDeliveryZone ? <p className="checkout-error" role="alert">{outsideDeliveryAreaMessage}</p> : null}
+              {selectedDeliveryZone && !selectedDeliveryZone.isSupported ? <p className="checkout-error" role="alert">{outsideDeliveryAreaMessage}</p> : null}
               {selectedDeliveryZone?.isSupported ? <p className="checkout-hint">Delivery fee: ₱{deliveryFee.toFixed(2)}</p> : null}
             </fieldset>
           ) : null}
