@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { RestaurantProduct } from '../types/menu';
 import { createOrder } from '../services/orderRepository';
 import { getRestaurantDeliveryZones, type RestaurantDeliveryZone } from '../services/restaurantSettingsRepository';
+import { useRestaurant } from '../components/RestaurantProvider';
 import { OrderConfirmationPage } from './OrderConfirmationPage';
 import '../styles/checkout-mobile.css';
 
@@ -35,7 +36,8 @@ const paymentMethods: Array<{ value: PaymentMethod; label: string; description: 
 ];
 
 const outsideDeliveryAreaMessage = 'The address is not within the store delivery area. If you want to proceed, please book your own delivery courier like Lalamove or Grab Express.';
-const outsideCityMessage = 'We currently deliver only within selected barangays in Valenzuela City. We prepare your food after your order is confirmed so it can arrive hot and fresh. Delivering outside our service area may affect the food’s freshness and quality.';
+const outsideCityMessage = 'We currently deliver only within selected barangays in Valenzuela City. If you are outside Valenzuela, you can proceed using your own courier.';
+const thirdPartyCourierNote = 'THIRD-PARTY COURIER: Customer is responsible for booking and paying the delivery courier (such as Lalamove or Grab Express). The restaurant will prepare the food for courier pickup at the listed restaurant pickup point.';
 
 function normalizeBarangay(value: string): string {
   return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
@@ -51,6 +53,7 @@ function isValenzuelaCity(value: string): boolean {
 }
 
 export function CheckoutPage({ items }: CheckoutPageProps) {
+  const restaurant = useRestaurant();
   const [orderType, setOrderType] = useState<OrderType>('delivery');
   const [customerName, setCustomerName] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
@@ -64,11 +67,15 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const [notes, setNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('');
   const [showPayment, setShowPayment] = useState(false);
+  const [showDeliveryTerms, setShowDeliveryTerms] = useState(false);
+  const [thirdPartyCourierDelivery, setThirdPartyCourierDelivery] = useState(false);
+  const [promptedOutsideCity, setPromptedOutsideCity] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [confirmedOrder, setConfirmedOrder] = useState<ConfirmedOrder | null>(null);
 
   const restaurantId = items[0]?.product.restaurantId ?? '';
+  const restaurantPickupPoint = restaurant.locationText?.trim() ?? '';
 
   useEffect(() => {
     if (!restaurantId || orderType !== 'delivery') {
@@ -77,6 +84,9 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       setDeliveryBarangay('');
       setDeliveryZonesError('');
       setLoadingDeliveryZones(false);
+      setThirdPartyCourierDelivery(false);
+      setShowDeliveryTerms(false);
+      setPromptedOutsideCity('');
       return;
     }
 
@@ -112,16 +122,16 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const cityIsSupported = isValenzuelaCity(deliveryCity);
 
   const selectedDeliveryZone = useMemo(() => {
-    if (!cityIsSupported) return null;
+    if (!cityIsSupported || thirdPartyCourierDelivery) return null;
 
     const normalizedInput = normalizeBarangay(deliveryBarangay);
     if (!normalizedInput) return null;
 
     return deliveryZones.find((zone) => normalizeBarangay(zone.barangay) === normalizedInput) ?? null;
-  }, [cityIsSupported, deliveryZones, deliveryBarangay]);
+  }, [cityIsSupported, deliveryZones, deliveryBarangay, thirdPartyCourierDelivery]);
 
   const barangaySuggestions = useMemo(() => {
-    if (!cityIsSupported) return [];
+    if (!cityIsSupported || thirdPartyCourierDelivery) return [];
 
     const normalizedInput = normalizeBarangay(deliveryBarangay);
     if (!normalizedInput || selectedDeliveryZone) return [];
@@ -129,10 +139,12 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     return deliveryZones
       .filter((zone) => normalizeBarangay(zone.barangay).startsWith(normalizedInput))
       .slice(0, 6);
-  }, [cityIsSupported, deliveryZones, deliveryBarangay, selectedDeliveryZone]);
+  }, [cityIsSupported, deliveryZones, deliveryBarangay, selectedDeliveryZone, thirdPartyCourierDelivery]);
 
-  const deliveryFee = orderType === 'delivery' ? Number(selectedDeliveryZone?.shippingFee ?? 0) : 0;
-  const deliveryAreaIsSupported = orderType !== 'delivery' || Boolean(selectedDeliveryZone?.isSupported);
+  const deliveryFee = orderType === 'delivery' && !thirdPartyCourierDelivery
+    ? Number(selectedDeliveryZone?.shippingFee ?? 0)
+    : 0;
+  const deliveryAreaIsSupported = orderType !== 'delivery' || thirdPartyCourierDelivery || Boolean(selectedDeliveryZone?.isSupported);
   const barangayMatchesConfiguredZone = Boolean(selectedDeliveryZone);
 
   if (confirmedOrder) {
@@ -152,14 +164,53 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     && Boolean(customerName.trim() && mobileNumber.trim())
     && (!isDineIn || tableNumber.trim())
     && (!isDelivery || (
-      cityIsSupported
-      && address.trim()
-      && deliveryBarangay.trim()
-      && barangayMatchesConfiguredZone
-      && selectedDeliveryZone
-      && deliveryAreaIsSupported
-      && !loadingDeliveryZones
+      thirdPartyCourierDelivery
+        ? Boolean(restaurantPickupPoint)
+        : cityIsSupported
+          && address.trim()
+          && deliveryBarangay.trim()
+          && barangayMatchesConfiguredZone
+          && selectedDeliveryZone
+          && deliveryAreaIsSupported
+          && !loadingDeliveryZones
     ));
+
+  function resetDeliveryPaymentState() {
+    setShowPayment(false);
+    setPaymentMethod('');
+    setSubmitError('');
+  }
+
+  function handleCityBlur() {
+    const normalizedCity = normalizeCity(deliveryCity);
+    if (!normalizedCity || isValenzuelaCity(deliveryCity) || thirdPartyCourierDelivery) return;
+    if (normalizedCity === promptedOutsideCity) return;
+
+    setPromptedOutsideCity(normalizedCity);
+    setShowDeliveryTerms(true);
+  }
+
+  function handleCancelThirdPartyDelivery() {
+    setShowDeliveryTerms(false);
+    setThirdPartyCourierDelivery(false);
+    setDeliveryCity('');
+    setDeliveryBarangay('');
+    setAddress('');
+    resetDeliveryPaymentState();
+  }
+
+  function handleProceedWithThirdPartyCourier() {
+    setShowDeliveryTerms(false);
+    setThirdPartyCourierDelivery(true);
+    setDeliveryBarangay('');
+    setAddress('');
+    setPaymentMethod('');
+    setSubmitError('');
+    setShowPayment(true);
+    window.requestAnimationFrame(() => {
+      document.getElementById('payment-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
 
   function handleContinueToPayment() {
     if (!canContinue) return;
@@ -182,27 +233,39 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         throw new Error('Your cart contains items from different restaurants. Please clear your cart and try again.');
       }
 
-      if (isDelivery && !cityIsSupported) {
+      if (isDelivery && thirdPartyCourierDelivery && !restaurantPickupPoint) {
+        throw new Error('The restaurant pickup address is not configured yet. Please contact the restaurant.');
+      }
+
+      if (isDelivery && !thirdPartyCourierDelivery && !cityIsSupported) {
         throw new Error(outsideCityMessage);
       }
 
-      if (isDelivery && (!selectedDeliveryZone || !selectedDeliveryZone.isSupported)) {
+      if (isDelivery && !thirdPartyCourierDelivery && (!selectedDeliveryZone || !selectedDeliveryZone.isSupported)) {
         throw new Error(outsideDeliveryAreaMessage);
       }
 
       const restaurantId = items[0].product.restaurantId;
+      const finalNotes = [
+        notes.trim(),
+        isDelivery && thirdPartyCourierDelivery ? thirdPartyCourierNote : '',
+      ].filter(Boolean).join('\n\n');
+
       const createdOrder = await createOrder({
         restaurantId,
         customerName: customerName.trim(),
         mobileNumber: mobileNumber.trim(),
         orderType,
         tableNumber: tableNumber.trim(),
-        deliveryBarangay: isDelivery ? deliveryBarangay.trim() : '',
+        deliveryBarangay: isDelivery && !thirdPartyCourierDelivery ? deliveryBarangay.trim() : '',
         deliveryAddress: isDelivery
-          ? [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')
+          ? thirdPartyCourierDelivery
+            ? restaurantPickupPoint
+            : [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')
           : address.trim(),
-        notes: notes.trim(),
+        notes: finalNotes,
         paymentMethod,
+        isThirdPartyCourier: isDelivery && thirdPartyCourierDelivery,
         items: items.map((item) => ({
           productId: item.product.id,
           quantity: item.quantity,
@@ -223,6 +286,25 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
   return (
     <section className="checkout-page">
+      <style>{`
+        .third-party-courier-card{display:grid;gap:12px;padding:16px;border:1px solid #d9dee7;border-radius:14px;background:#f8fafc}
+        .third-party-courier-card strong{font-size:15px;color:#0f172a}
+        .third-party-courier-card p{margin:0;color:#475569;line-height:1.5}
+        .third-party-courier-card .pickup-label{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#64748b}
+        .third-party-courier-card .pickup-address{font-weight:700;color:#0f172a}
+        .third-party-courier-card .pickup-callout{padding:10px 12px;border-radius:10px;background:#fff;border:1px solid #e2e8f0;font-weight:700;color:#0f172a}
+        .courier-payment-note{margin:12px 0 0;padding:12px 14px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;color:#475569;line-height:1.5}
+        .delivery-terms-backdrop{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.58);backdrop-filter:blur(4px)}
+        .delivery-terms-modal{width:min(560px,100%);max-height:min(86vh,720px);overflow:auto;background:#fff;border-radius:18px;box-shadow:0 24px 70px rgba(15,23,42,.28);padding:28px;color:#0f172a}
+        .delivery-terms-modal h2{margin:0 0 8px;font-size:24px}
+        .delivery-terms-modal .terms-intro{margin:0 0 18px;color:#64748b;line-height:1.55}
+        .delivery-terms-modal .terms-box{display:grid;gap:12px;padding:16px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc}
+        .delivery-terms-modal .terms-box p{margin:0;color:#334155;line-height:1.55}
+        .delivery-terms-modal .terms-box strong{color:#0f172a}
+        .delivery-terms-modal .terms-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
+        @media(max-width:560px){.delivery-terms-backdrop{padding:12px;align-items:flex-end}.delivery-terms-modal{max-height:92vh;border-radius:18px 18px 12px 12px;padding:22px}.delivery-terms-modal .terms-actions{flex-direction:column-reverse}.delivery-terms-modal .terms-actions .button{width:100%}}
+      `}</style>
+
       <div className="menu-intro">
         <p className="eyebrow">Checkout</p>
         <h1>How would you like your order?</h1>
@@ -236,7 +318,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             <div className="order-type-grid">
               {orderTypes.map((type) => (
                 <label className={`order-type-card ${orderType === type.value ? 'is-selected' : ''}`} key={type.value}>
-                  <input type="radio" name="orderType" value={type.value} checked={orderType === type.value} onChange={() => { setOrderType(type.value); setShowPayment(false); setPaymentMethod(''); setSubmitError(''); }} />
+                  <input type="radio" name="orderType" value={type.value} checked={orderType === type.value} onChange={() => { setOrderType(type.value); resetDeliveryPaymentState(); }} />
                   <span className="order-type-content">
                     <strong>{type.label}</strong>
                     <span>{type.description}</span>
@@ -262,85 +344,94 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
           {isDelivery ? (
             <fieldset className="checkout-section">
-              <legend>Delivery address</legend>
+              <legend>{thirdPartyCourierDelivery ? 'Third-party courier delivery' : 'Delivery address'}</legend>
               {deliveryZonesError ? <p className="checkout-error" role="alert">{deliveryZonesError}</p> : null}
-              <div className="delivery-address-fields">
-                <label>
-                  <span>City</span>
-                  <input
-                    type="text"
-                    value={deliveryCity}
-                    onChange={(event) => {
-                      setDeliveryCity(event.target.value);
-                      setDeliveryBarangay('');
-                      setAddress('');
-                      setShowPayment(false);
-                      setPaymentMethod('');
-                      setSubmitError('');
-                    }}
-                    autoComplete="address-level2"
-                    placeholder="Enter your city"
-                    required
-                  />
-                </label>
 
-                {cityIsSupported ? (
+              {thirdPartyCourierDelivery ? (
+                <div className="third-party-courier-card">
+                  <div>
+                    <strong>Restaurant pickup point</strong>
+                    <p className="pickup-label">Give this to your courier.</p>
+                  </div>
+                  <p className="pickup-address">{restaurantPickupPoint || 'Restaurant pickup address is not configured.'}</p>
+                  <div className="pickup-callout">Your destination address is not entered here. Provide your own destination address directly to Lalamove, Grab Express, or your chosen courier.</div>
+                  <p>You are responsible for booking and paying the third-party courier.</p>
+                </div>
+              ) : (
+                <div className="delivery-address-fields">
                   <label>
-                    <span>Barangay</span>
-                    <div className="barangay-input-wrap">
-                      <input
-                        type="text"
-                        value={deliveryBarangay}
-                        onChange={(event) => {
-                          setDeliveryBarangay(event.target.value);
-                          setShowPayment(false);
-                          setPaymentMethod('');
-                          setSubmitError('');
-                        }}
-                        autoComplete="address-level3"
-                        placeholder="Enter your barangay"
-                        disabled={loadingDeliveryZones || deliveryZones.length === 0}
-                        required
-                      />
-                      {barangaySuggestions.length > 0 ? (
-                        <div className="barangay-suggestions" role="listbox" aria-label="Barangay suggestions">
-                          {barangaySuggestions.map((zone) => (
-                            <button
-                              className="barangay-suggestion"
-                              key={zone.id}
-                              type="button"
-                              role="option"
-                              onClick={() => {
-                                setDeliveryBarangay(zone.barangay);
-                                setShowPayment(false);
-                                setPaymentMethod('');
-                                setSubmitError('');
-                              }}
-                            >
-                              <span>{zone.barangay}</span>
-                              <small>{zone.isSupported ? `₱${zone.shippingFee.toFixed(2)} delivery fee` : 'Outside delivery area'}</small>
-                            </button>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
+                    <span>City</span>
+                    <input
+                      type="text"
+                      value={deliveryCity}
+                      onChange={(event) => {
+                        setDeliveryCity(event.target.value);
+                        setDeliveryBarangay('');
+                        setAddress('');
+                        setThirdPartyCourierDelivery(false);
+                        resetDeliveryPaymentState();
+                      }}
+                      onBlur={handleCityBlur}
+                      autoComplete="address-level2"
+                      placeholder="Enter your city"
+                      required
+                    />
                   </label>
-                ) : null}
 
-                {cityIsSupported && deliveryBarangay.trim() ? (
-                  <label>
-                    <span>Complete address</span>
-                    <textarea value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Complete delivery address" rows={4} required />
-                  </label>
-                ) : null}
-              </div>
+                  {cityIsSupported ? (
+                    <label>
+                      <span>Barangay</span>
+                      <div className="barangay-input-wrap">
+                        <input
+                          type="text"
+                          value={deliveryBarangay}
+                          onChange={(event) => {
+                            setDeliveryBarangay(event.target.value);
+                            resetDeliveryPaymentState();
+                          }}
+                          autoComplete="address-level3"
+                          placeholder="Enter your barangay"
+                          disabled={loadingDeliveryZones || deliveryZones.length === 0}
+                          required
+                        />
+                        {barangaySuggestions.length > 0 ? (
+                          <div className="barangay-suggestions" role="listbox" aria-label="Barangay suggestions">
+                            {barangaySuggestions.map((zone) => (
+                              <button
+                                className="barangay-suggestion"
+                                key={zone.id}
+                                type="button"
+                                role="option"
+                                onClick={() => {
+                                  setDeliveryBarangay(zone.barangay);
+                                  resetDeliveryPaymentState();
+                                }}
+                              >
+                                <span>{zone.barangay}</span>
+                                <small>{zone.isSupported ? `₱${zone.shippingFee.toFixed(2)} delivery fee` : 'Outside delivery area'}</small>
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                    </label>
+                  ) : null}
 
-              {deliveryCity.trim() && !cityIsSupported ? <p className="checkout-error" role="alert">{outsideCityMessage}</p> : null}
-              {loadingDeliveryZones ? <p className="checkout-hint">Loading delivery areas…</p> : null}
-              {!loadingDeliveryZones && cityIsSupported && !deliveryZonesError && deliveryZones.length === 0 ? <p className="checkout-error" role="alert">This restaurant has not configured any delivery areas yet.</p> : null}
-              {!loadingDeliveryZones && cityIsSupported && deliveryBarangay.trim() && !selectedDeliveryZone ? <p className="checkout-error" role="alert">{outsideDeliveryAreaMessage}</p> : null}
-              {selectedDeliveryZone && !selectedDeliveryZone.isSupported ? <p className="checkout-error" role="alert">{outsideDeliveryAreaMessage}</p> : null}
-              {selectedDeliveryZone?.isSupported ? <p className="checkout-hint">Delivery fee: ₱{deliveryFee.toFixed(2)}</p> : null}
+                  {cityIsSupported && deliveryBarangay.trim() ? (
+                    <label>
+                      <span>Complete address</span>
+                      <textarea value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Complete delivery address" rows={4} required />
+                    </label>
+                  ) : null}
+                </div>
+              )}
+
+              {!thirdPartyCourierDelivery && deliveryCity.trim() && !cityIsSupported ? <p className="checkout-error" role="alert">{outsideCityMessage}</p> : null}
+              {!thirdPartyCourierDelivery && loadingDeliveryZones ? <p className="checkout-hint">Loading delivery areas…</p> : null}
+              {!thirdPartyCourierDelivery && !loadingDeliveryZones && cityIsSupported && !deliveryZonesError && deliveryZones.length === 0 ? <p className="checkout-error" role="alert">This restaurant has not configured any delivery areas yet.</p> : null}
+              {!thirdPartyCourierDelivery && !loadingDeliveryZones && cityIsSupported && deliveryBarangay.trim() && !selectedDeliveryZone ? <p className="checkout-error" role="alert">{outsideDeliveryAreaMessage}</p> : null}
+              {!thirdPartyCourierDelivery && selectedDeliveryZone && !selectedDeliveryZone.isSupported ? <p className="checkout-error" role="alert">{outsideDeliveryAreaMessage}</p> : null}
+              {!thirdPartyCourierDelivery && selectedDeliveryZone?.isSupported ? <p className="checkout-hint">Delivery fee: ₱{deliveryFee.toFixed(2)}</p> : null}
             </fieldset>
           ) : null}
 
@@ -367,6 +458,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
           ) : (
             <fieldset className="checkout-section" id="payment-section">
               <legend>Payment method</legend>
+              {thirdPartyCourierDelivery ? <p className="courier-payment-note"><strong>Payment first:</strong> complete your payment selection before the order is sent to the restaurant. Your courier is booked and paid for separately by you.</p> : null}
               <div className="order-type-grid">
                 {paymentMethods.map((method) => (
                   <label className={`order-type-card ${paymentMethod === method.value ? 'is-selected' : ''}`} key={method.value}>
@@ -382,37 +474,55 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
               <button className="button button-primary checkout-submit" type="button" disabled={!paymentMethod || isSubmitting} onClick={handlePlaceOrder}>
                 {isSubmitting ? 'Creating Order…' : 'Place Order'}
               </button>
-              <p className="checkout-hint">Your order is saved as pending until the restaurant confirms it. Online payment processing will be connected separately.</p>
+              <p className="checkout-hint">Your order will be created after you select a payment method.</p>
             </fieldset>
           )}
         </form>
 
         <aside className="checkout-summary">
-          <h2>Order summary</h2>
-          <div className="checkout-summary-items">
-            {items.map((item) => (
-              <div className="checkout-summary-item" key={item.product.id}>
-                <span>{item.quantity} × {item.product.name}</span>
-                <strong>₱{(item.product.price * item.quantity).toFixed(2)}</strong>
-              </div>
-            ))}
-          </div>
-          <div className="checkout-summary-row">
-            <span>Subtotal</span>
-            <strong>₱{subtotal.toFixed(2)}</strong>
-          </div>
-          {isDelivery && selectedDeliveryZone?.isSupported ? (
+          <div className="checkout-section">
+            <h2>Order summary</h2>
+            <div className="checkout-summary-items">
+              {items.map((item) => (
+                <div className="checkout-summary-row" key={item.product.id}>
+                  <span>{item.quantity} × {item.product.name}</span>
+                  <strong>₱{(item.product.price * item.quantity).toFixed(2)}</strong>
+                </div>
+              ))}
+            </div>
+            <div className="checkout-summary-row">
+              <span>Subtotal</span>
+              <strong>₱{subtotal.toFixed(2)}</strong>
+            </div>
             <div className="checkout-summary-row">
               <span>Delivery fee</span>
               <strong>₱{deliveryFee.toFixed(2)}</strong>
             </div>
-          ) : null}
-          <div className="checkout-summary-row">
-            <span>Total</span>
-            <strong>₱{(subtotal + deliveryFee).toFixed(2)}</strong>
+            <div className="checkout-summary-total">
+              <span>Total</span>
+              <strong>₱{(subtotal + deliveryFee).toFixed(2)}</strong>
+            </div>
           </div>
         </aside>
       </div>
+
+      {showDeliveryTerms ? (
+        <div className="delivery-terms-backdrop" role="presentation">
+          <div className="delivery-terms-modal" role="dialog" aria-modal="true" aria-labelledby="delivery-terms-title">
+            <h2 id="delivery-terms-title">Delivery Terms</h2>
+            <p className="terms-intro">This address is outside Valenzuela City. The restaurant cannot deliver to this destination directly.</p>
+            <div className="terms-box">
+              <p><strong>Proceed with your own courier.</strong> You may book Lalamove, Grab Express, or another courier to collect your order from the restaurant.</p>
+              <p>You are responsible for booking and paying the courier, and for providing the courier with your destination address.</p>
+              <p>The restaurant will prepare your order for pickup at its listed restaurant pickup point.</p>
+            </div>
+            <div className="terms-actions">
+              <button className="button" type="button" onClick={handleCancelThirdPartyDelivery}>Cancel</button>
+              <button className="button button-primary" type="button" onClick={handleProceedWithThirdPartyCourier}>Proceed with Order</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
