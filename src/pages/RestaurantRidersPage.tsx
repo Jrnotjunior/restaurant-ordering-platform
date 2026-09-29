@@ -36,7 +36,9 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
+  const [riderToDelete, setRiderToDelete] = useState<RiderAccount | null>(null);
 
   const availableCount = useMemo(
     () => riders.filter((rider) => rider.status === 'available').length,
@@ -136,6 +138,30 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
     }
   }
 
+  async function handleDeleteRider() {
+    if (!supabase || !riderToDelete) return;
+
+    setDeleting(true);
+    setError('');
+
+    try {
+      const { error: deleteError } = await supabase
+        .from('restaurant_riders')
+        .delete()
+        .eq('id', riderToDelete.id)
+        .eq('restaurant_id', restaurantId);
+
+      if (deleteError) throw deleteError;
+
+      setRiderToDelete(null);
+      await loadRiders();
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : 'Unable to delete rider.');
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
     <section className="restaurant-riders-page">
       <div className="restaurant-riders-header">
@@ -220,10 +246,38 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
             </div>
             <div className="restaurant-rider-actions">
               <button className="button button-secondary" type="button" disabled>Edit</button>
+              <button className="button button-danger" type="button" onClick={() => setRiderToDelete(rider)} disabled={deleting}>
+                Delete Rider
+              </button>
             </div>
           </article>
         ))}
       </div>
+
+      {riderToDelete ? (
+        <div className="restaurant-rider-modal-backdrop" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget && !deleting) setRiderToDelete(null);
+        }}>
+          <div className="restaurant-rider-modal" role="dialog" aria-modal="true" aria-labelledby="delete-rider-title">
+            <div className="restaurant-rider-modal-icon" aria-hidden="true">!</div>
+            <h2 id="delete-rider-title">Delete this rider?</h2>
+            <p>
+              You are about to permanently remove <strong>{riderToDelete.name}</strong> from your restaurant's rider list.
+            </p>
+            <p className="restaurant-rider-modal-warning">
+              This action cannot be undone. The rider's delivery scope will also be removed. Existing orders will not be deleted.
+            </p>
+            <div className="restaurant-rider-modal-actions">
+              <button className="button button-secondary" type="button" onClick={() => setRiderToDelete(null)} disabled={deleting}>
+                Keep Rider
+              </button>
+              <button className="button button-danger" type="button" onClick={() => void handleDeleteRider()} disabled={deleting}>
+                {deleting ? 'Deleting…' : 'Delete Rider'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
