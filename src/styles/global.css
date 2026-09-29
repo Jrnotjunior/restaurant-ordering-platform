@@ -39,13 +39,22 @@ main { flex: 1; }
 .button-primary { color: var(--color-primary-text); background: var(--color-primary); }
 .button-primary:hover:not(:disabled) { background: var(--color-primary-hover); }
 .button-secondary { color: var(--color-secondary-text); background: var(--color-secondary); }
-.site-footer { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-6); padding: var(--space-12) 0; border-top: 1px solid var(--color-border); color: var(--color-muted); }
+.site-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, auto);
+  align-items: start;
+  column-gap: clamp(2rem, 8vw, 7rem);
+  row-gap: 1rem;
+  padding: 2.5rem 0 1.5rem;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted);
+}
 .site-footer > div, .site-footer > nav { min-width: 0; }
 .site-footer strong { color: var(--color-text); font-family: var(--font-heading); }
-.site-footer p { margin: var(--space-2) 0 0; }
+.site-footer p { margin: 0.4rem 0 0; line-height: 1.45; }
 .site-footer nav { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-4); }
 .site-footer nav a { min-height: 44px; display: inline-flex; align-items: center; }
-.site-footer small { grid-column: 1 / -1; }
+.site-footer small { grid-column: 1 / -1; margin-top: 0.25rem; }
 .menu-page, .cart-page, .checkout-page { width: min(1120px, calc(100% - 2rem)); margin: 0 auto; padding: var(--space-12) 0 var(--space-16); }
 .menu-intro { max-width: 720px; }
 .menu-intro h1 { margin: 0; font-family: var(--font-heading); font-size: clamp(2.25rem, 6vw, 4rem); line-height: 1; letter-spacing: -0.04em; }
@@ -168,7 +177,11 @@ main { flex: 1; }
   .checkout-section input, .checkout-section select { min-height: 50px; padding-inline: 0.9rem; font-size: 1rem; }
   .checkout-section textarea { font-size: 1rem; }
   .checkout-summary-item { gap: 0.75rem; font-size: 0.9rem; }
-  .site-footer { grid-template-columns: 1fr; padding-top: 2rem; padding-bottom: 2rem; gap: 1rem; }
+  .site-footer {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 2rem 0 1.25rem;
+  }
   .site-footer nav { justify-content: flex-start; gap: 0.25rem 1rem; }
 }
 
