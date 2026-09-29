@@ -1,7 +1,14 @@
 .order-tracking-page { width: min(760px, calc(100% - 2rem)); margin: 0 auto; padding: clamp(2rem, 7vw, 5rem) 0; }
 .order-tracking-card { padding: clamp(1.25rem, 5vw, 2.5rem); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-background); }
+.order-tracking-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 1.5rem; }
+.order-tracking-header > div { min-width: 0; }
 .order-tracking-card h1 { margin: 0; font-family: var(--font-heading); font-size: clamp(1.9rem, 6vw, 3rem); line-height: 1.05; }
-.order-tracking-card > p:not(.eyebrow) { color: var(--color-muted); line-height: 1.6; }
+.order-tracking-subtitle { margin: .65rem 0 0; color: var(--color-muted); line-height: 1.6; }
+.order-tracking-live-status { flex: 0 0 auto; display: inline-flex; align-items: center; gap: .45rem; margin-bottom: .15rem; color: var(--color-text); font-size: .9rem; white-space: nowrap; }
+.order-tracking-live-dot { width: .45rem; height: .45rem; border-radius: 50%; background: currentColor; }
+.order-tracking-live-status.is-live { color: var(--color-text); }
+.order-tracking-live-status.is-connecting,
+.order-tracking-live-status.is-error { color: var(--color-muted); }
 .order-tracking-total { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 1.5rem 0 2rem; padding: 1rem; border-radius: var(--radius-md); background: var(--color-secondary); }
 .order-tracking-total span { color: var(--color-muted); }
 .order-tracking-total strong { white-space: nowrap; }
@@ -30,6 +37,8 @@
 @media (max-width: 560px) {
   .order-tracking-page { width: min(100% - 1rem, 760px); padding-top: 1.5rem; }
   .order-tracking-card { padding: 1rem; }
+  .order-tracking-header { align-items: flex-end; gap: .75rem; }
+  .order-tracking-live-status { margin-bottom: .1rem; }
   .order-status-step { grid-template-columns: 36px minmax(0, 1fr); gap: .75rem; }
   .order-status-marker { width: 36px; height: 36px; }
   .order-status-step:not(:last-child)::before { left: 17px; top: 36px; }
