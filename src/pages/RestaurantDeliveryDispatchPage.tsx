@@ -33,7 +33,7 @@ export function RestaurantDeliveryDispatchPage() {
   );
 
   const statusLabel = (status: Rider['status']) => ({
-    available: 'At restaurant',
+    available: 'Available',
     delivering: 'Out delivering',
     returning: 'Returning to restaurant',
     offline: 'Offline',
