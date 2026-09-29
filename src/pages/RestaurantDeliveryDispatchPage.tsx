@@ -121,15 +121,8 @@ export function RestaurantDeliveryDispatchPage() {
               </article>
             ))}
           </div>
-          <div className="restaurant-dispatch-assignment-bar">
-            <div>
-              <p className="restaurant-dispatch-label">Selected batch</p>
-              <strong>{selectedIds.length ? selectedIds.length + ' order' + (selectedIds.length === 1 ? '' : 's') : 'No orders selected'}</strong>
-              {selectedIds.length > 0 && <span>{selectedOrders.map((order) => order.orderNumber).join(' · ')}</span>}
-            </div>
-            <button className="button button-primary restaurant-dispatch-send" type="button" onClick={createBatch} disabled={!selectedIds.length || !selectedRiderId}>Send to Rider</button>
-          </div>
-          <p className="restaurant-dispatch-note">The dispatcher makes the final assignment. Riders do not accept or reject delivery batches.</p>
+
+
         </section>
 
         <section className="restaurant-dispatch-card restaurant-dispatch-active-card">
