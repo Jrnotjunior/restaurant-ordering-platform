@@ -18,6 +18,7 @@ import { SupabaseRestaurantRepository } from './services/supabaseRestaurantRepos
 import { isSupabaseConfigured } from './services/supabaseClient';
 import type { RestaurantConfig } from './types/restaurant';
 import type { RestaurantProduct } from './types/menu';
+import './styles/cart-empty.css';
 
 const restaurantRepository = new SupabaseRestaurantRepository();
 const CART_STORAGE_KEY = 'restaurant-ordering-cart';
