@@ -55,19 +55,12 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
     [products, selectedCategory]
   );
 
-  const cartHref = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/#cart`;
-
   return (
     <section className="menu-page">
       <div className="menu-intro">
         <p className="eyebrow">Our menu</p>
         <h1>Choose what you’re craving.</h1>
         <p>Browse available items and add your favorites to your order.</p>
-        {cartCount > 0 ? (
-          <a className="menu-cart-link" href={cartHref}>
-            View cart · {cartCount} {cartCount === 1 ? 'item' : 'items'}
-          </a>
-        ) : null}
       </div>
 
       {categories.length > 0 ? (
