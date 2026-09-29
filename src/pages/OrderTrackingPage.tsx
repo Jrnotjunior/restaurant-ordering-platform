@@ -50,6 +50,12 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
 
   const currentIndex = statusOrder.indexOf(order.status);
   const isCancelled = order.status === 'cancelled';
+  const riderAssigned = order.orderType === 'delivery' && Boolean(order.riderName && order.riderPhone);
+  const deliveryStatusLabel = order.deliveryStatus === 'out_for_delivery'
+    ? 'Out for delivery'
+    : order.deliveryStatus === 'delivered'
+      ? 'Delivered'
+      : 'Rider assigned';
 
   return (
     <section className="order-tracking-page">
@@ -73,6 +79,26 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
               );
             })}
           </div>
+        )}
+
+        {riderAssigned && !isCancelled && (
+          <section className="order-rider-card" aria-label="Assigned rider">
+            <div className="order-rider-card-header">
+              <div>
+                <p className="order-rider-label">Your rider</p>
+                <h2>{order.riderName}</h2>
+              </div>
+              <span className="order-rider-status">{deliveryStatusLabel}</span>
+            </div>
+            <p className="order-rider-message">Hi! I'm {order.riderName}, and I'll be the one delivering your order. You can contact me if you need assistance.</p>
+            <a className="order-rider-phone" href={`tel:${order.riderPhone}`} aria-label={`Call ${order.riderName}`}>
+              <span>📞</span>{order.riderPhone}
+            </a>
+            <div className="order-rider-actions">
+              <a className="button button-primary" href={`tel:${order.riderPhone}`}>Call Rider</a>
+              <a className="button button-secondary" href={`sms:${order.riderPhone}`}>Text Rider</a>
+            </div>
+          </section>
         )}
 
         <div className="order-tracking-meta">
