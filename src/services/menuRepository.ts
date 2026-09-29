@@ -1,5 +1,5 @@
 import type { RestaurantCategory, RestaurantProduct } from '../types/menu';
-import { supabase, supabaseGet, supabaseRpc } from './supabaseClient';
+import { supabase, supabaseRpc } from './supabaseClient';
 
 type CategoryRow = {
   id: string;
@@ -29,26 +29,66 @@ type ProductRow = {
 };
 
 export async function getMenu(restaurantId: string, includeUnavailable = false): Promise<{ categories: RestaurantCategory[]; products: RestaurantProduct[] }> {
-  const productParams: Record<string, string> = {
-    select: 'id,restaurant_id,category_id,name,slug,description,price,image_url,sort_order,is_available,created_at,updated_at',
-    restaurant_id: `eq.${restaurantId}`,
-    order: 'sort_order.asc,name.asc'
-  };
-  if (!includeUnavailable) productParams.is_available = 'eq.true';
+  if (!supabase) throw new Error('Supabase environment variables are not configured.');
 
-  const [categoryRows, productRows] = await Promise.all([
-    supabaseGet<CategoryRow>('categories', {
-      select: 'id,restaurant_id,name,slug,description,sort_order,is_active,created_at,updated_at',
-      restaurant_id: `eq.${restaurantId}`,
-      is_active: 'eq.true',
-      order: 'sort_order.asc,name.asc'
-    }),
-    supabaseGet<ProductRow>('products', productParams)
-  ]);
+  let categoryQuery = supabase
+    .from('categories')
+    .select('id,restaurant_id,name,slug,description,sort_order,is_active,created_at,updated_at')
+    .eq('restaurant_id', restaurantId)
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+    .order('name', { ascending: true });
+
+  let productQuery = supabase
+    .from('products')
+    .select('id,restaurant_id,category_id,name,slug,description,price,image_url,sort_order,is_available,created_at,updated_at')
+    .eq('restaurant_id', restaurantId)
+    .order('sort_order', { ascending: true })
+    .order('name', { ascending: true });
+
+  if (!includeUnavailable) {
+    productQuery = productQuery.eq('is_available', true);
+  }
+
+  const [categoryResult, productResult] = await Promise.all([categoryQuery, productQuery]);
+
+  if (categoryResult.error) {
+    throw new Error(`Unable to load product categories: ${categoryResult.error.message}`);
+  }
+
+  if (productResult.error) {
+    throw new Error(`Unable to load products: ${productResult.error.message}`);
+  }
+
+  const categoryRows = (categoryResult.data ?? []) as CategoryRow[];
+  const productRows = (productResult.data ?? []) as ProductRow[];
 
   return {
-    categories: categoryRows.map((category) => ({ id: category.id, restaurantId: category.restaurant_id, name: category.name, slug: category.slug, description: category.description, sortOrder: category.sort_order, isActive: category.is_active, createdAt: category.created_at, updatedAt: category.updated_at })),
-    products: productRows.map((product) => ({ id: product.id, restaurantId: product.restaurant_id, categoryId: product.category_id, name: product.name, slug: product.slug, description: product.description, price: Number(product.price), imageUrl: product.image_url ?? undefined, sortOrder: product.sort_order, isAvailable: product.is_available, createdAt: product.created_at, updatedAt: product.updated_at }))
+    categories: categoryRows.map((category) => ({
+      id: category.id,
+      restaurantId: category.restaurant_id,
+      name: category.name,
+      slug: category.slug,
+      description: category.description,
+      sortOrder: category.sort_order,
+      isActive: category.is_active,
+      createdAt: category.created_at,
+      updatedAt: category.updated_at
+    })),
+    products: productRows.map((product) => ({
+      id: product.id,
+      restaurantId: product.restaurant_id,
+      categoryId: product.category_id,
+      name: product.name,
+      slug: product.slug,
+      description: product.description,
+      price: Number(product.price),
+      imageUrl: product.image_url ?? undefined,
+      sortOrder: product.sort_order,
+      isAvailable: product.is_available,
+      createdAt: product.created_at,
+      updatedAt: product.updated_at
+    }))
   };
 }
 
