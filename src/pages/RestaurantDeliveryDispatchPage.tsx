@@ -51,7 +51,7 @@ export function RestaurantDeliveryDispatchPage() {
         <div>
           <p className="eyebrow">Restaurant operations</p>
           <h1>Delivery Dispatch</h1>
-          <p>Select ready orders, choose a rider, and send them as one delivery batch.</p>
+          <p>Manage ready deliveries and assign them to available riders.</p>
         </div>
       </header>
 
@@ -61,8 +61,8 @@ export function RestaurantDeliveryDispatchPage() {
         <section className="restaurant-dispatch-card restaurant-dispatch-ready-card">
           <div className="restaurant-dispatch-card-heading">
             <div>
-              <p className="restaurant-dispatch-label">Step 1</p>
-              <h2>Select ready orders</h2>
+              <p className="restaurant-dispatch-label">Ready for delivery</p>
+              <h2>Select orders to dispatch</h2>
               <p className="restaurant-dispatch-helper">Choose one or more orders that should go with the same rider.</p>
             </div>
             <span className="restaurant-dispatch-count">{availableOrders.length}</span>
