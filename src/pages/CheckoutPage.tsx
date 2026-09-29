@@ -102,6 +102,15 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     return deliveryZones.find((zone) => normalizeBarangay(zone.barangay) === normalizedInput) ?? null;
   }, [deliveryZones, deliveryBarangay]);
 
+  const barangaySuggestions = useMemo(() => {
+    const normalizedInput = normalizeBarangay(deliveryBarangay);
+    if (!normalizedInput || selectedDeliveryZone) return [];
+
+    return deliveryZones
+      .filter((zone) => normalizeBarangay(zone.barangay).startsWith(normalizedInput))
+      .slice(0, 6);
+  }, [deliveryZones, deliveryBarangay, selectedDeliveryZone]);
+
   const deliveryFee = orderType === 'delivery' ? Number(selectedDeliveryZone?.shippingFee ?? 0) : 0;
   const deliveryAreaIsSupported = orderType !== 'delivery' || Boolean(selectedDeliveryZone?.isSupported);
   const barangayMatchesConfiguredZone = Boolean(selectedDeliveryZone);
@@ -224,20 +233,43 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
               <div className="checkout-fields">
                 <label>
                   <span>Barangay</span>
-                  <input
-                    type="text"
-                    value={deliveryBarangay}
-                    onChange={(event) => {
-                      setDeliveryBarangay(event.target.value);
-                      setShowPayment(false);
-                      setPaymentMethod('');
-                      setSubmitError('');
-                    }}
-                    autoComplete="address-level3"
-                    placeholder="Enter your barangay"
-                    disabled={loadingDeliveryZones || deliveryZones.length === 0}
-                    required
-                  />
+                  <div className="barangay-input-wrap">
+                    <input
+                      type="text"
+                      value={deliveryBarangay}
+                      onChange={(event) => {
+                        setDeliveryBarangay(event.target.value);
+                        setShowPayment(false);
+                        setPaymentMethod('');
+                        setSubmitError('');
+                      }}
+                      autoComplete="address-level3"
+                      placeholder="Enter your barangay"
+                      disabled={loadingDeliveryZones || deliveryZones.length === 0}
+                      required
+                    />
+                    {barangaySuggestions.length > 0 ? (
+                      <div className="barangay-suggestions" role="listbox" aria-label="Barangay suggestions">
+                        {barangaySuggestions.map((zone) => (
+                          <button
+                            className="barangay-suggestion"
+                            key={zone.id}
+                            type="button"
+                            role="option"
+                            onClick={() => {
+                              setDeliveryBarangay(zone.barangay);
+                              setShowPayment(false);
+                              setPaymentMethod('');
+                              setSubmitError('');
+                            }}
+                          >
+                            <span>{zone.barangay}</span>
+                            <small>{zone.isSupported ? `₱${zone.shippingFee.toFixed(2)} delivery fee` : 'Outside delivery area'}</small>
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
                 </label>
                 <label>
                   <span>Complete address</span>
