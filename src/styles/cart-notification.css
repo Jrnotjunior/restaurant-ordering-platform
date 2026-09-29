@@ -98,6 +98,7 @@
     width: min(340px, calc(100vw - 32px));
     transform: translateX(-50%);
     grid-template-columns: 36px minmax(0, 1fr) auto;
+    animation-name: cart-notification-in-mobile;
     gap: 10px;
     padding: 12px 14px;
     border-radius: 12px;
@@ -118,5 +119,17 @@
 
   .cart-notification-link {
     font-size: 0.8rem;
+  }
+}
+
+
+@keyframes cart-notification-in-mobile {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
   }
 }
