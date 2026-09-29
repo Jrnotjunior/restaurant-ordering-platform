@@ -24,6 +24,7 @@ type ScopeRow = {
 export function RestaurantRidersPage({ restaurantId }: { restaurantId: string }) {
   const [riders, setRiders] = useState<RiderAccount[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingRider, setEditingRider] = useState<RiderAccount | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -72,6 +73,10 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
     void loadRiders();
   }, [restaurantId]);
 
+  function parseScopes(scopeText: string) {
+    return [...new Set(scopeText.split(',').map((scope) => scope.trim()).filter(Boolean))];
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!supabase) {
@@ -87,8 +92,7 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
     const name = String(form.get('name') || '').trim();
     const mobileNumber = String(form.get('mobileNumber') || '').trim();
     const email = String(form.get('email') || '').trim();
-    const scopeText = String(form.get('scope') || '');
-    const scopes = [...new Set(scopeText.split(',').map((scope) => scope.trim()).filter(Boolean))];
+    const scopes = parseScopes(String(form.get('scope') || ''));
 
     try {
       const { data: rider, error: riderError } = await supabase
@@ -117,6 +121,57 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
       await loadRiders();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Unable to add rider.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleEditRider(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!supabase || !editingRider) {
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+
+    const form = new FormData(event.currentTarget);
+    const name = String(form.get('name') || '').trim();
+    const mobileNumber = String(form.get('mobileNumber') || '').trim();
+    const email = String(form.get('email') || '').trim();
+    const scopes = parseScopes(String(form.get('scope') || ''));
+
+    try {
+      const { error: riderError } = await supabase
+        .from('restaurant_riders')
+        .update({
+          name,
+          mobile_number: mobileNumber,
+          email: email || null,
+        })
+        .eq('id', editingRider.id)
+        .eq('restaurant_id', restaurantId);
+
+      if (riderError) throw riderError;
+
+      const { error: deleteScopesError } = await supabase
+        .from('rider_delivery_scopes')
+        .delete()
+        .eq('rider_id', editingRider.id);
+
+      if (deleteScopesError) throw deleteScopesError;
+
+      if (scopes.length) {
+        const { error: scopeError } = await supabase
+          .from('rider_delivery_scopes')
+          .insert(scopes.map((scope_name) => ({ rider_id: editingRider.id, scope_name })));
+        if (scopeError) throw scopeError;
+      }
+
+      setEditingRider(null);
+      await loadRiders();
+    } catch (editError) {
+      setError(editError instanceof Error ? editError.message : 'Unable to update rider.');
     } finally {
       setSaving(false);
     }
@@ -218,14 +273,60 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
               </div>
             </div>
             <div className="restaurant-rider-actions">
-              <button className="button button-secondary" type="button" disabled>Edit</button>
-              <button className="button button-danger" type="button" onClick={() => setRiderToDelete(rider)} disabled={deleting}>
+              <button className="button button-secondary" type="button" onClick={() => setEditingRider(rider)} disabled={saving || deleting}>Edit</button>
+              <button className="button button-danger" type="button" onClick={() => setRiderToDelete(rider)} disabled={deleting || saving}>
                 Delete Rider
               </button>
             </div>
           </article>
         ))}
       </div>
+
+      {editingRider ? (
+        <div className="restaurant-rider-modal-backdrop" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget && !saving) setEditingRider(null);
+        }}>
+          <form className="restaurant-rider-modal restaurant-rider-edit-modal" onSubmit={handleEditRider}>
+            <div className="restaurant-rider-modal-header">
+              <div>
+                <p className="eyebrow">Edit rider</p>
+                <h2>Update rider details</h2>
+              </div>
+              <button className="restaurant-rider-modal-close" type="button" onClick={() => setEditingRider(null)} disabled={saving} aria-label="Close edit rider dialog">
+                ×
+              </button>
+            </div>
+
+            <div className="restaurant-rider-form-grid">
+              <label>
+                Rider name
+                <input name="name" type="text" defaultValue={editingRider.name} required />
+              </label>
+              <label>
+                Mobile number
+                <input name="mobileNumber" type="tel" defaultValue={editingRider.mobileNumber} required />
+              </label>
+              <label>
+                Login email
+                <input name="email" type="email" defaultValue={editingRider.email} />
+              </label>
+              <label>
+                Delivery scope
+                <input name="scope" type="text" defaultValue={editingRider.scopes.join(', ')} placeholder="Dalandanan, Malinta, Arkong Bato" />
+              </label>
+            </div>
+
+            <p className="restaurant-rider-form-help">Separate multiple delivery areas with commas.</p>
+
+            <div className="restaurant-rider-modal-actions">
+              <button className="button button-secondary" type="button" onClick={() => setEditingRider(null)} disabled={saving}>Cancel</button>
+              <button className="button button-primary" type="submit" disabled={saving}>
+                {saving ? 'Saving…' : 'Save Changes'}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
 
       {riderToDelete ? (
         <div className="restaurant-rider-modal-backdrop" role="presentation" onMouseDown={(event) => {
