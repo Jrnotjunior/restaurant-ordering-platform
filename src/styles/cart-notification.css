@@ -92,10 +92,11 @@
 
 @media (max-width: 560px) {
   .cart-notification {
-    left: 12px;
-    right: 12px;
+    left: 50%;
+    right: auto;
     bottom: 12px;
-    width: auto;
+    width: min(340px, calc(100vw - 32px));
+    transform: translateX(-50%);
     grid-template-columns: 36px minmax(0, 1fr) auto;
     gap: 10px;
     padding: 12px 14px;
