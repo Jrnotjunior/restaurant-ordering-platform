@@ -55,7 +55,7 @@ alter table public.orders
 alter table public.restaurant_riders enable row level security;
 alter table public.rider_delivery_scopes enable row level security;
 
--- Restaurant owners can manage riders belonging to their own restaurant.
+-- Restaurant owners can view riders belonging to their own restaurant.
 create policy "restaurant owners can view their riders"
 on public.restaurant_riders
 for select
@@ -83,6 +83,8 @@ with check (
   )
 );
 
+-- Only the restaurant owner can edit rider identity/account fields.
+-- Rider status changes will be exposed later through a dedicated, restricted RPC.
 create policy "restaurant owners can update their riders"
 on public.restaurant_riders
 for update
@@ -94,7 +96,6 @@ using (
     where r.id = restaurant_riders.restaurant_id
       and r.owner_id = auth.uid()
   )
-  or auth_user_id = auth.uid()
 )
 with check (
   exists (
@@ -103,7 +104,6 @@ with check (
     where r.id = restaurant_riders.restaurant_id
       and r.owner_id = auth.uid()
   )
-  or auth_user_id = auth.uid()
 );
 
 create policy "restaurant owners can delete their riders"
@@ -119,7 +119,7 @@ using (
   )
 );
 
-create policy "restaurant owners can view rider scopes"
+create policy "restaurant owners and riders can view rider scopes"
 on public.rider_delivery_scopes
 for select
 to authenticated
