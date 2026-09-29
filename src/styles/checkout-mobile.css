@@ -115,7 +115,7 @@
   white-space: nowrap;
 }
 
-/* Delivery address: explicitly keep Barangay on the left and Complete address on the right. */
+/* Delivery address: Complete address on the left, Barangay on the right. */
 .checkout-section:has(.barangay-input-wrap) {
   position: relative;
   overflow: visible;
@@ -124,6 +124,7 @@
 .checkout-section:has(.barangay-input-wrap) .checkout-fields {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas: "address barangay";
   align-items: start;
   column-gap: 1.25rem;
   row-gap: 1rem;
@@ -131,6 +132,14 @@
 
 .checkout-section:has(.barangay-input-wrap) .checkout-fields > label {
   min-width: 0;
+}
+
+.checkout-section:has(.barangay-input-wrap) .checkout-fields > label:first-child {
+  grid-area: barangay;
+}
+
+.checkout-section:has(.barangay-input-wrap) .checkout-fields > label:nth-child(2) {
+  grid-area: address;
 }
 
 .checkout-section:has(.barangay-input-wrap) .checkout-fields input,
@@ -224,6 +233,7 @@
 
   .checkout-section:has(.barangay-input-wrap) .checkout-fields {
     grid-template-columns: 1fr;
+    grid-template-areas: "barangay" "address";
   }
 
   .checkout-section:has(.barangay-input-wrap) .checkout-fields textarea {
