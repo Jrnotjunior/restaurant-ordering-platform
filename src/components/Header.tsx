@@ -1,5 +1,6 @@
 import { useRestaurant } from './RestaurantProvider';
 import '../styles/cart-badge.css';
+import '../styles/header-actions.css';
 
 function withBasePath(path: string) {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -20,9 +21,7 @@ export function Header({ cartCount = 0 }: HeaderProps) {
   return (
     <header className="site-header">
       <a className="brand" href={withBasePath('/')} aria-label={`${restaurant.name} home`}>
-        {restaurant.logoUrl ? (
-          <img src={restaurant.logoUrl} alt="" className="brand-logo" />
-        ) : null}
+        {restaurant.logoUrl ? <img src={restaurant.logoUrl} alt="" className="brand-logo" /> : null}
         <span>{restaurant.name}</span>
       </a>
 
