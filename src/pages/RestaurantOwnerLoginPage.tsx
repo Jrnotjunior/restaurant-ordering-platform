@@ -2,15 +2,8 @@ import { useState, type FormEvent } from 'react';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
 import { supabase } from '../services/supabaseClient';
 
-function routeForRole(role: string | undefined, hasRestaurant: boolean) {
-  if (role === 'rider') return '#rider/delivery-preview';
-  if (role === 'customer') return '#menu';
-  if (role === 'restaurant_owner' || hasRestaurant) return '#restaurant/orders';
-  return '#menu';
-}
-
 export function RestaurantOwnerLoginPage() {
-  const { signIn, error: authError, restaurant } = useRestaurantOwnerAuth();
+  const { signIn, error: authError } = useRestaurantOwnerAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -27,9 +20,37 @@ export function RestaurantOwnerLoginPage() {
     setSubmitting(true);
     try {
       await signIn(email, password);
-      const { data } = await supabase?.auth.getUser() ?? { data: { user: null } };
-      const role = data.user?.app_metadata?.role ?? data.user?.user_metadata?.role;
-      window.location.hash = routeForRole(typeof role === 'string' ? role : undefined, Boolean(restaurant));
+      if (!supabase) throw new Error('Supabase is not configured.');
+
+      const { data } = await supabase.auth.getUser();
+      const user = data.user;
+      const role = user?.app_metadata?.role ?? user?.user_metadata?.role;
+
+      if (role === 'rider') {
+        window.location.hash = '#rider/delivery-preview';
+        return;
+      }
+
+      if (role === 'customer') {
+        window.location.hash = '#menu';
+        return;
+      }
+
+      const { data: ownerRestaurant, error: ownerLookupError } = await supabase
+        .from('restaurants')
+        .select('id')
+        .eq('owner_id', user?.id ?? '')
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle();
+
+      if (ownerLookupError) throw ownerLookupError;
+      if (ownerRestaurant) {
+        window.location.hash = '#restaurant/orders';
+        return;
+      }
+
+      throw new Error('Your account is not assigned to a supported system role yet.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to sign in.');
     } finally {
