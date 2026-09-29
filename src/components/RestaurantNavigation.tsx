@@ -3,13 +3,14 @@ import { useEffect, useState } from 'react';
 type NavigationItem = {
   label: string;
   href: string;
-  icon: 'dashboard' | 'orders' | 'products' | 'shipping' | 'sales';
+  icon: 'dashboard' | 'orders' | 'products' | 'riders' | 'shipping' | 'sales';
 };
 
 const navigationItems: NavigationItem[] = [
   { label: 'Dashboard', href: '#restaurant/dashboard', icon: 'dashboard' },
   { label: 'Orders', href: '#restaurant/orders', icon: 'orders' },
   { label: 'Products', href: '#restaurant/menu', icon: 'products' },
+  { label: 'Riders', href: '#restaurant/riders', icon: 'riders' },
   { label: 'Shipping Fee', href: '#restaurant/shipping-fee', icon: 'shipping' },
   { label: 'Sales', href: '#restaurant/sales', icon: 'sales' },
 ];
@@ -37,6 +38,10 @@ function NavigationIcon({ type }: { type: NavigationItem['icon'] }) {
 
   if (type === 'products') {
     return <svg {...common}><path d="m12 3 7 4v10l-7 4-7-4V7z" /><path d="m5 7 7 4 7-4M12 11v10" /></svg>;
+  }
+
+  if (type === 'riders') {
+    return <svg {...common}><circle cx="9" cy="8" r="3" /><path d="M3.5 19c.7-3.2 2.5-5 5.5-5s4.8 1.8 5.5 5" /><path d="M16 6.5h4M18 4.5v4" /></svg>;
   }
 
   if (type === 'shipping') {
