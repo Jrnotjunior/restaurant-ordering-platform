@@ -14,7 +14,16 @@
 .order-status-step strong { display: block; margin-top: .45rem; font-family: var(--font-heading); }
 .order-status-step p { margin: .35rem 0 0; color: var(--color-muted); font-size: .9rem; line-height: 1.5; }
 .order-status-step.is-current strong { color: var(--color-primary); }
-.order-tracking-meta { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .5rem; padding-top: 1.25rem; border-top: 1px solid var(--color-border); color: var(--color-muted); font-size: .9rem; }
+.order-rider-card { display: grid; gap: .8rem; margin-top: .5rem; padding: 1.15rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-secondary); }
+.order-rider-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.order-rider-label { margin: 0 0 .25rem; color: var(--color-muted); font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.order-rider-card h2 { margin: 0; font-family: var(--font-heading); font-size: 1.2rem; }
+.order-rider-status { padding: .35rem .6rem; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-background); font-size: .78rem; font-weight: 700; white-space: nowrap; }
+.order-rider-message { margin: 0; color: var(--color-muted); line-height: 1.5; }
+.order-rider-phone { display: inline-flex; align-items: center; gap: .5rem; width: fit-content; color: inherit; font-weight: 700; text-decoration: none; }
+.order-rider-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+.order-rider-actions .button { text-decoration: none; text-align: center; }
+.order-tracking-meta { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--color-border); color: var(--color-muted); font-size: .9rem; }
 .order-tracking-meta span { padding: .45rem .7rem; border: 1px solid var(--color-border); border-radius: 999px; }
 .order-tracking-cancelled { display: grid; gap: .4rem; margin-top: 1.5rem; padding: 1rem; border: 1px solid var(--color-error); border-radius: var(--radius-md); color: var(--color-error); }
 .order-tracking-cancelled span { line-height: 1.5; }
@@ -24,4 +33,6 @@
   .order-status-step { grid-template-columns: 36px minmax(0, 1fr); gap: .75rem; }
   .order-status-marker { width: 36px; height: 36px; }
   .order-status-step:not(:last-child)::before { left: 17px; top: 36px; }
+  .order-rider-card-header { align-items: flex-start; }
+  .order-rider-actions { display: grid; grid-template-columns: 1fr 1fr; }
 }
