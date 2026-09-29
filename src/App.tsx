@@ -19,6 +19,7 @@ import { isSupabaseConfigured } from './services/supabaseClient';
 import type { RestaurantConfig } from './types/restaurant';
 import type { RestaurantProduct } from './types/menu';
 import './styles/cart-empty.css';
+import './styles/cart-notification.css';
 
 const restaurantRepository = new SupabaseRestaurantRepository();
 const CART_STORAGE_KEY = 'restaurant-ordering-cart';
@@ -139,13 +140,14 @@ function AppContent() {
         <RestaurantLayout cartCount={cartCount}>
           {publicContent}
           {cartNotification ? (
-            <div
-              role="status"
-              aria-live="polite"
-              style={{ position: 'fixed', right: '24px', bottom: '24px', zIndex: 2000, width: 'min(360px, calc(100vw - 32px))', padding: '14px 16px', borderRadius: '14px', background: '#111827', color: '#fff', boxShadow: '0 14px 40px rgba(0,0,0,.22)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px' }}
-            >
-              <span><strong>✓</strong> {cartNotification}</span>
-              <a href={withBasePath('/cart')} style={{ color: '#fff', fontWeight: 700, textDecoration: 'underline', whiteSpace: 'nowrap' }}>View Cart</a>
+            <div className="cart-notification" role="status" aria-live="polite">
+              <div className="cart-notification-icon" aria-hidden="true">✓</div>
+              <div className="cart-notification-content">
+                <strong>Added to cart</strong>
+                <span>{cartNotification}</span>
+              </div>
+              <a className="cart-notification-link" href={withBasePath('/cart')}>View cart</a>
+              <button className="cart-notification-close" type="button" aria-label="Dismiss notification" onClick={() => setCartNotification('')}>×</button>
             </div>
           ) : null}
         </RestaurantLayout>
