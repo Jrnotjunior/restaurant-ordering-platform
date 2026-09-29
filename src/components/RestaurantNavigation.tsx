@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 type NavigationItem = {
   label: string;
   href: string;
-  icon: 'dashboard' | 'orders' | 'products' | 'riders' | 'shipping' | 'sales';
+  icon: 'dashboard' | 'orders' | 'products' | 'riders' | 'shipping' | 'sales' | 'dispatch';
 };
 
 const navigationItems: NavigationItem[] = [
@@ -11,6 +11,7 @@ const navigationItems: NavigationItem[] = [
   { label: 'Orders', href: '#restaurant/orders', icon: 'orders' },
   { label: 'Products', href: '#restaurant/menu', icon: 'products' },
   { label: 'Riders', href: '#restaurant/riders', icon: 'riders' },
+  { label: 'Delivery Dispatch', href: '#restaurant/delivery-dispatch', icon: 'dispatch' },
   { label: 'Shipping Fee', href: '#restaurant/shipping-fee', icon: 'shipping' },
   { label: 'Sales', href: '#restaurant/sales', icon: 'sales' },
 ];
@@ -42,6 +43,10 @@ function NavigationIcon({ type }: { type: NavigationItem['icon'] }) {
 
   if (type === 'riders') {
     return <svg {...common}><circle cx="9" cy="8" r="3" /><path d="M3.5 19c.7-3.2 2.5-5 5.5-5s4.8 1.8 5.5 5" /><path d="M16 6.5h4M18 4.5v4" /></svg>;
+  }
+
+  if (type === 'dispatch') {
+    return <svg {...common}><path d="M4 18h16M6 14l4-4 3 3 5-6" /><path d="M17 7h3v3" /></svg>;
   }
 
   if (type === 'shipping') {
