@@ -24,6 +24,13 @@ export async function updateRestaurantShippingFee(restaurantId: string, shipping
   if (error) throw new Error(error.message);
 }
 
+export async function getRestaurantLocationText(restaurantId: string): Promise<string> {
+  if (!supabase) throw new Error('Supabase environment variables are not configured.');
+  const { data, error } = await supabase.from('restaurants').select('location_text').eq('id', restaurantId).single();
+  if (error) throw new Error(error.message);
+  return String(data?.location_text ?? '').trim();
+}
+
 export async function getRestaurantDeliveryZones(restaurantId: string): Promise<RestaurantDeliveryZone[]> {
   if (!supabase) throw new Error('Supabase environment variables are not configured.');
   const { data, error } = await supabase
