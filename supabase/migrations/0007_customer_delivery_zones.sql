@@ -25,7 +25,6 @@ create index if not exists restaurant_delivery_zones_restaurant_idx
 
 alter table public.restaurant_delivery_zones enable row level security;
 
--- Customers may read delivery zones for active restaurants.
 drop policy if exists "Public can read restaurant delivery zones" on public.restaurant_delivery_zones;
 create policy "Public can read restaurant delivery zones"
 on public.restaurant_delivery_zones
@@ -37,7 +36,6 @@ using (exists (
   where r.id = restaurant_delivery_zones.restaurant_id
 ));
 
--- Restaurant owners may manage delivery zones for their own restaurant.
 drop policy if exists "Restaurant owners can manage delivery zones" on public.restaurant_delivery_zones;
 create policy "Restaurant owners can manage delivery zones"
 on public.restaurant_delivery_zones
@@ -55,6 +53,10 @@ with check (exists (
   where r.id = restaurant_delivery_zones.restaurant_id
     and r.owner_id = auth.uid()
 ));
+
+-- Remove the older RPC signature so a delivery order cannot bypass the
+-- delivery-zone fee by calling the legacy zero-fee version.
+drop function if exists public.create_order(uuid, text, text, text, text, text, text, text, jsonb);
 
 create or replace function public.create_order(
   p_restaurant_id uuid,
@@ -246,6 +248,7 @@ $$;
 
 grant execute on function public.create_order(uuid, text, text, text, text, text, text, text, text, jsonb) to anon, authenticated;
 
+drop trigger if exists restaurant_delivery_zones_set_updated_at on public.restaurant_delivery_zones;
 create trigger restaurant_delivery_zones_set_updated_at
 before update on public.restaurant_delivery_zones
 for each row
