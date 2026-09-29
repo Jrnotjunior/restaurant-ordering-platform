@@ -26,15 +26,15 @@
 .restaurant-menu-status.is-unavailable { color: var(--color-muted); }
 .restaurant-menu-card-footer .button { min-height: 42px; padding-inline: .8rem; font-size: .8rem; }
 
-/* Keep product actions compact and aligned on one professional action row. */
-.restaurant-menu-card-content { grid-template-rows: auto 1fr auto; }
+/* Product actions share one clean bottom row instead of stacking vertically. */
+.restaurant-menu-card-content { grid-template-columns: minmax(0, 1fr) auto auto auto; grid-template-rows: auto 1fr auto; }
+.restaurant-menu-card-heading { grid-column: 1 / -1; }
 .restaurant-menu-card-footer { display: contents !important; }
 .restaurant-menu-card-actions { display: contents !important; margin-top: 0 !important; }
 .restaurant-menu-card-content > .restaurant-menu-status { grid-column: 1; grid-row: 3; align-self: center; }
-.restaurant-menu-card-content > .button { grid-row: 3; min-height: 38px; }
-.restaurant-menu-card-content > .restaurant-menu-card-footer > .button { grid-column: 2; }
-.restaurant-menu-card-actions > .button:first-child { grid-column: 3; }
-.restaurant-menu-card-actions > .button:last-child { grid-column: 4; }
+.restaurant-menu-card-content > .restaurant-menu-card-footer > .button { grid-column: 2; grid-row: 3; min-height: 38px; }
+.restaurant-menu-card-actions > .button:first-child { grid-column: 3; grid-row: 3; }
+.restaurant-menu-card-actions > .button:last-child { grid-column: 4; grid-row: 3; }
 .restaurant-menu-card-content > .restaurant-menu-card-footer > .button,
 .restaurant-menu-card-actions > .button { min-width: 0; padding-inline: .75rem; }
 @media (max-width: 760px) {
@@ -47,7 +47,7 @@
   .restaurant-menu-count { align-self: flex-start; }
   .restaurant-menu-card { grid-template-columns: 96px minmax(0, 1fr); }
   .restaurant-menu-image, .restaurant-menu-image-placeholder { width: 96px; min-height: 150px; }
-  .restaurant-menu-card-content { padding: .85rem; }
+  .restaurant-menu-card-content { padding: .85rem; grid-template-columns: minmax(0, 1fr) auto auto; }
   .restaurant-menu-card-content > .restaurant-menu-status { grid-column: 1; }
   .restaurant-menu-card-content > .restaurant-menu-card-footer > .button { grid-column: 2; }
   .restaurant-menu-card-actions > .button:first-child { grid-column: 3; }
