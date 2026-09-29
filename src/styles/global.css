@@ -188,3 +188,32 @@ main { flex: 1; }
 @media (min-width: 561px) and (max-width: 800px) {
   .hero h1 { font-size: clamp(2.75rem, 8vw, 4rem); }
 }
+
+@media print {
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+
+  html,
+  body {
+    width: 80mm !important;
+    min-width: 80mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .restaurant-order-modal-backdrop .restaurant-order-modal {
+    width: 80mm !important;
+    max-width: 80mm !important;
+    min-width: 80mm !important;
+    margin: 0 !important;
+    padding: 4mm !important;
+    box-sizing: border-box !important;
+  }
+
+  .restaurant-order-modal-backdrop .restaurant-order-modal * {
+    max-width: 100% !important;
+  }
+}
