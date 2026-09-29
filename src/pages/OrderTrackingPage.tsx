@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getOrderStatus, type OrderStatus } from '../services/orderRepository';
+import { supabase } from '../services/supabaseClient';
 import '../styles/order-tracking.css';
 
 type OrderTrackingPageProps = {
@@ -19,6 +20,7 @@ const statusOrder: OrderStatus[] = ['pending', 'confirmed', 'preparing', 'ready'
 export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
   const [order, setOrder] = useState<Awaited<ReturnType<typeof getOrderStatus>> | null>(null);
   const [error, setError] = useState('');
+  const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
 
   useEffect(() => {
     let cancelled = false;
@@ -26,17 +28,47 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
     async function load() {
       try {
         const result = await getOrderStatus(orderNumber);
-        if (!cancelled) setOrder(result);
+        if (!cancelled) {
+          setOrder(result);
+          setError('');
+        }
       } catch (loadError) {
         if (!cancelled) setError(loadError instanceof Error ? loadError.message : 'Unable to load this order.');
       }
     }
 
     void load();
-    const timer = window.setInterval(load, 15000);
+
+    const client = supabase;
+    if (!client) {
+      setRealtimeStatus('error');
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const channel = client
+      .channel(`order-tracking:${orderNumber}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `order_number=eq.${orderNumber}`,
+        },
+        () => {
+          void load();
+        },
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') setRealtimeStatus('live');
+        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') setRealtimeStatus('error');
+      });
+
     return () => {
       cancelled = true;
-      window.clearInterval(timer);
+      void client.removeChannel(channel);
     };
   }, [orderNumber]);
 
@@ -104,6 +136,7 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
         <div className="order-tracking-meta">
           <span>{order.orderType === 'dine_in' ? 'Dine-in' : order.orderType === 'pickup' ? 'Pickup / Take-out' : 'Delivery'}</span>
           <span>{order.paymentMethod === 'gcash' ? 'GCash' : 'Cash'}</span>
+          <span>{realtimeStatus === 'live' ? '● Live' : realtimeStatus === 'connecting' ? '● Connecting…' : '● Reconnecting…'}</span>
         </div>
       </div>
     </section>
