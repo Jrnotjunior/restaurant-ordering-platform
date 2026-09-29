@@ -84,10 +84,11 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
       return;
     }
 
+    const formElement = event.currentTarget;
     setSaving(true);
     setError('');
 
-    const form = new FormData(event.currentTarget);
+    const form = new FormData(formElement);
     const name = String(form.get('name') || '').trim();
     const mobileNumber = String(form.get('mobileNumber') || '').trim();
     const email = String(form.get('email') || '').trim();
@@ -121,7 +122,7 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
         throw new Error('Rider was created, but the Supabase Auth account was not linked.');
       }
 
-      event.currentTarget.reset();
+      formElement.reset();
       setShowForm(false);
       await loadRiders();
     } catch (saveError) {
