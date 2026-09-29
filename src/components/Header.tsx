@@ -25,14 +25,6 @@ export function Header({ cartCount = 0 }: HeaderProps) {
         <span>{restaurant.name}</span>
       </a>
 
-      <nav aria-label="Primary navigation">
-        {restaurant.navigation.map((item) => (
-          <a key={`${item.href}-${item.label}`} href={withBasePath(item.href)}>
-            {item.label}
-          </a>
-        ))}
-      </nav>
-
       <a
         className="header-cart"
         href={withBasePath('/cart')}
