@@ -115,56 +115,47 @@
   white-space: nowrap;
 }
 
-/* Delivery address: Complete address on the left, Barangay on the right. */
-.checkout-section:has(.barangay-input-wrap) {
+/* Delivery address is intentionally ordered: City, Barangay, Complete address. */
+.checkout-section:has(.delivery-address-fields) {
   position: relative;
   overflow: visible;
 }
 
-.checkout-section:has(.barangay-input-wrap) .checkout-fields {
+.delivery-address-fields {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  grid-template-areas: "address barangay";
-  align-items: start;
-  column-gap: 1.25rem;
-  row-gap: 1rem;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
 }
 
-.checkout-section:has(.barangay-input-wrap) .checkout-fields > label {
+.delivery-address-fields > label {
+  display: grid;
+  gap: 0.45rem;
   min-width: 0;
 }
 
-.checkout-section:has(.barangay-input-wrap) .checkout-fields > label:first-child {
-  grid-area: barangay;
-}
-
-.checkout-section:has(.barangay-input-wrap) .checkout-fields > label:nth-child(2) {
-  grid-area: address;
-}
-
-.checkout-section:has(.barangay-input-wrap) .checkout-fields input,
-.checkout-section:has(.barangay-input-wrap) .checkout-fields textarea {
+.delivery-address-fields input,
+.delivery-address-fields textarea {
   width: 100%;
   box-sizing: border-box;
 }
 
-.checkout-section:has(.barangay-input-wrap) .checkout-fields input {
+.delivery-address-fields input {
   min-height: 3.25rem;
 }
 
-.checkout-section:has(.barangay-input-wrap) .checkout-fields textarea {
+.delivery-address-fields textarea {
   min-height: 7.5rem;
   resize: vertical;
 }
 
-.checkout-section:has(.barangay-input-wrap) > .checkout-error,
-.checkout-section:has(.barangay-input-wrap) > .checkout-hint {
+.checkout-section:has(.delivery-address-fields) > .checkout-error,
+.checkout-section:has(.delivery-address-fields) > .checkout-hint {
   width: 100%;
   box-sizing: border-box;
   margin: 0.9rem 0 0;
 }
 
-.checkout-section:has(.barangay-input-wrap) > .checkout-error {
+.checkout-section:has(.delivery-address-fields) > .checkout-error {
   padding: 0.7rem 0.85rem;
   border-radius: 0.65rem;
 }
@@ -231,12 +222,11 @@
     white-space: normal;
   }
 
-  .checkout-section:has(.barangay-input-wrap) .checkout-fields {
-    grid-template-columns: 1fr;
-    grid-template-areas: "barangay" "address";
+  .delivery-address-fields {
+    gap: 0.9rem;
   }
 
-  .checkout-section:has(.barangay-input-wrap) .checkout-fields textarea {
+  .delivery-address-fields textarea {
     min-height: 6.5rem;
   }
 }
