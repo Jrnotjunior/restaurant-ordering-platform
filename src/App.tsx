@@ -80,14 +80,23 @@ function AppContent() {
   const [restaurant, setRestaurant] = useState<RestaurantConfig>(defaultRestaurant);
   const [route, setRoute] = useState(() => window.location.hash || '');
   const [cartItems, setCartItems] = useState<CartItem[]>(() => { try { const stored = window.localStorage.getItem(CART_STORAGE_KEY); return stored ? JSON.parse(stored) as CartItem[] : []; } catch { return []; } });
+  const [cartNotification, setCartNotification] = useState('');
   const { loading: authLoading, error: authError } = useRestaurantOwnerAuth();
 
   useEffect(() => { const handleHashChange = () => setRoute(window.location.hash || ''); window.addEventListener('hashchange', handleHashChange); return () => window.removeEventListener('hashchange', handleHashChange); }, []);
   useEffect(() => { window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems)); }, [cartItems]);
+  useEffect(() => { if (!cartNotification) return; const timer = window.setTimeout(() => setCartNotification(''), 3000); return () => window.clearTimeout(timer); }, [cartNotification]);
   useEffect(() => { if (!isSupabaseConfigured) return; let cancelled = false; restaurantRepository.getRestaurant(currentRestaurantLookup).then((loadedRestaurant) => { if (!cancelled && loadedRestaurant) setRestaurant(loadedRestaurant); }).catch((error: unknown) => console.error('Unable to load restaurant from Supabase.', error)); return () => { cancelled = true; }; }, []);
 
   const cartCount = useMemo(() => cartItems.reduce((total, item) => total + item.quantity, 0), [cartItems]);
-  function addToCart(product: RestaurantProduct) { setCartItems((current) => { const existing = current.find((item) => item.product.id === product.id); if (existing) return current.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item); return [...current, { product, quantity: 1 }]; }); }
+  function addToCart(product: RestaurantProduct) {
+    setCartItems((current) => {
+      const existing = current.find((item) => item.product.id === product.id);
+      if (existing) return current.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
+      return [...current, { product, quantity: 1 }];
+    });
+    setCartNotification(`${product.name} added to cart`);
+  }
   function changeQuantity(productId: string, delta: number) { setCartItems((current) => current.map((item) => item.product.id === productId ? { ...item, quantity: item.quantity + delta } : item).filter((item) => item.quantity > 0)); }
   function removeFromCart(productId: string) { setCartItems((current) => current.filter((item) => item.product.id !== productId)); }
 
@@ -102,7 +111,7 @@ function AppContent() {
   const isRestaurantOperationsPage = isRestaurantDashboardPage || isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantShippingFeePage || isRestaurantSalesPage;
   const trackingMatch = route.match(/^#order\/(.+)$/);
 
-  const publicContent = isMenuPage ? <MenuPage onAddToCart={addToCart} cartCount={cartCount} /> : isCartPage ? <CartPage items={cartItems} onIncrease={(id) => changeQuantity(id, 1)} onDecrease={(id) => changeQuantity(id, -1)} onRemove={removeFromCart} /> : isCheckoutPage ? <CheckoutPage items={cartItems} /> : trackingMatch ? <OrderTrackingPage orderNumber={decodeURIComponent(trackingMatch[1])} /> : <section className="hero"><p className="eyebrow">Direct online ordering</p><h1>Order from your favorite local restaurant.</h1><p className="hero-copy">Browse the menu, choose pickup or delivery, and place your order directly.</p><div className="hero-actions"><a className="button button-primary" href={withBasePath('/menu')}>View Menu</a><a className="button button-secondary" href={withBasePath('/cart')}>View Cart{cartCount > 0 ? ` (${cartCount})` : ''}</a></div></section>;
+  const publicContent = isMenuPage ? <MenuPage onAddToCart={addToCart} cartCount={cartCount} /> : isCartPage ? <CartPage items={cartItems} onIncrease={(id) => changeQuantity(id, 1)} onDecrease={(id) => changeQuantity(id, -1)} onRemove={(id) => removeFromCart(id)} /> : isCheckoutPage ? <CheckoutPage items={cartItems} /> : trackingMatch ? <OrderTrackingPage orderNumber={decodeURIComponent(trackingMatch[1])} /> : <section className="hero"><p className="eyebrow">Direct online ordering</p><h1>Order from your favorite local restaurant.</h1><p className="hero-copy">Browse the menu, choose pickup or delivery, and place your order directly.</p><div className="hero-actions"><a className="button button-primary" href={withBasePath('/menu')}>View Menu</a><a className="button button-secondary" href={withBasePath('/cart')}>View Cart{cartCount > 0 ? ` (${cartCount})` : ''}</a></div></section>;
 
   if (isRestaurantOperationsPage) {
     if (authLoading) return <section className="restaurant-owner-auth-loading">Loading owner session…</section>;
@@ -123,7 +132,25 @@ function AppContent() {
     );
   }
 
-  return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout>{publicContent}</RestaurantLayout></ThemeProvider></RestaurantProvider>;
+  return (
+    <RestaurantProvider restaurant={restaurant}>
+      <ThemeProvider restaurant={restaurant}>
+        <RestaurantLayout>
+          {publicContent}
+          {cartNotification ? (
+            <div
+              role="status"
+              aria-live="polite"
+              style={{ position: 'fixed', right: '24px', bottom: '24px', zIndex: 2000, width: 'min(360px, calc(100vw - 32px))', padding: '14px 16px', borderRadius: '14px', background: '#111827', color: '#fff', boxShadow: '0 14px 40px rgba(0,0,0,.22)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px' }}
+            >
+              <span><strong>✓</strong> {cartNotification}</span>
+              <a href={withBasePath('/cart')} style={{ color: '#fff', fontWeight: 700, textDecoration: 'underline', whiteSpace: 'nowrap' }}>View Cart</a>
+            </div>
+          ) : null}
+        </RestaurantLayout>
+      </ThemeProvider>
+    </RestaurantProvider>
+  );
 }
 
 export function App() {
