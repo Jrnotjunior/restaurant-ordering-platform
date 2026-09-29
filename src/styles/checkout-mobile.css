@@ -30,7 +30,6 @@
   text-align: right;
 }
 
-/* Keep the subtotal label and amount in two clearly separated columns. */
 .checkout-summary-row {
   display: flex !important;
   align-items: center;
@@ -115,7 +114,6 @@
   white-space: nowrap;
 }
 
-/* Delivery address is intentionally ordered: City, Barangay, Complete address. */
 .checkout-section:has(.delivery-address-fields) {
   position: relative;
   overflow: visible;
@@ -158,6 +156,123 @@
 .checkout-section:has(.delivery-address-fields) > .checkout-error {
   padding: 0.7rem 0.85rem;
   border-radius: 0.65rem;
+}
+
+/* Delivery Terms modal */
+.delivery-terms-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 1.25rem;
+  background: rgba(15, 23, 42, 0.62);
+  backdrop-filter: blur(3px);
+}
+
+.delivery-terms-modal {
+  width: min(560px, 100%);
+  max-height: min(86vh, 720px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 1.6rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+  color: #0f172a;
+}
+
+.delivery-terms-modal h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+  line-height: 1.25;
+}
+
+.delivery-terms-modal .terms-intro {
+  margin: 0 0 1rem;
+  color: #64748b;
+  line-height: 1.55;
+}
+
+.delivery-terms-modal .terms-box {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+}
+
+.delivery-terms-modal .terms-box p {
+  margin: 0;
+  color: #334155;
+  line-height: 1.55;
+}
+
+.delivery-terms-modal .terms-box strong {
+  color: #0f172a;
+}
+
+.delivery-terms-modal .terms-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.third-party-courier-card {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #d9dee7;
+  border-radius: 0.875rem;
+  background: #f8fafc;
+}
+
+.third-party-courier-card > strong {
+  color: #0f172a;
+}
+
+.third-party-courier-card p {
+  margin: 0;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.third-party-courier-card .pickup-label {
+  margin-top: -0.4rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.third-party-courier-card .pickup-address {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.third-party-courier-card .pickup-callout {
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.65rem;
+  background: #fff;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.courier-payment-note {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.65rem;
+  background: #f8fafc;
+  color: #475569;
+  line-height: 1.5;
 }
 
 @media (max-width: 560px) {
@@ -228,6 +343,26 @@
 
   .delivery-address-fields textarea {
     min-height: 6.5rem;
+  }
+
+  .delivery-terms-backdrop {
+    align-items: flex-end;
+    padding: 0.75rem;
+  }
+
+  .delivery-terms-modal {
+    width: 100%;
+    max-height: 92vh;
+    padding: 1.25rem;
+    border-radius: 1rem 1rem 0.75rem 0.75rem;
+  }
+
+  .delivery-terms-modal .terms-actions {
+    flex-direction: column-reverse;
+  }
+
+  .delivery-terms-modal .terms-actions .button {
+    width: 100%;
   }
 }
 
