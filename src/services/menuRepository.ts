@@ -52,6 +52,22 @@ export async function getMenu(restaurantId: string, includeUnavailable = false):
   };
 }
 
+export async function getOrCreateCategory(restaurantId: string, name: string) {
+  if (!supabase) throw new Error('Supabase environment variables are not configured.');
+
+  const trimmedName = name.trim();
+  if (!trimmedName) throw new Error('Category is required.');
+
+  const { data, error } = await supabase.rpc('get_or_create_restaurant_category', {
+    p_restaurant_id: restaurantId,
+    p_name: trimmedName
+  });
+
+  if (error) throw new Error(`Unable to save category: ${error.message}`);
+  if (!data) throw new Error('Category was created but no category ID was returned.');
+  return String(data);
+}
+
 export async function setProductAvailability(productId: string, isAvailable: boolean) {
   if (!supabase) throw new Error('Supabase environment variables are not configured.');
 
