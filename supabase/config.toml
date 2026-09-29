@@ -1,0 +1,2 @@
+[functions.create-rider]
+verify_jwt = false
