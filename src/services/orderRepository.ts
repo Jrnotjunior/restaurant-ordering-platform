@@ -28,6 +28,7 @@ export type CreatedOrder = {
 };
 
 export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'completed' | 'cancelled';
+export type DeliveryStatus = 'assigned' | 'out_for_delivery' | 'delivered';
 
 export type TrackedOrder = {
   orderId: string;
@@ -37,6 +38,9 @@ export type TrackedOrder = {
   status: OrderStatus;
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   total: number;
+  deliveryStatus: DeliveryStatus | null;
+  riderName: string | null;
+  riderPhone: string | null;
 };
 
 type CreatedOrderRow = {
@@ -55,6 +59,9 @@ type TrackedOrderRow = {
   status: OrderStatus;
   payment_status: TrackedOrder['paymentStatus'];
   total: number;
+  delivery_status?: DeliveryStatus | null;
+  rider_name?: string | null;
+  rider_phone?: string | null;
 };
 
 export async function createOrder(input: CreateOrderInput): Promise<CreatedOrder> {
@@ -100,5 +107,8 @@ export async function getOrderStatus(orderNumber: string): Promise<TrackedOrder>
     status: row.status,
     paymentStatus: row.payment_status,
     total: Number(row.total),
+    deliveryStatus: row.delivery_status ?? null,
+    riderName: row.rider_name ?? null,
+    riderPhone: row.rider_phone ?? null,
   };
 }
