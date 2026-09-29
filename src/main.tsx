@@ -10,6 +10,7 @@ import './styles/restaurant-menu.css';
 import './styles/restaurant-shipping.css';
 import './styles/restaurant-sales.css';
 import './styles/restaurant-auth.css';
+import './styles/restaurant-navigation.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
