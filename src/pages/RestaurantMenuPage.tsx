@@ -195,6 +195,10 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
         .restaurant-product-form{display:grid;gap:14px}
         .restaurant-product-form label{display:grid;gap:6px;font-weight:600;font-size:14px}
         .restaurant-product-form input,.restaurant-product-form textarea{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:10px;padding:11px 12px;font:inherit;color:#0f172a;background:#fff}
+        .restaurant-product-form input[type=number]{-moz-appearance:textfield}
+        .restaurant-product-form input[type=number]::-webkit-inner-spin-button,.restaurant-product-form input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+        .restaurant-product-form input[list]{padding-right:12px}
+        .restaurant-product-form input[list]::-webkit-calendar-picker-indicator{display:none!important;opacity:0;width:0;margin:0}
         .restaurant-product-form textarea{min-height:90px;resize:vertical}
         .restaurant-product-image-picker{display:grid;gap:10px}
         .restaurant-product-image-preview{display:block;width:100%;aspect-ratio:1 / 1;height:auto;object-fit:cover;border-radius:12px;border:1px solid #dbe2ea;background:#f8fafc}
