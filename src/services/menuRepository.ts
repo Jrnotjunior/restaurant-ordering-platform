@@ -62,9 +62,10 @@ export async function getMenu(restaurantId: string, includeUnavailable = false):
 
   const categoryRows = (categoryResult.data ?? []) as CategoryRow[];
   const productRows = (productResult.data ?? []) as ProductRow[];
+  const usedCategoryIds = new Set(productRows.map((product) => product.category_id));
 
   return {
-    categories: categoryRows.map((category) => ({
+    categories: categoryRows.filter((category) => usedCategoryIds.has(category.id)).map((category) => ({
       id: category.id,
       restaurantId: category.restaurant_id,
       name: category.name,
