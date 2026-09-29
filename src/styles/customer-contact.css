@@ -1,0 +1,42 @@
+.customer-contact-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.customer-contact-action {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 13px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  color: #0f172a;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+  transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
+}
+
+.customer-contact-action:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, .06);
+}
+
+.customer-contact-action:focus-visible {
+  outline: 2px solid #111827;
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .customer-contact-actions {
+    width: 100%;
+  }
+
+  .customer-contact-action {
+    flex: 1;
+  }
+}
