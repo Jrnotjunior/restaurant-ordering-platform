@@ -12,6 +12,7 @@ import { RestaurantMenuPage } from './pages/RestaurantMenuPage';
 import { RestaurantShippingFeePage } from './pages/RestaurantShippingFeePage';
 import { RestaurantSalesPage } from './pages/RestaurantSalesPage';
 import { RestaurantRidersPage } from './pages/RestaurantRidersPage';
+import { RestaurantDeliveryDispatchPage } from './pages/RestaurantDeliveryDispatchPage';
 import { RestaurantOwnerLoginPage } from './pages/RestaurantOwnerLoginPage';
 import { RiderDeliveryPage } from './pages/RiderDeliveryPage';
 import { defaultRestaurant } from './config/defaultRestaurant';
@@ -39,6 +40,7 @@ function withBasePath(path: string) {
   if (path === '/restaurant/shipping-fee') return `${base}/#restaurant/shipping-fee`;
   if (path === '/restaurant/sales') return `${base}/#restaurant/sales`;
   if (path === '/restaurant/riders') return `${base}/#restaurant/riders`;
+  if (path === '/restaurant/delivery-dispatch') return `${base}/#restaurant/delivery-dispatch`;
   if (path === '/rider/delivery-preview') return `${base}/#rider/delivery-preview`;
   return `${base}${path.startsWith('/') ? path : `/${path}`}`;
 }
@@ -115,8 +117,9 @@ function AppContent() {
   const isRestaurantShippingFeePage = route === '#restaurant/shipping-fee';
   const isRestaurantSalesPage = route === '#restaurant/sales';
   const isRestaurantRidersPage = route === '#restaurant/riders';
+  const isRestaurantDeliveryDispatchPage = route === '#restaurant/delivery-dispatch';
   const isRiderDeliveryPreviewPage = route === '#rider/delivery-preview';
-  const isRestaurantOperationsPage = isRestaurantDashboardPage || isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantShippingFeePage || isRestaurantSalesPage || isRestaurantRidersPage;
+  const isRestaurantOperationsPage = isRestaurantDashboardPage || isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantShippingFeePage || isRestaurantSalesPage || isRestaurantRidersPage || isRestaurantDeliveryDispatchPage;
   const trackingMatch = route.match(/^#order\/(.+)$/);
 
   const publicContent = isMenuPage || (!isCartPage && !isCheckoutPage && !trackingMatch) ? <MenuPage onAddToCart={addToCart} cartCount={cartCount} /> : isCartPage ? <CartPage items={cartItems} onIncrease={(id) => changeQuantity(id, 1)} onDecrease={(id) => changeQuantity(id, -1)} onRemove={(id) => removeFromCart(id)} /> : isCheckoutPage ? <CheckoutPage items={cartItems} /> : <OrderTrackingPage orderNumber={decodeURIComponent(trackingMatch![1])} />;
@@ -133,7 +136,7 @@ function AppContent() {
           <RestaurantProvider restaurant={ownerRestaurant}>
             <ThemeProvider restaurant={ownerRestaurant}>
               <RestaurantLayout hideChrome>
-                {isRestaurantDashboardPage ? <RestaurantDashboardPage restaurantId={ownerRestaurant.id!} /> : isRestaurantOrdersPage ? <RestaurantOrdersPage restaurantId={ownerRestaurant.id!} /> : isRestaurantMenuPage ? <RestaurantMenuPage restaurantId={ownerRestaurant.id!} /> : isRestaurantShippingFeePage ? <RestaurantShippingFeePage restaurantId={ownerRestaurant.id!} /> : isRestaurantRidersPage ? <RestaurantRidersPage /> : <RestaurantSalesPage restaurantId={ownerRestaurant.id!} />}
+                {isRestaurantDashboardPage ? <RestaurantDashboardPage restaurantId={ownerRestaurant.id!} /> : isRestaurantOrdersPage ? <RestaurantOrdersPage restaurantId={ownerRestaurant.id!} /> : isRestaurantMenuPage ? <RestaurantMenuPage restaurantId={ownerRestaurant.id!} /> : isRestaurantShippingFeePage ? <RestaurantShippingFeePage restaurantId={ownerRestaurant.id!} /> : isRestaurantRidersPage ? <RestaurantRidersPage /> : isRestaurantDeliveryDispatchPage ? <RestaurantDeliveryDispatchPage /> : <RestaurantSalesPage restaurantId={ownerRestaurant.id!} />}
               </RestaurantLayout>
             </ThemeProvider>
           </RestaurantProvider>
