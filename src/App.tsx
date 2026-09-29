@@ -137,7 +137,7 @@ function AppContent() {
           <RestaurantProvider restaurant={ownerRestaurant}>
             <ThemeProvider restaurant={ownerRestaurant}>
               <RestaurantLayout hideChrome>
-                {isRestaurantOrdersPage ? <RestaurantOrdersPage restaurantId={ownerRestaurant.id!} /> : isRestaurantMenuPage ? <RestaurantMenuPage restaurantId={ownerRestaurant.id!} /> : isRestaurantShippingFeePage ? <RestaurantShippingFeePage restaurantId={ownerRestaurant.id!} /> : isRestaurantRidersPage ? <RestaurantRidersPage restaurantId={ownerRestaurant.id!} /> : isRestaurantDeliveryDispatchPage ? <RestaurantDeliveryDispatchPage /> : <RestaurantSalesPage restaurantId={ownerRestaurant.id!} />}
+                {isRestaurantOrdersPage ? <RestaurantOrdersPage restaurantId={ownerRestaurant.id!} /> : isRestaurantMenuPage ? <RestaurantMenuPage restaurantId={ownerRestaurant.id!} /> : isRestaurantShippingFeePage ? <RestaurantShippingFeePage restaurantId={ownerRestaurant.id!} /> : isRestaurantRidersPage ? <RestaurantRidersPage restaurantId={ownerRestaurant.id!} /> : isRestaurantDeliveryDispatchPage ? <RestaurantDeliveryDispatchPage restaurantId={ownerRestaurant.id!} /> : <RestaurantSalesPage restaurantId={ownerRestaurant.id!} />}
               </RestaurantLayout>
             </ThemeProvider>
           </RestaurantProvider>
