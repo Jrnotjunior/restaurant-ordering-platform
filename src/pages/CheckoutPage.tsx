@@ -35,7 +35,7 @@ const paymentMethods: Array<{ value: PaymentMethod; label: string; description: 
 ];
 
 const outsideDeliveryAreaMessage = 'The address is not within the store delivery area. If you want to proceed, please book your own delivery courier like Lalamove or Grab Express.';
-const outsideCityMessage = 'We currently deliver only within Valenzuela City.';
+const outsideCityMessage = 'We currently deliver only within selected barangays in Valenzuela City. We prepare your food after your order is confirmed so it can arrive hot and fresh. Delivering outside our service area may affect the food’s freshness and quality.';
 
 function normalizeBarangay(value: string): string {
   return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
@@ -273,6 +273,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
                     onChange={(event) => {
                       setDeliveryCity(event.target.value);
                       setDeliveryBarangay('');
+                      setAddress('');
                       setShowPayment(false);
                       setPaymentMethod('');
                       setSubmitError('');
@@ -326,10 +327,12 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
                   </label>
                 ) : null}
 
-                <label>
-                  <span>Complete address</span>
-                  <textarea value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Complete delivery address" rows={4} required />
-                </label>
+                {cityIsSupported && deliveryBarangay.trim() ? (
+                  <label>
+                    <span>Complete address</span>
+                    <textarea value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Complete delivery address" rows={4} required />
+                  </label>
+                ) : null}
               </div>
 
               {deliveryCity.trim() && !cityIsSupported ? <p className="checkout-error" role="alert">{outsideCityMessage}</p> : null}
