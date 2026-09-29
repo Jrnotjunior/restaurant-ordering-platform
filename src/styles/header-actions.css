@@ -1,0 +1,36 @@
+.header-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  flex: 0 0 auto;
+}
+
+.header-account,
+.header-cart {
+  position: relative;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: inherit;
+  font-weight: 600;
+}
+
+.header-account:hover,
+.header-cart:hover {
+  color: var(--color-text);
+}
+
+.header-account-icon,
+.header-cart-icon {
+  display: block;
+}
+
+@media (max-width: 560px) {
+  .header-actions {
+    gap: 0.25rem;
+  }
+}
