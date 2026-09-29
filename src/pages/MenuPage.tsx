@@ -79,6 +79,7 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
       </div>
 
       {categories.length > 0 ? (
+        <>
         <div className="menu-category-select menu-category-desktop">
           <label htmlFor="menu-category-desktop">Category</label>
           <select
@@ -135,6 +136,7 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
             ) : null}
           </div>
         </div>
+        </>
       ) : null}
 
       {loading ? <p className="menu-state">Loading menu…</p> : null}
