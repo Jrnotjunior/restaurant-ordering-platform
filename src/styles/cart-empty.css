@@ -1,0 +1,12 @@
+.cart-empty {
+  justify-items: center;
+  text-align: center;
+}
+
+.cart-empty p {
+  width: 100%;
+}
+
+.cart-empty .button {
+  justify-self: center;
+}
