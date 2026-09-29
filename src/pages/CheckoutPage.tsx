@@ -35,9 +35,19 @@ const paymentMethods: Array<{ value: PaymentMethod; label: string; description: 
 ];
 
 const outsideDeliveryAreaMessage = 'The address is not within the store delivery area. If you want to proceed, please book your own delivery courier like Lalamove or Grab Express.';
+const outsideCityMessage = 'We currently deliver only within Valenzuela City.';
 
 function normalizeBarangay(value: string): string {
   return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+}
+
+function normalizeCity(value: string): string {
+  return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+}
+
+function isValenzuelaCity(value: string): boolean {
+  const normalized = normalizeCity(value);
+  return normalized === 'valenzuela' || normalized === 'valenzuela city';
 }
 
 export function CheckoutPage({ items }: CheckoutPageProps) {
@@ -45,6 +55,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const [customerName, setCustomerName] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
   const [tableNumber, setTableNumber] = useState('');
+  const [deliveryCity, setDeliveryCity] = useState('');
   const [address, setAddress] = useState('');
   const [deliveryBarangay, setDeliveryBarangay] = useState('');
   const [deliveryZones, setDeliveryZones] = useState<RestaurantDeliveryZone[]>([]);
@@ -62,6 +73,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   useEffect(() => {
     if (!restaurantId || orderType !== 'delivery') {
       setDeliveryZones([]);
+      setDeliveryCity('');
       setDeliveryBarangay('');
       setDeliveryZonesError('');
       setLoadingDeliveryZones(false);
@@ -97,21 +109,27 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     [items],
   );
 
+  const cityIsSupported = isValenzuelaCity(deliveryCity);
+
   const selectedDeliveryZone = useMemo(() => {
+    if (!cityIsSupported) return null;
+
     const normalizedInput = normalizeBarangay(deliveryBarangay);
     if (!normalizedInput) return null;
 
     return deliveryZones.find((zone) => normalizeBarangay(zone.barangay) === normalizedInput) ?? null;
-  }, [deliveryZones, deliveryBarangay]);
+  }, [cityIsSupported, deliveryZones, deliveryBarangay]);
 
   const barangaySuggestions = useMemo(() => {
+    if (!cityIsSupported) return [];
+
     const normalizedInput = normalizeBarangay(deliveryBarangay);
     if (!normalizedInput || selectedDeliveryZone) return [];
 
     return deliveryZones
       .filter((zone) => normalizeBarangay(zone.barangay).startsWith(normalizedInput))
       .slice(0, 6);
-  }, [deliveryZones, deliveryBarangay, selectedDeliveryZone]);
+  }, [cityIsSupported, deliveryZones, deliveryBarangay, selectedDeliveryZone]);
 
   const deliveryFee = orderType === 'delivery' ? Number(selectedDeliveryZone?.shippingFee ?? 0) : 0;
   const deliveryAreaIsSupported = orderType !== 'delivery' || Boolean(selectedDeliveryZone?.isSupported);
@@ -133,7 +151,15 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const canContinue = items.length > 0
     && Boolean(customerName.trim() && mobileNumber.trim())
     && (!isDineIn || tableNumber.trim())
-    && (!isDelivery || (address.trim() && deliveryBarangay.trim() && barangayMatchesConfiguredZone && selectedDeliveryZone && deliveryAreaIsSupported && !loadingDeliveryZones));
+    && (!isDelivery || (
+      cityIsSupported
+      && address.trim()
+      && deliveryBarangay.trim()
+      && barangayMatchesConfiguredZone
+      && selectedDeliveryZone
+      && deliveryAreaIsSupported
+      && !loadingDeliveryZones
+    ));
 
   function handleContinueToPayment() {
     if (!canContinue) return;
@@ -156,6 +182,10 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         throw new Error('Your cart contains items from different restaurants. Please clear your cart and try again.');
       }
 
+      if (isDelivery && !cityIsSupported) {
+        throw new Error(outsideCityMessage);
+      }
+
       if (isDelivery && (!selectedDeliveryZone || !selectedDeliveryZone.isSupported)) {
         throw new Error(outsideDeliveryAreaMessage);
       }
@@ -168,7 +198,9 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         orderType,
         tableNumber: tableNumber.trim(),
         deliveryBarangay: isDelivery ? deliveryBarangay.trim() : '',
-        deliveryAddress: address.trim(),
+        deliveryAddress: isDelivery
+          ? [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')
+          : address.trim(),
         notes: notes.trim(),
         paymentMethod,
         items: items.map((item) => ({
@@ -232,55 +264,78 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             <fieldset className="checkout-section">
               <legend>Delivery address</legend>
               {deliveryZonesError ? <p className="checkout-error" role="alert">{deliveryZonesError}</p> : null}
-              <div className="checkout-fields">
+              <div className="delivery-address-fields">
                 <label>
-                  <span>Barangay</span>
-                  <div className="barangay-input-wrap">
-                    <input
-                      type="text"
-                      value={deliveryBarangay}
-                      onChange={(event) => {
-                        setDeliveryBarangay(event.target.value);
-                        setShowPayment(false);
-                        setPaymentMethod('');
-                        setSubmitError('');
-                      }}
-                      autoComplete="address-level3"
-                      placeholder="Enter your barangay"
-                      disabled={loadingDeliveryZones || deliveryZones.length === 0}
-                      required
-                    />
-                    {barangaySuggestions.length > 0 ? (
-                      <div className="barangay-suggestions" role="listbox" aria-label="Barangay suggestions">
-                        {barangaySuggestions.map((zone) => (
-                          <button
-                            className="barangay-suggestion"
-                            key={zone.id}
-                            type="button"
-                            role="option"
-                            onClick={() => {
-                              setDeliveryBarangay(zone.barangay);
-                              setShowPayment(false);
-                              setPaymentMethod('');
-                              setSubmitError('');
-                            }}
-                          >
-                            <span>{zone.barangay}</span>
-                            <small>{zone.isSupported ? `₱${zone.shippingFee.toFixed(2)} delivery fee` : 'Outside delivery area'}</small>
-                          </button>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
+                  <span>City</span>
+                  <input
+                    type="text"
+                    value={deliveryCity}
+                    onChange={(event) => {
+                      setDeliveryCity(event.target.value);
+                      setDeliveryBarangay('');
+                      setShowPayment(false);
+                      setPaymentMethod('');
+                      setSubmitError('');
+                    }}
+                    autoComplete="address-level2"
+                    placeholder="Enter your city"
+                    required
+                  />
                 </label>
+
+                {cityIsSupported ? (
+                  <label>
+                    <span>Barangay</span>
+                    <div className="barangay-input-wrap">
+                      <input
+                        type="text"
+                        value={deliveryBarangay}
+                        onChange={(event) => {
+                          setDeliveryBarangay(event.target.value);
+                          setShowPayment(false);
+                          setPaymentMethod('');
+                          setSubmitError('');
+                        }}
+                        autoComplete="address-level3"
+                        placeholder="Enter your barangay"
+                        disabled={loadingDeliveryZones || deliveryZones.length === 0}
+                        required
+                      />
+                      {barangaySuggestions.length > 0 ? (
+                        <div className="barangay-suggestions" role="listbox" aria-label="Barangay suggestions">
+                          {barangaySuggestions.map((zone) => (
+                            <button
+                              className="barangay-suggestion"
+                              key={zone.id}
+                              type="button"
+                              role="option"
+                              onClick={() => {
+                                setDeliveryBarangay(zone.barangay);
+                                setShowPayment(false);
+                                setPaymentMethod('');
+                                setSubmitError('');
+                              }}
+                            >
+                              <span>{zone.barangay}</span>
+                              <small>{zone.isSupported ? `₱${zone.shippingFee.toFixed(2)} delivery fee` : 'Outside delivery area'}</small>
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  </label>
+                ) : null}
+
                 <label>
                   <span>Complete address</span>
                   <textarea value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Complete delivery address" rows={4} required />
                 </label>
               </div>
+
+              {deliveryCity.trim() && !cityIsSupported ? <p className="checkout-error" role="alert">{outsideCityMessage}</p> : null}
               {loadingDeliveryZones ? <p className="checkout-hint">Loading delivery areas…</p> : null}
-              {!loadingDeliveryZones && !deliveryZonesError && deliveryZones.length === 0 ? <p className="checkout-error" role="alert">This restaurant has not configured any delivery areas yet.</p> : null}
-              {!loadingDeliveryZones && deliveryBarangay.trim() && !selectedDeliveryZone ? <p className="checkout-error" role="alert">{outsideDeliveryAreaMessage}</p> : null}
+              {!loadingDeliveryZones && cityIsSupported && !deliveryZonesError && deliveryZones.length === 0 ? <p className="checkout-error" role="alert">This restaurant has not configured any delivery areas yet.</p> : null}
+              {!loadingDeliveryZones && cityIsSupported && deliveryBarangay.trim() && !selectedDeliveryZone ? <p className="checkout-error" role="alert">{outsideDeliveryAreaMessage}</p> : null}
               {selectedDeliveryZone && !selectedDeliveryZone.isSupported ? <p className="checkout-error" role="alert">{outsideDeliveryAreaMessage}</p> : null}
               {selectedDeliveryZone?.isSupported ? <p className="checkout-hint">Delivery fee: ₱{deliveryFee.toFixed(2)}</p> : null}
             </fieldset>
