@@ -3,11 +3,10 @@ import { useEffect, useState } from 'react';
 type NavigationItem = {
   label: string;
   href: string;
-  icon: 'dashboard' | 'orders' | 'products' | 'riders' | 'shipping' | 'sales' | 'dispatch';
+  icon: 'orders' | 'products' | 'riders' | 'shipping' | 'sales' | 'dispatch';
 };
 
 const navigationItems: NavigationItem[] = [
-  { label: 'Dashboard', href: '#restaurant/dashboard', icon: 'dashboard' },
   { label: 'Orders', href: '#restaurant/orders', icon: 'orders' },
   { label: 'Products', href: '#restaurant/menu', icon: 'products' },
   { label: 'Riders', href: '#restaurant/riders', icon: 'riders' },
@@ -28,10 +27,6 @@ function NavigationIcon({ type }: { type: NavigationItem['icon'] }) {
     strokeLinejoin: 'round' as const,
     'aria-hidden': true,
   };
-
-  if (type === 'dashboard') {
-    return <svg {...common}><path d="M4 10.5 12 4l8 6.5" /><path d="M6.5 9.5V20h11V9.5" /><path d="M9.5 20v-6h5v6" /></svg>;
-  }
 
   if (type === 'orders') {
     return <svg {...common}><path d="M6 3.5h9l3 3V20.5H6z" /><path d="M14 3.5v4h4" /><path d="M9 12h6M9 15.5h6" /></svg>;
