@@ -1,0 +1,30 @@
+.header-cart {
+  position: relative;
+}
+
+.header-cart-badge {
+  position: absolute;
+  top: 1px;
+  right: -2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  font-family: var(--font-ui);
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 0 0 2px var(--color-background);
+}
+
+@media (max-width: 560px) {
+  .header-cart-badge {
+    top: 2px;
+    right: 1px;
+  }
+}
