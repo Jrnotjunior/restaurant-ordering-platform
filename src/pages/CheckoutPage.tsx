@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { RestaurantProduct } from '../types/menu';
 import { createOrder } from '../services/orderRepository';
-import { getRestaurantDeliveryZones, type RestaurantDeliveryZone } from '../services/restaurantSettingsRepository';
+import { getRestaurantDeliveryZones, getRestaurantLocationText, type RestaurantDeliveryZone } from '../services/restaurantSettingsRepository';
 import { OrderConfirmationPage } from './OrderConfirmationPage';
 import '../styles/checkout-mobile.css';
 
@@ -61,6 +61,8 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const [deliveryZones, setDeliveryZones] = useState<RestaurantDeliveryZone[]>([]);
   const [loadingDeliveryZones, setLoadingDeliveryZones] = useState(false);
   const [deliveryZonesError, setDeliveryZonesError] = useState('');
+  const [restaurantLocationText, setRestaurantLocationText] = useState('');
+  const [loadingRestaurantLocation, setLoadingRestaurantLocation] = useState(false);
   const [outsideCityAccepted, setOutsideCityAccepted] = useState(false);
   const [showOutsideCityModal, setShowOutsideCityModal] = useState(false);
   const [notes, setNotes] = useState('');
@@ -79,6 +81,8 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       setDeliveryBarangay('');
       setDeliveryZonesError('');
       setLoadingDeliveryZones(false);
+      setRestaurantLocationText('');
+      setLoadingRestaurantLocation(false);
       setOutsideCityAccepted(false);
       setShowOutsideCityModal(false);
       return;
@@ -86,21 +90,29 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
     let cancelled = false;
     setLoadingDeliveryZones(true);
+    setLoadingRestaurantLocation(true);
     setDeliveryZonesError('');
 
-    void getRestaurantDeliveryZones(restaurantId)
-      .then((zones) => {
+    void Promise.all([
+      getRestaurantDeliveryZones(restaurantId),
+      getRestaurantLocationText(restaurantId),
+    ])
+      .then(([zones, locationText]) => {
         if (cancelled) return;
         setDeliveryZones(zones);
+        setRestaurantLocationText(locationText);
       })
       .catch((error) => {
         if (cancelled) return;
         setDeliveryZones([]);
         setDeliveryBarangay('');
-        setDeliveryZonesError(error instanceof Error ? error.message : 'Unable to load delivery areas.');
+        setRestaurantLocationText('');
+        setDeliveryZonesError(error instanceof Error ? error.message : 'Unable to load delivery settings.');
       })
       .finally(() => {
-        if (!cancelled) setLoadingDeliveryZones(false);
+        if (cancelled) return;
+        setLoadingDeliveryZones(false);
+        setLoadingRestaurantLocation(false);
       });
 
     return () => {
@@ -152,6 +164,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const isDineIn = orderType === 'dine_in';
   const isDelivery = orderType === 'delivery';
   const outsideCityDelivery = isDelivery && Boolean(deliveryCity.trim()) && !cityIsSupported;
+  const outsideCityReady = outsideCityDelivery && outsideCityAccepted && Boolean(restaurantLocationText.trim());
 
   if (confirmedOrder) {
     return (
@@ -165,7 +178,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   }
 
   const deliveryDetailsComplete = outsideCityDelivery
-    ? outsideCityAccepted && address.trim()
+    ? outsideCityReady
     : cityIsSupported
       && address.trim()
       && deliveryBarangay.trim()
@@ -209,8 +222,8 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         throw new Error('Your cart contains items from different restaurants. Please clear your cart and try again.');
       }
 
-      if (isDelivery && outsideCityDelivery && !outsideCityAccepted) {
-        throw new Error('Please review and accept the outside-area delivery terms before continuing.');
+      if (isDelivery && outsideCityDelivery && !outsideCityReady) {
+        throw new Error('Please review the outside-area delivery terms and confirm the restaurant pickup point before continuing.');
       }
 
       if (isDelivery && cityIsSupported && (!selectedDeliveryZone || !selectedDeliveryZone.isSupported)) {
@@ -227,9 +240,16 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         deliveryCity: isDelivery ? deliveryCity.trim() : '',
         deliveryBarangay: isDelivery && cityIsSupported ? deliveryBarangay.trim() : '',
         deliveryAddress: isDelivery
-          ? [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')
+          ? outsideCityDelivery
+            ? `Restaurant pickup point: ${restaurantLocationText.trim()}`
+            : [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')
           : address.trim(),
-        notes: notes.trim(),
+        notes: outsideCityDelivery
+          ? [
+              'Outside-city delivery: customer is responsible for booking and paying the third-party courier.',
+              notes.trim(),
+            ].filter(Boolean).join(' ')
+          : notes.trim(),
         paymentMethod,
         items: items.map((item) => ({
           productId: item.product.id,
@@ -358,15 +378,26 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
                   </label>
                 ) : null}
 
-                {(cityIsSupported && deliveryBarangay.trim()) || outsideCityAccepted ? (
+                {cityIsSupported && deliveryBarangay.trim() ? (
                   <label>
                     <span>Complete address</span>
                     <textarea value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Complete delivery address" rows={4} required />
                   </label>
                 ) : null}
+
+                {outsideCityAccepted ? (
+                  <div className="outside-pickup-point" aria-label="Restaurant pickup point">
+                    <div className="outside-pickup-point-header">
+                      <span>Restaurant pickup point</span>
+                      <span className="outside-pickup-point-badge">Give this to your courier</span>
+                    </div>
+                    <p>{loadingRestaurantLocation ? 'Loading restaurant address…' : restaurantLocationText || 'Restaurant pickup address is not configured yet.'}</p>
+                    <small>Your address is not required here. You will provide your destination directly to the courier you book.</small>
+                  </div>
+                ) : null}
               </div>
 
-              {loadingDeliveryZones ? <p className="checkout-hint">Loading delivery areas…</p> : null}
+              {loadingDeliveryZones || loadingRestaurantLocation ? <p className="checkout-hint">Loading delivery settings…</p> : null}
               {!loadingDeliveryZones && cityIsSupported && !deliveryZonesError && deliveryZones.length === 0 ? <p className="checkout-error" role="alert">This restaurant has not configured any delivery areas yet.</p> : null}
               {!loadingDeliveryZones && cityIsSupported && deliveryBarangay.trim() && !selectedDeliveryZone ? <p className="checkout-error" role="alert">{outsideDeliveryAreaMessage}</p> : null}
               {selectedDeliveryZone && !selectedDeliveryZone.isSupported ? <p className="checkout-error" role="alert">{outsideDeliveryAreaMessage}</p> : null}
@@ -462,10 +493,12 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
               <ul>
                 <li>The restaurant will prepare your food after the order is confirmed.</li>
                 <li>You are responsible for booking and paying a third-party courier such as Lalamove or Grab Express.</li>
+                <li>Your destination address is not required in this checkout. You will provide the destination directly to the courier.</li>
+                <li>The restaurant pickup point shown after proceeding must be entered as the courier’s pickup location.</li>
                 <li>Courier availability, delivery time, courier charges, and handling are outside the restaurant’s control.</li>
                 <li>Longer travel or courier delays may affect the food’s temperature, freshness, and quality.</li>
               </ul>
-              <p className="delivery-terms-note">By proceeding, you confirm that you have read and understood these delivery terms and agree to arrange your own courier for this address.</p>
+              <p className="delivery-terms-note">By proceeding, you confirm that you have read and understood these delivery terms and agree to arrange your own courier for this order.</p>
             </div>
 
             <div className="delivery-terms-actions">
@@ -473,8 +506,10 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
               <button
                 className="button button-primary"
                 type="button"
+                disabled={loadingRestaurantLocation || !restaurantLocationText.trim()}
                 onClick={() => {
                   setOutsideCityAccepted(true);
+                  setAddress('');
                   setShowOutsideCityModal(false);
                   setShowPayment(false);
                   setPaymentMethod('');
