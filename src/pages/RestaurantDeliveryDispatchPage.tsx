@@ -71,11 +71,13 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
   const [assigning, setAssigning] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
 
   async function loadDispatchData() {
     if (!supabase) {
       setError('Supabase is not configured.');
       setLoading(false);
+      setRealtimeStatus('error');
       return;
     }
 
@@ -121,7 +123,6 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
       const assignments = (assignmentResult.data ?? []) as AssignmentRow[];
       const activeStatuses = new Set(['assigned', 'picked_up', 'delivering']);
       const startOfToday = todayStartIso();
-
       const activeByRider = new Map<string, number>();
       const deliveredTodayByRider = new Map<string, number>();
 
@@ -129,12 +130,8 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
         if (activeStatuses.has(assignment.status)) {
           activeByRider.set(assignment.rider_id, (activeByRider.get(assignment.rider_id) ?? 0) + 1);
         }
-
         if (assignment.status === 'delivered' && assignment.delivered_at && assignment.delivered_at >= startOfToday) {
-          deliveredTodayByRider.set(
-            assignment.rider_id,
-            (deliveredTodayByRider.get(assignment.rider_id) ?? 0) + 1,
-          );
+          deliveredTodayByRider.set(assignment.rider_id, (deliveredTodayByRider.get(assignment.rider_id) ?? 0) + 1);
         }
       }
 
@@ -166,6 +163,35 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
   useEffect(() => {
     setLoading(true);
     void loadDispatchData();
+
+    const client = supabase;
+    if (!client) {
+      setRealtimeStatus('error');
+      return;
+    }
+
+    const channel = client
+      .channel(`delivery-dispatch:${restaurantId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `restaurant_id=eq.${restaurantId}` }, () => {
+        void loadDispatchData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'restaurant_riders', filter: `restaurant_id=eq.${restaurantId}` }, () => {
+        void loadDispatchData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'rider_delivery_scopes' }, () => {
+        void loadDispatchData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'delivery_assignments', filter: `restaurant_id=eq.${restaurantId}` }, () => {
+        void loadDispatchData();
+      })
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') setRealtimeStatus('live');
+        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') setRealtimeStatus('error');
+      });
+
+    return () => {
+      void client.removeChannel(channel);
+    };
   }, [restaurantId]);
 
   const availableOrders = useMemo(() => orders, [orders]);
@@ -181,7 +207,6 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
 
   async function assignOrder(rider: Rider) {
     if (!supabase || !selectedOrder || assigning) return;
-
     const canAssign = rider.status === 'available' && rider.activeDeliveries === 0 && rider.scope.includes(orderArea);
     if (!canAssign) return;
 
@@ -198,7 +223,6 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
           restaurant_id: restaurantId,
           status: 'assigned',
         });
-
       if (assignmentError) throw assignmentError;
 
       const { error: orderError } = await supabase
@@ -235,6 +259,10 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
           <h1>Delivery Dispatch</h1>
           <p>Ready orders that still need a rider assignment.</p>
         </div>
+        <span className={`restaurant-dashboard-live-status is-${realtimeStatus}`}>
+          <span className="restaurant-dashboard-live-dot" />
+          {realtimeStatus === 'live' ? 'Live' : realtimeStatus === 'connecting' ? 'Connecting…' : 'Reconnecting…'}
+        </span>
       </header>
 
       {message ? <div className="restaurant-dispatch-message" role="status">{message}</div> : null}
@@ -266,11 +294,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
                   <span className="restaurant-dispatch-address">{order.address}</span>
                   <small>Ready at {order.readyAt}</small>
                 </div>
-                <button
-                  className="restaurant-dispatch-assign-button"
-                  type="button"
-                  onClick={() => { setSelectedOrder(order); setMessage(''); setError(''); }}
-                >
+                <button className="restaurant-dispatch-assign-button" type="button" onClick={() => { setSelectedOrder(order); setMessage(''); setError(''); }}>
                   Assign to Rider
                 </button>
               </article>
@@ -280,13 +304,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
       </main>
 
       {selectedOrder ? (
-        <div
-          className="restaurant-dispatch-modal-backdrop"
-          role="presentation"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget && !assigning) setSelectedOrder(null);
-          }}
-        >
+        <div className="restaurant-dispatch-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !assigning) setSelectedOrder(null); }}>
           <section className="restaurant-dispatch-modal" role="dialog" aria-modal="true" aria-labelledby="dispatch-modal-title">
             <div className="restaurant-dispatch-modal-header">
               <div>
@@ -325,12 +343,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
                         {inScope ? '✓ Destination is within this rider’s scope' : 'Destination is outside this rider’s scope'}
                       </div>
                     </div>
-                    <button
-                      className="restaurant-dispatch-rider-select"
-                      type="button"
-                      disabled={!canAssign || assigning}
-                      onClick={() => void assignOrder(rider)}
-                    >
+                    <button className="restaurant-dispatch-rider-select" type="button" disabled={!canAssign || assigning} onClick={() => void assignOrder(rider)}>
                       {assigning ? 'Assigning…' : canAssign ? 'Assign' : rider.status === 'delivering' ? 'Currently delivering' : rider.status === 'returning' ? 'Returning' : inScope ? 'Unavailable' : 'Outside scope'}
                     </button>
                   </article>
