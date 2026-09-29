@@ -7,3 +7,11 @@ export type RestaurantLookup = {
 export interface RestaurantRepository {
   getRestaurant(lookup: RestaurantLookup): Promise<RestaurantConfig | null>;
 }
+
+export class ConfigRestaurantRepository implements RestaurantRepository {
+  constructor(private readonly config: RestaurantConfig) {}
+
+  async getRestaurant(_lookup: RestaurantLookup): Promise<RestaurantConfig | null> {
+    return this.config;
+  }
+}
