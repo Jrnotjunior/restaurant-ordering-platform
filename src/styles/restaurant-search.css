@@ -1,0 +1,6 @@
+.restaurant-shipping-search input::placeholder,
+.restaurant-sales-search input::placeholder,
+.restaurant-menu-search input::placeholder {
+  color: transparent;
+  opacity: 0;
+}
