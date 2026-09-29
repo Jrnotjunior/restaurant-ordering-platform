@@ -1,12 +1,5 @@
 import { useRestaurant } from './RestaurantProvider';
 
-function withBasePath(path: string) {
-  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-  if (path === '/') return `${base}/`;
-  if (path === '/menu') return `${base}/#menu`;
-  return `${base}${path.startsWith('/') ? path : `/${path}`}`;
-}
-
 export function Footer() {
   const restaurant = useRestaurant();
 
@@ -22,16 +15,6 @@ export function Footer() {
         {restaurant.contactNumber ? <p>{restaurant.contactNumber}</p> : null}
         {restaurant.email ? <p>{restaurant.email}</p> : null}
       </div>
-
-      {restaurant.footerLinks.length > 0 ? (
-        <nav aria-label="Footer navigation">
-          {restaurant.footerLinks.map((link) => (
-            <a key={`${link.href}-${link.label}`} href={withBasePath(link.href)}>
-              {link.label}
-            </a>
-          ))}
-        </nav>
-      ) : null}
 
       {restaurant.socialLinks && restaurant.socialLinks.length > 0 ? (
         <nav aria-label="Social links">
