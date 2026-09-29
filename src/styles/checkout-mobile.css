@@ -160,6 +160,109 @@
   border-radius: 0.65rem;
 }
 
+.outside-delivery-hint {
+  margin-top: 0.9rem !important;
+}
+
+.delivery-terms-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgba(15, 23, 42, 0.52);
+}
+
+.delivery-terms-modal {
+  width: min(100%, 34rem);
+  max-height: min(90vh, 44rem);
+  overflow: auto;
+  border: 1px solid #dfe4eb;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
+}
+
+.delivery-terms-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.4rem 1.4rem 1rem;
+  border-bottom: 1px solid #edf0f4;
+}
+
+.delivery-terms-header .eyebrow {
+  margin: 0 0 0.35rem;
+}
+
+.delivery-terms-header h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 1.35rem;
+  line-height: 1.25;
+}
+
+.delivery-terms-close {
+  display: grid;
+  flex: 0 0 auto;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border: 1px solid #dfe4eb;
+  border-radius: 999px;
+  background: #fff;
+  color: #334155;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.delivery-terms-close:hover,
+.delivery-terms-close:focus-visible {
+  background: #f5f7fa;
+  outline: none;
+}
+
+.delivery-terms-body {
+  padding: 1.25rem 1.4rem;
+  color: #475569;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.delivery-terms-body p {
+  margin: 0 0 1rem;
+}
+
+.delivery-terms-body ul {
+  margin: 0 0 1rem;
+  padding-left: 1.2rem;
+}
+
+.delivery-terms-body li + li {
+  margin-top: 0.65rem;
+}
+
+.delivery-terms-note {
+  margin-bottom: 0 !important;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.delivery-terms-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.4rem 1.4rem;
+  border-top: 1px solid #edf0f4;
+}
+
+.delivery-terms-actions .button {
+  min-width: 8.5rem;
+}
+
 @media (max-width: 560px) {
   .checkout-summary {
     padding: 1rem;
@@ -228,6 +331,32 @@
 
   .delivery-address-fields textarea {
     min-height: 6.5rem;
+  }
+
+  .delivery-terms-backdrop {
+    align-items: end;
+    padding: 0.75rem;
+  }
+
+  .delivery-terms-modal {
+    width: 100%;
+    max-height: 88vh;
+    border-radius: 1rem;
+  }
+
+  .delivery-terms-header,
+  .delivery-terms-body,
+  .delivery-terms-actions {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .delivery-terms-actions {
+    flex-direction: column-reverse;
+  }
+
+  .delivery-terms-actions .button {
+    width: 100%;
   }
 }
 

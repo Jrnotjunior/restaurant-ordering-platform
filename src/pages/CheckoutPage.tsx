@@ -61,6 +61,8 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const [deliveryZones, setDeliveryZones] = useState<RestaurantDeliveryZone[]>([]);
   const [loadingDeliveryZones, setLoadingDeliveryZones] = useState(false);
   const [deliveryZonesError, setDeliveryZonesError] = useState('');
+  const [outsideCityAccepted, setOutsideCityAccepted] = useState(false);
+  const [showOutsideCityModal, setShowOutsideCityModal] = useState(false);
   const [notes, setNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('');
   const [showPayment, setShowPayment] = useState(false);
@@ -77,6 +79,8 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       setDeliveryBarangay('');
       setDeliveryZonesError('');
       setLoadingDeliveryZones(false);
+      setOutsideCityAccepted(false);
+      setShowOutsideCityModal(false);
       return;
     }
 
@@ -103,6 +107,17 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       cancelled = true;
     };
   }, [restaurantId, orderType]);
+
+  useEffect(() => {
+    if (!showOutsideCityModal) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowOutsideCityModal(false);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showOutsideCityModal]);
 
   const subtotal = useMemo(
     () => items.reduce((total, item) => total + item.product.price * item.quantity, 0),
@@ -134,6 +149,9 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const deliveryFee = orderType === 'delivery' ? Number(selectedDeliveryZone?.shippingFee ?? 0) : 0;
   const deliveryAreaIsSupported = orderType !== 'delivery' || Boolean(selectedDeliveryZone?.isSupported);
   const barangayMatchesConfiguredZone = Boolean(selectedDeliveryZone);
+  const isDineIn = orderType === 'dine_in';
+  const isDelivery = orderType === 'delivery';
+  const outsideCityDelivery = isDelivery && Boolean(deliveryCity.trim()) && !cityIsSupported;
 
   if (confirmedOrder) {
     return (
@@ -146,22 +164,31 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     );
   }
 
-  const isDineIn = orderType === 'dine_in';
-  const isDelivery = orderType === 'delivery';
-  const canContinue = items.length > 0
-    && Boolean(customerName.trim() && mobileNumber.trim())
-    && (!isDineIn || tableNumber.trim())
-    && (!isDelivery || (
-      cityIsSupported
+  const deliveryDetailsComplete = outsideCityDelivery
+    ? outsideCityAccepted && address.trim()
+    : cityIsSupported
       && address.trim()
       && deliveryBarangay.trim()
       && barangayMatchesConfiguredZone
       && selectedDeliveryZone
       && deliveryAreaIsSupported
-      && !loadingDeliveryZones
-    ));
+      && !loadingDeliveryZones;
+  const canContinue = items.length > 0
+    && Boolean(customerName.trim() && mobileNumber.trim())
+    && (!isDineIn || tableNumber.trim())
+    && (!isDelivery || deliveryDetailsComplete);
+
+  function handleCityBlur() {
+    if (!isDelivery || !deliveryCity.trim() || cityIsSupported || outsideCityAccepted) return;
+    setShowOutsideCityModal(true);
+  }
 
   function handleContinueToPayment() {
+    if (outsideCityDelivery && !outsideCityAccepted) {
+      setShowOutsideCityModal(true);
+      return;
+    }
+
     if (!canContinue) return;
     setSubmitError('');
     setShowPayment(true);
@@ -182,11 +209,11 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         throw new Error('Your cart contains items from different restaurants. Please clear your cart and try again.');
       }
 
-      if (isDelivery && !cityIsSupported) {
-        throw new Error(outsideCityMessage);
+      if (isDelivery && outsideCityDelivery && !outsideCityAccepted) {
+        throw new Error('Please review and accept the outside-area delivery terms before continuing.');
       }
 
-      if (isDelivery && (!selectedDeliveryZone || !selectedDeliveryZone.isSupported)) {
+      if (isDelivery && cityIsSupported && (!selectedDeliveryZone || !selectedDeliveryZone.isSupported)) {
         throw new Error(outsideDeliveryAreaMessage);
       }
 
@@ -197,7 +224,8 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         mobileNumber: mobileNumber.trim(),
         orderType,
         tableNumber: tableNumber.trim(),
-        deliveryBarangay: isDelivery ? deliveryBarangay.trim() : '',
+        deliveryCity: isDelivery ? deliveryCity.trim() : '',
+        deliveryBarangay: isDelivery && cityIsSupported ? deliveryBarangay.trim() : '',
         deliveryAddress: isDelivery
           ? [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')
           : address.trim(),
@@ -274,10 +302,13 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
                       setDeliveryCity(event.target.value);
                       setDeliveryBarangay('');
                       setAddress('');
+                      setOutsideCityAccepted(false);
+                      setShowOutsideCityModal(false);
                       setShowPayment(false);
                       setPaymentMethod('');
                       setSubmitError('');
                     }}
+                    onBlur={handleCityBlur}
                     autoComplete="address-level2"
                     placeholder="Enter your city"
                     required
@@ -327,7 +358,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
                   </label>
                 ) : null}
 
-                {cityIsSupported && deliveryBarangay.trim() ? (
+                {(cityIsSupported && deliveryBarangay.trim()) || outsideCityAccepted ? (
                   <label>
                     <span>Complete address</span>
                     <textarea value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Complete delivery address" rows={4} required />
@@ -335,12 +366,12 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
                 ) : null}
               </div>
 
-              {deliveryCity.trim() && !cityIsSupported ? <p className="checkout-error" role="alert">{outsideCityMessage}</p> : null}
               {loadingDeliveryZones ? <p className="checkout-hint">Loading delivery areas…</p> : null}
               {!loadingDeliveryZones && cityIsSupported && !deliveryZonesError && deliveryZones.length === 0 ? <p className="checkout-error" role="alert">This restaurant has not configured any delivery areas yet.</p> : null}
               {!loadingDeliveryZones && cityIsSupported && deliveryBarangay.trim() && !selectedDeliveryZone ? <p className="checkout-error" role="alert">{outsideDeliveryAreaMessage}</p> : null}
               {selectedDeliveryZone && !selectedDeliveryZone.isSupported ? <p className="checkout-error" role="alert">{outsideDeliveryAreaMessage}</p> : null}
               {selectedDeliveryZone?.isSupported ? <p className="checkout-hint">Delivery fee: ₱{deliveryFee.toFixed(2)}</p> : null}
+              {outsideCityAccepted ? <p className="checkout-hint outside-delivery-hint">Outside Valenzuela City delivery selected. Please arrange and pay your own courier. The restaurant delivery fee does not apply.</p> : null}
             </fieldset>
           ) : null}
 
@@ -411,8 +442,51 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             <span>Total</span>
             <strong>₱{(subtotal + deliveryFee).toFixed(2)}</strong>
           </div>
+          {outsideCityAccepted ? <p className="checkout-hint">Courier fee is arranged separately by the customer.</p> : null}
         </aside>
       </div>
+
+      {showOutsideCityModal ? (
+        <div className="delivery-terms-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowOutsideCityModal(false); }}>
+          <div className="delivery-terms-modal" role="dialog" aria-modal="true" aria-labelledby="outside-city-title">
+            <div className="delivery-terms-header">
+              <div>
+                <p className="eyebrow">Delivery terms</p>
+                <h2 id="outside-city-title">Delivery outside Valenzuela City</h2>
+              </div>
+              <button className="delivery-terms-close" type="button" aria-label="Close" onClick={() => setShowOutsideCityModal(false)}>×</button>
+            </div>
+
+            <div className="delivery-terms-body">
+              <p>{outsideCityMessage}</p>
+              <ul>
+                <li>The restaurant will prepare your food after the order is confirmed.</li>
+                <li>You are responsible for booking and paying a third-party courier such as Lalamove or Grab Express.</li>
+                <li>Courier availability, delivery time, courier charges, and handling are outside the restaurant’s control.</li>
+                <li>Longer travel or courier delays may affect the food’s temperature, freshness, and quality.</li>
+              </ul>
+              <p className="delivery-terms-note">By proceeding, you confirm that you have read and understood these delivery terms and agree to arrange your own courier for this address.</p>
+            </div>
+
+            <div className="delivery-terms-actions">
+              <button className="button button-secondary" type="button" onClick={() => setShowOutsideCityModal(false)}>Cancel</button>
+              <button
+                className="button button-primary"
+                type="button"
+                onClick={() => {
+                  setOutsideCityAccepted(true);
+                  setShowOutsideCityModal(false);
+                  setShowPayment(false);
+                  setPaymentMethod('');
+                  setSubmitError('');
+                }}
+              >
+                Proceed with Order
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
