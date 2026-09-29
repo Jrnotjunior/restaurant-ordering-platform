@@ -12,6 +12,7 @@ import { RestaurantMenuPage } from './pages/RestaurantMenuPage';
 import { RestaurantShippingFeePage } from './pages/RestaurantShippingFeePage';
 import { RestaurantSalesPage } from './pages/RestaurantSalesPage';
 import { RestaurantOwnerLoginPage } from './pages/RestaurantOwnerLoginPage';
+import { RiderDeliveryPage } from './pages/RiderDeliveryPage';
 import { defaultRestaurant } from './config/defaultRestaurant';
 import { currentRestaurantLookup } from './config/restaurant';
 import { SupabaseRestaurantRepository } from './services/supabaseRestaurantRepository';
@@ -36,6 +37,7 @@ function withBasePath(path: string) {
   if (path === '/restaurant/menu') return `${base}/#restaurant/menu`;
   if (path === '/restaurant/shipping-fee') return `${base}/#restaurant/shipping-fee`;
   if (path === '/restaurant/sales') return `${base}/#restaurant/sales`;
+  if (path === '/rider/delivery-preview') return `${base}/#rider/delivery-preview`;
   return `${base}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
@@ -110,10 +112,13 @@ function AppContent() {
   const isRestaurantMenuPage = route === '#restaurant/menu';
   const isRestaurantShippingFeePage = route === '#restaurant/shipping-fee';
   const isRestaurantSalesPage = route === '#restaurant/sales';
+  const isRiderDeliveryPreviewPage = route === '#rider/delivery-preview';
   const isRestaurantOperationsPage = isRestaurantDashboardPage || isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantShippingFeePage || isRestaurantSalesPage;
   const trackingMatch = route.match(/^#order\/(.+)$/);
 
   const publicContent = isMenuPage || (!isCartPage && !isCheckoutPage && !trackingMatch) ? <MenuPage onAddToCart={addToCart} cartCount={cartCount} /> : isCartPage ? <CartPage items={cartItems} onIncrease={(id) => changeQuantity(id, 1)} onDecrease={(id) => changeQuantity(id, -1)} onRemove={(id) => removeFromCart(id)} /> : isCheckoutPage ? <CheckoutPage items={cartItems} /> : <OrderTrackingPage orderNumber={decodeURIComponent(trackingMatch![1])} />;
+
+  if (isRiderDeliveryPreviewPage) return <RiderDeliveryPage />;
 
   if (isRestaurantOperationsPage) {
     if (authLoading) return <section className="restaurant-owner-auth-loading">Loading owner session…</section>;
