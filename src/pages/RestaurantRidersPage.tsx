@@ -102,7 +102,6 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
           name,
           mobile_number: mobileNumber,
           email: email || null,
-          status: 'available',
         })
         .select('id,name,mobile_number,email')
         .single();
