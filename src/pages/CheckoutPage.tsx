@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { RestaurantProduct } from '../types/menu';
 import { createOrder } from '../services/orderRepository';
+import { getRestaurantDeliveryZones, type RestaurantDeliveryZone } from '../services/restaurantSettingsRepository';
 import { OrderConfirmationPage } from './OrderConfirmationPage';
 import '../styles/checkout-mobile.css';
 
@@ -39,6 +40,10 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const [mobileNumber, setMobileNumber] = useState('');
   const [tableNumber, setTableNumber] = useState('');
   const [address, setAddress] = useState('');
+  const [deliveryBarangay, setDeliveryBarangay] = useState('');
+  const [deliveryZones, setDeliveryZones] = useState<RestaurantDeliveryZone[]>([]);
+  const [loadingDeliveryZones, setLoadingDeliveryZones] = useState(false);
+  const [deliveryZonesError, setDeliveryZonesError] = useState('');
   const [notes, setNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('');
   const [showPayment, setShowPayment] = useState(false);
@@ -46,10 +51,54 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const [submitError, setSubmitError] = useState('');
   const [confirmedOrder, setConfirmedOrder] = useState<ConfirmedOrder | null>(null);
 
+  const restaurantId = items[0]?.product.restaurantId ?? '';
+
+  useEffect(() => {
+    if (!restaurantId || orderType !== 'delivery') {
+      setDeliveryZones([]);
+      setDeliveryBarangay('');
+      setDeliveryZonesError('');
+      setLoadingDeliveryZones(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoadingDeliveryZones(true);
+    setDeliveryZonesError('');
+
+    void getRestaurantDeliveryZones(restaurantId)
+      .then((zones) => {
+        if (cancelled) return;
+        setDeliveryZones(zones);
+        setDeliveryBarangay((current) => zones.some((zone) => zone.barangay === current) ? current : '');
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setDeliveryZones([]);
+        setDeliveryBarangay('');
+        setDeliveryZonesError(error instanceof Error ? error.message : 'Unable to load delivery areas.');
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingDeliveryZones(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [restaurantId, orderType]);
+
   const subtotal = useMemo(
     () => items.reduce((total, item) => total + item.product.price * item.quantity, 0),
     [items],
   );
+
+  const selectedDeliveryZone = useMemo(
+    () => deliveryZones.find((zone) => zone.barangay === deliveryBarangay) ?? null,
+    [deliveryZones, deliveryBarangay],
+  );
+
+  const deliveryFee = orderType === 'delivery' ? Number(selectedDeliveryZone?.shippingFee ?? 0) : 0;
+  const deliveryAreaIsSupported = orderType !== 'delivery' || Boolean(selectedDeliveryZone?.isSupported);
 
   if (confirmedOrder) {
     return (
@@ -67,7 +116,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const canContinue = items.length > 0
     && Boolean(customerName.trim() && mobileNumber.trim())
     && (!isDineIn || tableNumber.trim())
-    && (!isDelivery || address.trim());
+    && (!isDelivery || (address.trim() && deliveryBarangay && selectedDeliveryZone && deliveryAreaIsSupported && !loadingDeliveryZones));
 
   function handleContinueToPayment() {
     if (!canContinue) return;
@@ -90,6 +139,10 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         throw new Error('Your cart contains items from different restaurants. Please clear your cart and try again.');
       }
 
+      if (isDelivery && (!selectedDeliveryZone || !selectedDeliveryZone.isSupported)) {
+        throw new Error('Please select a barangay within the restaurant\'s delivery coverage.');
+      }
+
       const restaurantId = items[0].product.restaurantId;
       const createdOrder = await createOrder({
         restaurantId,
@@ -97,6 +150,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         mobileNumber: mobileNumber.trim(),
         orderType,
         tableNumber: tableNumber.trim(),
+        deliveryBarangay: isDelivery ? deliveryBarangay : '',
         deliveryAddress: address.trim(),
         notes: notes.trim(),
         paymentMethod,
@@ -160,11 +214,28 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
           {isDelivery ? (
             <fieldset className="checkout-section">
               <legend>Delivery address</legend>
-              <label>
-                <span>Complete address</span>
-                <textarea value={address} onChange={(event) => setAddress(event.target.value)} placeholder="House/building, street, barangay, city" rows={4} required />
-              </label>
-              <p className="checkout-hint">We will add the Philippine address dropdowns and delivery-radius check in the next checkout step.</p>
+              {deliveryZonesError ? <p className="checkout-error" role="alert">{deliveryZonesError}</p> : null}
+              <div className="checkout-fields">
+                <label>
+                  <span>Barangay</span>
+                  <select value={deliveryBarangay} onChange={(event) => { setDeliveryBarangay(event.target.value); setShowPayment(false); setPaymentMethod(''); setSubmitError(''); }} disabled={loadingDeliveryZones || deliveryZones.length === 0} required>
+                    <option value="">Select barangay</option>
+                    {deliveryZones.map((zone) => (
+                      <option key={zone.id} value={zone.barangay}>
+                        {zone.barangay}{zone.isSupported ? ` — ₱${zone.shippingFee.toFixed(2)}` : ' — Outside delivery area'}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Complete address</span>
+                  <textarea value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Complete delivery address" rows={4} required />
+                </label>
+              </div>
+              {loadingDeliveryZones ? <p className="checkout-hint">Loading delivery areas…</p> : null}
+              {!loadingDeliveryZones && !deliveryZonesError && deliveryZones.length === 0 ? <p className="checkout-error" role="alert">This restaurant has not configured any delivery areas yet.</p> : null}
+              {selectedDeliveryZone && !selectedDeliveryZone.isSupported ? <p className="checkout-error" role="alert">{selectedDeliveryZone.outOfScopeMessage}</p> : null}
+              {selectedDeliveryZone?.isSupported ? <p className="checkout-hint">Delivery fee: ₱{deliveryFee.toFixed(2)}</p> : null}
             </fieldset>
           ) : null}
 
@@ -173,7 +244,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
               <legend>Dine-in details</legend>
               <label>
                 <span>Table number</span>
-                <input type="text" value={tableNumber} onChange={(event) => setTableNumber(event.target.value)} inputMode="numeric" placeholder="e.g. 12" required />
+                <input type="text" value={tableNumber} onChange={(event) => setTableNumber(event.target.value)} inputMode="numeric" placeholder="Table number" required />
               </label>
             </fieldset>
           ) : null}
@@ -225,7 +296,16 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             <span>Subtotal</span>
             <strong>₱{subtotal.toFixed(2)}</strong>
           </div>
-          <p>Delivery fee, if applicable, will be calculated after the delivery address is validated.</p>
+          {isDelivery && selectedDeliveryZone?.isSupported ? (
+            <div className="checkout-summary-row">
+              <span>Delivery fee</span>
+              <strong>₱{deliveryFee.toFixed(2)}</strong>
+            </div>
+          ) : null}
+          <div className="checkout-summary-row">
+            <span>Total</span>
+            <strong>₱{(subtotal + deliveryFee).toFixed(2)}</strong>
+          </div>
         </aside>
       </div>
     </section>
