@@ -1,0 +1,2 @@
+-- Customer-facing shipping fee integration is implemented in 0007_customer_delivery_zones.sql.
+-- This migration file intentionally contains no additional schema changes.
