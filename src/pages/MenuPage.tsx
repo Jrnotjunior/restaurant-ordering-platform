@@ -14,7 +14,7 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
   const restaurant = useRestaurant();
   const [categories, setCategories] = useState<RestaurantCategory[]>([]);
   const [products, setProducts] = useState<RestaurantProduct[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -32,6 +32,7 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
       .then((menu) => {
         if (cancelled) return;
         setCategories(menu.categories);
+        setSelectedCategory((current) => current || menu.categories[0]?.id || '');
         setProducts(menu.products);
       })
       .catch((loadError: unknown) => {
@@ -49,9 +50,9 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
   }, [restaurant.id]);
 
   const visibleProducts = useMemo(
-    () => selectedCategory === 'all'
-      ? products
-      : products.filter((product) => product.categoryId === selectedCategory),
+    () => selectedCategory
+      ? products.filter((product) => product.categoryId === selectedCategory)
+      : products,
     [products, selectedCategory]
   );
 
@@ -65,13 +66,6 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
 
       {categories.length > 0 ? (
         <div className="menu-categories" role="tablist" aria-label="Menu categories">
-          <button
-            className={`menu-category-button ${selectedCategory === 'all' ? 'is-active' : ''}`}
-            type="button"
-            onClick={() => setSelectedCategory('all')}
-          >
-            All
-          </button>
           {categories.map((category) => (
             <button
               key={category.id}
