@@ -32,7 +32,7 @@ function withBasePath(path: string) {
   if (path === '/') return `${base}/`;
   if (path === '/menu') return `${base}/#menu`;
   if (path === '/cart') return `${base}/#cart`;
-  if (path === '/checkout') return `${base}/#checkout`;
+  if (path === '/account') return `${base}/#account`;
   if (path === '/restaurant/orders') return `${base}/#restaurant/orders`;
   if (path === '/restaurant/menu') return `${base}/#restaurant/menu`;
   if (path === '/restaurant/shipping-fee') return `${base}/#restaurant/shipping-fee`;
@@ -53,36 +53,13 @@ function CartPage({ items, onIncrease, onDecrease, onRemove }: { items: CartItem
 }
 
 function ownerRestaurantConfig(restaurant: NonNullable<ReturnType<typeof useRestaurantOwnerAuth>['restaurant']>): RestaurantConfig {
-  return {
-    ...defaultRestaurant,
-    id: restaurant.id,
-    name: restaurant.name,
-    tagline: restaurant.tagline,
-    logoUrl: restaurant.logo_url ?? undefined,
-    locationText: restaurant.location_text ?? undefined,
-    contactNumber: restaurant.contact_number ?? undefined,
-    email: restaurant.email ?? undefined,
-  };
+  return { ...defaultRestaurant, id: restaurant.id, name: restaurant.name, tagline: restaurant.tagline, logoUrl: restaurant.logo_url ?? undefined, locationText: restaurant.location_text ?? undefined, contactNumber: restaurant.contact_number ?? undefined, email: restaurant.email ?? undefined };
 }
 
 function OwnerRestaurantGuard({ children }: { children: (restaurant: RestaurantConfig) => ReactNode }) {
   const { restaurant, user } = useRestaurantOwnerAuth();
-
   if (!user) return <RestaurantOwnerLoginPage />;
-
-  if (!restaurant) {
-    return (
-      <section className="restaurant-owner-auth-no-restaurant">
-        <div className="restaurant-owner-auth-no-restaurant-card">
-          <p className="eyebrow">Restaurant operations</p>
-          <h1>No restaurant assigned</h1>
-          <p>Your owner account is signed in, but it is not linked to an active restaurant yet. Set the restaurant's <code>owner_id</code> to your Supabase Auth user ID, then reload this page.</p>
-          <p><strong>Signed in as:</strong> {user.email ?? user.id}</p>
-        </div>
-      </section>
-    );
-  }
-
+  if (!restaurant) return <section className="restaurant-owner-auth-no-restaurant"><div className="restaurant-owner-auth-no-restaurant-card"><p className="eyebrow">Restaurant operations</p><h1>No restaurant assigned</h1><p>Your owner account is signed in, but it is not linked to an active restaurant yet. Set the restaurant's <code>owner_id</code> to your Supabase Auth user ID, then reload this page.</p><p><strong>Signed in as:</strong> {user.email ?? user.id}</p></div></section>;
   return children(ownerRestaurantConfig(restaurant));
 }
 
@@ -99,19 +76,13 @@ function AppContent() {
   useEffect(() => { if (!isSupabaseConfigured) return; let cancelled = false; restaurantRepository.getRestaurant(currentRestaurantLookup).then((loadedRestaurant) => { if (!cancelled && loadedRestaurant) setRestaurant(loadedRestaurant); }).catch((error: unknown) => console.error('Unable to load restaurant from Supabase.', error)); return () => { cancelled = true; }; }, []);
 
   const cartCount = useMemo(() => cartItems.reduce((total, item) => total + item.quantity, 0), [cartItems]);
-  function addToCart(product: RestaurantProduct) {
-    setCartItems((current) => {
-      const existing = current.find((item) => item.product.id === product.id);
-      if (existing) return current.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
-      return [...current, { product, quantity: 1 }];
-    });
-    setCartNotification(`${product.name} added to cart`);
-  }
+  function addToCart(product: RestaurantProduct) { setCartItems((current) => { const existing = current.find((item) => item.product.id === product.id); if (existing) return current.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item); return [...current, { product, quantity: 1 }]; }); setCartNotification(`${product.name} added to cart`); }
   function changeQuantity(productId: string, delta: number) { setCartItems((current) => current.map((item) => item.product.id === productId ? { ...item, quantity: item.quantity + delta } : item).filter((item) => item.quantity > 0)); }
   function removeFromCart(productId: string) { setCartItems((current) => current.filter((item) => item.product.id !== productId)); }
 
   const isMenuPage = route === '#menu' || window.location.pathname.endsWith('/menu') || window.location.pathname.endsWith('/menu/');
   const isCartPage = route === '#cart';
+  const isAccountPage = route === '#account';
   const isCheckoutPage = route === '#checkout';
   const isRestaurantOrdersPage = route === '#restaurant/orders';
   const isRestaurantMenuPage = route === '#restaurant/menu';
@@ -123,53 +94,19 @@ function AppContent() {
   const isRestaurantOperationsPage = isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantShippingFeePage || isRestaurantSalesPage || isRestaurantRidersPage || isRestaurantDeliveryDispatchPage;
   const trackingMatch = route.match(/^#order\/(.+)$/);
 
-  const publicContent = isMenuPage || (!isCartPage && !isCheckoutPage && !trackingMatch) ? <MenuPage onAddToCart={addToCart} cartCount={cartCount} /> : isCartPage ? <CartPage items={cartItems} onIncrease={(id) => changeQuantity(id, 1)} onDecrease={(id) => changeQuantity(id, -1)} onRemove={(id) => removeFromCart(id)} /> : isCheckoutPage ? <CheckoutPage items={cartItems} /> : <OrderTrackingPage orderNumber={decodeURIComponent(trackingMatch![1])} />;
-
+  if (isAccountPage) return <RestaurantOwnerLoginPage />;
   if (isRiderDeliveryPreviewPage) return <RiderDeliveryPage />;
+
+  const publicContent = isMenuPage || (!isCartPage && !isCheckoutPage && !trackingMatch) ? <MenuPage onAddToCart={addToCart} cartCount={cartCount} /> : isCartPage ? <CartPage items={cartItems} onIncrease={(id) => changeQuantity(id, 1)} onDecrease={(id) => changeQuantity(id, -1)} onRemove={(id) => removeFromCart(id)} /> : isCheckoutPage ? <CheckoutPage items={cartItems} /> : <OrderTrackingPage orderNumber={decodeURIComponent(trackingMatch![1])} />;
 
   if (isRestaurantOperationsPage) {
     if (authLoading) return <section className="restaurant-owner-auth-loading">Loading owner session…</section>;
     if (authError && !isSupabaseConfigured) return <section className="restaurant-owner-auth-loading">{authError}</section>;
-
-    return (
-      <OwnerRestaurantGuard>
-        {(ownerRestaurant) => (
-          <RestaurantProvider restaurant={ownerRestaurant}>
-            <ThemeProvider restaurant={ownerRestaurant}>
-              <RestaurantLayout hideChrome>
-                {isRestaurantOrdersPage ? <RestaurantOrdersPage restaurantId={ownerRestaurant.id!} /> : isRestaurantMenuPage ? <RestaurantMenuPage restaurantId={ownerRestaurant.id!} /> : isRestaurantShippingFeePage ? <RestaurantShippingFeePage restaurantId={ownerRestaurant.id!} /> : isRestaurantRidersPage ? <RestaurantRidersPage restaurantId={ownerRestaurant.id!} /> : isRestaurantDeliveryDispatchPage ? <RestaurantDeliveryDispatchPage restaurantId={ownerRestaurant.id!} /> : <RestaurantSalesPage restaurantId={ownerRestaurant.id!} />}
-              </RestaurantLayout>
-            </ThemeProvider>
-          </RestaurantProvider>
-        )}
-      </OwnerRestaurantGuard>
-    );
+    return <OwnerRestaurantGuard>{(ownerRestaurant) => <RestaurantProvider restaurant={ownerRestaurant}><ThemeProvider restaurant={ownerRestaurant}><RestaurantLayout hideChrome>{isRestaurantOrdersPage ? <RestaurantOrdersPage restaurantId={ownerRestaurant.id!} /> : isRestaurantMenuPage ? <RestaurantMenuPage restaurantId={ownerRestaurant.id!} /> : isRestaurantShippingFeePage ? <RestaurantShippingFeePage restaurantId={ownerRestaurant.id!} /> : isRestaurantRidersPage ? <RestaurantRidersPage restaurantId={ownerRestaurant.id!} /> : isRestaurantDeliveryDispatchPage ? <RestaurantDeliveryDispatchPage restaurantId={ownerRestaurant.id!} /> : <RestaurantSalesPage restaurantId={ownerRestaurant.id!} />}</RestaurantLayout></ThemeProvider></RestaurantProvider>}</OwnerRestaurantGuard>;
   }
 
-  return (
-    <RestaurantProvider restaurant={restaurant}>
-      <ThemeProvider restaurant={restaurant}>
-        <RestaurantLayout cartCount={cartCount}>
-          {publicContent}
-          {cartNotification ? (
-            <div className="cart-notification" role="status" aria-live="polite">
-              <div className="cart-notification-icon" aria-hidden="true">✓</div>
-              <div className="cart-notification-content">
-                <strong>Added to cart</strong>
-                <span>{cartNotification}</span>
-              </div>
-              <a className="cart-notification-link" href={withBasePath('/cart')}>View cart</a>
-              <button className="cart-notification-close" type="button" aria-label="Dismiss notification" onClick={() => setCartNotification('')}>×</button>
-            </div>
-          ) : null}
-        </RestaurantLayout>
-      </ThemeProvider>
-    </RestaurantProvider>
-  );
+  return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}>{publicContent}{cartNotification ? <div className="cart-notification" role="status" aria-live="polite"><div className="cart-notification-icon" aria-hidden="true">✓</div><div className="cart-notification-content"><strong>Added to cart</strong><span>{cartNotification}</span></div><a className="cart-notification-link" href={withBasePath('/cart')}>View cart</a><button className="cart-notification-close" type="button" aria-label="Dismiss notification" onClick={() => setCartNotification('')}>×</button></div> : null}</RestaurantLayout></ThemeProvider></RestaurantProvider>;
 }
 
-export function App() {
-  return <AppContent />;
-}
-
+export function App() { return <AppContent />; }
 export { RestaurantOwnerAuthProvider };
