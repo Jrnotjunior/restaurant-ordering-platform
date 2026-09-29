@@ -34,15 +34,13 @@
 .restaurant-riders-summary strong { font-size: 22px; }
 .restaurant-riders-summary span { font-size: 13px; color: var(--text-muted, #667085); }
 
-.restaurant-riders-preview-note {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 14px 16px;
+.restaurant-riders-error {
   margin-bottom: 20px;
-  border: 1px solid var(--border-color, #ddd);
+  padding: 12px 14px;
+  border: 1px solid #e2b4b4;
   border-radius: 12px;
-  background: var(--surface-muted, #f7f7f7);
+  background: #fff5f5;
+  color: #8a1c1c;
   font-size: 14px;
 }
 
@@ -101,6 +99,15 @@
 }
 
 .restaurant-riders-list { display: grid; gap: 12px; }
+
+.restaurant-riders-empty {
+  padding: 28px 18px;
+  border: 1px dashed var(--border-color, #ddd);
+  border-radius: 16px;
+  background: var(--surface, #fff);
+  color: var(--text-muted, #667085);
+  text-align: center;
+}
 
 .restaurant-rider-card {
   display: grid;
