@@ -1,4 +1,5 @@
 import { useRestaurant } from './RestaurantProvider';
+import '../styles/cart-badge.css';
 
 function withBasePath(path: string) {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -8,7 +9,11 @@ function withBasePath(path: string) {
   return `${base}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
-export function Header() {
+type HeaderProps = {
+  cartCount?: number;
+};
+
+export function Header({ cartCount = 0 }: HeaderProps) {
   const restaurant = useRestaurant();
 
   return (
@@ -31,8 +36,8 @@ export function Header() {
       <a
         className="header-cart"
         href={withBasePath('/cart')}
-        aria-label="View cart"
-        title="Cart"
+        aria-label={cartCount > 0 ? `View cart, ${cartCount} item${cartCount === 1 ? '' : 's'}` : 'View cart'}
+        title={cartCount > 0 ? `${cartCount} item${cartCount === 1 ? '' : 's'} in cart` : 'Cart'}
       >
         <svg
           className="header-cart-icon"
@@ -51,6 +56,7 @@ export function Header() {
             strokeLinejoin="round"
           />
         </svg>
+        {cartCount > 0 ? <span className="header-cart-badge" aria-hidden="true">{cartCount > 99 ? '99+' : cartCount}</span> : null}
       </a>
     </header>
   );
