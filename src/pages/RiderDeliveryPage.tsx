@@ -71,21 +71,7 @@ export function RiderDeliveryPage() {
             <p className="rider-delivery-helper">Tap the address to open Google Maps or Waze.</p>
           </section>
 
-          <section className="rider-delivery-card">
-            <div className="rider-delivery-card-heading">
-              <div>
-                <p className="rider-delivery-label">Restaurant pickup</p>
-                <h2>Pick up the order here</h2>
-              </div>
-            </div>
-            <div className="rider-delivery-pickup">
-              <span className="rider-delivery-pickup-icon" aria-hidden="true">●</span>
-              <div>
-                <strong>{previewDelivery.restaurantPickupPoint}</strong>
-                <p>Order must be collected before going to the customer.</p>
-              </div>
-            </div>
-          </section>
+
 
           <section className="rider-delivery-card">
             <div className="rider-delivery-card-heading">
