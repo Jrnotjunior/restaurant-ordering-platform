@@ -136,26 +136,6 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
     }
   }
 
-  async function toggleRiderStatus(rider: RiderAccount) {
-    if (!supabase || rider.status === 'delivering') return;
-
-    const nextStatus: RiderStatus = rider.status === 'offline' ? 'available' : 'offline';
-    setError('');
-
-    const { error: updateError } = await supabase
-      .from('restaurant_riders')
-      .update({ status: nextStatus })
-      .eq('id', rider.id)
-      .eq('restaurant_id', restaurantId);
-
-    if (updateError) {
-      setError(updateError.message);
-      return;
-    }
-
-    setRiders((current) => current.map((item) => item.id === rider.id ? { ...item, status: nextStatus } : item));
-  }
-
   return (
     <section className="restaurant-riders-page">
       <div className="restaurant-riders-header">
@@ -240,9 +220,6 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
             </div>
             <div className="restaurant-rider-actions">
               <button className="button button-secondary" type="button" disabled>Edit</button>
-              <button className="button button-secondary" type="button" disabled={rider.status === 'delivering'} onClick={() => void toggleRiderStatus(rider)}>
-                {rider.status === 'offline' ? 'Activate' : rider.status === 'delivering' ? 'Delivering' : 'Set Offline'}
-              </button>
             </div>
           </article>
         ))}
