@@ -1,8 +1,14 @@
 import { useMemo, useState } from 'react';
 
 type ReadyOrder = { id: string; orderNumber: string; customerName: string; address: string; total: number; readyAt: string };
-type Rider = { id: string; name: string; status: 'available' | 'delivering' | 'returning' | 'offline'; activeDeliveries: number; deliveredToday: number; scope: string[] };
-type DeliveryBatch = { id: string; riderId: string; orderIds: string[] };
+type Rider = {
+  id: string;
+  name: string;
+  status: 'available' | 'delivering' | 'returning' | 'offline';
+  activeDeliveries: number;
+  deliveredToday: number;
+  scope: string[];
+};
 
 const previewOrders: ReadyOrder[] = [
   { id: 'order-1001', orderNumber: '#1001', customerName: 'Juan Dela Cruz', address: 'Dalandanan, Valenzuela City', total: 350, readyAt: '10:12 AM' },
@@ -17,27 +23,29 @@ const previewRiders: Rider[] = [
 ];
 
 export function RestaurantDeliveryDispatchPage() {
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [selectedRiderId, setSelectedRiderId] = useState('');
-  const [batches, setBatches] = useState<DeliveryBatch[]>([]);
+  const [assignedOrderIds, setAssignedOrderIds] = useState<string[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<ReadyOrder | null>(null);
   const [message, setMessage] = useState('');
-  const availableOrders = useMemo(() => previewOrders.filter((order) => !batches.some((batch) => batch.orderIds.includes(order.id))), [batches]);
-  const orderById = (id: string) => previewOrders.find((order) => order.id === id)!;
-  const selectedOrders = selectedIds.map(orderById);
-  const selectedAreas = selectedOrders.map((order) => order.address.split(',')[0].trim());
-  const riderMatches = previewRiders.map((rider) => ({ ...rider, matches: selectedAreas.filter((area) => rider.scope.includes(area)).length }));
-  const statusLabel = (status: Rider['status']) => ({ available: 'At restaurant', delivering: 'Out delivering', returning: 'Returning to restaurant', offline: 'Offline' }[status]);
 
-  function toggleOrder(id: string) {
-    setSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
-    setMessage('');
-  }
+  const availableOrders = useMemo(
+    () => previewOrders.filter((order) => !assignedOrderIds.includes(order.id)),
+    [assignedOrderIds],
+  );
 
-  function createBatch() {
-    if (!selectedRiderId || selectedIds.length === 0) { setMessage('Select at least one ready order and a rider.'); return; }
-    const nextNumber = batches.length + 1;
-    setBatches((current) => [...current, { id: 'B00' + nextNumber, riderId: selectedRiderId, orderIds: selectedIds }]);
-    setSelectedIds([]); setSelectedRiderId(''); setMessage('Delivery batch created in this UI preview.');
+  const statusLabel = (status: Rider['status']) => ({
+    available: 'At restaurant',
+    delivering: 'Out delivering',
+    returning: 'Returning to restaurant',
+    offline: 'Offline',
+  }[status]);
+
+  const orderArea = selectedOrder?.address.split(',')[0].trim() ?? '';
+
+  function assignOrder(rider: Rider) {
+    if (!selectedOrder || rider.status !== 'available') return;
+    setAssignedOrderIds((current) => [...current, selectedOrder.id]);
+    setSelectedOrder(null);
+    setMessage(selectedOrder.orderNumber + ' assigned to ' + rider.name + '.');
   }
 
   return (
@@ -51,7 +59,7 @@ export function RestaurantDeliveryDispatchPage() {
         <div>
           <p className="eyebrow">Restaurant operations</p>
           <h1>Delivery Dispatch</h1>
-          <p>Manage ready deliveries and assign them to available riders.</p>
+          <p>Ready orders that still need a rider assignment.</p>
         </div>
       </header>
 
@@ -62,106 +70,94 @@ export function RestaurantDeliveryDispatchPage() {
           <div className="restaurant-dispatch-card-heading">
             <div>
               <p className="restaurant-dispatch-label">Ready for delivery</p>
-              <h2>Select orders to dispatch</h2>
-              <p className="restaurant-dispatch-helper">Choose one or more orders that should go with the same rider.</p>
+              <h2>Orders waiting for a rider</h2>
             </div>
             <span className="restaurant-dispatch-count">{availableOrders.length}</span>
           </div>
 
           <div className="restaurant-dispatch-order-list">
             {availableOrders.length === 0 ? (
-              <div className="restaurant-dispatch-empty">All ready orders are currently assigned to a delivery batch.</div>
-            ) : availableOrders.map((order) => {
-              const selected = selectedIds.includes(order.id);
-              return (
-                <label className={'restaurant-dispatch-order' + (selected ? ' is-selected' : '')} key={order.id}>
-                  <input type="checkbox" checked={selected} onChange={() => toggleOrder(order.id)} />
-                  <span className="restaurant-dispatch-order-main">
-                    <span className="restaurant-dispatch-order-top"><strong>{order.orderNumber}</strong><strong>₱{order.total.toFixed(2)}</strong></span>
-                    <span>{order.customerName}</span>
-                    <span className="restaurant-dispatch-address">{order.address}</span>
-                    <small>Ready at {order.readyAt}</small>
-                  </span>
-                </label>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="restaurant-dispatch-card restaurant-dispatch-riders-card">
-          <div className="restaurant-dispatch-card-heading">
-            <div>
-              <p className="restaurant-dispatch-label">Rider availability</p>
-              <h2>Riders</h2>
-              <p className="restaurant-dispatch-helper">See who is available, who is delivering, and which destinations are in each rider's restaurant-assigned scope.</p>
-            </div>
-          </div>
-          <div className="restaurant-dispatch-rider-list">
-            {riderMatches.map((rider) => (
-              <article className="restaurant-dispatch-rider" key={rider.id}>
-                <div className="restaurant-dispatch-rider-main">
-                  <div className="restaurant-dispatch-rider-heading">
-                    <strong>{rider.name}</strong>
-                    <span className={'restaurant-dispatch-status is-' + rider.status}>● {statusLabel(rider.status)}</span>
+              <div className="restaurant-dispatch-empty">There are no ready orders waiting for rider assignment.</div>
+            ) : availableOrders.map((order) => (
+              <article className="restaurant-dispatch-order" key={order.id}>
+                <div className="restaurant-dispatch-order-main">
+                  <div className="restaurant-dispatch-order-top">
+                    <strong>{order.orderNumber}</strong>
+                    <strong>₱{order.total.toFixed(2)}</strong>
                   </div>
-                  <div className="restaurant-dispatch-rider-stats">
-                    <span>{rider.activeDeliveries} active</span>
-                    <span>{rider.deliveredToday} delivered today</span>
-                  </div>
-                  <div className="restaurant-dispatch-rider-scope"><strong>Delivery scope:</strong> {rider.scope.join(' · ')}</div>
-                  {selectedIds.length > 0 && (
-                    <div className={'restaurant-dispatch-match ' + (rider.matches === selectedAreas.length ? 'is-match' : '')}>
-                      {rider.matches === selectedAreas.length ? '✓ Covers all selected destinations' : rider.matches + ' of ' + selectedAreas.length + ' selected destinations in scope'}
-                    </div>
-                  )}
+                  <span>{order.customerName}</span>
+                  <span className="restaurant-dispatch-address">{order.address}</span>
+                  <small>Ready at {order.readyAt}</small>
                 </div>
-                <button className="restaurant-dispatch-rider-select" type="button" disabled={!selectedIds.length || rider.status === 'offline' || rider.matches !== selectedAreas.length} onClick={() => setSelectedRiderId(rider.id)}>
-                  {selectedRiderId === rider.id ? 'Selected' : 'Assign'}
+                <button
+                  className="restaurant-dispatch-assign-button"
+                  type="button"
+                  onClick={() => { setSelectedOrder(order); setMessage(''); }}
+                >
+                  Assign to Rider
                 </button>
               </article>
             ))}
           </div>
-
-
         </section>
+      </main>
 
-        <section className="restaurant-dispatch-card restaurant-dispatch-active-card">
-          <div className="restaurant-dispatch-card-heading">
-            <div>
-              <p className="restaurant-dispatch-label">After sending</p>
-              <h2>Active delivery batches</h2>
+      {selectedOrder && (
+        <div className="restaurant-dispatch-modal-backdrop" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setSelectedOrder(null);
+        }}>
+          <section className="restaurant-dispatch-modal" role="dialog" aria-modal="true" aria-labelledby="dispatch-modal-title">
+            <div className="restaurant-dispatch-modal-header">
+              <div>
+                <p className="restaurant-dispatch-label">Assign delivery</p>
+                <h2 id="dispatch-modal-title">{selectedOrder.orderNumber} · {selectedOrder.customerName}</h2>
+                <p>{selectedOrder.address}</p>
+              </div>
+              <button type="button" className="restaurant-dispatch-modal-close" onClick={() => setSelectedOrder(null)} aria-label="Close">×</button>
             </div>
-            <span className="restaurant-dispatch-count">{batches.length}</span>
-          </div>
 
-          {batches.length === 0 ? (
-            <div className="restaurant-dispatch-empty">Batches you send to riders will appear here.</div>
-          ) : (
-            <div className="restaurant-dispatch-batches">
-              {batches.map((batch) => {
-                const rider = previewRiders.find((item) => item.id === batch.riderId);
+            <div className="restaurant-dispatch-modal-order">
+              <span>Delivery destination</span>
+              <strong>{orderArea}</strong>
+            </div>
+
+            <div className="restaurant-dispatch-modal-riders">
+              {previewRiders.map((rider) => {
+                const inScope = rider.scope.includes(orderArea);
+                const canAssign = rider.status === 'available' && inScope;
                 return (
-                  <article className="restaurant-dispatch-batch" key={batch.id}>
-                    <div className="restaurant-dispatch-batch-heading">
-                      <div>
-                        <strong>{rider ? rider.name : 'Unknown rider'}</strong>
-                        <span>{batch.orderIds.length} order{batch.orderIds.length === 1 ? '' : 's'} · Assigned</span>
+                  <article className="restaurant-dispatch-modal-rider" key={rider.id}>
+                    <div>
+                      <div className="restaurant-dispatch-rider-heading">
+                        <strong>{rider.name}</strong>
+                        <span className={'restaurant-dispatch-status is-' + rider.status}>● {statusLabel(rider.status)}</span>
                       </div>
-                      <button type="button" onClick={() => { setBatches((current) => current.filter((item) => item.id !== batch.id)); setMessage('Batch released in this UI preview.'); }}>Release</button>
+                      <div className="restaurant-dispatch-rider-stats">
+                        <span>{rider.activeDeliveries} active</span>
+                        <span>{rider.deliveredToday} delivered today</span>
+                      </div>
+                      <div className="restaurant-dispatch-rider-scope">
+                        <strong>Delivery scope:</strong> {rider.scope.join(' · ')}
+                      </div>
+                      <div className={'restaurant-dispatch-match ' + (inScope ? 'is-match' : '')}>
+                        {inScope ? '✓ Destination is within this rider’s scope' : 'Destination is outside this rider’s scope'}
+                      </div>
                     </div>
-                    <ol>
-                      {batch.orderIds.map((id) => {
-                        const order = orderById(id);
-                        return <li key={id}><span><strong>{order.orderNumber}</strong></span><span>{order.address}</span></li>;
-                      })}
-                    </ol>
+                    <button
+                      className="restaurant-dispatch-rider-select"
+                      type="button"
+                      disabled={!canAssign}
+                      onClick={() => assignOrder(rider)}
+                    >
+                      {rider.status === 'available' && inScope ? 'Assign' : rider.status === 'delivering' ? 'Currently delivering' : rider.status === 'returning' ? 'Returning' : 'Unavailable'}
+                    </button>
                   </article>
                 );
               })}
             </div>
-          )}
-        </section>
-      </main>
+          </section>
+        </div>
+      )}
     </section>
   );
 }
