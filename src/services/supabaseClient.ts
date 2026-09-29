@@ -42,7 +42,18 @@ export async function supabaseGet<T>(path: string, params: Record<string, string
     throw new Error(`Supabase request failed with status ${response.status}.${detail}`);
   }
 
-  return response.json() as Promise<T[]>;
+  // Some Supabase/proxy responses can legitimately have an empty body.
+  // Treat an empty successful response as an empty result instead of calling
+  // response.json(), which throws "Unexpected end of JSON input".
+  const responseText = await response.text();
+  if (!responseText.trim()) return [];
+
+  try {
+    const data = JSON.parse(responseText);
+    return Array.isArray(data) ? data as T[] : [data as T];
+  } catch {
+    throw new Error('Supabase returned an invalid JSON response.');
+  }
 }
 
 export async function supabaseRpc<T>(functionName: string, body: Record<string, unknown>): Promise<T[]> {
@@ -67,6 +78,13 @@ export async function supabaseRpc<T>(functionName: string, body: Record<string, 
     throw new Error(`Supabase RPC request failed with status ${response.status}.${detail}`);
   }
 
-  const data = await response.json();
-  return Array.isArray(data) ? data as T[] : [data as T];
+  const responseText = await response.text();
+  if (!responseText.trim()) return [];
+
+  try {
+    const data = JSON.parse(responseText);
+    return Array.isArray(data) ? data as T[] : [data as T];
+  } catch {
+    throw new Error(`Supabase RPC ${functionName} returned an invalid JSON response.`);
+  }
 }
