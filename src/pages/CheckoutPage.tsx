@@ -34,6 +34,10 @@ const paymentMethods: Array<{ value: PaymentMethod; label: string; description: 
   { value: 'gcash', label: 'GCash', description: 'Create the order first. Payment gateway instructions will be connected next.' },
 ];
 
+function normalizeBarangay(value: string): string {
+  return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+}
+
 export function CheckoutPage({ items }: CheckoutPageProps) {
   const [orderType, setOrderType] = useState<OrderType>('delivery');
   const [customerName, setCustomerName] = useState('');
@@ -70,7 +74,6 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       .then((zones) => {
         if (cancelled) return;
         setDeliveryZones(zones);
-        setDeliveryBarangay((current) => zones.some((zone) => zone.barangay === current) ? current : '');
       })
       .catch((error) => {
         if (cancelled) return;
@@ -92,13 +95,16 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     [items],
   );
 
-  const selectedDeliveryZone = useMemo(
-    () => deliveryZones.find((zone) => zone.barangay === deliveryBarangay) ?? null,
-    [deliveryZones, deliveryBarangay],
-  );
+  const selectedDeliveryZone = useMemo(() => {
+    const normalizedInput = normalizeBarangay(deliveryBarangay);
+    if (!normalizedInput) return null;
+
+    return deliveryZones.find((zone) => normalizeBarangay(zone.barangay) === normalizedInput) ?? null;
+  }, [deliveryZones, deliveryBarangay]);
 
   const deliveryFee = orderType === 'delivery' ? Number(selectedDeliveryZone?.shippingFee ?? 0) : 0;
   const deliveryAreaIsSupported = orderType !== 'delivery' || Boolean(selectedDeliveryZone?.isSupported);
+  const barangayMatchesConfiguredZone = Boolean(selectedDeliveryZone);
 
   if (confirmedOrder) {
     return (
@@ -116,7 +122,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const canContinue = items.length > 0
     && Boolean(customerName.trim() && mobileNumber.trim())
     && (!isDineIn || tableNumber.trim())
-    && (!isDelivery || (address.trim() && deliveryBarangay && selectedDeliveryZone && deliveryAreaIsSupported && !loadingDeliveryZones));
+    && (!isDelivery || (address.trim() && deliveryBarangay.trim() && barangayMatchesConfiguredZone && selectedDeliveryZone && deliveryAreaIsSupported && !loadingDeliveryZones));
 
   function handleContinueToPayment() {
     if (!canContinue) return;
@@ -140,7 +146,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       }
 
       if (isDelivery && (!selectedDeliveryZone || !selectedDeliveryZone.isSupported)) {
-        throw new Error('Please select a barangay within the restaurant\'s delivery coverage.');
+        throw new Error('Please enter a barangay within the restaurant\'s delivery coverage.');
       }
 
       const restaurantId = items[0].product.restaurantId;
@@ -150,7 +156,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         mobileNumber: mobileNumber.trim(),
         orderType,
         tableNumber: tableNumber.trim(),
-        deliveryBarangay: isDelivery ? deliveryBarangay : '',
+        deliveryBarangay: isDelivery ? deliveryBarangay.trim() : '',
         deliveryAddress: address.trim(),
         notes: notes.trim(),
         paymentMethod,
@@ -218,14 +224,20 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
               <div className="checkout-fields">
                 <label>
                   <span>Barangay</span>
-                  <select value={deliveryBarangay} onChange={(event) => { setDeliveryBarangay(event.target.value); setShowPayment(false); setPaymentMethod(''); setSubmitError(''); }} disabled={loadingDeliveryZones || deliveryZones.length === 0} required>
-                    <option value="">Select barangay</option>
-                    {deliveryZones.map((zone) => (
-                      <option key={zone.id} value={zone.barangay}>
-                        {zone.barangay}{zone.isSupported ? ` — ₱${zone.shippingFee.toFixed(2)}` : ' — Outside delivery area'}
-                      </option>
-                    ))}
-                  </select>
+                  <input
+                    type="text"
+                    value={deliveryBarangay}
+                    onChange={(event) => {
+                      setDeliveryBarangay(event.target.value);
+                      setShowPayment(false);
+                      setPaymentMethod('');
+                      setSubmitError('');
+                    }}
+                    autoComplete="address-level3"
+                    placeholder="Enter your barangay"
+                    disabled={loadingDeliveryZones || deliveryZones.length === 0}
+                    required
+                  />
                 </label>
                 <label>
                   <span>Complete address</span>
@@ -234,6 +246,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
               </div>
               {loadingDeliveryZones ? <p className="checkout-hint">Loading delivery areas…</p> : null}
               {!loadingDeliveryZones && !deliveryZonesError && deliveryZones.length === 0 ? <p className="checkout-error" role="alert">This restaurant has not configured any delivery areas yet.</p> : null}
+              {!loadingDeliveryZones && deliveryBarangay.trim() && !selectedDeliveryZone ? <p className="checkout-error" role="alert">This barangay is not within the restaurant's configured delivery areas.</p> : null}
               {selectedDeliveryZone && !selectedDeliveryZone.isSupported ? <p className="checkout-error" role="alert">{selectedDeliveryZone.outOfScopeMessage}</p> : null}
               {selectedDeliveryZone?.isSupported ? <p className="checkout-hint">Delivery fee: ₱{deliveryFee.toFixed(2)}</p> : null}
             </fieldset>
