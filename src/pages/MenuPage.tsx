@@ -4,6 +4,7 @@ import { useRestaurant } from '../components/RestaurantProvider';
 import { isSupabaseConfigured } from '../services/supabaseClient';
 import { getMenu } from '../services/menuRepository';
 import type { RestaurantCategory, RestaurantProduct } from '../types/menu';
+import '../styles/menu-category.css';
 
 type MenuPageProps = {
   onAddToCart: (product: RestaurantProduct) => void;
