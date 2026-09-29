@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ProductCard } from '../components/ProductCard';
 import { useRestaurant } from '../components/RestaurantProvider';
 import { isSupabaseConfigured } from '../services/supabaseClient';
@@ -16,6 +16,8 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
   const [categories, setCategories] = useState<RestaurantCategory[]>([]);
   const [products, setProducts] = useState<RestaurantProduct[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  const categorySelectRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -49,6 +51,18 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
     };
   }, [restaurant.id]);
 
+  useEffect(() => {
+    function handleOutsideClick(event: MouseEvent) {
+      if (!categorySelectRef.current?.contains(event.target as Node)) setCategoryOpen(false);
+    }
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  const selectedCategoryName = selectedCategory === 'all'
+    ? 'All products'
+    : categories.find((category) => category.id === selectedCategory)?.name ?? 'All products';
+
   const visibleProducts = useMemo(
     () => selectedCategory === 'all'
       ? products
@@ -65,20 +79,45 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
       </div>
 
       {categories.length > 0 ? (
-        <div className="menu-category-select">
-          <label htmlFor="menu-category">Category</label>
-          <select
-            id="menu-category"
-            value={selectedCategory}
-            onChange={(event) => setSelectedCategory(event.target.value)}
-          >
-            <option value="all">All products</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
+        <div className="menu-category-select" ref={categorySelectRef}>
+          <span className="menu-category-label">Category</span>
+          <div className="menu-category-dropdown">
+            <button
+              className="menu-category-trigger"
+              type="button"
+              aria-haspopup="listbox"
+              aria-expanded={categoryOpen}
+              onClick={() => setCategoryOpen((open) => !open)}
+            >
+              <span>{selectedCategoryName}</span>
+              <span className={`menu-category-chevron ${categoryOpen ? 'is-open' : ''}`} aria-hidden="true">⌄</span>
+            </button>
+            {categoryOpen ? (
+              <div className="menu-category-options" role="listbox" aria-label="Menu categories">
+                <button
+                  className={`menu-category-option ${selectedCategory === 'all' ? 'is-selected' : ''}`}
+                  type="button"
+                  role="option"
+                  aria-selected={selectedCategory === 'all'}
+                  onClick={() => { setSelectedCategory('all'); setCategoryOpen(false); }}
+                >
+                  All products
+                </button>
+                {categories.map((category) => (
+                  <button
+                    className={`menu-category-option ${selectedCategory === category.id ? 'is-selected' : ''}`}
+                    key={category.id}
+                    type="button"
+                    role="option"
+                    aria-selected={selectedCategory === category.id}
+                    onClick={() => { setSelectedCategory(category.id); setCategoryOpen(false); }}
+                  >
+                    {category.name}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
         </div>
       ) : null}
 
