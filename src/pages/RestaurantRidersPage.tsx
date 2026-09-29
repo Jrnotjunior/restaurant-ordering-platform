@@ -1,6 +1,7 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { supabase, supabaseGet } from '../services/supabaseClient';
 
-type RiderStatus = 'Available' | 'Delivering' | 'Offline';
+type RiderStatus = 'available' | 'delivering' | 'offline';
 
 type RiderAccount = {
   id: string;
@@ -11,62 +12,147 @@ type RiderAccount = {
   scopes: string[];
 };
 
-const sampleRiders: RiderAccount[] = [
-  {
-    id: 'rider-1',
-    name: 'John Santos',
-    mobileNumber: '0917 123 4567',
-    email: 'john.santos@example.com',
-    status: 'Available',
-    scopes: ['Dalandanan', 'Malinta', 'Arkong Bato'],
-  },
-  {
-    id: 'rider-2',
-    name: 'Mark Dela Cruz',
-    mobileNumber: '0918 234 5678',
-    email: 'mark.delacruz@example.com',
-    status: 'Delivering',
-    scopes: ['Gen. T. de Leon', 'Karuhatan', 'Paso de Blas'],
-  },
-];
+type RiderRow = {
+  id: string;
+  name: string;
+  mobile_number: string;
+  email: string | null;
+  status: RiderStatus;
+};
 
-export function RestaurantRidersPage() {
-  const [riders, setRiders] = useState<RiderAccount[]>(sampleRiders);
+type ScopeRow = {
+  rider_id: string;
+  scope_name: string;
+};
+
+function displayStatus(status: RiderStatus) {
+  if (status === 'available') return 'Available';
+  if (status === 'delivering') return 'Delivering';
+  return 'Offline';
+}
+
+export function RestaurantRidersPage({ restaurantId }: { restaurantId: string }) {
+  const [riders, setRiders] = useState<RiderAccount[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const availableCount = useMemo(
-    () => riders.filter((rider) => rider.status === 'Available').length,
+    () => riders.filter((rider) => rider.status === 'available').length,
     [riders],
   );
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const scopeText = String(form.get('scope') || '');
-    const scopes = scopeText
-      .split(',')
-      .map((scope) => scope.trim())
-      .filter(Boolean);
+  async function loadRiders() {
+    setLoading(true);
+    setError('');
 
-    const rider: RiderAccount = {
-      id: `preview-${Date.now()}`,
-      name: String(form.get('name') || 'New Rider'),
-      mobileNumber: String(form.get('mobileNumber') || ''),
-      email: String(form.get('email') || ''),
-      status: 'Available',
-      scopes,
-    };
+    try {
+      const [riderRows, scopeRows] = await Promise.all([
+        supabaseGet<RiderRow>('restaurant_riders', {
+          select: 'id,name,mobile_number,email,status',
+          restaurant_id: `eq.${restaurantId}`,
+          order: 'created_at.asc',
+        }),
+        supabaseGet<ScopeRow>('rider_delivery_scopes', {
+          select: 'rider_id,scope_name',
+          order: 'scope_name.asc',
+        }),
+      ]);
 
-    setRiders((current) => [...current, rider]);
-    event.currentTarget.reset();
-    setShowForm(false);
+      const scopesByRider = new Map<string, string[]>();
+      for (const scope of scopeRows) {
+        const current = scopesByRider.get(scope.rider_id) ?? [];
+        current.push(scope.scope_name);
+        scopesByRider.set(scope.rider_id, current);
+      }
+
+      setRiders(riderRows.map((rider) => ({
+        id: rider.id,
+        name: rider.name,
+        mobileNumber: rider.mobile_number,
+        email: rider.email ?? '',
+        status: rider.status,
+        scopes: scopesByRider.get(rider.id) ?? [],
+      })));
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Unable to load riders.');
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function toggleRiderStatus(id: string) {
-    setRiders((current) => current.map((rider) => {
-      if (rider.id !== id) return rider;
-      return { ...rider, status: rider.status === 'Offline' ? 'Available' : 'Offline' };
-    }));
+  useEffect(() => {
+    void loadRiders();
+  }, [restaurantId]);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!supabase) {
+      setError('Supabase is not configured.');
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+
+    const form = new FormData(event.currentTarget);
+    const name = String(form.get('name') || '').trim();
+    const mobileNumber = String(form.get('mobileNumber') || '').trim();
+    const email = String(form.get('email') || '').trim();
+    const scopeText = String(form.get('scope') || '');
+    const scopes = [...new Set(scopeText.split(',').map((scope) => scope.trim()).filter(Boolean))];
+
+    try {
+      const { data: rider, error: riderError } = await supabase
+        .from('restaurant_riders')
+        .insert({
+          restaurant_id: restaurantId,
+          name,
+          mobile_number: mobileNumber,
+          email: email || null,
+          status: 'available',
+        })
+        .select('id,name,mobile_number,email,status')
+        .single();
+
+      if (riderError) throw riderError;
+
+      if (scopes.length) {
+        const { error: scopeError } = await supabase
+          .from('rider_delivery_scopes')
+          .insert(scopes.map((scope_name) => ({ rider_id: rider.id, scope_name })));
+        if (scopeError) throw scopeError;
+      }
+
+      event.currentTarget.reset();
+      setShowForm(false);
+      await loadRiders();
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : 'Unable to add rider.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function toggleRiderStatus(rider: RiderAccount) {
+    if (!supabase || rider.status === 'delivering') return;
+
+    const nextStatus: RiderStatus = rider.status === 'offline' ? 'available' : 'offline';
+    setError('');
+
+    const { error: updateError } = await supabase
+      .from('restaurant_riders')
+      .update({ status: nextStatus })
+      .eq('id', rider.id)
+      .eq('restaurant_id', restaurantId);
+
+    if (updateError) {
+      setError(updateError.message);
+      return;
+    }
+
+    setRiders((current) => current.map((item) => item.id === rider.id ? { ...item, status: nextStatus } : item));
   }
 
   return (
@@ -93,10 +179,7 @@ export function RestaurantRidersPage() {
         </div>
       </div>
 
-      <div className="restaurant-riders-preview-note" role="note">
-        <strong>Preview mode</strong>
-        <span>This page is ready for the rider workflow. Rider records will be connected to Supabase after the rider tables and authentication are added.</span>
-      </div>
+      {error ? <div className="restaurant-riders-error" role="alert">{error}</div> : null}
 
       {showForm ? (
         <form className="restaurant-rider-form" onSubmit={handleSubmit}>
@@ -105,7 +188,7 @@ export function RestaurantRidersPage() {
               <p className="eyebrow">New rider</p>
               <h2>Add rider</h2>
             </div>
-            <p>The restaurant owner creates the rider account and assigns the delivery scope.</p>
+            <p>The restaurant owner creates the rider record and assigns the delivery scope.</p>
           </div>
 
           <div className="restaurant-rider-form-grid">
@@ -119,7 +202,7 @@ export function RestaurantRidersPage() {
             </label>
             <label>
               Login email
-              <input name="email" type="email" placeholder="rider@example.com" required />
+              <input name="email" type="email" placeholder="rider@example.com" />
             </label>
             <label>
               Delivery scope
@@ -127,37 +210,37 @@ export function RestaurantRidersPage() {
             </label>
           </div>
 
-          <p className="restaurant-rider-form-help">Separate multiple delivery areas with commas. Login credentials will be handled by Supabase Auth, not stored in this form.</p>
+          <p className="restaurant-rider-form-help">Separate multiple delivery areas with commas. Rider login will be connected to Supabase Auth separately.</p>
 
           <div className="restaurant-rider-form-actions">
-            <button className="button button-secondary" type="button" onClick={() => setShowForm(false)}>Cancel</button>
-            <button className="button button-primary" type="submit">Add Rider</button>
+            <button className="button button-secondary" type="button" onClick={() => setShowForm(false)} disabled={saving}>Cancel</button>
+            <button className="button button-primary" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Add Rider'}</button>
           </div>
         </form>
       ) : null}
 
       <div className="restaurant-riders-list">
-        {riders.map((rider) => (
+        {loading ? <div className="restaurant-riders-empty">Loading riders…</div> : riders.length === 0 ? <div className="restaurant-riders-empty">No riders have been added yet.</div> : riders.map((rider) => (
           <article className="restaurant-rider-card" key={rider.id}>
             <div className="restaurant-rider-avatar" aria-hidden="true">{rider.name.charAt(0).toUpperCase()}</div>
             <div className="restaurant-rider-details">
               <div className="restaurant-rider-name-row">
                 <h2>{rider.name}</h2>
-                <span className={`restaurant-rider-status restaurant-rider-status-${rider.status.toLowerCase()}`}>
-                  {rider.status}
+                <span className={`restaurant-rider-status restaurant-rider-status-${rider.status}`}>
+                  {displayStatus(rider.status)}
                 </span>
               </div>
               <p>{rider.mobileNumber}</p>
-              <p>{rider.email}</p>
+              {rider.email ? <p>{rider.email}</p> : null}
               <div className="restaurant-rider-scope">
                 <span>Delivery scope</span>
                 <strong>{rider.scopes.length ? rider.scopes.join(' · ') : 'Not assigned'}</strong>
               </div>
             </div>
             <div className="restaurant-rider-actions">
-              <button className="button button-secondary" type="button">Edit</button>
-              <button className="button button-secondary" type="button" onClick={() => toggleRiderStatus(rider.id)}>
-                {rider.status === 'Offline' ? 'Activate' : 'Set Offline'}
+              <button className="button button-secondary" type="button" disabled>Edit</button>
+              <button className="button button-secondary" type="button" disabled={rider.status === 'delivering'} onClick={() => void toggleRiderStatus(rider)}>
+                {rider.status === 'offline' ? 'Activate' : rider.status === 'delivering' ? 'Delivering' : 'Set Offline'}
               </button>
             </div>
           </article>
