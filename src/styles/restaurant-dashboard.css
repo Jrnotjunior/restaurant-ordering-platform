@@ -164,12 +164,13 @@
 .restaurant-dashboard-stat span,
 .restaurant-dashboard-stat small {
   display: block;
-  color: #64748b;
 }
 
 .restaurant-dashboard-stat span {
-  font-size: 14px;
+  color: #0f172a;
+  font-size: 17px;
   font-weight: 700;
+  line-height: 1.25;
 }
 
 .restaurant-dashboard-stat strong {
@@ -180,7 +181,10 @@
 }
 
 .restaurant-dashboard-stat small {
-  font-size: 12px;
+  margin-top: 4px;
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.35;
 }
 
 .restaurant-dashboard-sections {
