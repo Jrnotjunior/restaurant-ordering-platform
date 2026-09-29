@@ -135,7 +135,7 @@ function AppContent() {
   return (
     <RestaurantProvider restaurant={restaurant}>
       <ThemeProvider restaurant={restaurant}>
-        <RestaurantLayout>
+        <RestaurantLayout cartCount={cartCount}>
           {publicContent}
           {cartNotification ? (
             <div
