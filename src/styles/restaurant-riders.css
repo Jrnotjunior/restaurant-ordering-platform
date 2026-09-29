@@ -9,11 +9,30 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .restaurant-riders-header h1 { margin: 4px 0 8px; }
 .restaurant-riders-header p { margin: 0; }
+
+.restaurant-riders-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 180px));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.restaurant-riders-summary > div {
+  display: grid;
+  gap: 2px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+}
+
+.restaurant-riders-summary strong { font-size: 22px; }
+.restaurant-riders-summary span { font-size: 13px; color: var(--text-muted, #667085); }
 
 .restaurant-riders-preview-note {
   display: flex;
@@ -68,6 +87,12 @@
   font: inherit;
 }
 
+.restaurant-rider-form-help {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: var(--text-muted, #667085);
+}
+
 .restaurant-rider-form-actions {
   display: flex;
   justify-content: flex-end;
@@ -98,23 +123,41 @@
   font-weight: 700;
 }
 
-.restaurant-rider-name-row { display: flex; align-items: center; gap: 10px; }
+.restaurant-rider-name-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .restaurant-rider-name-row h2 { margin: 0; font-size: 17px; }
 .restaurant-rider-details p { margin: 3px 0 0; font-size: 14px; }
 
 .restaurant-rider-status {
   padding: 3px 8px;
   border-radius: 999px;
-  background: #e9f7ee;
+  background: #eef2f6;
   font-size: 12px;
   font-weight: 700;
 }
 
+.restaurant-rider-status-available { background: #e9f7ee; }
+.restaurant-rider-status-delivering { background: #fff4d6; }
+.restaurant-rider-status-offline { background: #f0f1f3; }
+
+.restaurant-rider-scope {
+  display: grid;
+  gap: 2px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color, #eee);
+  font-size: 13px;
+}
+
+.restaurant-rider-scope span { color: var(--text-muted, #667085); }
+.restaurant-rider-scope strong { font-weight: 600; }
+
 .restaurant-rider-actions { display: flex; gap: 8px; }
 
 @media (max-width: 700px) {
+  .restaurant-riders-page { width: min(100% - 24px, 560px); padding-top: 24px; }
   .restaurant-riders-header, .restaurant-rider-form-heading { align-items: stretch; flex-direction: column; }
   .restaurant-rider-form-grid { grid-template-columns: 1fr; }
+  .restaurant-riders-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .restaurant-rider-card { grid-template-columns: auto 1fr; }
   .restaurant-rider-actions { grid-column: 1 / -1; }
   .restaurant-rider-actions .button { flex: 1; }
