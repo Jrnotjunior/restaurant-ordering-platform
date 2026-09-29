@@ -15,6 +15,7 @@ export type CreateOrderInput = {
   deliveryAddress: string;
   notes: string;
   paymentMethod: 'cash' | 'gcash';
+  isThirdPartyCourier?: boolean;
   items: CreateOrderItem[];
 };
 
@@ -67,6 +68,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreatedOrder
     p_delivery_address: input.deliveryAddress || null,
     p_notes: input.notes,
     p_payment_method: input.paymentMethod,
+    p_is_third_party_courier: input.isThirdPartyCourier ?? false,
     p_items: input.items.map((item) => ({ product_id: item.productId, quantity: item.quantity })),
   });
 
