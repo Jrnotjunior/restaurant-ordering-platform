@@ -102,12 +102,13 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     setShowDeliveryTerms(true);
   }
 
-  function handleCheckoutSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function handleCityKeyboard(event: React.KeyboardEvent<HTMLInputElement>) {
+    const nativeEvent = event.nativeEvent as KeyboardEvent;
+    const isEnter = event.key === 'Enter' || event.code === 'Enter' || nativeEvent.keyCode === 13 || nativeEvent.which === 13;
+    if (!isEnter) return;
     event.preventDefault();
-    const activeElement = document.activeElement;
-    if (activeElement instanceof HTMLInputElement && activeElement.name === 'deliveryCity') {
-      commitCity();
-    }
+    event.stopPropagation();
+    commitCity();
   }
 
   function handleCancelThirdPartyDelivery() {
@@ -145,7 +146,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     <section className="checkout-page">
       <div className="menu-intro"><p className="eyebrow">Checkout</p><h1>How would you like your order?</h1><p>Choose how you will receive your food, then provide the details we need.</p></div>
       <div className="checkout-layout">
-        <form className="checkout-form" onSubmit={handleCheckoutSubmit}>
+        <form className="checkout-form" onSubmit={(event) => event.preventDefault()}>
           <fieldset className="checkout-section"><legend>Order type</legend><div className="order-type-grid">
             {orderTypes.map((type) => <label className={`order-type-card ${orderType === type.value ? 'is-selected' : ''}`} key={type.value}><input type="radio" name="orderType" checked={orderType === type.value} onChange={() => { setOrderType(type.value); resetPayment(); }} /><span className="order-type-content"><strong>{type.label}</strong><span>{type.description}</span></span></label>)}
           </div></fieldset>
@@ -161,7 +162,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
               <strong>Restaurant pickup point</strong><p className="pickup-label">Give this to your courier.</p><p className="pickup-address">{restaurantPickupPoint || 'Restaurant pickup address is not configured.'}</p>
               <div className="pickup-callout">Your destination address is not entered here. Provide your destination directly to Lalamove, Grab Express, or your chosen courier.</div><p>You are responsible for booking and paying the third-party courier.</p>
             </div> : <div className="delivery-address-fields">
-              <label><span>City</span><input type="text" name="deliveryCity" value={deliveryCity} onChange={(e) => { setDeliveryCity(e.target.value); setDeliveryBarangay(''); setAddress(''); setThirdPartyCourierDelivery(false); setShowDeliveryTerms(false); resetPayment(); }} autoComplete="address-level2" placeholder="Enter your city, then press Enter" required /></label>
+              <label><span>City</span><input type="text" name="deliveryCity" value={deliveryCity} onChange={(e) => { setDeliveryCity(e.target.value); setDeliveryBarangay(''); setAddress(''); setThirdPartyCourierDelivery(false); setShowDeliveryTerms(false); resetPayment(); }} onKeyDownCapture={handleCityKeyboard} onKeyUpCapture={handleCityKeyboard} autoComplete="address-level2" placeholder="Enter your city, then press Enter" required /></label>
               {cityIsSupported && <label><span>Barangay</span><div className="barangay-input-wrap"><input type="text" value={deliveryBarangay} onChange={(e) => { setDeliveryBarangay(e.target.value); resetPayment(); }} placeholder="Enter your barangay" disabled={loadingDeliveryZones || deliveryZones.length === 0} required />{suggestions.length > 0 && <div className="barangay-suggestions" role="listbox">{suggestions.map((zone) => <button className="barangay-suggestion" key={zone.id} type="button" onClick={() => setDeliveryBarangay(zone.barangay)}><span>{zone.barangay}</span><small>{zone.isSupported ? `₱${zone.shippingFee.toFixed(2)} delivery fee` : 'Outside delivery area'}</small></button>)}</div>}</div></label>}
               {cityIsSupported && deliveryBarangay.trim() && <label><span>Complete address</span><textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Complete delivery address" rows={4} required /></label>}
             </div>}
