@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
-import { createProduct, deleteProduct, getMenu, setProductAvailability, updateProduct } from '../services/menuRepository';
+import { createProduct, deleteProduct, getMenu, getOrCreateCategory, setProductAvailability, updateProduct } from '../services/menuRepository';
 import { saveProductImage, uploadProductImage } from '../services/productImageRepository';
 import type { RestaurantCategory, RestaurantProduct } from '../types/menu';
 
@@ -71,7 +71,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
   function openAdd() {
     setEditingProduct(null);
     setIsAddingProduct(true);
-    setForm({ ...emptyForm, categoryName: categories[0]?.name ?? '' });
+    setForm(emptyForm);
     setImageFile(null);
     setImagePreview('');
     setError('');
@@ -122,28 +122,23 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
     if (!Number.isFinite(price) || price < 0) { setError('Enter a valid price.'); return; }
     if (!categoryName) { setError('Category is required.'); return; }
 
-    const category = categories.find((item) => item.name.trim().toLowerCase() === categoryName.toLowerCase());
-    if (!category) {
-      setError('That category does not exist yet. Please enter one of the existing category names.');
-      return;
-    }
-
     setSavingForm(true);
     setError('');
     try {
+      const categoryId = await getOrCreateCategory(restaurantId, categoryName);
+
       if (isAddingProduct) {
-        const productId = await createProduct({ restaurantId, name, description, price, categoryId: category.id });
+        const productId = await createProduct({ restaurantId, name, description, price, categoryId });
         if (imageFile) {
           const imageUrl = await uploadProductImage(restaurantId, productId, imageFile);
           await saveProductImage(productId, imageUrl);
         }
       } else if (editingProduct) {
-        let imageUrl = editingProduct.imageUrl;
         if (imageFile) {
-          imageUrl = await uploadProductImage(restaurantId, editingProduct.id, imageFile);
+          const imageUrl = await uploadProductImage(restaurantId, editingProduct.id, imageFile);
           await saveProductImage(editingProduct.id, imageUrl);
         }
-        await updateProduct(editingProduct, { name, description, price, categoryId: category.id });
+        await updateProduct(editingProduct, { name, description, price, categoryId });
       }
 
       await loadMenu();
@@ -321,13 +316,13 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
                 <input
                   list="restaurant-product-categories"
                   value={form.categoryName}
-                  placeholder="Enter category"
+                  placeholder="Enter or choose a category"
                   onChange={(event) => setForm((current) => ({ ...current, categoryName: event.target.value }))}
                 />
                 <datalist id="restaurant-product-categories">
                   {categories.map((category) => <option key={category.id} value={category.name} />)}
                 </datalist>
-                <span className="restaurant-product-category-hint">Choose one of the existing categories.</span>
+                <span className="restaurant-product-category-hint">Choose an existing category or enter a new one. New categories are added automatically.</span>
               </label>
               <div className="restaurant-product-form-actions">
                 <button className="button button-secondary" type="button" disabled={savingForm} onClick={closeProductModal}>Cancel</button>
