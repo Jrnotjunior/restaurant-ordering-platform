@@ -11,6 +11,7 @@ export type CreateOrderInput = {
   mobileNumber: string;
   orderType: 'delivery' | 'pickup' | 'dine_in';
   tableNumber: string;
+  deliveryBarangay: string;
   deliveryAddress: string;
   notes: string;
   paymentMethod: 'cash' | 'gcash';
@@ -62,6 +63,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreatedOrder
     p_mobile_number: input.mobileNumber,
     p_order_type: input.orderType,
     p_table_number: input.tableNumber || null,
+    p_delivery_barangay: input.deliveryBarangay || null,
     p_delivery_address: input.deliveryAddress || null,
     p_notes: input.notes,
     p_payment_method: input.paymentMethod,
