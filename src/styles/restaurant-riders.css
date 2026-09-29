@@ -158,7 +158,68 @@
 .restaurant-rider-scope span { color: var(--text-muted, #667085); }
 .restaurant-rider-scope strong { font-weight: 600; }
 
-.restaurant-rider-actions { display: flex; gap: 8px; }
+.restaurant-rider-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+.restaurant-rider-actions .button-danger,
+.restaurant-rider-modal-actions .button-danger {
+  border: 1px solid #d7a0a0;
+  background: #fff5f5;
+  color: #a11b1b;
+}
+
+.restaurant-rider-actions .button-danger:hover,
+.restaurant-rider-modal-actions .button-danger:hover {
+  background: #ffe8e8;
+}
+
+.restaurant-rider-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(15 23 42 / 45%);
+}
+
+.restaurant-rider-modal {
+  width: min(440px, 100%);
+  padding: 24px;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 18px;
+  background: var(--surface, #fff);
+  box-shadow: 0 20px 60px rgb(15 23 42 / 22%);
+}
+
+.restaurant-rider-modal-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  margin-bottom: 14px;
+  border-radius: 50%;
+  background: #fff0f0;
+  color: #a11b1b;
+  font-weight: 800;
+}
+
+.restaurant-rider-modal h2 { margin: 0 0 10px; font-size: 20px; }
+.restaurant-rider-modal p { margin: 0 0 10px; line-height: 1.5; }
+
+.restaurant-rider-modal-warning {
+  padding: 11px 12px;
+  border-radius: 10px;
+  background: #fff8e6;
+  color: #694f12;
+  font-size: 13px;
+}
+
+.restaurant-rider-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
 
 @media (max-width: 700px) {
   .restaurant-riders-page { width: min(100% - 24px, 560px); padding-top: 24px; }
@@ -166,6 +227,8 @@
   .restaurant-rider-form-grid { grid-template-columns: 1fr; }
   .restaurant-riders-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .restaurant-rider-card { grid-template-columns: auto 1fr; }
-  .restaurant-rider-actions { grid-column: 1 / -1; }
+  .restaurant-rider-actions { grid-column: 1 / -1; justify-content: stretch; }
   .restaurant-rider-actions .button { flex: 1; }
+  .restaurant-rider-modal-actions { flex-direction: column-reverse; }
+  .restaurant-rider-modal-actions .button { width: 100%; }
 }
