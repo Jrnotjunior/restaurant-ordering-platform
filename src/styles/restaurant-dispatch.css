@@ -1,1 +1,52 @@
-.restaurant-dispatch-page{width:min(1180px,calc(100% - 32px));margin:0 auto;padding:32px 0 56px}.restaurant-dispatch-preview-banner{display:flex;gap:10px;align-items:center;padding:13px 16px;margin-bottom:22px;border:1px solid #dbe4f0;border-radius:12px;background:#f8fafc;color:#475569;font-size:13px}.restaurant-dispatch-preview-banner strong{color:#0f172a}.restaurant-dispatch-header{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:24px}.restaurant-dispatch-header h1{margin:4px 0 8px}.restaurant-dispatch-header p{margin:0}.restaurant-dispatch-rule{max-width:360px;padding:14px 16px;border:1px solid #e2e8f0;border-radius:12px;background:#fff}.restaurant-dispatch-rule strong,.restaurant-dispatch-rule span{display:block}.restaurant-dispatch-rule span{margin-top:4px;color:#64748b;font-size:13px}.restaurant-dispatch-message{margin-bottom:18px;padding:12px 14px;border-radius:10px;background:#f1f5f9;color:#334155;font-size:14px}.restaurant-dispatch-layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,.9fr);gap:20px}.restaurant-dispatch-layout main,.restaurant-dispatch-layout aside{display:grid;gap:20px;align-content:start}.restaurant-dispatch-card{padding:20px;border:1px solid #e2e8f0;border-radius:16px;background:#fff}.restaurant-dispatch-card-heading{display:flex;justify-content:space-between;gap:16px;margin-bottom:16px}.restaurant-dispatch-card-heading h2{margin:4px 0 0;font-size:19px}.restaurant-dispatch-label{margin:0;color:#64748b;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}.restaurant-dispatch-count{min-width:32px;height:32px;display:grid;place-items:center;border-radius:999px;background:#f1f5f9;font-weight:700}.restaurant-dispatch-order-list{display:grid;gap:10px}.restaurant-dispatch-order{display:grid;grid-template-columns:auto 1fr;gap:12px;padding:14px;border:1px solid #e2e8f0;border-radius:12px;cursor:pointer}.restaurant-dispatch-order.is-selected{border-color:#94a3b8;background:#f8fafc}.restaurant-dispatch-order input{margin-top:4px;width:18px;height:18px}.restaurant-dispatch-order-main{display:grid;gap:4px}.restaurant-dispatch-order-top{display:flex;justify-content:space-between;gap:16px}.restaurant-dispatch-address{color:#334155}.restaurant-dispatch-order small{color:#64748b}.restaurant-dispatch-empty{padding:22px;border:1px dashed #cbd5e1;border-radius:10px;color:#64748b;text-align:center}.restaurant-dispatch-selection-list{display:grid;gap:8px;margin:0;padding:0;list-style:none}.restaurant-dispatch-selection-list li{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:10px;padding:10px;border-radius:10px;background:#f8fafc}.restaurant-dispatch-selection-list li span:nth-child(2){display:grid;gap:2px}.restaurant-dispatch-selection-list small{color:#64748b}.restaurant-dispatch-selection-list button,.restaurant-dispatch-batch-heading button{border:0;background:transparent;cursor:pointer;color:#64748b}.restaurant-dispatch-sequence{width:28px;height:28px;display:grid;place-items:center;border-radius:50%;background:#e2e8f0;font-size:12px;font-weight:700}.restaurant-dispatch-helper,.restaurant-dispatch-note{color:#64748b;font-size:13px;line-height:1.5}.restaurant-dispatch-assignment-card select{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;font:inherit}.restaurant-dispatch-send{width:100%;margin-top:12px}.restaurant-dispatch-note{margin:14px 0 0;padding-top:14px;border-top:1px solid #e2e8f0}.restaurant-dispatch-batches{display:grid;gap:12px}.restaurant-dispatch-batch{padding:14px;border:1px solid #e2e8f0;border-radius:12px}.restaurant-dispatch-batch-heading{display:flex;justify-content:space-between;gap:12px}.restaurant-dispatch-batch-heading div{display:grid;gap:3px}.restaurant-dispatch-batch-heading span{color:#64748b;font-size:13px}.restaurant-dispatch-batch ol{display:grid;gap:8px;margin:14px 0 0;padding-left:20px}.restaurant-dispatch-batch li{padding-left:4px}.restaurant-dispatch-batch li span{display:block}.restaurant-dispatch-batch li span:last-child{color:#64748b;font-size:13px}@media(max-width:820px){.restaurant-dispatch-header{align-items:stretch;flex-direction:column}.restaurant-dispatch-layout{grid-template-columns:1fr}}@media(max-width:560px){.restaurant-dispatch-page{width:min(100% - 20px,1180px);padding-top:20px}.restaurant-dispatch-preview-banner{align-items:flex-start;flex-direction:column}.restaurant-dispatch-card{padding:16px}}
+.restaurant-dispatch-page{width:min(980px,calc(100% - 32px));margin:0 auto;padding:32px 0 56px}
+.restaurant-dispatch-preview-banner{display:flex;gap:10px;align-items:center;padding:13px 16px;margin-bottom:24px;border:1px solid #dbe4f0;border-radius:12px;background:#f8fafc;color:#475569;font-size:13px}
+.restaurant-dispatch-preview-banner strong{color:#0f172a}
+.restaurant-dispatch-header{margin-bottom:20px}
+.restaurant-dispatch-header h1{margin:4px 0 8px}
+.restaurant-dispatch-header p{margin:0}
+.restaurant-dispatch-message{margin-bottom:18px;padding:12px 14px;border-radius:10px;background:#f1f5f9;color:#334155;font-size:14px}
+.restaurant-dispatch-workflow{display:grid;gap:18px}
+.restaurant-dispatch-card{padding:20px;border:1px solid #e2e8f0;border-radius:16px;background:#fff}
+.restaurant-dispatch-card-heading{display:flex;justify-content:space-between;gap:16px;margin-bottom:16px}
+.restaurant-dispatch-card-heading h2{margin:4px 0 0;font-size:19px}
+.restaurant-dispatch-label{margin:0;color:#64748b;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.restaurant-dispatch-count{min-width:32px;height:32px;display:grid;place-items:center;border-radius:999px;background:#f1f5f9;font-weight:700}
+.restaurant-dispatch-helper{margin:6px 0 0;color:#64748b;font-size:13px;line-height:1.5}
+.restaurant-dispatch-order-list{display:grid;gap:10px}
+.restaurant-dispatch-order{display:grid;grid-template-columns:auto 1fr;gap:12px;padding:14px;border:1px solid #e2e8f0;border-radius:12px;cursor:pointer;transition:border-color .15s ease,background .15s ease}
+.restaurant-dispatch-order:hover{border-color:#cbd5e1}
+.restaurant-dispatch-order.is-selected{border-color:#0f172a;background:#f8fafc}
+.restaurant-dispatch-order input{margin-top:4px;width:18px;height:18px}
+.restaurant-dispatch-order-main{display:grid;gap:4px}
+.restaurant-dispatch-order-top{display:flex;justify-content:space-between;gap:16px}
+.restaurant-dispatch-address{color:#334155}
+.restaurant-dispatch-order small{color:#64748b}
+.restaurant-dispatch-assignment-card{border-color:#dbe4f0}
+.restaurant-dispatch-assignment-card.has-selection{border-color:#94a3b8}
+.restaurant-dispatch-assignment-summary{display:grid;gap:14px}
+.restaurant-dispatch-selected-orders{display:grid;gap:5px;padding:12px;border-radius:10px;background:#f8fafc;color:#334155;font-size:13px}
+.restaurant-dispatch-assignment-controls{display:grid;grid-template-columns:110px minmax(220px,1fr) auto;align-items:center;gap:12px;margin-top:18px}
+.restaurant-dispatch-assignment-controls label{font-weight:700;font-size:14px}
+.restaurant-dispatch-assignment-card select{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;font:inherit}
+.restaurant-dispatch-assignment-card select:disabled{background:#f8fafc;color:#94a3b8}
+.restaurant-dispatch-send{min-width:150px}
+.restaurant-dispatch-send:disabled{cursor:not-allowed;opacity:.55}
+.restaurant-dispatch-note{margin:14px 0 0;padding-top:14px;border-top:1px solid #e2e8f0;color:#64748b;font-size:13px;line-height:1.5}
+.restaurant-dispatch-empty{padding:22px;border:1px dashed #cbd5e1;border-radius:10px;color:#64748b;text-align:center}
+.restaurant-dispatch-batches{display:grid;gap:12px}
+.restaurant-dispatch-batch{padding:14px;border:1px solid #e2e8f0;border-radius:12px}
+.restaurant-dispatch-batch-heading{display:flex;justify-content:space-between;gap:12px}
+.restaurant-dispatch-batch-heading div{display:grid;gap:3px}
+.restaurant-dispatch-batch-heading span{color:#64748b;font-size:13px}
+.restaurant-dispatch-batch-heading button{border:0;background:transparent;cursor:pointer;color:#64748b}
+.restaurant-dispatch-batch ol{display:grid;gap:8px;margin:14px 0 0;padding-left:20px}
+.restaurant-dispatch-batch li{padding-left:4px}
+.restaurant-dispatch-batch li span{display:block}
+.restaurant-dispatch-batch li span:last-child{color:#64748b;font-size:13px}
+@media(max-width:680px){
+  .restaurant-dispatch-page{width:min(100% - 20px,980px);padding-top:20px}
+  .restaurant-dispatch-preview-banner{align-items:flex-start;flex-direction:column}
+  .restaurant-dispatch-card{padding:16px}
+  .restaurant-dispatch-assignment-controls{grid-template-columns:1fr;align-items:stretch}
+  .restaurant-dispatch-send{width:100%}
+}
