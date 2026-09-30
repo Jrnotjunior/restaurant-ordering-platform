@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { DeliveryNavigation } from '../components/DeliveryNavigation';
 import { CustomerContactActions } from '../components/CustomerContactActions';
 import { supabase } from '../services/supabaseClient';
@@ -34,6 +34,7 @@ export function RiderDeliveryPage() {
   const [passwordError, setPasswordError] = useState('');
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [logoutSaving, setLogoutSaving] = useState(false);
+  const slideCompletionLock = useRef(false);
   const currentStatus = deliveryStatuses[statusIndex];
   const isDelivered = statusIndex === deliveryStatuses.length - 1;
 
@@ -53,13 +54,21 @@ export function RiderDeliveryPage() {
   }, []);
 
   function handleDeliverySlide(value: number) {
-    if (isDelivered) return;
+    if (isDelivered || slideCompletionLock.current) return;
 
     setSlideValue(value);
 
     if (value >= 95) {
+      // Lock this drag so the remaining range input events cannot
+      // immediately advance from "Out for delivery" to "Delivered".
+      slideCompletionLock.current = true;
       setStatusIndex((current) => Math.min(current + 1, deliveryStatuses.length - 1));
       setSlideValue(0);
+
+      // Unlock only after the current drag events have finished.
+      window.setTimeout(() => {
+        slideCompletionLock.current = false;
+      }, 250);
     }
   }
 
