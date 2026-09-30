@@ -1,15 +1,15 @@
-.restaurant-dispatch-page{width:min(980px,calc(100% - 32px));margin:0 auto;padding:32px 0 56px}
-.restaurant-dispatch-preview-banner{display:flex;gap:10px;align-items:center;padding:13px 16px;margin-bottom:24px;border:1px solid #dbe4f0;border-radius:12px;background:#f8fafc;color:#475569;font-size:13px}
+.restaurant-dispatch-page{width:min(1140px,calc(100% - 2rem));margin:0 auto;padding:32px 0 56px}
+.restaurant-dispatch-preview-banner{display:flex;gap:10px;align-items:center;padding:13px 16px;margin-bottom:22px;border:1px solid #dbe4f0;border-radius:12px;background:#f8fafc;color:#475569;font-size:13px}
 .restaurant-dispatch-preview-banner strong{color:#0f172a}
-.restaurant-dispatch-header{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:20px}
-.restaurant-dispatch-header h1{margin:4px 0 8px}
-.restaurant-dispatch-header p{margin:0}
+.restaurant-dispatch-header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:22px}
+.restaurant-dispatch-header h1{margin:4px 0 6px;font-family:var(--font-heading);font-size:30px;line-height:1.2;letter-spacing:-0.02em}
+.restaurant-dispatch-header p{margin:0;color:#64748b;font-size:16px;line-height:1.5}
 .restaurant-dispatch-header .restaurant-dashboard-live-status{flex:0 0 auto;margin-bottom:2px}
-.restaurant-dispatch-message{margin-bottom:18px;padding:12px 14px;border-radius:10px;background:#f1f5f9;color:#334155;font-size:14px}
-.restaurant-dispatch-workflow{display:grid;gap:18px}
+.restaurant-dispatch-message{margin-bottom:18px;padding:12px 14px;border-radius:12px;background:#f1f5f9;color:#334155;font-size:14px}
+.restaurant-dispatch-workflow{display:grid;gap:14px}
 .restaurant-dispatch-card{padding:20px;border:1px solid #e2e8f0;border-radius:16px;background:#fff}
 .restaurant-dispatch-card-heading{display:flex;justify-content:space-between;gap:16px;margin-bottom:16px}
-.restaurant-dispatch-card-heading h2{margin:4px 0 0;font-size:19px}
+.restaurant-dispatch-card-heading h2{margin:4px 0 0;font-size:18px}
 .restaurant-dispatch-label{margin:0;color:#64748b;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
 .restaurant-dispatch-count{min-width:32px;height:32px;display:grid;place-items:center;border-radius:999px;background:#f1f5f9;font-weight:700}
 .restaurant-dispatch-order-list{display:grid;gap:10px}
@@ -41,4 +41,4 @@
 .restaurant-dispatch-match.is-match{background:#f0fdf4;color:#166534}
 .restaurant-dispatch-rider-select{padding:9px 13px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;cursor:pointer;font:inherit;font-weight:700;white-space:nowrap}
 .restaurant-dispatch-rider-select:disabled{cursor:not-allowed;opacity:.45}
-@media(max-width:680px){.restaurant-dispatch-page{width:min(100% - 20px,980px);padding-top:20px}.restaurant-dispatch-preview-banner{align-items:flex-start;flex-direction:column}.restaurant-dispatch-header{align-items:stretch;flex-direction:column;gap:12px}.restaurant-dispatch-header .restaurant-dashboard-live-status{align-self:flex-start;margin-bottom:0}.restaurant-dispatch-card{padding:16px}.restaurant-dispatch-order{grid-template-columns:1fr}.restaurant-dispatch-assign-button{width:100%}.restaurant-dispatch-modal{padding:16px}.restaurant-dispatch-modal-rider{grid-template-columns:1fr}.restaurant-dispatch-rider-heading{align-items:flex-start;flex-direction:column}.restaurant-dispatch-rider-select{width:100%}}
+@media(max-width:680px){.restaurant-dispatch-page{width:min(100% - 1rem,1140px);padding-top:24px}.restaurant-dispatch-preview-banner{align-items:flex-start;flex-direction:column}.restaurant-dispatch-header{align-items:stretch;flex-direction:column;gap:12px}.restaurant-dispatch-header .restaurant-dashboard-live-status{align-self:flex-start;margin-bottom:0}.restaurant-dispatch-card{padding:16px}.restaurant-dispatch-order{grid-template-columns:1fr}.restaurant-dispatch-assign-button{width:100%}.restaurant-dispatch-modal{padding:16px}.restaurant-dispatch-modal-rider{grid-template-columns:1fr}.restaurant-dispatch-rider-heading{align-items:flex-start;flex-direction:column}.restaurant-dispatch-rider-select{width:100%}}
