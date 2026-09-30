@@ -13,6 +13,7 @@ import { RestaurantSalesPage } from './pages/RestaurantSalesPage';
 import { RestaurantRidersPage } from './pages/RestaurantRidersPage';
 import { RestaurantDeliveryDispatchPage } from './pages/RestaurantDeliveryDispatchPage';
 import { RestaurantOwnerLoginPage } from './pages/RestaurantOwnerLoginPage';
+import { CustomerSignUpPage } from './pages/CustomerSignUpPage';
 import { RiderDeliveryPage } from './pages/RiderDeliveryPage';
 import { RiderInvitePage } from './pages/RiderInvitePage';
 import { defaultRestaurant } from './config/defaultRestaurant';
@@ -34,6 +35,7 @@ function withBasePath(path: string) {
   if (path === '/menu') return `${base}/#menu`;
   if (path === '/cart') return `${base}/#cart`;
   if (path === '/account') return `${base}/#account`;
+  if (path === '/signup') return `${base}/#signup`;
   if (path === '/restaurant/orders') return `${base}/#restaurant/orders`;
   if (path === '/restaurant/menu') return `${base}/#restaurant/menu`;
   if (path === '/restaurant/shipping-fee') return `${base}/#restaurant/shipping-fee`;
@@ -84,6 +86,7 @@ function AppContent() {
   const isMenuPage = route === '#menu' || window.location.pathname.endsWith('/menu') || window.location.pathname.endsWith('/menu/');
   const isCartPage = route === '#cart';
   const isAccountPage = route === '#account';
+  const isSignUpPage = route === '#signup';
   const isCheckoutPage = route === '#checkout';
   const isRestaurantOrdersPage = route === '#restaurant/orders';
   const isRestaurantMenuPage = route === '#restaurant/menu';
@@ -97,6 +100,7 @@ function AppContent() {
   const trackingMatch = route.match(/^#order\/(.+)$/);
 
   if (isRiderInvitePage) return <RiderInvitePage />;
+  if (isSignUpPage) return <CustomerSignUpPage />;
   if (isAccountPage) return <RestaurantOwnerLoginPage />;
   if (isRiderDeliveryPreviewPage) return <RiderDeliveryPage />;
 
