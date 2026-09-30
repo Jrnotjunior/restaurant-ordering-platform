@@ -100,7 +100,8 @@ function AppContent() {
   const isRestaurantDeliveryDispatchPage = route === '#restaurant/delivery-dispatch';
   const isRiderDashboardPage = route === '#rider/dashboard' || route === '#rider/delivery-preview';
   const riderDeliveryMatch = route.match(/^#rider\/delivery\/([^/]+)$/);
-  const isRiderInvitePage = new URLSearchParams(window.location.search).get('invite') === '1' || isInviteCallback;
+  const searchParams = new URLSearchParams(window.location.search);
+  const isRiderInvitePage = searchParams.get('invite') === '1' || Boolean(searchParams.get('token_hash')) || isInviteCallback;
   const isRestaurantOperationsPage = isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantShippingFeePage || isRestaurantSalesPage || isRestaurantRidersPage || isRestaurantDeliveryDispatchPage;
   const trackingMatch = route.match(/^#order\/(.+)$/);
 

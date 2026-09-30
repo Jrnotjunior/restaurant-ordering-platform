@@ -26,6 +26,7 @@ export function RiderInvitePage() {
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [inviteTokenHash, setInviteTokenHash] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
@@ -45,6 +46,21 @@ export function RiderInvitePage() {
       if (callbackError) {
         if (mounted) {
           setError(callbackError);
+          setLoading(false);
+        }
+        return;
+      }
+
+      const searchParams = new URLSearchParams(window.location.search);
+      const tokenHash = searchParams.get('token_hash');
+      const tokenType = searchParams.get('type');
+
+      // The invite email uses a token_hash callback so the email provider can
+      // safely open the link without consuming the one-time invite token.
+      // We only verify the token after the rider explicitly clicks Accept.
+      if (tokenHash && tokenType === 'invite') {
+        if (mounted) {
+          setInviteTokenHash(tokenHash);
           setLoading(false);
         }
         return;
@@ -99,6 +115,37 @@ export function RiderInvitePage() {
       mounted = false;
     };
   }, []);
+
+  async function handleAcceptInvitation() {
+    if (!supabase || !inviteTokenHash) return;
+
+    setSaving(true);
+    setError('');
+
+    const { data, error: verifyError } = await supabase.auth.verifyOtp({
+      token_hash: inviteTokenHash,
+      type: 'invite',
+    });
+
+    if (verifyError) {
+      setSaving(false);
+      setError(verifyError.message);
+      return;
+    }
+
+    const user = data.user;
+    if (!user) {
+      setSaving(false);
+      setError('Supabase accepted the invitation but did not return the rider account.');
+      return;
+    }
+
+    setUserEmail(user.email ?? '');
+    setName(String(user.user_metadata?.name ?? ''));
+    setInviteTokenHash('');
+    window.history.replaceState({}, document.title, `${appBaseUrl()}?invite=1`);
+    setSaving(false);
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -161,6 +208,13 @@ export function RiderInvitePage() {
             <a className="button button-primary" href={`${appBaseUrl()}#rider/dashboard`} style={{ display: 'inline-flex', marginTop: 18 }}>
               Continue to Rider Dashboard
             </a>
+          </div>
+        ) : inviteTokenHash ? (
+          <div>
+            <p style={{ marginBottom: 18 }}>Your rider invitation is ready. Click below to accept the invitation and continue to set your password.</p>
+            <button className="button button-primary" type="button" onClick={() => void handleAcceptInvitation()} disabled={saving}>
+              {saving ? 'Accepting…' : 'Accept Invitation'}
+            </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
