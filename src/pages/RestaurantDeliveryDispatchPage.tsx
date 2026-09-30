@@ -14,7 +14,7 @@ type Rider = {
   id: string;
   name: string;
   mobileNumber: string;
-  status: 'available' | 'delivering' | 'returning' | 'offline';
+  status: 'available' | 'delivering';
   activeDeliveries: number;
   deliveredToday: number;
   scope: string[];
@@ -34,7 +34,6 @@ type RiderRow = {
   id: string;
   name: string;
   mobile_number: string;
-  status: Rider['status'];
 };
 
 type ScopeRow = {
@@ -44,7 +43,7 @@ type ScopeRow = {
 
 type AssignmentRow = {
   rider_id: string;
-  status: 'assigned' | 'picked_up' | 'delivering' | 'delivered' | 'cancelled';
+  status: 'assigned' | 'delivering' | 'delivered' | 'cancelled';
   assigned_at: string;
   delivered_at: string | null;
 };
@@ -95,7 +94,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
           .order('created_at', { ascending: true }),
         supabase
           .from('restaurant_riders')
-          .select('id,name,mobile_number,status')
+          .select('id,name,mobile_number')
           .eq('restaurant_id', restaurantId)
           .order('name', { ascending: true }),
         supabase
@@ -121,7 +120,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
       }
 
       const assignments = (assignmentResult.data ?? []) as AssignmentRow[];
-      const activeStatuses = new Set(['assigned', 'picked_up', 'delivering']);
+      const activeStatuses = new Set<AssignmentRow['status']>(['assigned', 'delivering']);
       const startOfToday = todayStartIso();
       const activeByRider = new Map<string, number>();
       const deliveredTodayByRider = new Map<string, number>();
@@ -144,15 +143,18 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
         readyAt: formatReadyTime(order.created_at),
       })));
 
-      setRiders(((riderResult.data ?? []) as RiderRow[]).map((rider) => ({
-        id: rider.id,
-        name: rider.name,
-        mobileNumber: rider.mobile_number,
-        status: rider.status,
-        activeDeliveries: activeByRider.get(rider.id) ?? 0,
-        deliveredToday: deliveredTodayByRider.get(rider.id) ?? 0,
-        scope: scopesByRider.get(rider.id) ?? [],
-      })));
+      setRiders(((riderResult.data ?? []) as RiderRow[]).map((rider) => {
+        const activeDeliveries = activeByRider.get(rider.id) ?? 0;
+        return {
+          id: rider.id,
+          name: rider.name,
+          mobileNumber: rider.mobile_number,
+          status: activeDeliveries > 0 ? 'delivering' : 'available',
+          activeDeliveries,
+          deliveredToday: deliveredTodayByRider.get(rider.id) ?? 0,
+          scope: scopesByRider.get(rider.id) ?? [],
+        };
+      }));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load delivery dispatch data.');
     } finally {
@@ -199,8 +201,6 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
   const statusLabel = (status: Rider['status']) => ({
     available: 'Available',
     delivering: 'Out delivering',
-    returning: 'Returning to restaurant',
-    offline: 'Offline',
   }[status]);
 
   const orderArea = selectedOrder?.address.split(',')[0].trim() ?? '';
@@ -321,7 +321,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
             </div>
 
             <div className="restaurant-dispatch-modal-riders">
-              {riders.filter((rider) => rider.status !== 'offline').map((rider) => {
+              {riders.map((rider) => {
                 const inScope = rider.scope.includes(orderArea);
                 const canAssign = rider.status === 'available' && inScope;
 
@@ -344,13 +344,13 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
                       </div>
                     </div>
                     <button className="restaurant-dispatch-rider-select" type="button" disabled={!canAssign || assigning} onClick={() => void assignOrder(rider)}>
-                      {assigning ? 'Assigning…' : canAssign ? 'Assign' : rider.status === 'delivering' ? 'Currently delivering' : rider.status === 'returning' ? 'Returning' : inScope ? 'Unavailable' : 'Outside scope'}
+                      {assigning ? 'Assigning…' : canAssign ? 'Assign' : rider.status === 'delivering' ? 'Currently delivering' : inScope ? 'Unavailable' : 'Outside scope'}
                     </button>
                   </article>
                 );
               })}
 
-              {!riders.some((rider) => rider.status !== 'offline') ? (
+              {!riders.length ? (
                 <div className="restaurant-dispatch-empty">No riders are currently available to view.</div>
               ) : null}
             </div>
