@@ -17,7 +17,7 @@
 .rider-delivery-main,.rider-delivery-sidebar{display:grid;gap:1rem}
 .rider-delivery-card{padding:1.25rem;border:1px solid var(--color-border);border-radius:var(--radius-lg);background:var(--color-background)}
 .rider-delivery-card-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}
-.rider-delivery-label{margin:0 0 .35rem;color:var(--color-primary);font-size:.72rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+.rider-delivery-label{display:block;margin:0 0 .35rem;color:var(--color-primary);font-size:.72rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
 .rider-delivery-card h2{margin:0;font-family:var(--font-heading);font-size:1.1rem}
 .rider-delivery-customer-icon,.rider-delivery-location-icon{display:grid;place-items:center;flex:0 0 auto;width:40px;height:40px;border-radius:999px;background:var(--color-secondary);color:var(--color-muted)}
 .rider-delivery-phone{margin:.6rem 0 0;color:var(--color-muted);font-size:.92rem}
@@ -28,6 +28,13 @@
 .rider-delivery-item>span:last-child{white-space:nowrap}
 .rider-delivery-total{padding-top:.85rem;font-size:.9rem}
 .rider-delivery-total strong{font-size:1.2rem}
+.rider-order-details-card{padding:.35rem 1.25rem 1rem}
+.rider-order-details-toggle{display:flex;width:100%;align-items:center;justify-content:space-between;gap:1rem;padding:.9rem 0;border:0;background:transparent;color:var(--color-text);text-align:left;cursor:pointer}
+.rider-order-details-toggle>span:first-child{display:grid;gap:.15rem}
+.rider-order-details-toggle strong{font-family:var(--font-heading);font-size:1.1rem}
+.rider-order-details-toggle small{color:var(--color-muted);font-size:.8rem}
+.rider-order-details-chevron{display:grid;place-items:center;flex:0 0 auto;width:32px;height:32px;border-radius:999px;background:var(--color-secondary);color:var(--color-muted);font-size:1rem}
+.rider-order-details-toggle:hover .rider-order-details-chevron{background:color-mix(in srgb,var(--color-primary) 10%,var(--color-secondary));color:var(--color-primary)}
 .rider-delivery-progress-card{position:sticky;top:1rem}
 .rider-delivery-progress-card h2{margin-top:.1rem}
 .rider-delivery-steps{display:grid;margin-top:1.25rem}
@@ -48,4 +55,4 @@
 .rider-password-error{margin:1rem 0 0;padding:.7rem .8rem;border-radius:.55rem;background:color-mix(in srgb,var(--color-danger,#b91c1c) 8%,var(--color-background));color:var(--color-danger,#b91c1c);font-size:.8rem}
 .rider-password-actions{display:flex;justify-content:flex-end;gap:.6rem;margin-top:1.2rem}
 @media(max-width:800px){.rider-delivery-layout{grid-template-columns:1fr}.rider-delivery-progress-card{position:static}}
-@media(max-width:560px){.rider-delivery-page{width:min(100% - 1rem,1040px);padding-top:1rem}.rider-delivery-header{align-items:flex-start;flex-direction:column;padding-right:3rem}.rider-delivery-header-actions{width:100%;justify-content:flex-end}.rider-delivery-card{padding:1rem;border-radius:.8rem}.rider-delivery-header h1{font-size:2.25rem}.rider-account-menu{top:1rem;right:0}.rider-account-dropdown{right:0}}
+@media(max-width:560px){.rider-delivery-page{width:min(100% - 1rem,1040px);padding-top:1rem}.rider-delivery-header{align-items:flex-start;flex-direction:column;padding-right:3rem}.rider-delivery-header-actions{width:100%;justify-content:flex-end}.rider-delivery-card{padding:1rem;border-radius:.8rem}.rider-delivery-header h1{font-size:2.25rem}.rider-account-menu{top:1rem;right:0}.rider-account-dropdown{right:0}.rider-order-details-card{padding:.25rem 1rem .75rem}}
