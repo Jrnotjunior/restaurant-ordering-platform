@@ -6,6 +6,8 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+const riderInviteRedirectTo = "https://jrnotjunior.github.io/restaurant-ordering-platform/?invite=1";
+
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -129,6 +131,7 @@ Deno.serve(async (request) => {
           name,
           mobile_number: mobileNumber,
         },
+        redirectTo: riderInviteRedirectTo,
       });
 
       if (inviteError) throw inviteError;
