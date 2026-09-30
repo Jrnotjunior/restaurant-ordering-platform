@@ -1,11 +1,18 @@
 .rider-delivery-page{width:min(1040px,calc(100% - 2rem));margin:0 auto;padding:2rem 0 4rem;color:var(--color-text)}
-.rider-delivery-preview-banner{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;margin-bottom:1.5rem;border:1px dashed var(--color-border);border-radius:var(--radius-md);background:color-mix(in srgb,var(--color-secondary) 45%,var(--color-background))}
-.rider-delivery-preview-banner span{flex:0 0 auto;padding:.25rem .5rem;border-radius:999px;background:var(--color-text);color:var(--color-background);font-size:.68rem;font-weight:800;letter-spacing:.06em}
-.rider-delivery-preview-banner p{margin:0;color:var(--color-muted);font-size:.82rem}
 .rider-delivery-header{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;margin-bottom:1.5rem}
 .rider-delivery-header h1{margin:0;font-family:var(--font-heading);font-size:clamp(2rem,6vw,3.5rem);line-height:1;letter-spacing:-.04em}
 .rider-delivery-header>div>p:last-child{margin:.5rem 0 0;color:var(--color-muted)}
+.rider-delivery-header-actions{display:flex;align-items:center;gap:.65rem}
 .rider-delivery-status{display:inline-flex;align-items:center;min-height:36px;padding:0 .8rem;border-radius:999px;background:color-mix(in srgb,var(--color-primary) 10%,var(--color-background));color:var(--color-primary);font-size:.8rem;font-weight:800}
+.rider-account-menu{position:relative}
+.rider-account-button{display:grid;place-items:center;width:42px;height:42px;padding:0;border:1px solid var(--color-border);border-radius:999px;background:var(--color-background);color:var(--color-text);cursor:pointer}
+.rider-account-button:hover{background:var(--color-secondary)}
+.rider-account-dropdown{position:absolute;z-index:20;top:calc(100% + .6rem);right:0;width:220px;padding:.5rem;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-background);box-shadow:0 16px 36px rgba(15,23,42,.14)}
+.rider-account-email{padding:.65rem .7rem .75rem;color:var(--color-muted);font-size:.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-bottom:1px solid var(--color-border);margin-bottom:.35rem}
+.rider-account-dropdown button{display:block;width:100%;padding:.7rem;border:0;border-radius:.5rem;background:transparent;color:var(--color-text);text-align:left;font:inherit;font-size:.86rem;cursor:pointer}
+.rider-account-dropdown button:hover{background:var(--color-secondary)}
+.rider-account-dropdown button:last-child{color:var(--color-danger,#b91c1c)}
+.rider-account-dropdown button:disabled{opacity:.6;cursor:not-allowed}
 .rider-delivery-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,.8fr);gap:1rem;align-items:start}
 .rider-delivery-main,.rider-delivery-sidebar{display:grid;gap:1rem}
 .rider-delivery-card{padding:1.25rem;border:1px solid var(--color-border);border-radius:var(--radius-lg);background:var(--color-background)}
@@ -15,10 +22,6 @@
 .rider-delivery-customer-icon,.rider-delivery-location-icon{display:grid;place-items:center;flex:0 0 auto;width:40px;height:40px;border-radius:999px;background:var(--color-secondary);color:var(--color-muted)}
 .rider-delivery-phone{margin:.6rem 0 0;color:var(--color-muted);font-size:.92rem}
 .rider-delivery-helper{margin:.65rem 0 0;color:var(--color-muted);font-size:.8rem;line-height:1.45}
-.rider-delivery-pickup{display:flex;gap:.8rem;align-items:flex-start;margin-top:1rem;padding:1rem;border-radius:var(--radius-md);background:color-mix(in srgb,var(--color-secondary) 45%,var(--color-background))}
-.rider-delivery-pickup-icon{display:grid;place-items:center;width:28px;height:28px;flex:0 0 auto;border-radius:999px;background:var(--color-primary);color:var(--color-primary-text);font-size:.65rem}
-.rider-delivery-pickup strong{display:block;font-size:.9rem;line-height:1.4}
-.rider-delivery-pickup p{margin:.35rem 0 0;color:var(--color-muted);font-size:.8rem;line-height:1.45}
 .rider-delivery-items{display:grid;gap:.6rem;margin-top:1rem;padding:.85rem 0;border-top:1px solid var(--color-border);border-bottom:1px solid var(--color-border)}
 .rider-delivery-item,.rider-delivery-total{display:flex;justify-content:space-between;gap:1rem}
 .rider-delivery-item{font-size:.88rem}
@@ -36,8 +39,13 @@
 .rider-delivery-step strong{display:block;margin:.35rem 0 0;font-size:.88rem}
 .rider-delivery-step p{margin:.2rem 0 0;color:var(--color-muted);font-size:.76rem;line-height:1.4}
 .rider-delivery-primary-action{width:100%;margin-top:1.25rem}
-.rider-delivery-safety-card{padding:1rem;border:1px solid color-mix(in srgb,var(--color-warning) 25%,var(--color-border));border-radius:var(--radius-md);background:color-mix(in srgb,var(--color-warning) 6%,var(--color-background))}
-.rider-delivery-safety-card strong{font-size:.85rem}
-.rider-delivery-safety-card p{margin:.35rem 0 0;color:var(--color-muted);font-size:.78rem;line-height:1.5}
+.rider-password-overlay{position:fixed;z-index:100;inset:0;display:grid;place-items:center;padding:1rem;background:rgba(15,23,42,.45)}
+.rider-password-modal{width:min(100%,440px);padding:1.35rem;border:1px solid var(--color-border);border-radius:var(--radius-lg);background:var(--color-background);box-shadow:0 24px 60px rgba(15,23,42,.22)}
+.rider-password-modal-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}
+.rider-password-close{display:grid;place-items:center;width:34px;height:34px;border:0;border-radius:999px;background:var(--color-secondary);color:var(--color-text);font-size:1.25rem;cursor:pointer}
+.rider-password-field{display:grid;gap:.45rem;margin-top:1rem;font-size:.82rem;font-weight:700}
+.rider-password-field input{width:100%;box-sizing:border-box;padding:.75rem;border:1px solid var(--color-border);border-radius:.6rem;background:var(--color-background);color:var(--color-text);font:inherit}
+.rider-password-error{margin:1rem 0 0;padding:.7rem .8rem;border-radius:.55rem;background:color-mix(in srgb,var(--color-danger,#b91c1c) 8%,var(--color-background));color:var(--color-danger,#b91c1c);font-size:.8rem}
+.rider-password-actions{display:flex;justify-content:flex-end;gap:.6rem;margin-top:1.2rem}
 @media(max-width:800px){.rider-delivery-layout{grid-template-columns:1fr}.rider-delivery-progress-card{position:static}}
-@media(max-width:560px){.rider-delivery-page{width:min(100% - 1rem,1040px);padding-top:1rem}.rider-delivery-preview-banner{align-items:flex-start;flex-direction:column;gap:.45rem}.rider-delivery-header{align-items:flex-start;flex-direction:column}.rider-delivery-card{padding:1rem;border-radius:.8rem}.rider-delivery-header h1{font-size:2.25rem}}
+@media(max-width:560px){.rider-delivery-page{width:min(100% - 1rem,1040px);padding-top:1rem}.rider-delivery-header{align-items:flex-start;flex-direction:column}.rider-delivery-header-actions{width:100%;justify-content:flex-end}.rider-delivery-card{padding:1rem;border-radius:.8rem}.rider-delivery-header h1{font-size:2.25rem}.rider-account-dropdown{right:0}}
