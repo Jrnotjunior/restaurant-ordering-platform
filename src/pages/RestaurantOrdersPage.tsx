@@ -156,7 +156,7 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
     try {
       setError('');
       setUpdating(order.orderId);
-      window.setTimeout(() => window.print(), 100);
+      window.print();
       await updateOrderStatus(order.orderId, 'confirmed');
       const updated = { ...order, status: 'confirmed' as RestaurantOrderStatus };
       setOrders((current) => current.map((item) => (item.orderId === order.orderId ? updated : item)));
