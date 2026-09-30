@@ -14,6 +14,7 @@ import { RestaurantRidersPage } from './pages/RestaurantRidersPage';
 import { RestaurantDeliveryDispatchPage } from './pages/RestaurantDeliveryDispatchPage';
 import { RestaurantOwnerLoginPage } from './pages/RestaurantOwnerLoginPage';
 import { RiderDeliveryPage } from './pages/RiderDeliveryPage';
+import { RiderInvitePage } from './pages/RiderInvitePage';
 import { defaultRestaurant } from './config/defaultRestaurant';
 import { currentRestaurantLookup } from './config/restaurant';
 import { SupabaseRestaurantRepository } from './services/supabaseRestaurantRepository';
@@ -91,9 +92,11 @@ function AppContent() {
   const isRestaurantRidersPage = route === '#restaurant/riders';
   const isRestaurantDeliveryDispatchPage = route === '#restaurant/delivery-dispatch';
   const isRiderDeliveryPreviewPage = route === '#rider/delivery-preview';
+  const isRiderInvitePage = new URLSearchParams(window.location.search).get('invite') === '1';
   const isRestaurantOperationsPage = isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantShippingFeePage || isRestaurantSalesPage || isRestaurantRidersPage || isRestaurantDeliveryDispatchPage;
   const trackingMatch = route.match(/^#order\/(.+)$/);
 
+  if (isRiderInvitePage) return <RiderInvitePage />;
   if (isAccountPage) return <RestaurantOwnerLoginPage />;
   if (isRiderDeliveryPreviewPage) return <RiderDeliveryPage />;
 
