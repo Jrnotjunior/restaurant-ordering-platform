@@ -26,6 +26,7 @@ export function RiderDeliveryPage() {
   const [statusIndex, setStatusIndex] = useState(0);
   const [accountOpen, setAccountOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
+  const [orderDetailsOpen, setOrderDetailsOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -174,25 +175,37 @@ export function RiderDeliveryPage() {
             <p className="rider-delivery-helper">Tap the address to open Google Maps or Waze.</p>
           </section>
 
-          <section className="rider-delivery-card">
-            <div className="rider-delivery-card-heading">
-              <div>
-                <p className="rider-delivery-label">Order</p>
-                <h2>Items to deliver</h2>
-              </div>
-            </div>
-            <div className="rider-delivery-items">
-              {previewDelivery.items.map((item) => (
-                <div className="rider-delivery-item" key={item.name}>
-                  <span><strong>{item.quantity}×</strong> {item.name}</span>
-                  <span>₱{item.total.toFixed(2)}</span>
+          <section className="rider-delivery-card rider-order-details-card">
+            <button
+              className="rider-order-details-toggle"
+              type="button"
+              aria-expanded={orderDetailsOpen}
+              onClick={() => setOrderDetailsOpen((open) => !open)}
+            >
+              <span>
+                <span className="rider-delivery-label">Order</span>
+                <strong>Order details</strong>
+                <small>View items and order total</small>
+              </span>
+              <span className="rider-order-details-chevron" aria-hidden="true">{orderDetailsOpen ? '⌃' : '⌄'}</span>
+            </button>
+
+            {orderDetailsOpen ? (
+              <>
+                <div className="rider-delivery-items">
+                  {previewDelivery.items.map((item) => (
+                    <div className="rider-delivery-item" key={item.name}>
+                      <span><strong>{item.quantity}×</strong> {item.name}</span>
+                      <span>₱{item.total.toFixed(2)}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div className="rider-delivery-total">
-              <span>Order total</span>
-              <strong>₱{previewDelivery.total.toFixed(2)}</strong>
-            </div>
+                <div className="rider-delivery-total">
+                  <span>Order total</span>
+                  <strong>₱{previewDelivery.total.toFixed(2)}</strong>
+                </div>
+              </>
+            ) : null}
           </section>
         </main>
 
