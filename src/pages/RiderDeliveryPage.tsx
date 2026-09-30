@@ -32,11 +32,6 @@ export function RiderDeliveryPage() {
 
   return (
     <section className="rider-delivery-page">
-      <div className="rider-delivery-preview-banner">
-        <span>UI PREVIEW</span>
-        <p>This screen uses sample data only. No Supabase data is changed.</p>
-      </div>
-
       <header className="rider-delivery-header">
         <div>
           <p className="eyebrow">My delivery</p>
@@ -124,11 +119,6 @@ export function RiderDeliveryPage() {
             >
               {statusIndex === 0 ? 'Start Delivery' : isDelivered ? 'Delivered' : 'Mark Delivered'}
             </button>
-          </section>
-
-          <section className="rider-delivery-safety-card">
-            <strong>Important</strong>
-            <p>You do not accept or reject deliveries. When the dispatcher assigns an order to you, it is your delivery to complete.</p>
           </section>
         </aside>
       </div>
