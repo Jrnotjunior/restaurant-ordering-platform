@@ -114,6 +114,7 @@ begin
   end if;
 end $$;
 
+drop trigger if exists restaurant_riders_set_updated_at on public.restaurant_riders;
 create trigger restaurant_riders_set_updated_at
 before update on public.restaurant_riders
 for each row
