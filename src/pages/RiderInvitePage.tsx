@@ -27,9 +27,6 @@ export function RiderInvitePage() {
         return;
       }
 
-      // Supabase invitation links return the invited user's session in the URL
-      // fragment. Always prefer that invite session over any existing browser
-      // session (for example, the restaurant owner's session).
       const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
       const inviteAccessToken = hashParams.get('access_token');
       const inviteRefreshToken = hashParams.get('refresh_token');
@@ -49,8 +46,6 @@ export function RiderInvitePage() {
           return;
         }
 
-        // Remove the one-time auth tokens from the visible URL after Supabase
-        // has stored the invited user's session.
         window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.search}`);
       }
 
@@ -134,8 +129,8 @@ export function RiderInvitePage() {
           <div>
             <p>Your password has been set successfully for <strong>{userEmail}</strong>.</p>
             <p style={{ marginTop: 8 }}>You can now sign in with this email and password.</p>
-            <a className="button button-primary" href={`${appBaseUrl()}#rider/delivery-preview`} style={{ display: 'inline-flex', marginTop: 18 }}>
-              Continue to Rider Area
+            <a className="button button-primary" href={`${appBaseUrl()}#rider/dashboard`} style={{ display: 'inline-flex', marginTop: 18 }}>
+              Continue to Rider Dashboard
             </a>
           </div>
         ) : (

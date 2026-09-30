@@ -207,7 +207,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
 
   async function assignOrder(rider: Rider) {
     if (!supabase || !selectedOrder || assigning) return;
-    const canAssign = rider.status === 'available' && rider.activeDeliveries === 0 && rider.scope.includes(orderArea);
+    const canAssign = rider.status === 'available' && rider.scope.includes(orderArea);
     if (!canAssign) return;
 
     setAssigning(true);
@@ -323,7 +323,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
             <div className="restaurant-dispatch-modal-riders">
               {riders.filter((rider) => rider.status !== 'offline').map((rider) => {
                 const inScope = rider.scope.includes(orderArea);
-                const canAssign = rider.status === 'available' && rider.activeDeliveries === 0 && inScope;
+                const canAssign = rider.status === 'available' && inScope;
 
                 return (
                   <article className="restaurant-dispatch-modal-rider" key={rider.id}>

@@ -16,6 +16,7 @@ import './styles/restaurant-search.css';
 import './styles/delivery-navigation.css';
 import './styles/customer-contact.css';
 import './styles/rider-delivery.css';
+import './styles/rider-dashboard.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

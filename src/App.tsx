@@ -15,6 +15,7 @@ import { RestaurantDeliveryDispatchPage } from './pages/RestaurantDeliveryDispat
 import { RestaurantOwnerLoginPage } from './pages/RestaurantOwnerLoginPage';
 import { CustomerSignUpPage } from './pages/CustomerSignUpPage';
 import { RiderDeliveryPage } from './pages/RiderDeliveryPage';
+import { RiderDashboardPage } from './pages/RiderDashboardPage';
 import { RiderInvitePage } from './pages/RiderInvitePage';
 import { defaultRestaurant } from './config/defaultRestaurant';
 import { currentRestaurantLookup } from './config/restaurant';
@@ -42,7 +43,8 @@ function withBasePath(path: string) {
   if (path === '/restaurant/sales') return `${base}/#restaurant/sales`;
   if (path === '/restaurant/riders') return `${base}/#restaurant/riders`;
   if (path === '/restaurant/delivery-dispatch') return `${base}/#restaurant/delivery-dispatch`;
-  if (path === '/rider/delivery-preview') return `${base}/#rider/delivery-preview`;
+  if (path === '/rider/dashboard') return `${base}/#rider/dashboard`;
+  if (path === '/rider/delivery-preview') return `${base}/#rider/dashboard`;
   return `${base}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
@@ -94,7 +96,8 @@ function AppContent() {
   const isRestaurantSalesPage = route === '#restaurant/sales';
   const isRestaurantRidersPage = route === '#restaurant/riders';
   const isRestaurantDeliveryDispatchPage = route === '#restaurant/delivery-dispatch';
-  const isRiderDeliveryPreviewPage = route === '#rider/delivery-preview';
+  const isRiderDashboardPage = route === '#rider/dashboard' || route === '#rider/delivery-preview';
+  const riderDeliveryMatch = route.match(/^#rider\/delivery\/([^/]+)$/);
   const isRiderInvitePage = new URLSearchParams(window.location.search).get('invite') === '1';
   const isRestaurantOperationsPage = isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantShippingFeePage || isRestaurantSalesPage || isRestaurantRidersPage || isRestaurantDeliveryDispatchPage;
   const trackingMatch = route.match(/^#order\/(.+)$/);
@@ -102,7 +105,8 @@ function AppContent() {
   if (isRiderInvitePage) return <RiderInvitePage />;
   if (isSignUpPage) return <CustomerSignUpPage />;
   if (isAccountPage) return <RestaurantOwnerLoginPage />;
-  if (isRiderDeliveryPreviewPage) return <RiderDeliveryPage />;
+  if (isRiderDashboardPage) return <RiderDashboardPage />;
+  if (riderDeliveryMatch) return <RiderDeliveryPage orderId={decodeURIComponent(riderDeliveryMatch[1])} />;
 
   const publicContent = isMenuPage || (!isCartPage && !isCheckoutPage && !trackingMatch) ? <MenuPage onAddToCart={addToCart} cartCount={cartCount} /> : isCartPage ? <CartPage items={cartItems} onIncrease={(id) => changeQuantity(id, 1)} onDecrease={(id) => changeQuantity(id, -1)} onRemove={(id) => removeFromCart(id)} /> : isCheckoutPage ? <CheckoutPage items={cartItems} /> : <OrderTrackingPage orderNumber={decodeURIComponent(trackingMatch![1])} />;
 
