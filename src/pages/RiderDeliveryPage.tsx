@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { DeliveryNavigation } from '../components/DeliveryNavigation';
 import { CustomerContactActions } from '../components/CustomerContactActions';
+import { supabase } from '../services/supabaseClient';
 
 const previewDelivery = {
   orderNumber: '#1024',
@@ -23,11 +24,87 @@ const deliveryStatuses = [
 
 export function RiderDeliveryPage() {
   const [statusIndex, setStatusIndex] = useState(0);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [email, setEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [logoutSaving, setLogoutSaving] = useState(false);
   const currentStatus = deliveryStatuses[statusIndex];
   const isDelivered = statusIndex === deliveryStatuses.length - 1;
 
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadAccount() {
+      if (!supabase) return;
+      const { data } = await supabase.auth.getUser();
+      if (mounted) setEmail(data.user?.email ?? '');
+    }
+
+    void loadAccount();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   function advanceStatus() {
     if (!isDelivered) setStatusIndex((current) => current + 1);
+  }
+
+  function openPasswordChange() {
+    setAccountOpen(false);
+    setPasswordError('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setPasswordOpen(true);
+  }
+
+  async function handleChangePassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPasswordError('');
+
+    if (!supabase) {
+      setPasswordError('Supabase is not configured.');
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setPasswordError('Password must be at least 8 characters.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Passwords do not match.');
+      return;
+    }
+
+    setPasswordSaving(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setPasswordSaving(false);
+
+    if (error) {
+      setPasswordError(error.message);
+      return;
+    }
+
+    setPasswordOpen(false);
+  }
+
+  async function handleLogout() {
+    if (!supabase) return;
+    setLogoutSaving(true);
+    const { error } = await supabase.auth.signOut();
+    setLogoutSaving(false);
+
+    if (error) {
+      setPasswordError(error.message);
+      return;
+    }
+
+    window.location.href = `${window.location.origin}${import.meta.env.BASE_URL}`;
   }
 
   return (
@@ -38,7 +115,32 @@ export function RiderDeliveryPage() {
           <h1>{previewDelivery.orderNumber}</h1>
           <p>Deliver this order to the customer.</p>
         </div>
-        <span className="rider-delivery-status">{currentStatus.label}</span>
+        <div className="rider-delivery-header-actions">
+          <span className="rider-delivery-status">{currentStatus.label}</span>
+          <div className="rider-account-menu">
+            <button
+              className="rider-account-button"
+              type="button"
+              aria-label="Open rider account menu"
+              aria-expanded={accountOpen}
+              onClick={() => setAccountOpen((open) => !open)}
+            >
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="8" r="3.5" />
+                <path d="M5 20c.8-3.4 3.2-5.2 7-5.2s6.2 1.8 7 5.2" />
+              </svg>
+            </button>
+            {accountOpen ? (
+              <div className="rider-account-dropdown">
+                <div className="rider-account-email">{email || 'Rider account'}</div>
+                <button type="button" onClick={openPasswordChange}>Change password</button>
+                <button type="button" onClick={() => void handleLogout()} disabled={logoutSaving}>
+                  {logoutSaving ? 'Logging out…' : 'Log out'}
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
       </header>
 
       <div className="rider-delivery-layout">
@@ -122,6 +224,36 @@ export function RiderDeliveryPage() {
           </section>
         </aside>
       </div>
+
+      {passwordOpen ? (
+        <div className="rider-password-overlay" role="presentation" onMouseDown={() => setPasswordOpen(false)}>
+          <section className="rider-password-modal" role="dialog" aria-modal="true" aria-labelledby="rider-password-title" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="rider-password-modal-header">
+              <div>
+                <p className="rider-delivery-label">Account</p>
+                <h2 id="rider-password-title">Change password</h2>
+              </div>
+              <button className="rider-password-close" type="button" aria-label="Close" onClick={() => setPasswordOpen(false)}>×</button>
+            </div>
+            <p className="rider-delivery-helper">Choose a new password with at least 8 characters.</p>
+            <form onSubmit={handleChangePassword}>
+              <label className="rider-password-field">
+                <span>New password</span>
+                <input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={8} autoComplete="new-password" required />
+              </label>
+              <label className="rider-password-field">
+                <span>Confirm new password</span>
+                <input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={8} autoComplete="new-password" required />
+              </label>
+              {passwordError ? <p className="rider-password-error" role="alert">{passwordError}</p> : null}
+              <div className="rider-password-actions">
+                <button className="button" type="button" onClick={() => setPasswordOpen(false)}>Cancel</button>
+                <button className="button button-primary" type="submit" disabled={passwordSaving}>{passwordSaving ? 'Saving…' : 'Change password'}</button>
+              </div>
+            </form>
+          </section>
+        </div>
+      ) : null}
     </section>
   );
 }
