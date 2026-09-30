@@ -27,6 +27,7 @@ export function RiderDeliveryPage() {
   const [accountOpen, setAccountOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [orderDetailsOpen, setOrderDetailsOpen] = useState(false);
+  const [slideValue, setSlideValue] = useState(0);
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -51,8 +52,15 @@ export function RiderDeliveryPage() {
     };
   }, []);
 
-  function advanceStatus() {
-    if (!isDelivered) setStatusIndex((current) => current + 1);
+  function handleDeliverySlide(value: number) {
+    if (isDelivered) return;
+
+    setSlideValue(value);
+
+    if (value >= 95) {
+      setStatusIndex((current) => Math.min(current + 1, deliveryStatuses.length - 1));
+      setSlideValue(0);
+    }
   }
 
   function openPasswordChange() {
@@ -226,14 +234,26 @@ export function RiderDeliveryPage() {
                 </div>
               ))}
             </div>
-            <button
-              className="button button-primary rider-delivery-primary-action"
-              type="button"
-              onClick={advanceStatus}
-              disabled={isDelivered}
-            >
-              {statusIndex === 0 ? 'Start Delivery' : isDelivered ? 'Delivered' : 'Mark Delivered'}
-            </button>
+
+            {!isDelivered ? (
+              <div className="rider-delivery-slider" data-status={statusIndex === 0 ? 'start' : 'delivered'}>
+                <input
+                  className="rider-delivery-slider-input"
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={slideValue}
+                  aria-label={statusIndex === 0 ? 'Slide to start delivery' : 'Slide to mark delivered'}
+                  onChange={(event) => handleDeliverySlide(Number(event.target.value))}
+                />
+                <span className="rider-delivery-slider-label" aria-hidden="true">
+                  {statusIndex === 0 ? 'Slide to start delivery' : 'Slide to mark delivered'}
+                </span>
+                <span className="rider-delivery-slider-arrow" aria-hidden="true">›</span>
+              </div>
+            ) : (
+              <div className="rider-delivery-complete">Delivery completed</div>
+            )}
           </section>
         </aside>
       </div>
