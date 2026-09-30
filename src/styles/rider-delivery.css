@@ -1,10 +1,10 @@
-.rider-delivery-page{width:min(1040px,calc(100% - 2rem));margin:0 auto;padding:2rem 0 4rem;color:var(--color-text)}
-.rider-delivery-header{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;margin-bottom:1.5rem}
+.rider-delivery-page{position:relative;width:min(1040px,calc(100% - 2rem));margin:0 auto;padding:2rem 0 4rem;color:var(--color-text)}
+.rider-delivery-header{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;margin-bottom:1.5rem;padding-right:3.5rem}
 .rider-delivery-header h1{margin:0;font-family:var(--font-heading);font-size:clamp(2rem,6vw,3.5rem);line-height:1;letter-spacing:-.04em}
 .rider-delivery-header>div>p:last-child{margin:.5rem 0 0;color:var(--color-muted)}
 .rider-delivery-header-actions{display:flex;align-items:center;gap:.65rem}
 .rider-delivery-status{display:inline-flex;align-items:center;min-height:36px;padding:0 .8rem;border-radius:999px;background:color-mix(in srgb,var(--color-primary) 10%,var(--color-background));color:var(--color-primary);font-size:.8rem;font-weight:800}
-.rider-account-menu{position:relative}
+.rider-account-menu{position:absolute;z-index:30;top:2rem;right:0}
 .rider-account-button{display:grid;place-items:center;width:42px;height:42px;padding:0;border:1px solid var(--color-border);border-radius:999px;background:var(--color-background);color:var(--color-text);cursor:pointer}
 .rider-account-button:hover{background:var(--color-secondary)}
 .rider-account-dropdown{position:absolute;z-index:20;top:calc(100% + .6rem);right:0;width:220px;padding:.5rem;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-background);box-shadow:0 16px 36px rgba(15,23,42,.14)}
@@ -48,4 +48,4 @@
 .rider-password-error{margin:1rem 0 0;padding:.7rem .8rem;border-radius:.55rem;background:color-mix(in srgb,var(--color-danger,#b91c1c) 8%,var(--color-background));color:var(--color-danger,#b91c1c);font-size:.8rem}
 .rider-password-actions{display:flex;justify-content:flex-end;gap:.6rem;margin-top:1.2rem}
 @media(max-width:800px){.rider-delivery-layout{grid-template-columns:1fr}.rider-delivery-progress-card{position:static}}
-@media(max-width:560px){.rider-delivery-page{width:min(100% - 1rem,1040px);padding-top:1rem}.rider-delivery-header{align-items:flex-start;flex-direction:column}.rider-delivery-header-actions{width:100%;justify-content:flex-end}.rider-delivery-card{padding:1rem;border-radius:.8rem}.rider-delivery-header h1{font-size:2.25rem}.rider-account-dropdown{right:0}}
+@media(max-width:560px){.rider-delivery-page{width:min(100% - 1rem,1040px);padding-top:1rem}.rider-delivery-header{align-items:flex-start;flex-direction:column;padding-right:3rem}.rider-delivery-header-actions{width:100%;justify-content:flex-end}.rider-delivery-card{padding:1rem;border-radius:.8rem}.rider-delivery-header h1{font-size:2.25rem}.rider-account-menu{top:1rem;right:0}.rider-account-dropdown{right:0}}
