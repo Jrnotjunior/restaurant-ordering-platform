@@ -190,13 +190,29 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
     setError('');
 
     try {
-      const { error: deleteError } = await supabase
-        .from('restaurant_riders')
-        .delete()
-        .eq('id', riderToDelete.id)
-        .eq('restaurant_id', restaurantId);
+      const { data, error: functionError } = await supabase.functions.invoke('delete-rider', {
+        body: {
+          restaurantId,
+          riderId: riderToDelete.id,
+        },
+      });
 
-      if (deleteError) throw deleteError;
+      if (functionError) {
+        let message = functionError.message || 'Unable to delete rider.';
+        if (functionError.context instanceof Response) {
+          try {
+            const payload = await functionError.context.clone().json();
+            if (payload?.error) message = payload.error;
+          } catch {
+            // Keep the function error message when the response is not JSON.
+          }
+        }
+        throw new Error(message);
+      }
+
+      if (!data?.deleted) {
+        throw new Error('The rider could not be deleted.');
+      }
 
       setRiderToDelete(null);
       await loadRiders();
