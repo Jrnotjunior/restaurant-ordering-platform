@@ -5,6 +5,10 @@
 .rider-dashboard-account-menu{position:absolute;right:0;top:0}
 .rider-dashboard-message{margin-bottom:1rem;padding:.8rem .9rem;border-radius:.7rem;background:color-mix(in srgb,var(--color-danger,#b91c1c) 8%,var(--color-background));color:var(--color-danger,#b91c1c);font-size:.82rem}
 .rider-dashboard-section{padding:1.25rem;border:1px solid var(--color-border);border-radius:var(--radius-lg);background:var(--color-background)}
+.rider-dashboard-tabs{display:flex;gap:.35rem;margin:-.15rem -.15rem 1.25rem;padding:.25rem;background:var(--color-secondary);border-radius:999px}
+.rider-dashboard-tabs button{flex:1;display:flex;align-items:center;justify-content:center;gap:.45rem;min-height:38px;border:0;border-radius:999px;background:transparent;color:var(--color-muted);font:inherit;font-size:.78rem;font-weight:800;cursor:pointer}
+.rider-dashboard-tabs button.is-active{background:var(--color-background);color:var(--color-text);box-shadow:0 2px 8px rgba(15,23,42,.08)}
+.rider-dashboard-tabs button span{display:grid;place-items:center;min-width:22px;height:22px;padding:0 .35rem;border-radius:999px;background:color-mix(in srgb,var(--color-muted) 10%,var(--color-background));font-size:.68rem}
 .rider-dashboard-section-heading{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1rem}
 .rider-dashboard-section-heading h2{margin:0;font-family:var(--font-heading);font-size:1.15rem}
 .rider-dashboard-count{display:grid;place-items:center;min-width:34px;height:34px;padding:0 .55rem;border-radius:999px;background:var(--color-secondary);font-size:.8rem;font-weight:800}
@@ -22,9 +26,10 @@
 .rider-dashboard-delivery-side{display:flex;align-items:center;gap:.75rem;flex:0 0 auto}
 .rider-dashboard-delivery-side strong{font-size:.9rem}
 .rider-dashboard-delivery-side span{display:grid;place-items:center;width:30px;height:30px;border-radius:999px;background:var(--color-secondary);color:var(--color-muted);font-size:1.25rem}
+.rider-dashboard-history-card .rider-dashboard-delivery-side span{color:var(--color-success)}
 .rider-dashboard-empty,.rider-delivery-empty{display:grid;gap:.35rem;padding:2rem 1rem;text-align:center;border:1px dashed var(--color-border);border-radius:var(--radius-md);color:var(--color-muted);font-size:.82rem}
 .rider-dashboard-empty strong{color:var(--color-text);font-size:.9rem}
 .rider-delivery-error{margin-bottom:1rem;padding:.8rem .9rem;border-radius:.7rem;background:color-mix(in srgb,var(--color-danger,#b91c1c) 8%,var(--color-background));color:var(--color-danger,#b91c1c);font-size:.82rem}
 .rider-delivery-back{display:inline-flex;margin-bottom:.75rem;color:var(--color-muted);font-size:.8rem;font-weight:700;text-decoration:none}
 .rider-delivery-back:hover{color:var(--color-primary)}
-@media(max-width:560px){.rider-dashboard-page{width:min(100% - 1rem,900px);padding-top:1rem}.rider-dashboard-header{align-items:flex-start;padding-right:3rem}.rider-dashboard-section{padding:1rem}.rider-dashboard-delivery-card{align-items:flex-start}.rider-dashboard-delivery-side{flex-direction:column;gap:.4rem}.rider-dashboard-delivery-side strong{font-size:.8rem}}
+@media(max-width:560px){.rider-dashboard-page{width:min(100% - 1rem,900px);padding-top:1rem}.rider-dashboard-header{align-items:flex-start;padding-right:3rem}.rider-dashboard-section{padding:1rem}.rider-dashboard-delivery-card{align-items:flex-start}.rider-dashboard-delivery-side{flex-direction:column;gap:.4rem}.rider-dashboard-delivery-side strong{font-size:.8rem}.rider-dashboard-tabs{margin-left:0;margin-right:0}.rider-dashboard-tabs button{font-size:.72rem}}

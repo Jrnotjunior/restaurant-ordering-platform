@@ -12,13 +12,29 @@ type RiderDelivery = {
   status: DeliveryStatus;
 };
 
+type RiderHistoryItem = {
+  id: string;
+  orderNumber: string;
+  customerName: string;
+  total: number;
+  createdAt: string;
+};
+
 function statusLabel(status: DeliveryStatus) {
   return status === 'delivering' ? 'Out for delivery' : 'Assigned';
+}
+
+function formatHistoryDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Date unavailable';
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 export function RiderDashboardPage() {
   const [riderName, setRiderName] = useState('Rider');
   const [deliveries, setDeliveries] = useState<RiderDelivery[]>([]);
+  const [history, setHistory] = useState<RiderHistoryItem[]>([]);
+  const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [accountOpen, setAccountOpen] = useState(false);
@@ -88,6 +104,29 @@ export function RiderDashboardPage() {
         address: order.delivery_address ?? order.delivery_barangay ?? 'Delivery address not provided',
         total: Number(order.total),
         status: order.delivery_status,
+      })));
+
+      const { data: historyRows, error: historyError } = await supabase
+        .from('orders')
+        .select('id,order_number,customer_name,total,created_at')
+        .eq('rider_id', rider.id)
+        .eq('order_type', 'delivery')
+        .eq('delivery_status', 'delivered')
+        .order('created_at', { ascending: false });
+      if (historyError) throw historyError;
+
+      setHistory(((historyRows ?? []) as Array<{
+        id: string;
+        order_number: string;
+        customer_name: string;
+        total: number | string;
+        created_at: string;
+      }>).map((order) => ({
+        id: order.id,
+        orderNumber: order.order_number,
+        customerName: order.customer_name,
+        total: Number(order.total),
+        createdAt: order.created_at,
       })));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load your deliveries.');
@@ -188,28 +227,65 @@ export function RiderDashboardPage() {
 
       <main>
         <section className="rider-dashboard-section">
-          <div className="rider-dashboard-section-heading">
-            <div><p className="rider-delivery-label">My deliveries</p><h2>Orders assigned to you</h2></div>
-            <span className="rider-dashboard-count">{activeCount}</span>
+          <div className="rider-dashboard-tabs" role="tablist" aria-label="Rider deliveries">
+            <button className={activeTab === 'active' ? 'is-active' : ''} type="button" role="tab" aria-selected={activeTab === 'active'} onClick={() => setActiveTab('active')}>
+              Active <span>{activeCount}</span>
+            </button>
+            <button className={activeTab === 'history' ? 'is-active' : ''} type="button" role="tab" aria-selected={activeTab === 'history'} onClick={() => setActiveTab('history')}>
+              Order history <span>{history.length}</span>
+            </button>
           </div>
 
-          {loading ? (
-            <div className="rider-dashboard-empty">Loading your deliveries…</div>
-          ) : deliveries.length === 0 ? (
-            <div className="rider-dashboard-empty"><strong>No active deliveries</strong><span>New orders assigned by the dispatcher will appear here.</span></div>
+          {activeTab === 'active' ? (
+            <>
+              <div className="rider-dashboard-section-heading">
+                <div><p className="rider-delivery-label">My deliveries</p><h2>Orders assigned to you</h2></div>
+              </div>
+
+              {loading ? (
+                <div className="rider-dashboard-empty">Loading your deliveries…</div>
+              ) : deliveries.length === 0 ? (
+                <div className="rider-dashboard-empty"><strong>No active deliveries</strong><span>New orders assigned by the dispatcher will appear here.</span></div>
+              ) : (
+                <div className="rider-dashboard-list">
+                  {deliveries.map((delivery) => (
+                    <a className="rider-dashboard-delivery-card" href={`${import.meta.env.BASE_URL}#rider/delivery/${delivery.id}`} key={delivery.id}>
+                      <div className="rider-dashboard-delivery-main">
+                        <div className="rider-dashboard-delivery-top"><strong>{delivery.orderNumber}</strong><span className={`rider-dashboard-status is-${delivery.status}`}>{statusLabel(delivery.status)}</span></div>
+                        <h3>{delivery.customerName}</h3>
+                        <p>{delivery.address}</p>
+                      </div>
+                      <div className="rider-dashboard-delivery-side"><strong>₱{delivery.total.toFixed(2)}</strong><span aria-hidden="true">›</span></div>
+                    </a>
+                  ))}
+                </div>
+              )}
+            </>
           ) : (
-            <div className="rider-dashboard-list">
-              {deliveries.map((delivery) => (
-                <a className="rider-dashboard-delivery-card" href={`${import.meta.env.BASE_URL}#rider/delivery/${delivery.id}`} key={delivery.id}>
-                  <div className="rider-dashboard-delivery-main">
-                    <div className="rider-dashboard-delivery-top"><strong>{delivery.orderNumber}</strong><span className={`rider-dashboard-status is-${delivery.status}`}>{statusLabel(delivery.status)}</span></div>
-                    <h3>{delivery.customerName}</h3>
-                    <p>{delivery.address}</p>
-                  </div>
-                  <div className="rider-dashboard-delivery-side"><strong>₱{delivery.total.toFixed(2)}</strong><span aria-hidden="true">›</span></div>
-                </a>
-              ))}
-            </div>
+            <>
+              <div className="rider-dashboard-section-heading">
+                <div><p className="rider-delivery-label">Completed deliveries</p><h2>Your order history</h2></div>
+              </div>
+
+              {loading ? (
+                <div className="rider-dashboard-empty">Loading order history…</div>
+              ) : history.length === 0 ? (
+                <div className="rider-dashboard-empty"><strong>No completed deliveries yet</strong><span>Orders you complete will appear here.</span></div>
+              ) : (
+                <div className="rider-dashboard-list">
+                  {history.map((order) => (
+                    <a className="rider-dashboard-delivery-card rider-dashboard-history-card" href={`${import.meta.env.BASE_URL}#rider/delivery/${order.id}`} key={order.id}>
+                      <div className="rider-dashboard-delivery-main">
+                        <div className="rider-dashboard-delivery-top"><strong>{order.orderNumber}</strong><span className="rider-dashboard-status is-delivered">Delivered</span></div>
+                        <h3>{order.customerName}</h3>
+                        <p>Delivered on {formatHistoryDate(order.createdAt)}</p>
+                      </div>
+                      <div className="rider-dashboard-delivery-side"><strong>₱{order.total.toFixed(2)}</strong><span aria-hidden="true">›</span></div>
+                    </a>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </section>
       </main>
