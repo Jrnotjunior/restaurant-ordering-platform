@@ -35,6 +35,7 @@ function withBasePath(path: string) {
   if (path === '/') return `${base}/`;
   if (path === '/menu') return `${base}/#menu`;
   if (path === '/cart') return `${base}/#cart`;
+  if (path === '/checkout') return `${base}/#checkout`;
   if (path === '/account') return `${base}/#account`;
   if (path === '/signup') return `${base}/#signup`;
   if (path === '/restaurant/orders') return `${base}/#restaurant/orders`;
