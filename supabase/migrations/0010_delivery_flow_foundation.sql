@@ -98,10 +98,6 @@ create index if not exists orders_rider_delivery_idx
 create index if not exists orders_delivery_dispatch_idx
   on public.orders (restaurant_id, order_type, status, delivery_status, created_at asc);
 
-create unique index if not exists orders_active_rider_assignment_uidx
-  on public.orders (id)
-  where delivery_status in ('assigned', 'delivering');
-
 -- Keep delivery status values constrained even when older databases did not
 -- have the constraint yet.
 do $$
@@ -134,7 +130,20 @@ alter table public.rider_delivery_scopes enable row level security;
 alter table public.delivery_assignments enable row level security;
 
 -- Realtime publication is configured for the tables used by the delivery flow.
-alter publication supabase_realtime add table public.orders;
-alter publication supabase_realtime add table public.restaurant_riders;
-alter publication supabase_realtime add table public.rider_delivery_scopes;
-alter publication supabase_realtime add table public.delivery_assignments;
+do $$
+declare
+  table_name text;
+begin
+  foreach table_name in array array['orders', 'restaurant_riders', 'rider_delivery_scopes', 'delivery_assignments']
+  loop
+    if not exists (
+      select 1
+      from pg_publication_tables
+      where pubname = 'supabase_realtime'
+        and schemaname = 'public'
+        and tablename = table_name
+    ) then
+      execute format('alter publication supabase_realtime add table public.%I', table_name);
+    end if;
+  end loop;
+end $$;
