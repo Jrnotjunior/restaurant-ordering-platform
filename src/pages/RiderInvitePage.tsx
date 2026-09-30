@@ -27,6 +27,33 @@ export function RiderInvitePage() {
         return;
       }
 
+      // Supabase invitation links return the invited user's session in the URL
+      // fragment. Always prefer that invite session over any existing browser
+      // session (for example, the restaurant owner's session).
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      const inviteAccessToken = hashParams.get('access_token');
+      const inviteRefreshToken = hashParams.get('refresh_token');
+      const inviteType = hashParams.get('type');
+
+      if (inviteType === 'invite' && inviteAccessToken && inviteRefreshToken) {
+        const { error: inviteSessionError } = await supabase.auth.setSession({
+          access_token: inviteAccessToken,
+          refresh_token: inviteRefreshToken,
+        });
+
+        if (!mounted) return;
+
+        if (inviteSessionError) {
+          setError(inviteSessionError.message);
+          setLoading(false);
+          return;
+        }
+
+        // Remove the one-time auth tokens from the visible URL after Supabase
+        // has stored the invited user's session.
+        window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.search}`);
+      }
+
       const { data, error: sessionError } = await supabase.auth.getSession();
       if (!mounted) return;
 
