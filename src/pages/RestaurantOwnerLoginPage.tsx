@@ -80,6 +80,10 @@ export function RestaurantOwnerLoginPage() {
             {submitting ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
+
+        <p className="restaurant-auth-switch">
+          Don't have an account? <a href="#signup">Create account</a>
+        </p>
       </section>
     </main>
   );
