@@ -20,6 +20,15 @@ type RiderHistoryItem = {
   createdAt: string;
 };
 
+const demoDelivery: RiderDelivery = {
+  id: 'demo-rider-order-1001',
+  orderNumber: '#DEMO-1001',
+  customerName: 'Maria Santos',
+  address: 'Blk 5 Lot 12, Malinta, Valenzuela City',
+  total: 480,
+  status: 'assigned',
+};
+
 function statusLabel(status: DeliveryStatus) {
   return status === 'delivering' ? 'Out for delivery' : 'Assigned';
 }
@@ -199,7 +208,9 @@ export function RiderDashboardPage() {
     window.location.href = `${window.location.origin}${import.meta.env.BASE_URL}`;
   }
 
-  const activeCount = deliveries.length;
+  const isDemoMode = new URLSearchParams(window.location.search).get('demo') === '1';
+  const displayDeliveries = isDemoMode ? [...deliveries, demoDelivery] : deliveries;
+  const activeCount = displayDeliveries.length;
 
   return (
     <section className="rider-dashboard-page">
@@ -244,14 +255,14 @@ export function RiderDashboardPage() {
 
               {loading ? (
                 <div className="rider-dashboard-empty">Loading your deliveries…</div>
-              ) : deliveries.length === 0 ? (
+              ) : displayDeliveries.length === 0 ? (
                 <div className="rider-dashboard-empty"><strong>No active deliveries</strong><span>New orders assigned by the dispatcher will appear here.</span></div>
               ) : (
                 <div className="rider-dashboard-list">
-                  {deliveries.map((delivery) => (
+                  {displayDeliveries.map((delivery) => (
                     <a className="rider-dashboard-delivery-card" href={`${import.meta.env.BASE_URL}#rider/delivery/${delivery.id}`} key={delivery.id}>
                       <div className="rider-dashboard-delivery-main">
-                        <div className="rider-dashboard-delivery-top"><strong>{delivery.orderNumber}</strong><span className={`rider-dashboard-status is-${delivery.status}`}>{statusLabel(delivery.status)}</span></div>
+                        <div className="rider-dashboard-delivery-top"><strong>{delivery.orderNumber}</strong><span className={`rider-dashboard-status is-${delivery.status}`}>{statusLabel(delivery.status)}{delivery.id === demoDelivery.id ? ' · Demo' : ''}</span></div>
                         <h3>{delivery.customerName}</h3>
                         <p>{delivery.address}</p>
                       </div>
