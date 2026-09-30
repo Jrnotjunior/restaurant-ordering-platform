@@ -5,6 +5,20 @@ function appBaseUrl() {
   return `${window.location.origin}${import.meta.env.BASE_URL}`;
 }
 
+function getAuthCallbackError() {
+  const params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const errorCode = params.get('error_code');
+  const errorDescription = params.get('error_description');
+
+  if (!errorCode && !errorDescription) return '';
+  if (errorCode === 'otp_expired') {
+    return 'This invitation link has expired or has already been used. Please ask the restaurant owner to send you a new invitation.';
+  }
+  return errorDescription
+    ? decodeURIComponent(errorDescription.replace(/\+/g, ' '))
+    : 'The invitation link is invalid. Please ask the restaurant owner to send a new invitation.';
+}
+
 export function RiderInvitePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -22,6 +36,15 @@ export function RiderInvitePage() {
       if (!supabase) {
         if (mounted) {
           setError('Supabase is not configured.');
+          setLoading(false);
+        }
+        return;
+      }
+
+      const callbackError = getAuthCallbackError();
+      if (callbackError) {
+        if (mounted) {
+          setError(callbackError);
           setLoading(false);
         }
         return;
@@ -123,9 +146,15 @@ export function RiderInvitePage() {
     <section style={{ minHeight: '70vh', display: 'grid', placeItems: 'center', padding: '48px 20px' }}>
       <div style={{ width: '100%', maxWidth: 520, padding: 32, border: '1px solid #e5e7eb', borderRadius: 20, background: '#fff', boxShadow: '0 16px 40px rgba(15, 23, 42, 0.08)' }}>
         <p className="eyebrow">Rider invitation</p>
-        <h1 style={{ marginBottom: 10 }}>{success ? 'Your rider account is ready.' : `Welcome${name ? `, ${name}` : ''}.`}</h1>
+        <h1 style={{ marginBottom: 10 }}>{success ? 'Your rider account is ready.' : error ? 'Invitation link problem' : `Welcome${name ? `, ${name}` : ''}.`}</h1>
 
-        {success ? (
+        {error ? (
+          <div>
+            <p role="alert" style={{ marginBottom: 16, padding: '12px 14px', borderRadius: 10, background: '#fef2f2', color: '#b91c1c' }}>{error}</p>
+            <p style={{ marginBottom: 18 }}>The restaurant owner can create a fresh invitation for you.</p>
+            <a className="button button-primary" href={appBaseUrl()}>Back to restaurant</a>
+          </div>
+        ) : success ? (
           <div>
             <p>Your password has been set successfully for <strong>{userEmail}</strong>.</p>
             <p style={{ marginTop: 8 }}>You can now sign in with this email and password.</p>
@@ -151,8 +180,6 @@ export function RiderInvitePage() {
               <span>Confirm password</span>
               <input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={8} autoComplete="new-password" required />
             </label>
-
-            {error ? <p role="alert" style={{ marginBottom: 16, padding: '12px 14px', borderRadius: 10, background: '#fef2f2', color: '#b91c1c' }}>{error}</p> : null}
 
             <button className="button button-primary" type="submit" disabled={saving}>
               {saving ? 'Saving…' : 'Set Password'}
