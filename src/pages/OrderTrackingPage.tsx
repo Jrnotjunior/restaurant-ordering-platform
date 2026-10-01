@@ -7,15 +7,18 @@ type OrderTrackingPageProps = {
   orderNumber: string;
 };
 
-const steps: Array<{ key: OrderStatus; label: string; description: string }> = [
+type CustomerStatus = OrderStatus | 'out_for_delivery';
+
+const steps: Array<{ key: CustomerStatus; label: string; description: string }> = [
   { key: 'pending', label: 'Order Received', description: 'Your order has been received by the restaurant.' },
   { key: 'confirmed', label: 'Confirmed', description: 'The restaurant has confirmed your order.' },
   { key: 'preparing', label: 'Preparing', description: 'The kitchen is preparing your food.' },
   { key: 'ready', label: 'Ready', description: 'Your order is ready.' },
-  { key: 'completed', label: 'Completed', description: 'Your order has been completed.' },
+  { key: 'out_for_delivery', label: 'Out for delivery', description: 'Your rider is on the way to you.' },
+  { key: 'completed', label: 'Completed', description: 'Your order has been delivered.' },
 ];
 
-const statusOrder: OrderStatus[] = ['pending', 'confirmed', 'preparing', 'ready', 'completed'];
+const statusOrder: CustomerStatus[] = ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'completed'];
 
 export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
   const [order, setOrder] = useState<Awaited<ReturnType<typeof getOrderStatus>> | null>(null);
@@ -82,9 +85,15 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
 
   // Restaurant uses "confirmed" for orders that have entered the kitchen.
   // The customer-facing timeline should show that stage as "Preparing".
-  const customerStatus: OrderStatus = order.status === 'confirmed' ? 'preparing' : order.status;
-  const currentIndex = statusOrder.indexOf(customerStatus);
   const isCancelled = order.status === 'cancelled';
+  const customerStatus: CustomerStatus = order.deliveryStatus === 'delivered'
+    ? 'completed'
+    : order.deliveryStatus === 'out_for_delivery'
+      ? 'out_for_delivery'
+      : order.status === 'confirmed'
+        ? 'preparing'
+        : order.status;
+  const currentIndex = statusOrder.indexOf(customerStatus);
   const riderAssigned = order.orderType === 'delivery' && Boolean(order.riderName && order.riderPhone);
   const deliveryStatusLabel = order.deliveryStatus === 'out_for_delivery'
     ? 'Out for delivery'
@@ -135,7 +144,7 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
               </div>
               <span className="order-rider-status">{deliveryStatusLabel}</span>
             </div>
-            <p className="order-rider-message">Hi! I'm {order.riderName}, and I'll be the one delivering your order. You can contact me if you need assistance.</p>
+            <p className="order-rider-message">Hi! I'm {order.riderName}, and I'll be delivering your order shortly. You can contact me at {order.riderPhone} if you need assistance.</p>
             <a className="order-rider-phone" href={`tel:${order.riderPhone}`} aria-label={`Call ${order.riderName}`}>
               <span>📞</span>{order.riderPhone}
             </a>
