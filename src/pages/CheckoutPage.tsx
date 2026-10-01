@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { RestaurantProduct } from '../types/menu';
 import { createOrder } from '../services/orderRepository';
+import { createPayMongoCheckout } from '../services/paymongoRepository';
 import { getRestaurantDeliveryZones, type RestaurantDeliveryZone } from '../services/restaurantSettingsRepository';
 import { useRestaurant } from '../components/RestaurantProvider';
 import { OrderConfirmationPage } from './OrderConfirmationPage';
@@ -8,7 +9,7 @@ import '../styles/checkout-mobile.css';
 
 type CartItem = { product: RestaurantProduct; quantity: number };
 type OrderType = 'delivery' | 'pickup' | 'dine_in';
-type PaymentMethod = 'cash' | 'gcash';
+type PaymentMethod = 'cash' | 'online';
 type CheckoutPageProps = { items: CartItem[] };
 type ConfirmedOrder = { orderNumber: string; paymentMethod: PaymentMethod; orderType: OrderType; total: number };
 
@@ -20,7 +21,7 @@ const orderTypes: Array<{ value: OrderType; label: string; description: string }
 
 const paymentMethods: Array<{ value: PaymentMethod; label: string; description: string }> = [
   { value: 'cash', label: 'Cash', description: 'Pay in cash when your order is received or collected.' },
-  { value: 'gcash', label: 'GCash', description: 'Pay online before your order is sent to the restaurant.' },
+  { value: 'online', label: 'Online Payment', description: 'Pay securely through our online payment gateway.' },
 ];
 
 const outsideCityMessage = 'We currently deliver only within selected barangays in Valenzuela City. If you are outside Valenzuela, you can proceed using your own courier.';
@@ -122,26 +123,66 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     window.requestAnimationFrame(() => document.getElementById('payment-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
-  async function handlePlaceOrder() {
-    if (!paymentMethod || items.length === 0 || isSubmitting) return;
-    setIsSubmitting(true); setSubmitError('');
+  async function createPendingOrder(method: PaymentMethod) {
+    if (new Set(items.map((item) => item.product.restaurantId)).size !== 1) throw new Error('Your cart contains items from different restaurants. Please clear your cart and try again.');
+    if (isDelivery && thirdPartyCourierDelivery && !restaurantPickupPoint) throw new Error('The restaurant pickup address is not configured yet. Please contact the restaurant.');
+    if (isDelivery && !thirdPartyCourierDelivery && (!selectedDeliveryZone || !selectedDeliveryZone.isSupported)) throw new Error(outsideDeliveryAreaMessage);
+
+    const finalNotes = [notes.trim(), isDelivery && thirdPartyCourierDelivery ? thirdPartyCourierNote : ''].filter(Boolean).join('\n\n');
+    return createOrder({
+      restaurantId: items[0].product.restaurantId,
+      customerName: customerName.trim(),
+      mobileNumber: orderType === 'dine_in' ? '' : mobileNumber.trim(),
+      orderType,
+      deliveryBarangay: isDelivery && !thirdPartyCourierDelivery ? deliveryBarangay.trim() : '',
+      deliveryAddress: isDelivery ? (thirdPartyCourierDelivery ? restaurantPickupPoint : [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')) : address.trim(),
+      notes: finalNotes,
+      // Keep the existing database payment value while the customer-facing method is "Online Payment".
+      paymentMethod: method === 'online' ? 'gcash' : 'cash',
+      isThirdPartyCourier: isDelivery && thirdPartyCourierDelivery,
+      items: items.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
+    });
+  }
+
+  async function handleOnlinePayment() {
+    if (!canContinue || items.length === 0 || isSubmitting) return;
+    setIsSubmitting(true);
+    setSubmitError('');
+    setPaymentMethod('online');
+
     try {
-      if (new Set(items.map((item) => item.product.restaurantId)).size !== 1) throw new Error('Your cart contains items from different restaurants. Please clear your cart and try again.');
-      if (isDelivery && thirdPartyCourierDelivery && !restaurantPickupPoint) throw new Error('The restaurant pickup address is not configured yet. Please contact the restaurant.');
-      if (isDelivery && !thirdPartyCourierDelivery && (!selectedDeliveryZone || !selectedDeliveryZone.isSupported)) throw new Error(outsideDeliveryAreaMessage);
-      const finalNotes = [notes.trim(), isDelivery && thirdPartyCourierDelivery ? thirdPartyCourierNote : ''].filter(Boolean).join('\n\n');
-      const createdOrder = await createOrder({
-        restaurantId: items[0].product.restaurantId,
-        customerName: customerName.trim(), mobileNumber: orderType === 'dine_in' ? '' : mobileNumber.trim(), orderType,
-        deliveryBarangay: isDelivery && !thirdPartyCourierDelivery ? deliveryBarangay.trim() : '',
-        deliveryAddress: isDelivery ? (thirdPartyCourierDelivery ? restaurantPickupPoint : [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')) : address.trim(),
-        notes: finalNotes, paymentMethod, isThirdPartyCourier: isDelivery && thirdPartyCourierDelivery,
-        items: items.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
-      });
-      setConfirmedOrder({ orderNumber: createdOrder.orderNumber, paymentMethod, orderType, total: createdOrder.total });
+      const createdOrder = await createPendingOrder('online');
+      const checkoutUrl = await createPayMongoCheckout(createdOrder.orderId);
+      window.location.assign(checkoutUrl);
+    } catch (error) {
+      setPaymentMethod('');
+      setSubmitError(error instanceof Error ? error.message : 'We could not start online payment. Please try again.');
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handlePlaceOrder() {
+    if (paymentMethod !== 'cash' || items.length === 0 || isSubmitting) return;
+    setIsSubmitting(true);
+    setSubmitError('');
+
+    try {
+      const createdOrder = await createPendingOrder('cash');
+      setConfirmedOrder({ orderNumber: createdOrder.orderNumber, paymentMethod: 'cash', orderType, total: createdOrder.total });
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'We could not create your order. Please try again.');
-    } finally { setIsSubmitting(false); }
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  function handlePaymentMethodSelect(method: PaymentMethod) {
+    if (method === 'online') {
+      void handleOnlinePayment();
+      return;
+    }
+    setPaymentMethod('cash');
+    setSubmitError('');
   }
 
   return (
@@ -178,8 +219,10 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
           {!showPayment ? <button className="button button-primary checkout-submit" type="button" disabled={!canContinue} onClick={() => { setSubmitError(''); setShowPayment(true); }}>Continue to Payment</button> : <fieldset className="checkout-section" id="payment-section"><legend>Payment method</legend>
             {thirdPartyCourierDelivery && <p className="courier-payment-note"><strong>Online payment is required.</strong> Please complete your payment before the order is sent to the restaurant. You are responsible for booking and paying the courier separately.</p>}
-            <div className="order-type-grid">{paymentMethods.filter((method) => !thirdPartyCourierDelivery || method.value === 'gcash').map((method) => <label className={`order-type-card ${paymentMethod === method.value ? 'is-selected' : ''}`} key={method.value}><input type="radio" name="paymentMethod" value={method.value} checked={paymentMethod === method.value} onChange={() => setPaymentMethod(method.value)} /><span className="order-type-content"><strong>{orderType === 'dine_in' && method.value === 'cash' ? 'Pay at Counter' : method.label}</strong><span>{orderType === 'dine_in' && method.value === 'cash' ? 'Place your order now and pay the cashier at the restaurant counter.' : method.description}</span></span></label>)}</div>
-            {submitError && <p className="checkout-error" role="alert">{submitError}</p>}<button className="button button-primary checkout-submit" type="button" disabled={!paymentMethod || isSubmitting} onClick={handlePlaceOrder}>{isSubmitting ? 'Creating Order…' : 'Place Order'}</button>
+            <div className="order-type-grid">{paymentMethods.filter((method) => !thirdPartyCourierDelivery || method.value === 'online').map((method) => <label className={`order-type-card ${paymentMethod === method.value ? 'is-selected' : ''}`} key={method.value}><input type="radio" name="paymentMethod" value={method.value} checked={paymentMethod === method.value} onChange={() => handlePaymentMethodSelect(method.value)} disabled={isSubmitting} /><span className="order-type-content"><strong>{orderType === 'dine_in' && method.value === 'cash' ? 'Pay at Counter' : method.label}</strong><span>{orderType === 'dine_in' && method.value === 'cash' ? 'Place your order now and pay the cashier at the restaurant counter.' : method.description}</span></span></label>)}</div>
+            {isSubmitting && paymentMethod === 'online' && <p className="checkout-hint">Opening secure online payment…</p>}
+            {submitError && <p className="checkout-error" role="alert">{submitError}</p>}
+            {paymentMethod === 'cash' && <button className="button button-primary checkout-submit" type="button" disabled={isSubmitting} onClick={handlePlaceOrder}>{isSubmitting ? 'Creating Order…' : 'Place Order'}</button>}
           </fieldset>}
         </form>
 
