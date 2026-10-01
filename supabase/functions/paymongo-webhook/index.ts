@@ -98,16 +98,13 @@ Deno.serve(async (request) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { error } = await adminClient
-      .from("orders")
-      .update({ payment_status: "paid", updated_at: new Date().toISOString() })
-      .eq("order_number", orderNumber)
-      .eq("payment_method", "gcash")
-      .eq("payment_status", "pending");
+    const { data: finalized, error } = await adminClient.rpc("finalize_online_payment", {
+      p_reference_number: orderNumber,
+    });
 
     if (error) throw error;
 
-    return jsonResponse({ received: true }, 200);
+    return jsonResponse({ received: true, order: finalized?.[0] ?? null }, 200);
   } catch (error) {
     console.error("paymongo-webhook error", error);
     return jsonResponse({ error: "Unable to process webhook." }, 500);
