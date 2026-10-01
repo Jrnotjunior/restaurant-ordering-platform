@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getRestaurantOrders, updateOrderStatus, type RestaurantOrder, type RestaurantOrderStatus } from '../services/restaurantOrderRepository';
+import { confirmDineInPayment, getRestaurantOrders, updateOrderStatus, type RestaurantOrder, type RestaurantOrderStatus } from '../services/restaurantOrderRepository';
 import { supabase } from '../services/supabaseClient';
 
 type Props = { restaurantId: string };
@@ -40,6 +40,7 @@ function paymentLabel(order: RestaurantOrder) {
 }
 
 function isPaymentReady(order: RestaurantOrder) {
+  if (order.orderType === 'dine_in' && order.paymentMethod === 'cash') return order.paymentStatus === 'paid';
   return order.paymentMethod !== 'gcash' || order.paymentStatus === 'paid';
 }
 
@@ -148,6 +149,17 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
     } finally {
       setUpdating(null);
     }
+  }
+
+  async function confirmDineInCashPayment(order: RestaurantOrder) {
+    try {
+      setError(''); setUpdating(order.orderId);
+      await confirmDineInPayment(order.orderId);
+      setOrders((current) => current.map((item) => item.orderId === order.orderId ? { ...item, paymentStatus: 'paid', status: 'confirmed' } : item));
+      setSelectedOrder(null); setOpenColumn(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to confirm dine-in payment.');
+    } finally { setUpdating(null); }
   }
 
   async function printAndSendToKitchen(order: RestaurantOrder) {
@@ -378,20 +390,34 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
               <strong>Total</strong>
               <strong className="restaurant-order-modal-total">₱{selectedOrder.total.toFixed(2)}</strong>
             </div>
-            {selectedOrder.status === 'pending' && !isPaymentReady(selectedOrder) && (
+            {selectedOrder.status === 'pending' && selectedOrder.orderType === 'dine_in' && selectedOrder.paymentMethod === 'cash' && selectedOrder.paymentStatus !== 'paid' && (
+              <p style={{ marginTop: 16 }}>Customer must pay at the counter before this dine-in order can enter the kitchen.</p>
+            )}
+            {selectedOrder.status === 'pending' && !isPaymentReady(selectedOrder) && !(selectedOrder.orderType === 'dine_in' && selectedOrder.paymentMethod === 'cash') && (
               <p style={{ marginTop: 16 }}>Online payment is required before this order can enter the kitchen.</p>
             )}
             <div className="restaurant-order-modal-actions">
               {selectedOrder.status === 'pending' ? (
                 <>
-                  <button
-                    className="button button-primary"
-                    type="button"
-                    disabled={updating === selectedOrder.orderId || !isPaymentReady(selectedOrder)}
-                    onClick={() => void printAndSendToKitchen(selectedOrder)}
-                  >
-                    {updating === selectedOrder.orderId ? 'Printing & Sending…' : 'Print Order & Send to Kitchen'}
-                  </button>
+                  {selectedOrder.orderType === 'dine_in' && selectedOrder.paymentMethod === 'cash' && selectedOrder.paymentStatus !== 'paid' ? (
+                    <button
+                      className="button button-primary"
+                      type="button"
+                      disabled={updating === selectedOrder.orderId}
+                      onClick={() => void confirmDineInCashPayment(selectedOrder)}
+                    >
+                      {updating === selectedOrder.orderId ? 'Confirming Payment…' : 'Confirm Payment & Send to Kitchen'}
+                    </button>
+                  ) : (
+                    <button
+                      className="button button-primary"
+                      type="button"
+                      disabled={updating === selectedOrder.orderId || !isPaymentReady(selectedOrder)}
+                      onClick={() => void printAndSendToKitchen(selectedOrder)}
+                    >
+                      {updating === selectedOrder.orderId ? 'Printing & Sending…' : 'Print Order & Send to Kitchen'}
+                    </button>
+                  )
                   <button
                     className="button button-secondary"
                     type="button"

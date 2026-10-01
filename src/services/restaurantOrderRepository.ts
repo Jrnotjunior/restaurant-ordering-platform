@@ -69,3 +69,7 @@ export async function getRestaurantOrders(restaurantId: string): Promise<Restaur
 export async function updateOrderStatus(orderId: string, status: RestaurantOrderStatus) {
   await supabaseRpc('update_order_status', { p_order_id: orderId, p_status: status });
 }
+
+export async function confirmDineInPayment(orderId: string) {
+  await supabaseRpc('confirm_dine_in_payment', { p_order_id: orderId });
+}
