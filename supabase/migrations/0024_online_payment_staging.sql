@@ -339,6 +339,7 @@ begin
 end;
 $$;
 
+revoke execute on function public.finalize_online_payment(text) from public, anon, authenticated;
 grant execute on function public.finalize_online_payment(text) to service_role;
 
 create or replace function public.get_online_payment_status(
