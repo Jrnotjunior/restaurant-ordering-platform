@@ -2,15 +2,15 @@ import '../styles/order-confirmation.css';
 
 type OrderConfirmationPageProps = {
   orderNumber: string;
-  paymentMethod: 'cash' | 'gcash';
+  paymentMethod: 'cash' | 'online';
   orderType: 'delivery' | 'pickup' | 'dine_in';
   total: number;
   onReturnHome: () => void;
 };
 
 export function OrderConfirmationPage({ orderNumber, paymentMethod, orderType, total, onReturnHome }: OrderConfirmationPageProps) {
-  const paymentMessage = paymentMethod === 'gcash'
-    ? 'Your order is recorded as pending payment. Online payment instructions will be shown when the payment gateway is integrated.'
+  const paymentMessage = paymentMethod === 'online'
+    ? 'Your order is recorded as pending payment. Complete the online payment to send your order to the restaurant.'
     : orderType === 'dine_in'
       ? 'Please pay the cashier at the restaurant counter. Your order will enter the kitchen after the cashier confirms your payment.'
       : 'Your order is recorded as pending. Please pay in cash when your order is received or collected.';
