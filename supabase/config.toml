@@ -1,2 +1,9 @@
 [functions.create-rider]
 verify_jwt = false
+
+
+[functions.create-paymongo-checkout]
+verify_jwt = false
+
+[functions.paymongo-webhook]
+verify_jwt = false
