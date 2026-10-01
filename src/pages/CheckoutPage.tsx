@@ -46,6 +46,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const [showPayment, setShowPayment] = useState(false);
   const [showDeliveryTerms, setShowDeliveryTerms] = useState(false);
   const [thirdPartyCourierDelivery, setThirdPartyCourierDelivery] = useState(false);
+  const [thirdPartyCourierTermsAccepted, setThirdPartyCourierTermsAccepted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [confirmedOrder, setConfirmedOrder] = useState<ConfirmedOrder | null>(null);
@@ -58,7 +59,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   useEffect(() => {
     if (!restaurantId || orderType !== 'delivery') {
       setDeliveryZones([]); setDeliveryCity(''); setDeliveryBarangay(''); setDeliveryZonesError('');
-      setLoadingDeliveryZones(false); setThirdPartyCourierDelivery(false); setShowDeliveryTerms(false); return;
+      setLoadingDeliveryZones(false); setThirdPartyCourierDelivery(false); setThirdPartyCourierTermsAccepted(false); setShowDeliveryTerms(false); return;
     }
     let cancelled = false;
     setLoadingDeliveryZones(true);
@@ -97,6 +98,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       setShowDeliveryTerms(false);
       return;
     }
+    setThirdPartyCourierTermsAccepted(false);
     setShowDeliveryTerms(true);
   }
 
@@ -110,11 +112,12 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   }
 
   function handleCancelThirdPartyDelivery() {
-    setShowDeliveryTerms(false); setThirdPartyCourierDelivery(false); setDeliveryCity(''); setDeliveryBarangay(''); setAddress(''); resetPayment();
+    setShowDeliveryTerms(false); setThirdPartyCourierDelivery(false); setThirdPartyCourierTermsAccepted(false); setDeliveryCity(''); setDeliveryBarangay(''); setAddress(''); resetPayment();
   }
 
   function handleProceedWithThirdPartyCourier() {
-    setShowDeliveryTerms(false); setThirdPartyCourierDelivery(true); setDeliveryBarangay(''); setAddress(''); setPaymentMethod(''); setSubmitError(''); setShowPayment(true);
+    if (!thirdPartyCourierTermsAccepted) return;
+    setShowDeliveryTerms(false); setThirdPartyCourierDelivery(true); setThirdPartyCourierTermsAccepted(false); setDeliveryBarangay(''); setAddress(''); setPaymentMethod(''); setSubmitError(''); setShowPayment(true);
     window.requestAnimationFrame(() => document.getElementById('payment-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
@@ -160,7 +163,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
               <strong>Restaurant pickup point</strong><p className="pickup-label">Give this to your courier.</p><p className="pickup-address">{restaurantPickupPoint || 'Restaurant pickup address is not configured.'}</p>
               <div className="pickup-callout">Your destination address is not entered here. Provide your destination directly to Lalamove, Grab Express, or your chosen courier.</div><p>You are responsible for booking and paying the third-party courier.</p>
             </div> : <div className="delivery-address-fields">
-              <label><span>City</span><input type="text" name="deliveryCity" value={deliveryCity} onChange={(e) => { setDeliveryCity(e.target.value); setDeliveryBarangay(''); setAddress(''); setThirdPartyCourierDelivery(false); setShowDeliveryTerms(false); resetPayment(); }} onKeyDownCapture={handleCityKeyboard} onKeyUpCapture={handleCityKeyboard} autoComplete="address-level2" placeholder="Enter your city, then press Enter" required /></label>
+              <label><span>City</span><input type="text" name="deliveryCity" value={deliveryCity} onChange={(e) => { setDeliveryCity(e.target.value); setDeliveryBarangay(''); setAddress(''); setThirdPartyCourierDelivery(false); setThirdPartyCourierTermsAccepted(false); setShowDeliveryTerms(false); resetPayment(); }} onKeyDownCapture={handleCityKeyboard} onKeyUpCapture={handleCityKeyboard} autoComplete="address-level2" placeholder="Enter your city, then press Enter" required /></label>
               {cityIsSupported && <label><span>Barangay</span><div className="barangay-input-wrap"><input type="text" value={deliveryBarangay} onChange={(e) => { setDeliveryBarangay(e.target.value); resetPayment(); }} placeholder="Enter your barangay" disabled={loadingDeliveryZones || deliveryZones.length === 0} required />{suggestions.length > 0 && <div className="barangay-suggestions" role="listbox">{suggestions.map((zone) => <button className="barangay-suggestion" key={zone.id} type="button" onClick={() => setDeliveryBarangay(zone.barangay)}><span>{zone.barangay}</span><small>{zone.isSupported ? `₱${zone.shippingFee.toFixed(2)} delivery fee` : 'Outside delivery area'}</small></button>)}</div>}</div></label>}
               {cityIsSupported && deliveryBarangay.trim() && <label><span>Complete address</span><textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Complete delivery address" rows={4} required /></label>}
             </div>}
