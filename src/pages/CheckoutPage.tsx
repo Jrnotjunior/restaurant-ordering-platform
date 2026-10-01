@@ -47,6 +47,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const [notes, setNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('');
   const [showPayment, setShowPayment] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showDeliveryTerms, setShowDeliveryTerms] = useState(false);
   const [thirdPartyCourierDelivery, setThirdPartyCourierDelivery] = useState(false);
   const [thirdPartyCourierTermsAccepted, setThirdPartyCourierTermsAccepted] = useState(false);
@@ -92,7 +93,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
   const canContinue = items.length > 0 && Boolean(customerName.trim()) && (orderType === 'dine_in' || Boolean(mobileNumber.trim())) && (!isDelivery || (thirdPartyCourierDelivery ? Boolean(restaurantPickupPoint) : cityIsSupported && deliveryBarangay.trim() && address.trim() && Boolean(selectedDeliveryZone?.isSupported) && !loadingDeliveryZones));
 
-  function resetPayment() { setShowPayment(false); setPaymentMethod(''); setSubmitError(''); }
+  function resetPayment() { setShowPayment(false); setShowPaymentModal(false); setPaymentMethod(''); setSubmitError(''); }
 
   function commitCity() {
     const city = deliveryCity.trim();
@@ -221,17 +222,40 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
           <fieldset className="checkout-section"><legend>Order notes <span className="optional-label">Optional</span></legend><label><span>Special instructions</span><textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Add a note for the restaurant" rows={3} /></label></fieldset>
 
-          {!showPayment ? <button className="button button-primary checkout-submit" type="button" disabled={!canContinue} onClick={() => { setSubmitError(''); setShowPayment(true); }}>Continue to Payment</button> : <fieldset className="checkout-section" id="payment-section"><legend>Payment method</legend>
-            {thirdPartyCourierDelivery && <p className="courier-payment-note"><strong>Online payment is required.</strong> Please complete your payment before the order is sent to the restaurant. You are responsible for booking and paying the courier separately.</p>}
-            <div className="order-type-grid">{paymentMethods.filter((method) => !thirdPartyCourierDelivery || method.value === 'online').map((method) => <label className={`order-type-card ${paymentMethod === method.value ? 'is-selected' : ''}`} key={method.value}><input type="radio" name="paymentMethod" value={method.value} checked={paymentMethod === method.value} onChange={() => handlePaymentMethodSelect(method.value)} disabled={isSubmitting} /><span className="order-type-content"><strong>{orderType === 'dine_in' && method.value === 'cash' ? 'Pay at Counter' : method.label}</strong><span>{orderType === 'dine_in' && method.value === 'cash' ? 'Place your order now and pay the cashier at the restaurant counter.' : method.description}</span></span></label>)}</div>
-            {isSubmitting && paymentMethod === 'online' && <p className="checkout-hint">Opening secure online payment…</p>}
-            {submitError && <p className="checkout-error" role="alert">{submitError}</p>}
-            {paymentMethod === 'cash' && <button className="button button-primary checkout-submit" type="button" disabled={isSubmitting} onClick={handlePlaceOrder}>{isSubmitting ? 'Creating Order…' : 'Place Order'}</button>}
-          </fieldset>}
+          <button className="button button-primary checkout-submit" type="button" disabled={!canContinue} onClick={() => { setSubmitError(''); setPaymentMethod(''); setShowPaymentModal(true); }}>Continue to Payment</button>
         </form>
 
         <aside className="checkout-summary"><div className="checkout-section"><h2>Order summary</h2>{items.map((item) => <div className="checkout-summary-row" key={item.product.id}><span>{item.quantity} × {item.product.name}</span><strong>₱{(item.product.price * item.quantity).toFixed(2)}</strong></div>)}<div className="checkout-summary-row"><span>Subtotal</span><strong>₱{subtotal.toFixed(2)}</strong></div>{orderType !== 'dine_in' && <div className="checkout-summary-row"><span>Delivery fee</span><strong>₱{deliveryFee.toFixed(2)}</strong></div>}<div className="checkout-summary-total"><span>Total</span><strong>₱{(subtotal + deliveryFee).toFixed(2)}</strong></div></div></aside>
       </div>
+
+      {showPaymentModal && <div className="payment-modal-backdrop" role="presentation">
+        <div className="payment-modal" role="dialog" aria-modal="true" aria-labelledby="payment-modal-title">
+          <div className="payment-modal-header">
+            <div><p className="eyebrow">Checkout</p><h2 id="payment-modal-title">Choose your payment method</h2><p>Select how you would like to pay for this order.</p></div>
+            <button className="payment-modal-close" type="button" aria-label="Close payment method" onClick={() => setShowPaymentModal(false)} disabled={isSubmitting}>×</button>
+          </div>
+          {thirdPartyCourierDelivery && <p className="courier-payment-note"><strong>Online payment is required.</strong> Please complete your payment before the order is sent to the restaurant. You are responsible for booking and paying the courier separately.</p>}
+          <div className="payment-method-options">
+            {paymentMethods.filter((method) => !thirdPartyCourierDelivery || method.value === 'online').map((method) => {
+              const label = orderType === 'dine_in' && method.value === 'cash' ? 'Pay at Counter' : method.label;
+              const description = orderType === 'dine_in' && method.value === 'cash' ? 'Place your order now and pay the cashier at the restaurant counter.' : method.description;
+              return <button className={`payment-method-card ${paymentMethod === method.value ? 'is-selected' : ''}`} key={method.value} type="button" onClick={() => setPaymentMethod(method.value)} disabled={isSubmitting}>
+                <span className="payment-method-icon" aria-hidden="true">{method.value === 'cash' ? '₱' : '↗'}</span>
+                <span className="payment-method-content"><strong>{label}</strong><span>{description}</span></span>
+                <span className="payment-method-radio" aria-hidden="true">{paymentMethod === method.value ? '✓' : ''}</span>
+              </button>;
+            })}
+          </div>
+          {submitError && <p className="checkout-error" role="alert">{submitError}</p>}
+          <div className="payment-modal-actions">
+            <button className="button" type="button" onClick={() => setShowPaymentModal(false)} disabled={isSubmitting}>Cancel</button>
+            <button className="button button-primary" type="button" disabled={!paymentMethod || isSubmitting} onClick={() => {
+              if (paymentMethod === 'online') { setShowPaymentModal(false); void handleOnlinePayment(); }
+              else { setShowPaymentModal(false); void handlePlaceOrder(); }
+            }}>{paymentMethod === 'online' ? 'Continue to Online Payment' : orderType === 'dine_in' ? 'Place Order & Pay at Counter' : 'Place Order'}</button>
+          </div>
+        </div>
+      </div>}
 
       {showDeliveryTerms && <div className="delivery-terms-backdrop" role="presentation"><div className="delivery-terms-modal" role="dialog" aria-modal="true" aria-labelledby="delivery-terms-title"><h2 id="delivery-terms-title">Delivery Terms</h2><p className="terms-intro">This city is outside Valenzuela City. The restaurant cannot deliver to this destination directly.</p><div className="terms-box"><p><strong>Proceed with your own courier.</strong> You may book Lalamove, Grab Express, or another courier to collect your order from the restaurant.</p><p>You are responsible for booking and paying the courier, and for providing the courier with your destination address.</p><p>The restaurant will pack your order securely and prepare it as fresh as possible for courier pickup at its listed restaurant pickup point.</p><p>After the order is handed over to your courier, the restaurant is not responsible for courier-related delays, loss, spills, damage, or other issues that happen during transit.</p><label className="delivery-terms-checkbox"><input type="checkbox" checked={thirdPartyCourierTermsAccepted} onChange={(event) => setThirdPartyCourierTermsAccepted(event.target.checked)} /><span>I understand and agree to these third-party courier terms.</span></label></div><div className="terms-actions"><button className="button" type="button" onClick={handleCancelThirdPartyDelivery}>Cancel</button><button className="button button-primary" type="button" onClick={handleProceedWithThirdPartyCourier} disabled={!thirdPartyCourierTermsAccepted}>Proceed with Order</button></div></div></div>}
     </section>
