@@ -99,6 +99,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       return;
     }
     setThirdPartyCourierTermsAccepted(false);
+    setThirdPartyCourierTermsAccepted(false);
     setShowDeliveryTerms(true);
   }
 
