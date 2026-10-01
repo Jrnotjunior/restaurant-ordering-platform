@@ -589,6 +589,13 @@
   margin: 0;
   padding: 0;
   accent-color: var(--color-primary);
+  box-shadow: none;
+}
+
+.checkout-section .order-type-card input[type="radio"]:focus,
+.checkout-section .order-type-card input[type="radio"]:focus-visible {
+  box-shadow: none;
+  outline: none;
 }
 
 .checkout-section .order-type-content {
