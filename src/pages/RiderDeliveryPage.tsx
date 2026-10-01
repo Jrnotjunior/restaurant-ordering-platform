@@ -3,7 +3,7 @@ import { DeliveryNavigation } from '../components/DeliveryNavigation';
 import { CustomerContactActions } from '../components/CustomerContactActions';
 import { supabase } from '../services/supabaseClient';
 
-type DeliveryStatus = 'assigned' | 'delivering' | 'arrived' | 'delivered';
+type DeliveryStatus = 'assigned' | 'delivering' | 'arrived' | 'delivered' | 'failed';
 
 type DeliveryItem = {
   id: string;
@@ -23,6 +23,7 @@ type Delivery = {
   status: DeliveryStatus;
   paymentMethod: 'cash' | 'gcash';
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  failureReason: string | null;
 };
 
 const deliveryStatuses = [
@@ -44,6 +45,8 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [orderDetailsOpen, setOrderDetailsOpen] = useState(false);
   const [slideValue, setSlideValue] = useState(0);
+  const [failureOpen, setFailureOpen] = useState(false);
+  const [failureReason, setFailureReason] = useState('');
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -82,7 +85,7 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
 
       const { data: order, error: orderError } = await supabase
         .from('orders')
-        .select('id,order_number,customer_name,mobile_number,delivery_address,delivery_barangay,total,delivery_status,payment_method,payment_status')
+        .select('id,order_number,customer_name,mobile_number,delivery_address,delivery_barangay,total,delivery_status,payment_method,payment_status,delivery_failure_reason')
         .eq('id', orderId)
         .eq('rider_id', rider.id)
         .maybeSingle();
@@ -112,6 +115,7 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
         status: (order.delivery_status ?? 'assigned') as DeliveryStatus,
         paymentMethod: (order.payment_method ?? 'cash') as 'cash' | 'gcash',
         paymentStatus: (order.payment_status ?? 'pending') as 'pending' | 'paid' | 'failed' | 'refunded',
+        failureReason: order.delivery_failure_reason ?? null,
       };
 
       setDelivery(nextDelivery);
@@ -152,7 +156,7 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
     setError('');
 
     const previousStatus = delivery.status;
-    const previousAssignmentStatus = previousStatus === 'assigned' ? 'assigned' : previousStatus === 'delivering' ? 'delivering' : 'arrived';
+    const previousAssignmentStatus = previousStatus === 'assigned' ? 'assigned' : previousStatus === 'delivering' ? 'delivering' : previousStatus === 'arrived' ? 'arrived' : 'failed';
     const { data: authData, error: authError } = await supabase.auth.getUser();
 
     try {
@@ -168,7 +172,7 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
       if (riderError) throw riderError;
       if (!rider) throw new Error('Your account is not linked to a rider profile.');
 
-      const assignmentStatus = nextStatus === 'delivered' ? 'delivered' : nextStatus === 'arrived' ? 'arrived' : 'delivering';
+      const assignmentStatus = nextStatus === 'delivered' ? 'delivered' : nextStatus === 'arrived' ? 'arrived' : nextStatus === 'failed' ? 'failed' : 'delivering';
       const assignmentUpdate = nextStatus === 'delivered'
         ? { status: assignmentStatus, delivered_at: new Date().toISOString() }
         : { status: assignmentStatus };
@@ -183,7 +187,9 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
 
       const orderUpdate = nextStatus === 'delivered'
         ? { delivery_status: 'delivered', status: 'completed', ...(delivery.paymentMethod === 'cash' ? { payment_status: 'paid' } : {}) }
-        : { delivery_status: nextStatus === 'arrived' ? 'arrived' : 'delivering' };
+        : nextStatus === 'failed'
+          ? { delivery_status: 'failed', status: 'cancelled', delivery_failure_reason: failureReason }
+          : { delivery_status: nextStatus === 'arrived' ? 'arrived' : 'delivering' };
 
       const { error: orderError } = await supabase
         .from('orders')
@@ -210,6 +216,14 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
     } finally {
       setSavingStatus(false);
     }
+  }
+
+  async function reportFailedDelivery(reason: string) {
+    if (!delivery || savingStatus || !reason) return;
+    setFailureReason(reason);
+    setFailureOpen(false);
+    setSlideValue(0);
+    await updateDeliveryStatus('failed');
   }
 
   function handleDeliverySlide(value: number) {
@@ -376,9 +390,31 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
             ) : (
               <div className="rider-delivery-complete">{delivery.paymentMethod === 'cash' ? 'Cash collected · Delivery completed' : 'Payment received online · Delivery completed'}</div>
             )}
+
+            {!isDelivered && statusIndex >= 2 ? (
+              <button className="rider-delivery-failed-button" type="button" onClick={() => setFailureOpen(true)} disabled={savingStatus}>
+                Customer unavailable / refused
+              </button>
+            ) : null}
           </section>
         </aside>
       </div>
+
+      {failureOpen ? (
+        <div className="rider-password-overlay" role="presentation" onMouseDown={() => setFailureOpen(false)}>
+          <section className="rider-password-modal" role="dialog" aria-modal="true" aria-labelledby="delivery-failure-title" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="rider-password-modal-header">
+              <div><p className="rider-delivery-label">Delivery issue</p><h2 id="delivery-failure-title">Why couldn't the order be delivered?</h2></div>
+              <button className="rider-password-close" type="button" aria-label="Close" onClick={() => setFailureOpen(false)}>×</button>
+            </div>
+            <div className="rider-password-actions" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+              {['Customer unavailable', 'Customer refused the order', 'Wrong address', 'Customer unreachable', 'Other'].map((reason) => (
+                <button className="button" type="button" key={reason} onClick={() => void reportFailedDelivery(reason)}>{reason}</button>
+              ))}
+            </div>
+          </section>
+        </div>
+      ) : null}
 
       {passwordOpen ? (
         <div className="rider-password-overlay" role="presentation" onMouseDown={() => setPasswordOpen(false)}>
