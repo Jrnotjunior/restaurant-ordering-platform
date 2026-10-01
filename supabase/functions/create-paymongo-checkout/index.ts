@@ -50,7 +50,7 @@ Deno.serve(async (request) => {
 
     const { data: order, error: orderError } = await adminClient
       .from("orders")
-      .select("id,order_number,customer_name,mobile_number,payment_method,payment_status,status,total")
+      .select("id,order_number,customer_name,mobile_number,payment_method,payment_status,status,delivery_fee,total")
       .eq("id", orderId)
       .maybeSingle();
 
@@ -76,8 +76,20 @@ Deno.serve(async (request) => {
       quantity: Number(item.quantity),
     }));
 
-    if (Number(order.total) > Number(order.total)) {
-      return jsonResponse({ error: "Invalid order total." }, 400);
+    const deliveryFee = Math.round(Number(order.delivery_fee ?? 0) * 100);
+    if (deliveryFee > 0) {
+      lineItems.push({
+        name: "Delivery fee",
+        description: "Restaurant delivery fee",
+        amount: deliveryFee,
+        currency: "PHP",
+        quantity: 1,
+      });
+    }
+
+    const lineItemTotal = lineItems.reduce((sum, item) => sum + item.amount * item.quantity, 0);
+    if (lineItemTotal !== Math.round(Number(order.total) * 100)) {
+      return jsonResponse({ error: "The payment amount could not be verified. Please try again." }, 409);
     }
 
     const response = await fetch("https://api.paymongo.com/v2/checkout_sessions", {
