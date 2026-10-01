@@ -88,7 +88,7 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
   const isCancelled = order.status === 'cancelled';
   const customerStatus: CustomerStatus = order.deliveryStatus === 'delivered'
     ? 'completed'
-    : order.deliveryStatus === 'out_for_delivery'
+    : (order.deliveryStatus === 'delivering' || order.deliveryStatus === 'out_for_delivery')
       ? 'out_for_delivery'
       : order.status === 'confirmed'
         ? 'preparing'
