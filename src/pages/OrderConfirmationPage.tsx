@@ -25,6 +25,12 @@ export function OrderConfirmationPage({ orderNumber, paymentMethod, orderType, t
         <p className="eyebrow">Order received</p>
         <h1>Thank you for your order.</h1>
         <p className="order-confirmation-copy">Your order has been created and is now waiting for restaurant confirmation.</p>
+        {orderType === 'dine_in' && (
+          <div className="order-confirmation-counter">
+            <strong>Show this order number to the cashier</strong>
+            <span>Give the cashier your order number so they can find your order and confirm your payment.</span>
+          </div>
+        )}
         <div className="order-confirmation-number"><span>Order number</span><strong>{orderNumber}</strong></div>
         <div className="order-confirmation-total"><span>Order total</span><strong>₱{total.toFixed(2)}</strong></div>
         <p className="order-confirmation-payment">{paymentMessage}</p>

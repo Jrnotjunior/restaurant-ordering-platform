@@ -71,6 +71,7 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
   const [selectedOrder, setSelectedOrder] = useState<RestaurantOrder | null>(null);
   const [cancelConfirmationOrder, setCancelConfirmationOrder] = useState<RestaurantOrder | null>(null);
   const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
+  const [searchQuery, setSearchQuery] = useState('');
 
   async function loadOrders() {
     try {
@@ -127,10 +128,17 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
     [orders],
   );
   const boardOrders = filter === 'active' ? activeOrders : orders;
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+  const searchedOrders = normalizedSearch
+    ? boardOrders.filter((order) =>
+        order.orderNumber.toLowerCase().includes(normalizedSearch) ||
+        order.customerName.toLowerCase().includes(normalizedSearch),
+      )
+    : boardOrders;
 
   const openedColumn = columns.find((column) => column.key === openColumn) ?? null;
   const openedColumnOrders = openedColumn
-    ? boardOrders.filter((order) => columnFor(order) === openedColumn.key)
+    ? searchedOrders.filter((order) => columnFor(order) === openedColumn.key)
     : [];
 
   async function advance(order: RestaurantOrder) {
@@ -263,6 +271,17 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
         </span>
       </div>
 
+      <div className="restaurant-orders-search" style={{ margin: '18px 0', position: 'relative' }}>
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Search by order number or customer name"
+          aria-label="Search orders by order number or customer name"
+          style={{ width: '100%', boxSizing: 'border-box', padding: '12px 14px', border: '1px solid #cbd5e1', borderRadius: 12, fontSize: 15, outline: 'none' }}
+        />
+      </div>
+
       <div className="restaurant-orders-tabs">
         <button
           className={filter === 'active' ? 'is-active' : ''}
@@ -326,7 +345,7 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
           <div className="restaurant-order-list-modal" role="dialog" aria-modal="true" aria-label={`${openedColumn.title} orders`}>
             <button className="restaurant-order-list-modal-close" type="button" onClick={closeOrderList}>×</button>
             <h2 className="restaurant-order-list-modal-title">{openedColumn.title}</h2>
-            <p className="restaurant-order-list-modal-subtitle">{openedColumn.description}</p>
+            <p className="restaurant-order-list-modal-subtitle">{openedColumn.description}{normalizedSearch ? ` · ${openedColumnOrders.length} matching order${openedColumnOrders.length === 1 ? '' : 's'}` : ''}</p>
 
             {openedColumnOrders.length === 0 ? (
               <div className="restaurant-order-list-empty">No orders in this stage.</div>
