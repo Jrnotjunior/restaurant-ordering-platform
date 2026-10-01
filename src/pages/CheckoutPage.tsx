@@ -20,7 +20,7 @@ const orderTypes: Array<{ value: OrderType; label: string; description: string }
 
 const paymentMethods: Array<{ value: PaymentMethod; label: string; description: string }> = [
   { value: 'cash', label: 'Cash', description: 'Pay in cash when your order is received or collected.' },
-  { value: 'gcash', label: 'GCash', description: 'Pay online before the order is sent to the restaurant.' },
+  { value: 'gcash', label: 'GCash', description: 'Pay online before your order is sent to the restaurant.' },
 ];
 
 const outsideCityMessage = 'We currently deliver only within selected barangays in Valenzuela City. If you are outside Valenzuela, you can proceed using your own courier.';
@@ -177,7 +177,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
           <fieldset className="checkout-section"><legend>Order notes <span className="optional-label">Optional</span></legend><label><span>Special instructions</span><textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Add a note for the restaurant" rows={3} /></label></fieldset>
 
           {!showPayment ? <button className="button button-primary checkout-submit" type="button" disabled={!canContinue} onClick={() => { setSubmitError(''); setShowPayment(true); }}>Continue to Payment</button> : <fieldset className="checkout-section" id="payment-section"><legend>Payment method</legend>
-            {thirdPartyCourierDelivery && <p className="courier-payment-note"><strong>Online payment required:</strong> complete payment before the order is sent to the restaurant. Your courier is booked and paid separately by you.</p>}
+            {thirdPartyCourierDelivery && <p className="courier-payment-note"><strong>Online payment is required.</strong> Please complete your payment before the order is sent to the restaurant. You are responsible for booking and paying the courier separately.</p>}
             <div className="order-type-grid">{paymentMethods.filter((method) => !thirdPartyCourierDelivery || method.value === 'gcash').map((method) => <label className={`order-type-card ${paymentMethod === method.value ? 'is-selected' : ''}`} key={method.value}><input type="radio" name="paymentMethod" value={method.value} checked={paymentMethod === method.value} onChange={() => setPaymentMethod(method.value)} /><span className="order-type-content"><strong>{orderType === 'dine_in' && method.value === 'cash' ? 'Pay at Counter' : method.label}</strong><span>{orderType === 'dine_in' && method.value === 'cash' ? 'Place your order now and pay the cashier at the restaurant counter.' : method.description}</span></span></label>)}</div>
             {submitError && <p className="checkout-error" role="alert">{submitError}</p>}<button className="button button-primary checkout-submit" type="button" disabled={!paymentMethod || isSubmitting} onClick={handlePlaceOrder}>{isSubmitting ? 'Creating Order…' : 'Place Order'}</button>
           </fieldset>}
