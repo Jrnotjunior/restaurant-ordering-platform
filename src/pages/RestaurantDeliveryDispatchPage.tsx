@@ -206,7 +206,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
         });
       if (assignmentError) throw assignmentError;
 
-      const { error: orderError } = await supabase
+      const { data: updatedOrder, error: orderError } = await supabase
         .from('orders')
         .update({
           rider_id: rider.id,
@@ -215,11 +215,18 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
         })
         .eq('id', selectedOrder.id)
         .eq('restaurant_id', restaurantId)
-        .eq('delivery_status', 'unassigned');
+        .or('delivery_status.eq.unassigned,delivery_status.is.null')
+        .select('id')
+        .maybeSingle();
 
       if (orderError) {
         await supabase.from('delivery_assignments').delete().eq('order_id', selectedOrder.id).eq('rider_id', rider.id).eq('status', 'assigned');
         throw orderError;
+      }
+
+      if (!updatedOrder) {
+        await supabase.from('delivery_assignments').delete().eq('order_id', selectedOrder.id).eq('rider_id', rider.id).eq('status', 'assigned');
+        throw new Error('The order could not be updated for rider assignment. Please refresh and try again.');
       }
 
       setSelectedOrder(null);
