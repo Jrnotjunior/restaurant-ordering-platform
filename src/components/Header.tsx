@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useRestaurant } from './RestaurantProvider';
 import '../styles/cart-badge.css';
 import '../styles/header-actions.css';
@@ -17,6 +18,17 @@ type HeaderProps = {
 
 export function Header({ cartCount = 0 }: HeaderProps) {
   const restaurant = useRestaurant();
+  const [activeOrderNumber, setActiveOrderNumber] = useState(() => window.localStorage.getItem(ACTIVE_ORDER_KEY));
+
+  useEffect(() => {
+    const refreshActiveOrder = () => setActiveOrderNumber(window.localStorage.getItem(ACTIVE_ORDER_KEY));
+    window.addEventListener('storage', refreshActiveOrder);
+    window.addEventListener('restaurant-ordering-active-order-change', refreshActiveOrder);
+    return () => {
+      window.removeEventListener('storage', refreshActiveOrder);
+      window.removeEventListener('restaurant-ordering-active-order-change', refreshActiveOrder);
+    };
+  }, []);
 
   return (
     <header className="site-header">
@@ -37,6 +49,20 @@ export function Header({ cartCount = 0 }: HeaderProps) {
           </svg>
           {cartCount > 0 ? <span className="header-cart-badge" aria-hidden="true">{cartCount > 99 ? '99+' : cartCount}</span> : null}
         </a>
+
+        {activeOrderNumber ? (
+          <a
+            className="header-track-order"
+            href={withBasePath('/menu') + '?trackOrder=' + encodeURIComponent(activeOrderNumber)}
+            aria-label={"Track order " + activeOrderNumber}
+            title="Track my order"
+          >
+            <svg className="header-track-order-icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
+              <path d="M4 5.5h16v13H4z" fill="none" stroke="currentColor" strokeWidth="1.8" />
+              <path d="M8 9h8M8 13h5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          </a>
+        ) : null}
 
         <a className="header-account" href={withBasePath('/account')} aria-label="Account login" title="Account">
           <svg className="header-account-icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
