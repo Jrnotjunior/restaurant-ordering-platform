@@ -66,3 +66,176 @@
     font-size: 12px;
   }
 }
+
+.restaurant-navigation-row {
+  width: min(var(--restaurant-content-width), calc(100% - 2rem));
+  margin: 24px auto 0;
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  position: relative;
+}
+
+.restaurant-navigation-row .restaurant-navigation {
+  width: auto;
+  flex: 1 1 auto;
+  margin: 0;
+}
+
+.restaurant-account-menu {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.restaurant-account-button {
+  width: 48px;
+  height: 48px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #526174;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease, box-shadow .15s ease;
+}
+
+.restaurant-account-button:hover {
+  background: #eef2f7;
+  color: #0f172a;
+}
+
+.restaurant-account-button:focus-visible {
+  outline: 2px solid #111827;
+  outline-offset: 2px;
+}
+
+.restaurant-account-dropdown {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  padding: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, .14);
+}
+
+.restaurant-account-email {
+  padding: 10px 12px;
+  color: #526174;
+  font-size: 12px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.restaurant-account-dropdown button {
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: transparent;
+  color: #172033;
+  text-align: left;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.restaurant-account-dropdown button:hover {
+  background: #f1f5f9;
+}
+
+.restaurant-account-dropdown button:disabled {
+  cursor: wait;
+  opacity: .6;
+}
+
+.restaurant-password-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, .45);
+}
+
+.restaurant-password-modal {
+  width: min(100%, 460px);
+  padding: 24px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, .2);
+}
+
+.restaurant-password-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.restaurant-password-modal-header h2 {
+  margin: 4px 0 0;
+}
+
+.restaurant-password-close {
+  border: 0;
+  background: transparent;
+  color: #526174;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.restaurant-password-helper {
+  color: #526174;
+  font-size: 14px;
+}
+
+.restaurant-password-field {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.restaurant-password-field input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  font: inherit;
+}
+
+.restaurant-password-error {
+  margin: 12px 0 0;
+  color: #b42318;
+  font-size: 13px;
+}
+
+.restaurant-password-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+@media (max-width: 900px) {
+  .restaurant-navigation-row {
+    width: min(var(--restaurant-content-width), calc(100% - 1rem));
+    gap: 8px;
+  }
+
+  .restaurant-account-button {
+    width: 44px;
+    height: 44px;
+  }
+}
