@@ -67,12 +67,6 @@ Deno.serve(async (request) => {
     const name = String(body.name ?? "").trim();
     const mobileNumber = String(body.mobileNumber ?? "").trim();
     const email = String(body.email ?? "").trim().toLowerCase();
-    const scopes = [...new Set(
-      (Array.isArray(body.scopes) ? body.scopes : [])
-        .map((scope: unknown) => String(scope).trim())
-        .filter(Boolean),
-    )];
-
     if (!restaurantId || !name || !mobileNumber || !email) {
       return jsonResponse({ error: "Rider name, mobile number, email, and restaurant are required." }, 400);
     }
@@ -147,15 +141,7 @@ Deno.serve(async (request) => {
 
       if (linkError) throw linkError;
 
-      if (scopes.length) {
-        const { error: scopeError } = await adminClient
-          .from("rider_delivery_scopes")
-          .insert(scopes.map((scope_name) => ({ rider_id: rider.id, scope_name })));
-
-        if (scopeError) throw scopeError;
-      }
     } catch (error) {
-      await adminClient.from("rider_delivery_scopes").delete().eq("rider_id", rider.id);
       await adminClient.from("restaurant_riders").delete().eq("id", rider.id);
       if (authUserId) {
         await adminClient.auth.admin.deleteUser(authUserId);
