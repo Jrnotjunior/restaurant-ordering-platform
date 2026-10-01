@@ -68,6 +68,7 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
   const [filter, setFilter] = useState<'active' | 'all'>('active');
   const [openColumn, setOpenColumn] = useState<BoardColumn | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<RestaurantOrder | null>(null);
+  const [cancelConfirmationOrder, setCancelConfirmationOrder] = useState<RestaurantOrder | null>(null);
   const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
 
   async function loadOrders() {
@@ -171,8 +172,6 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
   }
 
   async function cancel(order: RestaurantOrder) {
-    if (!window.confirm(`Cancel order ${order.orderNumber}?`)) return;
-
     try {
       setError('');
       setUpdating(order.orderId);
@@ -180,6 +179,7 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
       setOrders((current) =>
         current.map((item) => (item.orderId === order.orderId ? { ...item, status: 'cancelled' } : item)),
       );
+      setCancelConfirmationOrder(null);
       setSelectedOrder(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to update order.');
@@ -216,6 +216,13 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
         .restaurant-order-modal-subtitle{margin:0 0 18px;color:#64748b;font-size:14px}
         .restaurant-order-modal-total{font-size:22px;font-weight:800}
         .restaurant-order-modal-actions{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin-top:20px}
+        .restaurant-order-cancel-modal-backdrop{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.62);backdrop-filter:blur(4px)}
+        .restaurant-order-cancel-modal{position:relative;width:min(430px,100%);background:#fff;border-radius:18px;box-shadow:0 24px 70px rgba(15,23,42,.32);padding:24px;color:#0f172a}
+        .restaurant-order-cancel-modal-title{margin:0 0 8px;font-size:21px}
+        .restaurant-order-cancel-modal-text{margin:0;color:#64748b;line-height:1.5}
+        .restaurant-order-cancel-modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
+        .restaurant-order-cancel-button{border:0;border-radius:10px;padding:11px 16px;background:#dc2626;color:#fff;font-weight:700;cursor:pointer}
+        .restaurant-order-cancel-button:disabled{opacity:.6;cursor:not-allowed}
         @media(max-width:600px){
           .restaurant-order-list-modal-backdrop,.restaurant-order-modal-backdrop{padding:10px;align-items:flex-end}
           .restaurant-order-list-modal,.restaurant-order-modal{max-height:92vh;border-radius:18px 18px 12px 12px;padding:20px}
@@ -386,9 +393,9 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
                     className="button button-secondary"
                     type="button"
                     disabled={updating === selectedOrder.orderId}
-                    onClick={() => void cancel(selectedOrder)}
+                    onClick={() => setCancelConfirmationOrder(selectedOrder)}
                   >
-                    Cancel
+                    Cancel Order
                   </button>
                 </>
               ) : nextStatus[selectedOrder.status] ? (
@@ -404,7 +411,42 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
             </div>
           </div>
         </div>
+      {cancelConfirmationOrder && (
+        <div
+          className="restaurant-order-cancel-modal-backdrop"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && updating !== cancelConfirmationOrder.orderId) {
+              setCancelConfirmationOrder(null);
+            }
+          }}
+        >
+          <div className="restaurant-order-cancel-modal" role="dialog" aria-modal="true" aria-labelledby="cancel-order-title">
+            <h2 id="cancel-order-title" className="restaurant-order-cancel-modal-title">Cancel Order?</h2>
+            <p className="restaurant-order-cancel-modal-text">
+              Are you sure you want to cancel order <strong>{cancelConfirmationOrder.orderNumber}</strong>? This action will mark the order as cancelled.
+            </p>
+            <div className="restaurant-order-cancel-modal-actions">
+              <button
+                className="button button-secondary"
+                type="button"
+                disabled={updating === cancelConfirmationOrder.orderId}
+                onClick={() => setCancelConfirmationOrder(null)}
+              >
+                Keep Order
+              </button>
+              <button
+                className="restaurant-order-cancel-button"
+                type="button"
+                disabled={updating === cancelConfirmationOrder.orderId}
+                onClick={() => void cancel(cancelConfirmationOrder)}
+              >
+                {updating === cancelConfirmationOrder.orderId ? 'Cancelling…' : 'Yes, Cancel Order'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
+
     </section>
   );
 }
