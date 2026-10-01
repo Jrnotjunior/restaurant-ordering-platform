@@ -228,11 +228,6 @@ function AppContent() {
   function addToCart(product: RestaurantProduct) { setCartItems((current) => { const existing = current.find((item) => item.product.id === product.id); if (existing) return current.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item); return [...current, { product, quantity: 1 }]; }); setCartNotification(`${product.name} added to cart`); }
   function changeQuantity(productId: string, delta: number) { setCartItems((current) => current.map((item) => item.product.id === productId ? { ...item, quantity: item.quantity + delta } : item).filter((item) => item.quantity > 0)); }
   function removeFromCart(productId: string) { setCartItems((current) => current.filter((item) => item.product.id !== productId)); }
-  function clearCartAfterSuccessfulOrder() {
-    setCartItems([]);
-    window.localStorage.removeItem(CART_STORAGE_KEY);
-    window.localStorage.removeItem(PENDING_PAYMENT_ORDER_KEY);
-  }
 
   const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
   const searchParams = new URLSearchParams(window.location.search);
