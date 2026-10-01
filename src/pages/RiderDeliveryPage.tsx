@@ -3,7 +3,7 @@ import { DeliveryNavigation } from '../components/DeliveryNavigation';
 import { CustomerContactActions } from '../components/CustomerContactActions';
 import { supabase } from '../services/supabaseClient';
 
-type DeliveryStatus = 'assigned' | 'delivering' | 'delivered';
+type DeliveryStatus = 'assigned' | 'delivering' | 'arrived' | 'delivered';
 
 type DeliveryItem = {
   id: string;
@@ -28,11 +28,12 @@ type Delivery = {
 const deliveryStatuses = [
   { label: 'Assigned', detail: 'Dispatcher assigned this delivery to you.' },
   { label: 'Out for delivery', detail: 'You are heading to the customer.' },
+  { label: 'Arrived at customer', detail: 'You have arrived at the customer location.' },
   { label: 'Delivered', detail: 'The order was delivered to the customer.' },
 ];
 
 function statusIndexFor(status: DeliveryStatus) {
-  return status === 'delivering' ? 1 : status === 'delivered' ? 2 : 0;
+  return status === 'delivering' ? 1 : status === 'arrived' ? 2 : status === 'delivered' ? 3 : 0;
 }
 
 export function RiderDeliveryPage({ orderId }: { orderId: string }) {
@@ -151,7 +152,7 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
     setError('');
 
     const previousStatus = delivery.status;
-    const previousAssignmentStatus = previousStatus === 'assigned' ? 'assigned' : 'delivering';
+    const previousAssignmentStatus = previousStatus === 'assigned' ? 'assigned' : previousStatus === 'delivering' ? 'delivering' : 'arrived';
     const { data: authData, error: authError } = await supabase.auth.getUser();
 
     try {
@@ -167,7 +168,7 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
       if (riderError) throw riderError;
       if (!rider) throw new Error('Your account is not linked to a rider profile.');
 
-      const assignmentStatus = nextStatus === 'delivered' ? 'delivered' : 'delivering';
+      const assignmentStatus = nextStatus === 'delivered' ? 'delivered' : nextStatus === 'arrived' ? 'arrived' : 'delivering';
       const assignmentUpdate = nextStatus === 'delivered'
         ? { status: assignmentStatus, delivered_at: new Date().toISOString() }
         : { status: assignmentStatus };
@@ -182,7 +183,7 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
 
       const orderUpdate = nextStatus === 'delivered'
         ? { delivery_status: 'delivered', status: 'completed', ...(delivery.paymentMethod === 'cash' ? { payment_status: 'paid' } : {}) }
-        : { delivery_status: 'delivering' };
+        : { delivery_status: nextStatus === 'arrived' ? 'arrived' : 'delivering' };
 
       const { error: orderError } = await supabase
         .from('orders')
@@ -194,7 +195,7 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
       if (orderError) {
         await supabase
           .from('delivery_assignments')
-          .update(nextStatus === 'delivered' ? { status: 'delivering', delivered_at: null } : { status: 'assigned' })
+          .update(nextStatus === 'delivered' ? { status: 'arrived', delivered_at: null } : nextStatus === 'arrived' ? { status: 'delivering' } : { status: 'assigned' })
           .eq('order_id', delivery.id)
           .eq('rider_id', rider.id)
           .eq('status', assignmentStatus);
@@ -217,7 +218,7 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
 
     if (value >= 95) {
       slideCompletionLock.current = true;
-      const nextStatus: DeliveryStatus = statusIndex === 0 ? 'delivering' : 'delivered';
+      const nextStatus: DeliveryStatus = statusIndex === 0 ? 'delivering' : statusIndex === 1 ? 'arrived' : 'delivered';
       void updateDeliveryStatus(nextStatus);
       window.setTimeout(() => {
         slideCompletionLock.current = false;
@@ -367,9 +368,9 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
             </div>
 
             {!isDelivered ? (
-              <div className="rider-delivery-slider" data-status={statusIndex === 0 ? 'start' : 'delivered'}>
-                <input className="rider-delivery-slider-input" type="range" min="0" max="100" value={slideValue} aria-label={statusIndex === 0 ? 'Slide to start delivery' : delivery.paymentMethod === 'cash' ? 'Slide to collect cash' : 'Slide to mark delivered'} onChange={(event) => handleDeliverySlide(Number(event.target.value))} disabled={savingStatus} />
-                <span className="rider-delivery-slider-label" aria-hidden="true">{savingStatus ? 'Updating…' : statusIndex === 0 ? 'Slide to start delivery' : delivery.paymentMethod === 'cash' ? 'Slide to collect cash' : 'Slide to mark delivered'}</span>
+              <div className="rider-delivery-slider" data-status={statusIndex === 0 ? 'start' : statusIndex === 1 ? 'arrive' : 'delivered'}>
+                <input className="rider-delivery-slider-input" type="range" min="0" max="100" value={slideValue} aria-label={statusIndex === 0 ? 'Slide to start delivery' : statusIndex === 1 ? 'Slide to mark arrived' : delivery.paymentMethod === 'cash' ? 'Slide to collect cash' : 'Slide to mark delivered'} onChange={(event) => handleDeliverySlide(Number(event.target.value))} disabled={savingStatus} />
+                <span className="rider-delivery-slider-label" aria-hidden="true">{savingStatus ? 'Updating…' : statusIndex === 0 ? 'Slide to start delivery' : statusIndex === 1 ? 'Slide to mark arrived' : delivery.paymentMethod === 'cash' ? 'Slide to collect cash' : 'Slide to mark delivered'}</span>
                 <span className="rider-delivery-slider-arrow" aria-hidden="true">›</span>
               </div>
             ) : (
