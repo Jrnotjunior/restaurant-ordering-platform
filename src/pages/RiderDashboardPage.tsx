@@ -18,6 +18,8 @@ type RiderHistoryItem = {
   customerName: string;
   total: number;
   createdAt: string;
+  status: 'delivered' | 'failed';
+  failureReason: string | null;
 };
 
 function statusLabel(status: DeliveryStatus) {
@@ -108,10 +110,10 @@ export function RiderDashboardPage() {
 
       const { data: historyRows, error: historyError } = await supabase
         .from('orders')
-        .select('id,order_number,customer_name,total,created_at')
+        .select('id,order_number,customer_name,total,created_at,delivery_status,delivery_failure_reason')
         .eq('rider_id', rider.id)
         .eq('order_type', 'delivery')
-        .eq('delivery_status', 'delivered')
+        .in('delivery_status', ['delivered', 'failed'])
         .order('created_at', { ascending: false });
       if (historyError) throw historyError;
 
@@ -121,12 +123,16 @@ export function RiderDashboardPage() {
         customer_name: string;
         total: number | string;
         created_at: string;
+        delivery_status: 'delivered' | 'failed';
+        delivery_failure_reason: string | null;
       }>).map((order) => ({
         id: order.id,
         orderNumber: order.order_number,
         customerName: order.customer_name,
         total: Number(order.total),
         createdAt: order.created_at,
+        status: order.delivery_status,
+        failureReason: order.delivery_failure_reason ?? null,
       })));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load your deliveries.');
@@ -282,9 +288,9 @@ export function RiderDashboardPage() {
                   {history.map((order) => (
                     <a className="rider-dashboard-delivery-card rider-dashboard-history-card" href={`${import.meta.env.BASE_URL}#rider/delivery/${order.id}`} key={order.id}>
                       <div className="rider-dashboard-delivery-main">
-                        <div className="rider-dashboard-delivery-top"><strong>{order.orderNumber}</strong><span className="rider-dashboard-status is-delivered">Delivered</span></div>
+                        <div className="rider-dashboard-delivery-top"><strong>{order.orderNumber}</strong><span className={`rider-dashboard-status is-${order.status}`}>{order.status === 'failed' ? 'Delivery failed' : 'Delivered'}</span></div>
                         <h3>{order.customerName}</h3>
-                        <p>Delivered on {formatHistoryDate(order.createdAt)}</p>
+                        <p>{order.status === 'failed' ? `Failed on ${formatHistoryDate(order.createdAt)}${order.failureReason ? ` · ${order.failureReason}` : ''}` : `Delivered on ${formatHistoryDate(order.createdAt)}`}</p>
                       </div>
                       <div className="rider-dashboard-delivery-side"><strong>₱{order.total.toFixed(2)}</strong><span aria-hidden="true">›</span></div>
                     </a>
