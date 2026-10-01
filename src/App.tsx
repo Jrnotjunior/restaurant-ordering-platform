@@ -143,8 +143,61 @@ function ownerRestaurantConfig(restaurant: NonNullable<ReturnType<typeof useRest
 
 function OwnerRestaurantGuard({ children }: { children: (restaurant: RestaurantConfig) => ReactNode }) {
   const { restaurant, user } = useRestaurantOwnerAuth();
+  const [checkingRole, setCheckingRole] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function checkAccess() {
+      if (!user || !supabase) {
+        if (mounted) setCheckingRole(false);
+        return;
+      }
+
+      const role = user.app_metadata?.role ?? user.user_metadata?.role;
+
+      if (role === 'customer') {
+        window.location.hash = '#menu';
+        return;
+      }
+
+      const { data: riderProfile, error: riderLookupError } = await supabase
+        .from('restaurant_riders')
+        .select('id')
+        .eq('auth_user_id', user.id)
+        .maybeSingle();
+
+      if (!mounted) return;
+
+      if (riderLookupError) {
+        console.error('Unable to verify rider access.', riderLookupError);
+        setCheckingRole(false);
+        return;
+      }
+
+      if (riderProfile || role === 'rider') {
+        window.location.hash = '#rider/dashboard';
+        return;
+      }
+
+      setCheckingRole(false);
+    }
+
+    void checkAccess();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user]);
+
   if (!user) return <RestaurantOwnerLoginPage />;
+
+  if (checkingRole) {
+    return <section className="restaurant-owner-auth-loading">Checking account access…</section>;
+  }
+
   if (!restaurant) return <section className="restaurant-owner-auth-no-restaurant"><div className="restaurant-owner-auth-no-restaurant-card"><p className="eyebrow">Restaurant operations</p><h1>No restaurant assigned</h1><p>Your owner account is signed in, but it is not linked to an active restaurant yet. Set the restaurant's <code>owner_id</code> to your Supabase Auth user ID, then reload this page.</p><p><strong>Signed in as:</strong> {user.email ?? user.id}</p></div></section>;
+
   return children(ownerRestaurantConfig(restaurant));
 }
 
