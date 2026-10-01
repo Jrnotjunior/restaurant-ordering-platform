@@ -71,6 +71,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     }
 
     if (paymentState !== 'processing' || !reference) return;
+    const paymentReference = reference;
 
     let cancelled = false;
     setPaymentProcessing(true);
@@ -78,7 +79,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     async function waitForPayment() {
       for (let attempt = 0; attempt < 20 && !cancelled; attempt += 1) {
         try {
-          const result = await getOnlinePaymentStatus(reference);
+          const result = await getOnlinePaymentStatus(paymentReference);
           if (result.status === 'paid' && result.orderNumber) {
             window.localStorage.removeItem(PENDING_PAYMENT_REFERENCE_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_CHECKOUT_URL_KEY);
