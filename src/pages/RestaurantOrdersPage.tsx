@@ -411,6 +411,8 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
             </div>
           </div>
         </div>
+      )}
+
       {cancelConfirmationOrder && (
         <div
           className="restaurant-order-cancel-modal-backdrop"
