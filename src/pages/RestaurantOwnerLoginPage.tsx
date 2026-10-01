@@ -26,14 +26,26 @@ export function RestaurantOwnerLoginPage() {
       const user = data.user;
       const role = user?.app_metadata?.role ?? user?.user_metadata?.role;
 
-      if (role === 'rider') {
-        window.location.hash = '#rider/delivery-preview';
-        return;
-      }
-
       if (role === 'customer') {
         window.location.hash = '#menu';
         return;
+      }
+
+      // Rider accounts are identified by their restaurant_riders link.
+      // This keeps rider routing working even if older invited accounts
+      // do not have the role metadata populated.
+      if (user) {
+        const { data: riderProfile, error: riderLookupError } = await supabase
+          .from('restaurant_riders')
+          .select('id')
+          .eq('auth_user_id', user.id)
+          .maybeSingle();
+
+        if (riderLookupError) throw riderLookupError;
+        if (riderProfile) {
+          window.location.hash = '#rider/dashboard';
+          return;
+        }
       }
 
       const { data: ownerRestaurant, error: ownerLookupError } = await supabase
@@ -74,7 +86,7 @@ export function RestaurantOwnerLoginPage() {
           </label>
           <label>
             Password
-            <input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Enter your password" disabled={submitting} />
+            <input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={1} placeholder="Enter your password" disabled={submitting} />
           </label>
           <button className="button button-primary" type="submit" disabled={submitting}>
             {submitting ? 'Signing in…' : 'Sign in'}
