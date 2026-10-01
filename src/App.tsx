@@ -20,7 +20,7 @@ import { RiderInvitePage } from './pages/RiderInvitePage';
 import { defaultRestaurant } from './config/defaultRestaurant';
 import { currentRestaurantLookup } from './config/restaurant';
 import { SupabaseRestaurantRepository } from './services/supabaseRestaurantRepository';
-import { isSupabaseConfigured } from './services/supabaseClient';
+import { isSupabaseConfigured, supabase } from './services/supabaseClient';
 import type { RestaurantConfig } from './types/restaurant';
 import type { RestaurantProduct } from './types/menu';
 import './styles/cart-empty.css';
