@@ -128,6 +128,7 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
     [orders],
   );
   const boardOrders = filter === 'active' ? activeOrders : orders;
+  const openedColumn = columns.find((column) => column.key === openColumn) ?? null;
   const normalizedSearch = searchQuery.trim().toLowerCase();
   const searchedOrders = openedColumn?.key === 'new' && normalizedSearch
     ? boardOrders.filter((order) =>
@@ -136,7 +137,6 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
       )
     : boardOrders;
 
-  const openedColumn = columns.find((column) => column.key === openColumn) ?? null;
   const openedColumnOrders = openedColumn
     ? searchedOrders.filter((order) => columnFor(order) === openedColumn.key)
     : [];
