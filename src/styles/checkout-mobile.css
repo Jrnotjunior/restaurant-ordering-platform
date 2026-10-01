@@ -562,3 +562,21 @@
     width: 100%;
   }
 }
+
+
+/* Compact order type choices */
+.order-type-card {
+  min-height: 3.5rem;
+  padding: 0.75rem 0.9rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.order-type-content {
+  display: flex;
+  align-items: center;
+}
+
+.order-type-content strong {
+  line-height: 1.2;
+}
