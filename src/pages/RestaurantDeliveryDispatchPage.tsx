@@ -139,6 +139,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
         orderNumber: order.order_number,
         customerName: order.customer_name,
         address: order.delivery_address ?? order.delivery_barangay ?? 'Delivery address not provided',
+        barangay: order.delivery_barangay ?? '',
         total: Number(order.total),
         readyAt: formatReadyTime(order.created_at),
       })));
@@ -203,7 +204,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
     delivering: 'Out delivering',
   }[status]);
 
-  const orderArea = selectedOrder?.address.split(',')[0].trim() ?? '';
+  const orderArea = selectedOrder?.barangay.trim() ?? '';
 
   async function assignOrder(rider: Rider) {
     if (!supabase || !selectedOrder || assigning) return;
