@@ -92,9 +92,8 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: "You are not authorized to delete this rider." }, 403);
     }
 
-    // Delete the application record first. rider_delivery_scopes are removed
-    // automatically by the rider_id ON DELETE CASCADE constraint, and orders
-    // keep their history because orders.rider_id uses ON DELETE SET NULL.
+    // Delete the application record first. Orders keep their history because
+    // orders.rider_id uses ON DELETE SET NULL.
     const { error: deleteRiderError } = await adminClient
       .from("restaurant_riders")
       .delete()
