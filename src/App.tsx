@@ -65,15 +65,32 @@ function RiderRouteGuard({ children }: { children: ReactNode }) {
         return;
       }
 
-      const { data } = await supabase.auth.getUser();
+      const { data, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        window.location.hash = '#account';
+        return;
+      }
+
       const user = data.user;
       const role = user?.app_metadata?.role ?? user?.user_metadata?.role;
 
       if (!mounted) return;
 
-      if (role === 'rider') {
-        setChecking(false);
-        return;
+      if (role === 'rider' || user) {
+        if (user) {
+          const { data: riderProfile } = await supabase
+            .from('restaurant_riders')
+            .select('id')
+            .eq('auth_user_id', user.id)
+            .maybeSingle();
+
+          if (!mounted) return;
+
+          if (riderProfile || role === 'rider') {
+            setChecking(false);
+            return;
+          }
+        }
       }
 
       if (role === 'customer') {
@@ -172,7 +189,7 @@ function AppContent() {
   if (isSignUpPage) return <CustomerSignUpPage />;
   if (isAccountPage) return <RestaurantOwnerLoginPage />;
   if (isRiderDashboardPage) return <RiderRouteGuard><RiderDashboardPage /></RiderRouteGuard>;
-  if (riderDeliveryMatch) return <RiderDeliveryPage orderId={decodeURIComponent(riderDeliveryMatch[1])} />;
+  if (riderDeliveryMatch) return <RiderRouteGuard><RiderDeliveryPage orderId={decodeURIComponent(riderDeliveryMatch[1])} /></RiderRouteGuard>;
 
   const publicContent = isMenuPage || (!isCartPage && !isCheckoutPage && !trackingMatch) ? <MenuPage onAddToCart={addToCart} cartCount={cartCount} /> : isCartPage ? <CartPage items={cartItems} onIncrease={(id) => changeQuantity(id, 1)} onDecrease={(id) => changeQuantity(id, -1)} onRemove={(id) => removeFromCart(id)} /> : isCheckoutPage ? <CheckoutPage items={cartItems} /> : <OrderTrackingPage orderNumber={decodeURIComponent(trackingMatch![1])} />;
 
