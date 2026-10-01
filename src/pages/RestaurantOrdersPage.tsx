@@ -46,7 +46,7 @@ function isPaymentReady(order: RestaurantOrder) {
 function columnFor(order: RestaurantOrder): BoardColumn | null {
   if (order.status === 'pending') return 'new';
   if (order.status === 'confirmed' || order.status === 'preparing') return 'kitchen';
-  if (order.status === 'ready') return 'ready';
+  // Delivery orders leave the restaurant Orders board once they are ready.\n  // They are handled in Delivery Dispatch instead.\n  if (order.status === 'ready' && order.orderType !== 'delivery') return 'ready';
   if (order.status === 'completed') return 'completed';
   return null;
 }
@@ -54,7 +54,7 @@ function columnFor(order: RestaurantOrder): BoardColumn | null {
 const columns: Array<{ key: BoardColumn; title: string; description: string }> = [
   { key: 'new', title: 'New Orders', description: 'Waiting for payment confirmation' },
   { key: 'kitchen', title: 'In the Kitchen', description: 'Orders being prepared' },
-  { key: 'ready', title: 'Ready', description: 'Ready for pickup, dine-in, or delivery' },
+  { key: 'ready', title: 'Ready', description: 'Ready for pickup or dine-in' },
   { key: 'completed', title: 'Completed', description: 'Finished orders' },
 ];
 
