@@ -86,7 +86,9 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
   // Restaurant uses "confirmed" for orders that have entered the kitchen.
   // The customer-facing timeline should show that stage as "Preparing".
   const isCancelled = order.status === 'cancelled';
-  const customerStatus: CustomerStatus = order.deliveryStatus === 'delivered'
+  const customerStatus: CustomerStatus = order.deliveryStatus === 'failed'
+    ? 'completed'
+    : order.deliveryStatus === 'delivered'
     ? 'completed'
     : (order.deliveryStatus === 'delivering' || order.deliveryStatus === 'out_for_delivery')
       ? 'out_for_delivery'
@@ -118,7 +120,12 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
 
         <div className="order-tracking-total"><span>Total</span><strong>₱{Number(order.total).toFixed(2)}</strong></div>
 
-        {isCancelled ? (
+        {order.deliveryStatus === 'failed' ? (
+          <div className="order-tracking-cancelled">
+            <strong>Delivery failed</strong>
+            <span>{order.deliveryFailureReason ? `Reason: ${order.deliveryFailureReason}. ` : ''}The order was not delivered and no cash payment was collected.</span>
+          </div>
+        ) : isCancelled ? (
           <div className="order-tracking-cancelled"><strong>Order cancelled</strong><span>This order has been cancelled by the restaurant or customer.</span></div>
         ) : (
           <div className="order-status-timeline" aria-label="Order status">
