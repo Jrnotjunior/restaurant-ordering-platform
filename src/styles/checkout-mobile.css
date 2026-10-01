@@ -690,3 +690,47 @@
     padding-top: 0.8rem;
   }
 }
+
+
+.checkout-payment-notice {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.2rem 1rem;
+  align-items: center;
+  margin: 0 0 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #d9e2ec;
+  border-radius: 0.8rem;
+  background: #f8fafc;
+  color: #334155;
+}
+
+.checkout-payment-notice strong {
+  color: #0f172a;
+  font-size: 0.92rem;
+}
+
+.checkout-payment-notice span {
+  color: #64748b;
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.checkout-payment-notice .button {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .checkout-payment-notice {
+    grid-template-columns: 1fr;
+  }
+
+  .checkout-payment-notice .button {
+    grid-column: auto;
+    grid-row: auto;
+    width: 100%;
+    margin-top: 0.35rem;
+  }
+}
