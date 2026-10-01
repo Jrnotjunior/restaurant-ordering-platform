@@ -357,6 +357,9 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
               <span>{selectedOrder.orderType === 'dine_in' ? 'Dine-in' : selectedOrder.orderType === 'pickup' ? 'Pickup / Take-out' : 'Delivery'}</span>
               <span>{paymentLabel(selectedOrder)}</span>
             </div>
+            <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 10, background: '#f8fafc', color: '#334155' }}>
+              <strong>Customer</strong><div>{selectedOrder.customerName}</div>
+            </div>
             <div className="restaurant-order-items" style={{ marginTop: 18 }}>
               {selectedOrder.items.map((item) => (
                 <div className="restaurant-order-item" key={item.id}>

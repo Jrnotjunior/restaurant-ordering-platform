@@ -6,6 +6,7 @@ export type RestaurantPaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded'
 export type RestaurantOrder = {
   orderId: string;
   orderNumber: string;
+  customerName: string;
   orderType: 'delivery' | 'pickup' | 'dine_in';
   paymentMethod: 'cash' | 'gcash';
   paymentStatus: RestaurantPaymentStatus;
@@ -30,6 +31,7 @@ type RawOrderItem = {
 type Row = {
   order_id: string;
   order_number: string;
+  customer_name?: string | null;
   order_type: RestaurantOrder['orderType'];
   payment_method: RestaurantOrder['paymentMethod'];
   payment_status?: RestaurantPaymentStatus | null;
@@ -46,6 +48,7 @@ export async function getRestaurantOrders(restaurantId: string): Promise<Restaur
   return rows.map((row): RestaurantOrder => ({
     orderId: row.order_id,
     orderNumber: row.order_number,
+    customerName: row.customer_name ?? '',
     orderType: row.order_type,
     paymentMethod: row.payment_method,
     paymentStatus: row.payment_status ?? 'pending',

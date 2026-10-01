@@ -35,7 +35,6 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const [orderType, setOrderType] = useState<OrderType>('delivery');
   const [customerName, setCustomerName] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
-  const [tableNumber, setTableNumber] = useState('');
   const [deliveryCity, setDeliveryCity] = useState('');
   const [address, setAddress] = useState('');
   const [deliveryBarangay, setDeliveryBarangay] = useState('');
@@ -55,7 +54,6 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const restaurantPickupPoint = restaurant.locationText?.trim() ?? '';
   const cityIsSupported = isValenzuela(deliveryCity);
   const isDelivery = orderType === 'delivery';
-  const isDineIn = orderType === 'dine_in';
 
   useEffect(() => {
     if (!restaurantId || orderType !== 'delivery') {
@@ -88,7 +86,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
   if (confirmedOrder) return <OrderConfirmationPage orderNumber={confirmedOrder.orderNumber} paymentMethod={confirmedOrder.paymentMethod} total={confirmedOrder.total} onReturnHome={() => { window.location.hash = ''; }} />;
 
-  const canContinue = items.length > 0 && Boolean(customerName.trim() && mobileNumber.trim()) && (!isDineIn || tableNumber.trim()) && (!isDelivery || (thirdPartyCourierDelivery ? Boolean(restaurantPickupPoint) : cityIsSupported && deliveryBarangay.trim() && address.trim() && Boolean(selectedDeliveryZone?.isSupported) && !loadingDeliveryZones));
+  const canContinue = items.length > 0 && Boolean(customerName.trim() && mobileNumber.trim()) && (!isDelivery || (thirdPartyCourierDelivery ? Boolean(restaurantPickupPoint) : cityIsSupported && deliveryBarangay.trim() && address.trim() && Boolean(selectedDeliveryZone?.isSupported) && !loadingDeliveryZones));
 
   function resetPayment() { setShowPayment(false); setPaymentMethod(''); setSubmitError(''); }
 
@@ -130,7 +128,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       const finalNotes = [notes.trim(), isDelivery && thirdPartyCourierDelivery ? thirdPartyCourierNote : ''].filter(Boolean).join('\n\n');
       const createdOrder = await createOrder({
         restaurantId: items[0].product.restaurantId,
-        customerName: customerName.trim(), mobileNumber: mobileNumber.trim(), orderType, tableNumber: tableNumber.trim(),
+        customerName: customerName.trim(), mobileNumber: mobileNumber.trim(), orderType,
         deliveryBarangay: isDelivery && !thirdPartyCourierDelivery ? deliveryBarangay.trim() : '',
         deliveryAddress: isDelivery ? (thirdPartyCourierDelivery ? restaurantPickupPoint : [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')) : address.trim(),
         notes: finalNotes, paymentMethod, isThirdPartyCourier: isDelivery && thirdPartyCourierDelivery,
@@ -172,7 +170,6 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             {!thirdPartyCourierDelivery && selectedDeliveryZone?.isSupported && <p className="checkout-hint">Delivery fee: ₱{deliveryFee.toFixed(2)}</p>}
           </fieldset>}
 
-          {isDineIn && <fieldset className="checkout-section"><legend>Dine-in details</legend><label><span>Table number</span><input type="text" value={tableNumber} onChange={(e) => setTableNumber(e.target.value)} required /></label></fieldset>}
           <fieldset className="checkout-section"><legend>Order notes <span className="optional-label">Optional</span></legend><label><span>Special instructions</span><textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Add a note for the restaurant" rows={3} /></label></fieldset>
 
           {!showPayment ? <button className="button button-primary checkout-submit" type="button" disabled={!canContinue} onClick={() => { setSubmitError(''); setShowPayment(true); }}>Continue to Payment</button> : <fieldset className="checkout-section" id="payment-section"><legend>Payment method</legend>
