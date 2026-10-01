@@ -26,6 +26,8 @@ const paymentMethods: Array<{ value: PaymentMethod; label: string; description: 
 
 const outsideCityMessage = 'We currently deliver only within selected barangays in Valenzuela City. If you are outside Valenzuela, you can proceed using your own courier.';
 const outsideDeliveryAreaMessage = 'The address is not within the store delivery area. If you want to proceed, please book your own delivery courier like Lalamove or Grab Express.';
+const PENDING_PAYMENT_ORDER_KEY = 'restaurant-ordering-pending-payment-order';
+const CART_CLEAR_EVENT = 'restaurant-ordering-cart-clear';
 const thirdPartyCourierNote = 'THIRD-PARTY COURIER: Customer is responsible for booking and paying the delivery courier (such as Lalamove or Grab Express). The restaurant will prepare the food for courier pickup at the listed restaurant pickup point.';
 
 function normalize(value: string) { return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase(); }
@@ -152,6 +154,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
     try {
       const createdOrder = await createPendingOrder('online');
+      window.localStorage.setItem(PENDING_PAYMENT_ORDER_KEY, createdOrder.orderNumber);
       const checkoutUrl = await createPayMongoCheckout(createdOrder.orderId);
       window.location.assign(checkoutUrl);
     } catch (error) {
@@ -168,6 +171,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
     try {
       const createdOrder = await createPendingOrder('cash');
+      window.dispatchEvent(new Event(CART_CLEAR_EVENT));
       setConfirmedOrder({ orderNumber: createdOrder.orderNumber, paymentMethod: 'cash', orderType, total: createdOrder.total });
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'We could not create your order. Please try again.');
