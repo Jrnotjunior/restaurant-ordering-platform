@@ -166,7 +166,8 @@ function AppContent() {
   function removeFromCart(productId: string) { setCartItems((current) => current.filter((item) => item.product.id !== productId)); }
 
   const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-  const isInviteCallback = hashParams.get('type') === 'invite' || Boolean(hashParams.get('error_code') || hashParams.get('error'));
+  const searchParams = new URLSearchParams(window.location.search);
+  const isInviteCallback = hashParams.get('type') === 'invite' || searchParams.get('type') === 'invite' || Boolean(hashParams.get('token_hash') || searchParams.get('token_hash')) || Boolean(hashParams.get('error_code') || searchParams.get('error_code') || hashParams.get('error') || searchParams.get('error'));
   const isMenuPage = route === '#menu' || window.location.pathname.endsWith('/menu') || window.location.pathname.endsWith('/menu/');
   const isCartPage = route === '#cart';
   const isAccountPage = route === '#account';
@@ -180,8 +181,7 @@ function AppContent() {
   const isRestaurantDeliveryDispatchPage = route === '#restaurant/delivery-dispatch';
   const isRiderDashboardPage = route === '#rider/dashboard' || route === '#rider/delivery-preview';
   const riderDeliveryMatch = route.match(/^#rider\/delivery\/([^/]+)$/);
-  const searchParams = new URLSearchParams(window.location.search);
-  const isRiderInvitePage = searchParams.get('invite') === '1' || Boolean(searchParams.get('token_hash')) || isInviteCallback;
+  const isRiderInvitePage = searchParams.get('invite') === '1' || isInviteCallback;
   const isRestaurantOperationsPage = isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantShippingFeePage || isRestaurantSalesPage || isRestaurantRidersPage || isRestaurantDeliveryDispatchPage;
   const trackingMatch = route.match(/^#order\/(.+)$/);
 
