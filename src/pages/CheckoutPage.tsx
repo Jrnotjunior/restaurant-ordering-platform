@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { RestaurantProduct } from '../types/menu';
 import { createOrder } from '../services/orderRepository';
+import { createPendingOnlinePayment, getOnlinePaymentStatus } from '../services/onlinePaymentRepository';
 import { createPayMongoCheckout } from '../services/paymongoRepository';
 import { getRestaurantDeliveryZones, type RestaurantDeliveryZone } from '../services/restaurantSettingsRepository';
 import { useRestaurant } from '../components/RestaurantProvider';
@@ -13,6 +14,7 @@ type PaymentMethod = 'cash' | 'online';
 type CheckoutPageProps = { items: CartItem[] };
 type ConfirmedOrder = { orderNumber: string; paymentMethod: PaymentMethod; orderType: OrderType; total: number };
 const PENDING_PAYMENT_CHECKOUT_URL_KEY = 'restaurant-ordering-pending-payment-checkout-url';
+const PENDING_PAYMENT_REFERENCE_KEY = 'restaurant-ordering-pending-payment-reference';
 
 const orderTypes: Array<{ value: OrderType; label: string; description: string }> = [
   { value: 'delivery', label: 'Delivery', description: 'Have the restaurant deliver your order.' },
@@ -56,10 +58,62 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const [submitError, setSubmitError] = useState('');
   const [confirmedOrder, setConfirmedOrder] = useState<ConfirmedOrder | null>(null);
   const [paymentNotCompleted, setPaymentNotCompleted] = useState(false);
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
 
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('payment') === 'not_completed') setPaymentNotCompleted(true);
-  }, []);
+    const params = new URLSearchParams(window.location.search);
+    const paymentState = params.get('payment');
+    const reference = params.get('reference');
+
+    if (paymentState === 'not_completed') {
+      setPaymentNotCompleted(true);
+      return;
+    }
+
+    if (paymentState !== 'processing' || !reference) return;
+
+    let cancelled = false;
+    setPaymentProcessing(true);
+
+    async function waitForPayment() {
+      for (let attempt = 0; attempt < 20 && !cancelled; attempt += 1) {
+        try {
+          const result = await getOnlinePaymentStatus(reference);
+          if (result.status === 'paid' && result.orderNumber) {
+            window.localStorage.removeItem(PENDING_PAYMENT_REFERENCE_KEY);
+            window.localStorage.removeItem(PENDING_PAYMENT_CHECKOUT_URL_KEY);
+            window.localStorage.removeItem(PENDING_PAYMENT_ORDER_KEY);
+            window.history.replaceState({}, '', window.location.pathname + window.location.hash);
+            window.dispatchEvent(new Event(CART_CLEAR_EVENT));
+            if (!cancelled) {
+              setPaymentProcessing(false);
+              setConfirmedOrder({
+                orderNumber: result.orderNumber,
+                paymentMethod: 'online',
+                orderType,
+                total: result.total,
+              });
+            }
+            return;
+          }
+        } catch (error) {
+          console.error('Unable to check online payment status.', error);
+        }
+        await new Promise((resolve) => window.setTimeout(resolve, 1500));
+      }
+
+      if (!cancelled) {
+        setPaymentProcessing(false);
+        setSubmitError('Your payment was received, but we are still confirming it. Please wait a moment and try tracking your order again.');
+      }
+    }
+
+    void waitForPayment();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [orderType]);
 
   const restaurantId = items[0]?.product.restaurantId ?? '';
   const restaurantPickupPoint = restaurant.locationText?.trim() ?? '';
@@ -94,6 +148,8 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     return deliveryZones.filter((zone) => normalize(zone.barangay).startsWith(value)).slice(0, 6);
   }, [cityIsSupported, deliveryZones, deliveryBarangay, selectedDeliveryZone, thirdPartyCourierDelivery]);
   const deliveryFee = isDelivery && !thirdPartyCourierDelivery ? Number(selectedDeliveryZone?.shippingFee ?? 0) : 0;
+
+  if (paymentProcessing) return <section className="checkout-page"><div className="checkout-payment-notice" role="status"><strong>Payment received.</strong><span>We're confirming your order with the restaurant. Please wait a moment.</span></div></section>;
 
   if (confirmedOrder) return <OrderConfirmationPage orderNumber={confirmedOrder.orderNumber} paymentMethod={confirmedOrder.paymentMethod} orderType={confirmedOrder.orderType} total={confirmedOrder.total} onReturnHome={() => { window.location.hash = ''; }} />;
 
@@ -167,9 +223,19 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         window.location.assign(savedCheckoutUrl);
         return;
       }
-      const createdOrder = await createPendingOrder('online');
-      window.localStorage.setItem(PENDING_PAYMENT_ORDER_KEY, createdOrder.orderNumber);
-      const checkoutUrl = await createPayMongoCheckout(createdOrder.orderId);
+      const pendingPayment = await createPendingOnlinePayment({
+        restaurantId: items[0].product.restaurantId,
+        customerName: customerName.trim(),
+        mobileNumber: orderType === 'dine_in' ? '' : mobileNumber.trim(),
+        orderType,
+        deliveryBarangay: isDelivery && !thirdPartyCourierDelivery ? deliveryBarangay.trim() : '',
+        deliveryAddress: isDelivery ? (thirdPartyCourierDelivery ? restaurantPickupPoint : [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')) : address.trim(),
+        notes: [notes.trim(), isDelivery && thirdPartyCourierDelivery ? thirdPartyCourierNote : ''].filter(Boolean).join('\\n\\n'),
+        isThirdPartyCourier: isDelivery && thirdPartyCourierDelivery,
+        items: items.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
+      });
+      window.localStorage.setItem(PENDING_PAYMENT_REFERENCE_KEY, pendingPayment.referenceNumber);
+      const checkoutUrl = await createPayMongoCheckout(pendingPayment.paymentId);
       window.localStorage.setItem(PENDING_PAYMENT_CHECKOUT_URL_KEY, checkoutUrl);
       window.location.assign(checkoutUrl);
     } catch (error) {
