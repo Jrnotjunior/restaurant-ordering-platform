@@ -59,6 +59,7 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
 
   const currentStatus = deliveryStatuses[statusIndex];
   const isDelivered = statusIndex === deliveryStatuses.length - 1;
+  const isFailed = delivery?.status === 'failed';
 
   async function loadDelivery() {
     if (!supabase) {
@@ -149,7 +150,7 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
     };
   }, [orderId]);
 
-  async function updateDeliveryStatus(nextStatus: DeliveryStatus) {
+  async function updateDeliveryStatus(nextStatus: DeliveryStatus, failedReason?: string) {
     if (!supabase || !delivery || savingStatus) return;
 
     setSavingStatus(true);
@@ -188,7 +189,7 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
       const orderUpdate = nextStatus === 'delivered'
         ? { delivery_status: 'delivered', status: 'completed', ...(delivery.paymentMethod === 'cash' ? { payment_status: 'paid' } : {}) }
         : nextStatus === 'failed'
-          ? { delivery_status: 'failed', status: 'cancelled', delivery_failure_reason: failureReason }
+          ? { delivery_status: 'failed', status: 'cancelled', delivery_failure_reason: failedReason ?? null }
           : { delivery_status: nextStatus === 'arrived' ? 'arrived' : 'delivering' };
 
       const { error: orderError } = await supabase
@@ -223,7 +224,7 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
     setFailureReason(reason);
     setFailureOpen(false);
     setSlideValue(0);
-    await updateDeliveryStatus('failed');
+    await updateDeliveryStatus('failed', reason);
   }
 
   function handleDeliverySlide(value: number) {
@@ -371,7 +372,7 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
         <aside className="rider-delivery-sidebar">
           <section className="rider-delivery-card rider-delivery-progress-card">
             <p className="rider-delivery-label">Delivery status</p>
-            <h2>{currentStatus.label}</h2>
+            <h2>{isFailed ? 'Delivery failed' : currentStatus.label}</h2>
             <div className="rider-delivery-steps">
               {deliveryStatuses.map((status, index) => (
                 <div className="rider-delivery-step" key={status.label}>
@@ -381,17 +382,19 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
               ))}
             </div>
 
-            {!isDelivered ? (
+            {!isDelivered && !isFailed ? (
               <div className="rider-delivery-slider" data-status={statusIndex === 0 ? 'start' : statusIndex === 1 ? 'arrive' : 'delivered'}>
                 <input className="rider-delivery-slider-input" type="range" min="0" max="100" value={slideValue} aria-label={statusIndex === 0 ? 'Slide to start delivery' : statusIndex === 1 ? 'Slide to mark arrived' : delivery.paymentMethod === 'cash' ? 'Slide to collect cash' : 'Slide to mark delivered'} onChange={(event) => handleDeliverySlide(Number(event.target.value))} disabled={savingStatus} />
                 <span className="rider-delivery-slider-label" aria-hidden="true">{savingStatus ? 'Updating…' : statusIndex === 0 ? 'Slide to start delivery' : statusIndex === 1 ? 'Slide to mark arrived' : delivery.paymentMethod === 'cash' ? 'Slide to collect cash' : 'Slide to mark delivered'}</span>
                 <span className="rider-delivery-slider-arrow" aria-hidden="true">›</span>
               </div>
+            ) : isFailed ? (
+              <div className="rider-delivery-complete">Delivery failed{delivery.failureReason ? ` · ${delivery.failureReason}` : ''}</div>
             ) : (
               <div className="rider-delivery-complete">{delivery.paymentMethod === 'cash' ? 'Cash collected · Delivery completed' : 'Payment received online · Delivery completed'}</div>
             )}
 
-            {!isDelivered && statusIndex >= 2 ? (
+            {!isDelivered && !isFailed && statusIndex >= 2 ? (
               <button className="rider-delivery-failed-button" type="button" onClick={() => setFailureOpen(true)} disabled={savingStatus}>
                 Customer unavailable / refused
               </button>
