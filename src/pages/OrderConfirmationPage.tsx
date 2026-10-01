@@ -10,7 +10,7 @@ type OrderConfirmationPageProps = {
 
 export function OrderConfirmationPage({ orderNumber, paymentMethod, orderType, total, onReturnHome }: OrderConfirmationPageProps) {
   const paymentMessage = paymentMethod === 'online'
-    ? 'Your order is recorded as pending payment. Complete the online payment to send your order to the restaurant.'
+    ? 'Your online payment was received. Your order has been sent to the restaurant.'
     : orderType === 'dine_in'
       ? 'Please pay the cashier at the restaurant counter. Your order will enter the kitchen after the cashier confirms your payment.'
       : 'Your order is recorded as pending. Please pay in cash when your order is received or collected.';
@@ -24,7 +24,7 @@ export function OrderConfirmationPage({ orderNumber, paymentMethod, orderType, t
       <div className="order-confirmation-card">
         <p className="eyebrow">Order received</p>
         <h1>Thank you for your order.</h1>
-        <p className="order-confirmation-copy">Your order has been created and is now waiting for restaurant confirmation.</p>
+        <p className="order-confirmation-copy">{paymentMethod === 'online' ? 'Your payment has been confirmed and your order is now with the restaurant.' : 'Your order has been created and is now waiting for restaurant confirmation.'}</p>
         {orderType === 'dine_in' && (
           <div className="order-confirmation-counter">
             <strong>Show this order number to the cashier</strong>
