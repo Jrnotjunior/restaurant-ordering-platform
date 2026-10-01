@@ -181,7 +181,8 @@ function AppContent() {
   const isRestaurantDeliveryDispatchPage = route === '#restaurant/delivery-dispatch';
   const isRiderDashboardPage = route === '#rider/dashboard' || route === '#rider/delivery-preview';
   const riderDeliveryMatch = route.match(/^#rider\/delivery\/([^/]+)$/);
-  const isRiderInvitePage = searchParams.get('invite') === '1' || isInviteCallback;
+  const isRiderInvitePath = window.location.pathname.endsWith('/invite') || window.location.pathname.endsWith('/invite/');
+  const isRiderInvitePage = isRiderInvitePath || searchParams.get('invite') === '1' || isInviteCallback;
   const isRestaurantOperationsPage = isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantShippingFeePage || isRestaurantSalesPage || isRestaurantRidersPage || isRestaurantDeliveryDispatchPage;
   const trackingMatch = route.match(/^#order\/(.+)$/);
 
