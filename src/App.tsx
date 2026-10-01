@@ -29,6 +29,7 @@ import './styles/cart-notification.css';
 const restaurantRepository = new SupabaseRestaurantRepository();
 const CART_STORAGE_KEY = 'restaurant-ordering-cart';
 const PENDING_PAYMENT_ORDER_KEY = 'restaurant-ordering-pending-payment-order';
+const PENDING_PAYMENT_CHECKOUT_URL_KEY = 'restaurant-ordering-pending-payment-checkout-url';
 const CART_CLEAR_EVENT = 'restaurant-ordering-cart-clear';
 type CartItem = { product: RestaurantProduct; quantity: number };
 
@@ -217,6 +218,7 @@ function AppContent() {
       setCartItems([]);
       window.localStorage.removeItem(CART_STORAGE_KEY);
       window.localStorage.removeItem(PENDING_PAYMENT_ORDER_KEY);
+      window.localStorage.removeItem(PENDING_PAYMENT_CHECKOUT_URL_KEY);
     }
     window.addEventListener(CART_CLEAR_EVENT, handleSuccessfulOrder);
     return () => window.removeEventListener(CART_CLEAR_EVENT, handleSuccessfulOrder);
