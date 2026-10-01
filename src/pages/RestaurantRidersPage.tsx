@@ -6,7 +6,6 @@ type RiderAccount = {
   name: string;
   mobileNumber: string;
   email: string;
-  scopes: string[];
 };
 
 type RiderRow = {
@@ -14,11 +13,6 @@ type RiderRow = {
   name: string;
   mobile_number: string;
   email: string | null;
-};
-
-type ScopeRow = {
-  rider_id: string;
-  scope_name: string;
 };
 
 export function RestaurantRidersPage({ restaurantId }: { restaurantId: string }) {
@@ -36,31 +30,17 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
     setError('');
 
     try {
-      const [riderRows, scopeRows] = await Promise.all([
-        supabaseGet<RiderRow>('restaurant_riders', {
-          select: 'id,name,mobile_number,email',
-          restaurant_id: `eq.${restaurantId}`,
-          order: 'created_at.asc',
-        }),
-        supabaseGet<ScopeRow>('rider_delivery_scopes', {
-          select: 'rider_id,scope_name',
-          order: 'scope_name.asc',
-        }),
-      ]);
-
-      const scopesByRider = new Map<string, string[]>();
-      for (const scope of scopeRows) {
-        const current = scopesByRider.get(scope.rider_id) ?? [];
-        current.push(scope.scope_name);
-        scopesByRider.set(scope.rider_id, current);
-      }
+      const riderRows = await supabaseGet<RiderRow>('restaurant_riders', {
+        select: 'id,name,mobile_number,email',
+        restaurant_id: `eq.${restaurantId}`,
+        order: 'created_at.asc',
+      });
 
       setRiders(riderRows.map((rider) => ({
         id: rider.id,
         name: rider.name,
         mobileNumber: rider.mobile_number,
         email: rider.email ?? '',
-        scopes: scopesByRider.get(rider.id) ?? [],
       })));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load riders.');
@@ -73,9 +53,6 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
     void loadRiders();
   }, [restaurantId]);
 
-  function parseScopes(scopeText: string) {
-    return [...new Set(scopeText.split(',').map((scope) => scope.trim()).filter(Boolean))];
-  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -92,7 +69,6 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
     const name = String(form.get('name') || '').trim();
     const mobileNumber = String(form.get('mobileNumber') || '').trim();
     const email = String(form.get('email') || '').trim();
-    const scopes = parseScopes(String(form.get('scope') || ''));
 
     try {
       const { data, error: functionError } = await supabase.functions.invoke('create-rider', {
@@ -101,7 +77,6 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
           name,
           mobileNumber,
           email,
-          scopes,
         },
       });
 
@@ -145,8 +120,6 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
     const name = String(form.get('name') || '').trim();
     const mobileNumber = String(form.get('mobileNumber') || '').trim();
     const email = String(form.get('email') || '').trim();
-    const scopes = parseScopes(String(form.get('scope') || ''));
-
     try {
       const { error: riderError } = await supabase
         .from('restaurant_riders')
@@ -160,19 +133,6 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
 
       if (riderError) throw riderError;
 
-      const { error: deleteScopesError } = await supabase
-        .from('rider_delivery_scopes')
-        .delete()
-        .eq('rider_id', editingRider.id);
-
-      if (deleteScopesError) throw deleteScopesError;
-
-      if (scopes.length) {
-        const { error: scopeError } = await supabase
-          .from('rider_delivery_scopes')
-          .insert(scopes.map((scope_name) => ({ rider_id: editingRider.id, scope_name })));
-        if (scopeError) throw scopeError;
-      }
 
       setEditingRider(null);
       await loadRiders();
@@ -264,10 +224,6 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
               Login email
               <input name="email" type="email" placeholder="rider@example.com" required />
             </label>
-            <label>
-              Delivery scope
-              <input name="scope" type="text" placeholder="Dalandanan, Malinta, Arkong Bato" />
-            </label>
           </div>
 
           <p className="restaurant-rider-form-help">A Supabase Auth account is created automatically and an invitation email is sent to the rider so they can set their password.</p>
@@ -289,10 +245,6 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
               </div>
               <p>{rider.mobileNumber}</p>
               {rider.email ? <p>{rider.email}</p> : null}
-              <div className="restaurant-rider-scope">
-                <span>Delivery scope</span>
-                <strong>{rider.scopes.length ? rider.scopes.join(' · ') : 'Not assigned'}</strong>
-              </div>
             </div>
             <div className="restaurant-rider-actions">
               <button className="button button-secondary" type="button" onClick={() => setEditingRider(rider)} disabled={saving || deleting}>Edit</button>
@@ -332,13 +284,8 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
                 Login email
                 <input name="email" type="email" defaultValue={editingRider.email} />
               </label>
-              <label>
-                Delivery scope
-                <input name="scope" type="text" defaultValue={editingRider.scopes.join(', ')} placeholder="Dalandanan, Malinta, Arkong Bato" />
-              </label>
             </div>
 
-            <p className="restaurant-rider-form-help">Separate multiple delivery areas with commas.</p>
 
             <div className="restaurant-rider-modal-actions">
               <button className="button button-secondary" type="button" onClick={() => setEditingRider(null)} disabled={saving}>Cancel</button>
@@ -361,7 +308,7 @@ export function RestaurantRidersPage({ restaurantId }: { restaurantId: string })
               You are about to permanently remove <strong>{riderToDelete.name}</strong> from your restaurant's rider list.
             </p>
             <p className="restaurant-rider-modal-warning">
-              This action cannot be undone. The rider's delivery scope will also be removed. Existing orders will not be deleted.
+              This action cannot be undone. Existing orders will not be deleted.
             </p>
             <div className="restaurant-rider-modal-actions">
               <button className="button button-secondary" type="button" onClick={() => setRiderToDelete(null)} disabled={deleting}>
