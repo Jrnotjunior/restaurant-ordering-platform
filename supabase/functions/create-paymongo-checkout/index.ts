@@ -48,27 +48,30 @@ Deno.serve(async (request) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { data: order, error: orderError } = await adminClient
-      .from("orders")
-      .select("id,order_number,customer_name,mobile_number,payment_method,payment_status,status,delivery_fee,total")
+    const { data: pendingPayment, error: paymentError } = await adminClient
+      .from("pending_online_payments")
+      .select("id,reference_number,customer_name,mobile_number,items,subtotal,delivery_fee,total,status,checkout_session_id,checkout_url")
       .eq("id", orderId)
       .maybeSingle();
 
-    if (orderError) throw orderError;
-    if (!order) return jsonResponse({ error: "Order not found." }, 404);
-    if (order.payment_method !== "gcash") return jsonResponse({ error: "This order is not an online payment order." }, 400);
-    if (order.payment_status !== "pending") return jsonResponse({ error: "This order is no longer awaiting payment." }, 409);
+    if (paymentError) throw paymentError;
+    if (!pendingPayment) return jsonResponse({ error: "Pending payment not found." }, 404);
+    if (pendingPayment.status !== "pending") {
+      return jsonResponse({ error: "This payment is no longer awaiting payment." }, 409);
+    }
 
-    const { data: items, error: itemsError } = await adminClient
-      .from("order_items")
-      .select("product_name,quantity,unit_price,line_total")
-      .eq("order_id", orderId)
-      .order("created_at", { ascending: true });
+    if (pendingPayment.checkout_url) {
+      return jsonResponse({ checkoutUrl: pendingPayment.checkout_url }, 200);
+    }
 
-    if (itemsError) throw itemsError;
-    if (!items?.length) return jsonResponse({ error: "The order has no items." }, 400);
+    const storedItems = Array.isArray(pendingPayment.items) ? pendingPayment.items : [];
+    if (!storedItems.length) return jsonResponse({ error: "The payment has no items." }, 400);
 
-    const lineItems = items.map((item) => ({
+    const lineItems = storedItems.map((item: {
+      product_name: string;
+      unit_price: number;
+      quantity: number;
+    }) => ({
       name: item.product_name,
       description: item.product_name,
       amount: Math.round(Number(item.unit_price) * 100),
@@ -76,7 +79,7 @@ Deno.serve(async (request) => {
       quantity: Number(item.quantity),
     }));
 
-    const deliveryFee = Math.round(Number(order.delivery_fee ?? 0) * 100);
+    const deliveryFee = Math.round(Number(pendingPayment.delivery_fee ?? 0) * 100);
     if (deliveryFee > 0) {
       lineItems.push({
         name: "Delivery fee",
@@ -88,7 +91,7 @@ Deno.serve(async (request) => {
     }
 
     const lineItemTotal = lineItems.reduce((sum, item) => sum + item.amount * item.quantity, 0);
-    if (lineItemTotal !== Math.round(Number(order.total) * 100)) {
+    if (lineItemTotal !== Math.round(Number(pendingPayment.total) * 100)) {
       return jsonResponse({ error: "The payment amount could not be verified. Please try again." }, 409);
     }
 
@@ -104,16 +107,16 @@ Deno.serve(async (request) => {
           attributes: {
             line_items: lineItems,
             payment_method_types: ["card", "gcash", "qrph", "grab_pay", "paymaya", "billease", "dob"],
-            description: `Online payment for order ${order.order_number}`,
-            reference_number: order.order_number,
-            success_url: `${siteBaseUrl}#order/${encodeURIComponent(order.order_number)}`,
+            description: `Online payment for ${pendingPayment.reference_number}`,
+            reference_number: pendingPayment.reference_number,
+            success_url: `${siteBaseUrl}?payment=processing&reference=${encodeURIComponent(pendingPayment.reference_number)}#checkout`,
             cancel_url: `${siteBaseUrl}?payment=not_completed#checkout`,
             send_email_receipt: false,
             show_description: true,
             show_line_items: true,
             metadata: {
-              order_id: order.id,
-              order_number: order.order_number,
+              payment_id: pendingPayment.id,
+              reference_number: pendingPayment.reference_number,
             },
           },
         },
@@ -131,6 +134,12 @@ Deno.serve(async (request) => {
       console.error("PayMongo response did not include checkout_url", payload);
       return jsonResponse({ error: "Online payment could not be started." }, 502);
     }
+
+    await adminClient
+      .from("pending_online_payments")
+      .update({ checkout_session_id: payload?.data?.id ?? null, checkout_url: checkoutUrl })
+      .eq("id", pendingPayment.id)
+      .eq("status", "pending");
 
     return jsonResponse({ checkoutUrl }, 200);
   } catch (error) {
