@@ -10,7 +10,7 @@ type OrderConfirmationPageProps = {
 export function OrderConfirmationPage({ orderNumber, paymentMethod, total, onReturnHome }: OrderConfirmationPageProps) {
   const paymentMessage = paymentMethod === 'gcash'
     ? 'Your order is recorded as pending payment. Online payment instructions will be shown when the payment gateway is integrated.'
-    : 'Your order is recorded as pending. Please pay in cash when your order is received or collected.';
+    : 'For dine-in orders, please pay the cashier at the restaurant counter. Your order will enter the kitchen after the cashier confirms your payment.';
 
   function trackOrder() {
     window.location.hash = `#order/${encodeURIComponent(orderNumber)}`;
