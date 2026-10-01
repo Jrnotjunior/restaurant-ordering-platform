@@ -86,7 +86,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
   if (confirmedOrder) return <OrderConfirmationPage orderNumber={confirmedOrder.orderNumber} paymentMethod={confirmedOrder.paymentMethod} total={confirmedOrder.total} onReturnHome={() => { window.location.hash = ''; }} />;
 
-  const canContinue = items.length > 0 && Boolean(customerName.trim() && mobileNumber.trim()) && (!isDelivery || (thirdPartyCourierDelivery ? Boolean(restaurantPickupPoint) : cityIsSupported && deliveryBarangay.trim() && address.trim() && Boolean(selectedDeliveryZone?.isSupported) && !loadingDeliveryZones));
+  const canContinue = items.length > 0 && Boolean(customerName.trim()) && (orderType === 'dine_in' || Boolean(mobileNumber.trim())) && (!isDelivery || (thirdPartyCourierDelivery ? Boolean(restaurantPickupPoint) : cityIsSupported && deliveryBarangay.trim() && address.trim() && Boolean(selectedDeliveryZone?.isSupported) && !loadingDeliveryZones));
 
   function resetPayment() { setShowPayment(false); setPaymentMethod(''); setSubmitError(''); }
 
@@ -128,7 +128,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       const finalNotes = [notes.trim(), isDelivery && thirdPartyCourierDelivery ? thirdPartyCourierNote : ''].filter(Boolean).join('\n\n');
       const createdOrder = await createOrder({
         restaurantId: items[0].product.restaurantId,
-        customerName: customerName.trim(), mobileNumber: mobileNumber.trim(), orderType,
+        customerName: customerName.trim(), mobileNumber: orderType === 'dine_in' ? '' : mobileNumber.trim(), orderType,
         deliveryBarangay: isDelivery && !thirdPartyCourierDelivery ? deliveryBarangay.trim() : '',
         deliveryAddress: isDelivery ? (thirdPartyCourierDelivery ? restaurantPickupPoint : [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')) : address.trim(),
         notes: finalNotes, paymentMethod, isThirdPartyCourier: isDelivery && thirdPartyCourierDelivery,
@@ -151,7 +151,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
           <fieldset className="checkout-section"><legend>Customer information</legend><div className="checkout-fields">
             <label><span>Full name</span><input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} autoComplete="name" placeholder="Your name" required /></label>
-            <label><span>Mobile number</span><input type="tel" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} autoComplete="tel" placeholder="09XXXXXXXXX" required /></label>
+            {orderType !== 'dine_in' && <label><span>Mobile number</span><input type="tel" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} autoComplete="tel" placeholder="09XXXXXXXXX" required /></label>}
           </div></fieldset>
 
           {isDelivery && <fieldset className="checkout-section"><legend>{thirdPartyCourierDelivery ? 'Third-party courier delivery' : 'Delivery address'}</legend>
