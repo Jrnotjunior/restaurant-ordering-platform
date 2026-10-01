@@ -92,8 +92,18 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: "You are not authorized to delete this rider." }, 403);
     }
 
-    // Delete the application record first. Orders keep their history because
+    // Delivery assignments currently reference riders with ON DELETE RESTRICT.
+    // Remove those assignment records first so a rider can be deleted without
+    // deleting the associated order history. Orders keep their history because
     // orders.rider_id uses ON DELETE SET NULL.
+    const { error: deleteAssignmentsError } = await adminClient
+      .from("delivery_assignments")
+      .delete()
+      .eq("rider_id", rider.id)
+      .eq("restaurant_id", restaurantId);
+
+    if (deleteAssignmentsError) throw deleteAssignmentsError;
+
     const { error: deleteRiderError } = await adminClient
       .from("restaurant_riders")
       .delete()
