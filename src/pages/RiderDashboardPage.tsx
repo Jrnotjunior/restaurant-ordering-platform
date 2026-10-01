@@ -200,6 +200,8 @@ export function RiderDashboardPage() {
   }
 
   const activeCount = deliveries.length;
+  const hasDeliveringOrder = deliveries.some((delivery) => delivery.status === 'delivering');
+  const riderAvailability = hasDeliveringOrder ? 'Out for delivery' : 'Available';
 
   return (
     <section className="rider-dashboard-page">
@@ -207,6 +209,10 @@ export function RiderDashboardPage() {
         <div>
           <p className="eyebrow">Rider dashboard</p>
           <h1>Hello, {riderName}.</h1>
+          <div className="rider-dashboard-availability" aria-label={`Rider availability: ${riderAvailability}`}>
+            <span className={`rider-dashboard-availability-dot ${hasDeliveringOrder ? 'is-delivering' : 'is-available'}`} aria-hidden="true" />
+            <strong>{riderAvailability}</strong>
+          </div>
           <p>{activeCount === 0 ? 'You have no active deliveries right now.' : `You have ${activeCount} active ${activeCount === 1 ? 'delivery' : 'deliveries'}.`}</p>
         </div>
         <div className="rider-dashboard-account-menu">
