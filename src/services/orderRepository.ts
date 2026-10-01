@@ -28,7 +28,7 @@ export type CreatedOrder = {
 };
 
 export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'completed' | 'cancelled';
-export type DeliveryStatus = 'assigned' | 'out_for_delivery' | 'delivered';
+export type DeliveryStatus = 'assigned' | 'delivering' | 'out_for_delivery' | 'delivered';
 
 export type TrackedOrder = {
   orderId: string;
