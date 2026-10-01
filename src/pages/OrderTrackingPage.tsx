@@ -9,7 +9,7 @@ type OrderTrackingPageProps = {
 
 type CustomerStatus = OrderStatus | 'out_for_delivery';
 
-const steps: Array<{ key: CustomerStatus; label: string; description: string }> = [
+const deliverySteps: Array<{ key: CustomerStatus; label: string; description: string }> = [
   { key: 'pending', label: 'Order Received', description: 'Your order has been received by the restaurant.' },
   { key: 'confirmed', label: 'Confirmed', description: 'The restaurant has confirmed your order.' },
   { key: 'preparing', label: 'Preparing', description: 'The kitchen is preparing your food.' },
@@ -18,7 +18,16 @@ const steps: Array<{ key: CustomerStatus; label: string; description: string }> 
   { key: 'completed', label: 'Completed', description: 'Your order has been delivered.' },
 ];
 
-const statusOrder: CustomerStatus[] = ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'completed'];
+const pickupSteps: Array<{ key: CustomerStatus; label: string; description: string }> = [
+  { key: 'pending', label: 'Order Received', description: 'Your order has been received by the restaurant.' },
+  { key: 'confirmed', label: 'Confirmed', description: 'The restaurant has confirmed your order.' },
+  { key: 'preparing', label: 'Preparing', description: 'The kitchen is preparing your food.' },
+  { key: 'ready', label: 'Ready for pickup', description: 'Your order is ready to be picked up.' },
+  { key: 'completed', label: 'Picked up', description: 'Your order has been picked up.' },
+];
+
+const deliveryStatusOrder: CustomerStatus[] = ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'completed'];
+const pickupStatusOrder: CustomerStatus[] = ['pending', 'confirmed', 'preparing', 'ready', 'completed'];
 
 export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
   const [order, setOrder] = useState<Awaited<ReturnType<typeof getOrderStatus>> | null>(null);
@@ -102,6 +111,9 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
       : order.status === 'confirmed'
         ? 'preparing'
         : order.status;
+  const isPickup = order.orderType === 'pickup';
+  const steps = isPickup ? pickupSteps : deliverySteps;
+  const statusOrder = isPickup ? pickupStatusOrder : deliveryStatusOrder;
   const currentIndex = statusOrder.indexOf(customerStatus);
   const riderAssigned = order.orderType === 'delivery' && Boolean(order.riderName && order.riderPhone);
   const deliveryStatusLabel = order.deliveryStatus === 'out_for_delivery'
