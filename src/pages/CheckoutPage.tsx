@@ -12,6 +12,7 @@ type OrderType = 'delivery' | 'pickup' | 'dine_in';
 type PaymentMethod = 'cash' | 'online';
 type CheckoutPageProps = { items: CartItem[] };
 type ConfirmedOrder = { orderNumber: string; paymentMethod: PaymentMethod; orderType: OrderType; total: number };
+const PENDING_PAYMENT_CHECKOUT_URL_KEY = 'restaurant-ordering-pending-payment-checkout-url';
 
 const orderTypes: Array<{ value: OrderType; label: string; description: string }> = [
   { value: 'delivery', label: 'Delivery', description: 'Have the restaurant deliver your order.' },
@@ -54,6 +55,11 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [confirmedOrder, setConfirmedOrder] = useState<ConfirmedOrder | null>(null);
+  const [paymentNotCompleted, setPaymentNotCompleted] = useState(false);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('payment') === 'not_completed') setPaymentNotCompleted(true);
+  }, []);
 
   const restaurantId = items[0]?.product.restaurantId ?? '';
   const restaurantPickupPoint = restaurant.locationText?.trim() ?? '';
@@ -154,9 +160,17 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     setPaymentMethod('online');
 
     try {
+      const savedCheckoutUrl = paymentNotCompleted ? window.localStorage.getItem(PENDING_PAYMENT_CHECKOUT_URL_KEY) : null;
+      if (savedCheckoutUrl) {
+        setPaymentNotCompleted(false);
+        window.history.replaceState({}, '', window.location.pathname + window.location.hash);
+        window.location.assign(savedCheckoutUrl);
+        return;
+      }
       const createdOrder = await createPendingOrder('online');
       window.localStorage.setItem(PENDING_PAYMENT_ORDER_KEY, createdOrder.orderNumber);
       const checkoutUrl = await createPayMongoCheckout(createdOrder.orderId);
+      window.localStorage.setItem(PENDING_PAYMENT_CHECKOUT_URL_KEY, checkoutUrl);
       window.location.assign(checkoutUrl);
     } catch (error) {
       setPaymentMethod('');
@@ -193,6 +207,11 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   return (
     <section className="checkout-page">
       <div className="menu-intro"><p className="eyebrow">Checkout</p><h1>How would you like your order?</h1><p>Choose how you will receive your food, then provide the details we need.</p></div>
+      {paymentNotCompleted &&       <div className="checkout-payment-notice" role="status">
+        <strong>Online payment wasn't completed.</strong>
+        <span>You can try again whenever you're ready.</span>
+        <button type="button" className="button button-primary" onClick={() => { setPaymentNotCompleted(false); setPaymentMethod('online'); setShowPaymentModal(true); }}>Try Payment Again</button>
+      </div>
       <div className="checkout-layout">
         <form className="checkout-form" onSubmit={(event) => event.preventDefault()}>
           <fieldset className="checkout-section"><legend>Order type</legend><div className="order-type-grid">
