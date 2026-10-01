@@ -565,7 +565,7 @@
 
 
 /* Compact order type choices */
-.order-type-card {
+.checkout-section .order-type-card {
   min-height: 3.5rem;
   height: 3.5rem;
   box-sizing: border-box;
@@ -577,21 +577,29 @@
   padding: 0.7rem 0.9rem;
 }
 
-.order-type-card input {
+.checkout-section .order-type-card input[type="radio"] {
   order: 2;
-  flex: 0 0 auto;
-  width: 2.35rem;
-  height: 2.35rem;
+  flex: 0 0 20px;
+  width: 20px;
+  min-width: 20px;
+  max-width: 20px;
+  height: 20px;
+  min-height: 20px;
+  max-height: 20px;
   margin: 0;
+  padding: 0;
+  accent-color: var(--color-primary);
 }
 
-.order-type-content {
+.checkout-section .order-type-content {
   order: 1;
   display: flex;
   align-items: center;
   min-width: 0;
 }
 
-.order-type-content strong {
+.checkout-section .order-type-content strong {
+  line-height: 1.2;
+}
   line-height: 1.2;
 }
