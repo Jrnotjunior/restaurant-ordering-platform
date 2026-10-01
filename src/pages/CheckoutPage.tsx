@@ -10,7 +10,7 @@ type CartItem = { product: RestaurantProduct; quantity: number };
 type OrderType = 'delivery' | 'pickup' | 'dine_in';
 type PaymentMethod = 'cash' | 'gcash';
 type CheckoutPageProps = { items: CartItem[] };
-type ConfirmedOrder = { orderNumber: string; paymentMethod: PaymentMethod; total: number };
+type ConfirmedOrder = { orderNumber: string; paymentMethod: PaymentMethod; orderType: OrderType; total: number };
 
 const orderTypes: Array<{ value: OrderType; label: string; description: string }> = [
   { value: 'delivery', label: 'Delivery', description: 'Have the restaurant deliver your order.' },
@@ -84,7 +84,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   }, [cityIsSupported, deliveryZones, deliveryBarangay, selectedDeliveryZone, thirdPartyCourierDelivery]);
   const deliveryFee = isDelivery && !thirdPartyCourierDelivery ? Number(selectedDeliveryZone?.shippingFee ?? 0) : 0;
 
-  if (confirmedOrder) return <OrderConfirmationPage orderNumber={confirmedOrder.orderNumber} paymentMethod={confirmedOrder.paymentMethod} total={confirmedOrder.total} onReturnHome={() => { window.location.hash = ''; }} />;
+  if (confirmedOrder) return <OrderConfirmationPage orderNumber={confirmedOrder.orderNumber} paymentMethod={confirmedOrder.paymentMethod} orderType={confirmedOrder.orderType} total={confirmedOrder.total} onReturnHome={() => { window.location.hash = ''; }} />;
 
   const canContinue = items.length > 0 && Boolean(customerName.trim()) && (orderType === 'dine_in' || Boolean(mobileNumber.trim())) && (!isDelivery || (thirdPartyCourierDelivery ? Boolean(restaurantPickupPoint) : cityIsSupported && deliveryBarangay.trim() && address.trim() && Boolean(selectedDeliveryZone?.isSupported) && !loadingDeliveryZones));
 
@@ -134,7 +134,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         notes: finalNotes, paymentMethod, isThirdPartyCourier: isDelivery && thirdPartyCourierDelivery,
         items: items.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
       });
-      setConfirmedOrder({ orderNumber: createdOrder.orderNumber, paymentMethod, total: createdOrder.total });
+      setConfirmedOrder({ orderNumber: createdOrder.orderNumber, paymentMethod, orderType, total: createdOrder.total });
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'We could not create your order. Please try again.');
     } finally { setIsSubmitting(false); }

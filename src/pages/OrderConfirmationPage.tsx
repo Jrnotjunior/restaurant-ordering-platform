@@ -3,14 +3,17 @@ import '../styles/order-confirmation.css';
 type OrderConfirmationPageProps = {
   orderNumber: string;
   paymentMethod: 'cash' | 'gcash';
+  orderType: 'delivery' | 'pickup' | 'dine_in';
   total: number;
   onReturnHome: () => void;
 };
 
-export function OrderConfirmationPage({ orderNumber, paymentMethod, total, onReturnHome }: OrderConfirmationPageProps) {
+export function OrderConfirmationPage({ orderNumber, paymentMethod, orderType, total, onReturnHome }: OrderConfirmationPageProps) {
   const paymentMessage = paymentMethod === 'gcash'
     ? 'Your order is recorded as pending payment. Online payment instructions will be shown when the payment gateway is integrated.'
-    : 'For dine-in orders, please pay the cashier at the restaurant counter. Your order will enter the kitchen after the cashier confirms your payment.';
+    : orderType === 'dine_in'
+      ? 'Please pay the cashier at the restaurant counter. Your order will enter the kitchen after the cashier confirms your payment.'
+      : 'Your order is recorded as pending. Please pay in cash when your order is received or collected.';
 
   function trackOrder() {
     window.location.hash = `#order/${encodeURIComponent(orderNumber)}`;
