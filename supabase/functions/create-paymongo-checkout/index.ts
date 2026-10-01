@@ -107,7 +107,7 @@ Deno.serve(async (request) => {
             description: `Online payment for order ${order.order_number}`,
             reference_number: order.order_number,
             success_url: `${siteBaseUrl}#order/${encodeURIComponent(order.order_number)}`,
-            cancel_url: `${siteBaseUrl}#order/${encodeURIComponent(order.order_number)}`,
+            cancel_url: `${siteBaseUrl}?payment=not_completed#checkout`,
             send_email_receipt: false,
             show_description: true,
             show_line_items: true,
