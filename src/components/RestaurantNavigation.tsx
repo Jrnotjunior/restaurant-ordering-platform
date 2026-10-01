@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
+import { supabase } from '../services/supabaseClient';
 
 type NavigationItem = {
   label: string;
@@ -57,6 +58,49 @@ function getCurrentRoute() {
 
 export function RestaurantNavigation() {
   const [currentRoute, setCurrentRoute] = useState(getCurrentRoute);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [email, setEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [logoutSaving, setLogoutSaving] = useState(false);
+
+  useEffect(() => {
+    if (!supabase) return;
+    void supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? ''));
+  }, []);
+
+  function openPasswordChange() {
+    setAccountOpen(false);
+    setPasswordError('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setPasswordOpen(true);
+  }
+
+  async function handleChangePassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPasswordError('');
+    if (!supabase) { setPasswordError('Supabase is not configured.'); return; }
+    if (newPassword.length < 8) { setPasswordError('Password must be at least 8 characters.'); return; }
+    if (newPassword !== confirmPassword) { setPasswordError('Passwords do not match.'); return; }
+    setPasswordSaving(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setPasswordSaving(false);
+    if (error) { setPasswordError(error.message); return; }
+    setPasswordOpen(false);
+  }
+
+  async function handleLogout() {
+    if (!supabase) return;
+    setLogoutSaving(true);
+    const { error } = await supabase.auth.signOut();
+    setLogoutSaving(false);
+    if (error) { setPasswordError(error.message); return; }
+    window.location.href = `${window.location.origin}${import.meta.env.BASE_URL}`;
+  }
 
   useEffect(() => {
     const handleHashChange = () => setCurrentRoute(getCurrentRoute());
@@ -65,21 +109,59 @@ export function RestaurantNavigation() {
   }, []);
 
   return (
-    <nav className="restaurant-navigation" aria-label="Restaurant operations navigation">
-      {navigationItems.map((item) => {
-        const active = currentRoute === item.href;
-        return (
-          <a
-            key={item.href}
-            className={`restaurant-navigation-item${active ? ' is-active' : ''}`}
-            href={item.href}
-            aria-current={active ? 'page' : undefined}
-          >
-            <span className="restaurant-navigation-icon"><NavigationIcon type={item.icon} /></span>
-            <span>{item.label}</span>
-          </a>
-        );
-      })}
-    </nav>
+    <>
+      <div className="restaurant-navigation-row">
+        <nav className="restaurant-navigation" aria-label="Restaurant operations navigation">
+          {navigationItems.map((item) => {
+            const active = currentRoute === item.href;
+            return (
+              <a
+                key={item.href}
+                className={`restaurant-navigation-item${active ? ' is-active' : ''}`}
+                href={item.href}
+                aria-current={active ? 'page' : undefined}
+              >
+                <span className="restaurant-navigation-icon"><NavigationIcon type={item.icon} /></span>
+                <span>{item.label}</span>
+              </a>
+            );
+          })}
+        </nav>
+
+        <div className="restaurant-account-menu">
+          <button className="restaurant-account-button" type="button" aria-label="Open account menu" aria-expanded={accountOpen} onClick={() => setAccountOpen((open) => !open)}>
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="8" r="3.5" />
+              <path d="M5 20c.8-3.4 3.2-5.2 7-5.2s6.2 1.8 7 5.2" />
+            </svg>
+          </button>
+          {accountOpen ? (
+            <div className="restaurant-account-dropdown">
+              <div className="restaurant-account-email">{email || 'Restaurant account'}</div>
+              <button type="button" onClick={openPasswordChange}>Change password</button>
+              <button type="button" onClick={() => void handleLogout()} disabled={logoutSaving}>{logoutSaving ? 'Logging out…' : 'Log out'}</button>
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      {passwordOpen ? (
+        <div className="restaurant-password-overlay" role="presentation" onMouseDown={() => setPasswordOpen(false)}>
+          <section className="restaurant-password-modal" role="dialog" aria-modal="true" aria-labelledby="restaurant-password-title" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="restaurant-password-modal-header">
+              <div><p className="eyebrow">Account</p><h2 id="restaurant-password-title">Change password</h2></div>
+              <button className="restaurant-password-close" type="button" aria-label="Close" onClick={() => setPasswordOpen(false)}>×</button>
+            </div>
+            <p className="restaurant-password-helper">Choose a new password with at least 8 characters.</p>
+            <form onSubmit={handleChangePassword}>
+              <label className="restaurant-password-field"><span>New password</span><input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={8} autoComplete="new-password" required /></label>
+              <label className="restaurant-password-field"><span>Confirm new password</span><input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={8} autoComplete="new-password" required /></label>
+              {passwordError ? <p className="restaurant-password-error" role="alert">{passwordError}</p> : null}
+              <div className="restaurant-password-actions"><button className="button" type="button" onClick={() => setPasswordOpen(false)}>Cancel</button><button className="button button-primary" type="submit" disabled={passwordSaving}>{passwordSaving ? 'Saving…' : 'Change password'}</button></div>
+            </form>
+          </section>
+        </div>
+      ) : null}
+    </>
   );
 }
