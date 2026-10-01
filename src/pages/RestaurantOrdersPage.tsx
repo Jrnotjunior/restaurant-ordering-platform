@@ -28,10 +28,10 @@ const nextStatus: Partial<Record<RestaurantOrderStatus, RestaurantOrderStatus>> 
 
 function paymentLabel(order: RestaurantOrder) {
   if (order.paymentMethod === 'gcash') {
-    if (order.paymentStatus === 'paid') return 'GCash • Paid';
-    if (order.paymentStatus === 'failed') return 'GCash • Failed';
-    if (order.paymentStatus === 'refunded') return 'GCash • Refunded';
-    return 'GCash • Awaiting payment';
+    if (order.paymentStatus === 'paid') return 'Online Payment • Paid';
+    if (order.paymentStatus === 'failed') return 'Online Payment • Failed';
+    if (order.paymentStatus === 'refunded') return 'Online Payment • Refunded';
+    return 'Online Payment • Awaiting payment';
   }
   if (order.paymentStatus === 'paid') return 'Cash • Paid';
   if (order.paymentStatus === 'failed') return 'Cash • Failed';
