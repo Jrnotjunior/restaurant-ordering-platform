@@ -244,7 +244,7 @@ export function RiderDashboardPage() {
               Active <span>{activeCount}</span>
             </button>
             <button className={activeTab === 'history' ? 'is-active' : ''} type="button" role="tab" aria-selected={activeTab === 'history'} onClick={() => setActiveTab('history')}>
-              Order history <span>{history.length}</span>
+              Delivery history <span>{history.length}</span>
             </button>
           </div>
 
@@ -276,13 +276,13 @@ export function RiderDashboardPage() {
           ) : (
             <>
               <div className="rider-dashboard-section-heading">
-                <div><p className="rider-delivery-label">Completed deliveries</p><h2>Your order history</h2></div>
+                <div><p className="rider-delivery-label">Delivery history</p><h2>Your delivery history</h2></div>
               </div>
 
               {loading ? (
                 <div className="rider-dashboard-empty">Loading order history…</div>
               ) : history.length === 0 ? (
-                <div className="rider-dashboard-empty"><strong>No completed deliveries yet</strong><span>Orders you complete will appear here.</span></div>
+                <div className="rider-dashboard-empty"><strong>No delivery history yet</strong><span>Completed or failed deliveries will appear here.</span></div>
               ) : (
                 <div className="rider-dashboard-list">
                   {history.map((order) => (
