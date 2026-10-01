@@ -124,11 +124,15 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
       const activeStatuses = new Set<AssignmentRow['status']>(['assigned', 'delivering']);
       const startOfToday = todayStartIso();
       const activeByRider = new Map<string, number>();
+      const deliveringByRider = new Map<string, number>();
       const deliveredTodayByRider = new Map<string, number>();
 
       for (const assignment of assignments) {
         if (activeStatuses.has(assignment.status)) {
           activeByRider.set(assignment.rider_id, (activeByRider.get(assignment.rider_id) ?? 0) + 1);
+        }
+        if (assignment.status === 'delivering') {
+          deliveringByRider.set(assignment.rider_id, (deliveringByRider.get(assignment.rider_id) ?? 0) + 1);
         }
         if (assignment.status === 'delivered' && assignment.delivered_at && assignment.delivered_at >= startOfToday) {
           deliveredTodayByRider.set(assignment.rider_id, (deliveredTodayByRider.get(assignment.rider_id) ?? 0) + 1);
@@ -147,11 +151,12 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
 
       setRiders(((riderResult.data ?? []) as RiderRow[]).map((rider) => {
         const activeDeliveries = activeByRider.get(rider.id) ?? 0;
+        const activeDelivering = deliveringByRider.get(rider.id) ?? 0;
         return {
           id: rider.id,
           name: rider.name,
           mobileNumber: rider.mobile_number,
-          status: activeDeliveries > 0 ? 'delivering' : 'available',
+          status: activeDelivering > 0 ? 'delivering' : 'available',
           activeDeliveries,
           deliveredToday: deliveredTodayByRider.get(rider.id) ?? 0,
           scope: scopesByRider.get(rider.id) ?? [],
