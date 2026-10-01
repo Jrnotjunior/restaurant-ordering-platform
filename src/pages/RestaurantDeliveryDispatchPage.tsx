@@ -6,6 +6,7 @@ type ReadyOrder = {
   orderNumber: string;
   customerName: string;
   address: string;
+  barangay: string;
   total: number;
   readyAt: string;
 };
