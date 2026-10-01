@@ -34,7 +34,9 @@ const deliveryStatuses = [
 ];
 
 function statusIndexFor(status: DeliveryStatus) {
-  return status === 'delivering' ? 1 : status === 'arrived' ? 2 : status === 'delivered' ? 3 : 0;
+  // A failed delivery can only be reported after the rider reaches the customer,
+  // so keep Assigned → Out for delivery → Arrived at customer completed.
+  return status === 'delivering' ? 1 : status === 'arrived' || status === 'failed' ? 2 : status === 'delivered' ? 3 : 0;
 }
 
 export function RiderDeliveryPage({ orderId }: { orderId: string }) {
