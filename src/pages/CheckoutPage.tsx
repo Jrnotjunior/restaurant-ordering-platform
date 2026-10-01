@@ -207,11 +207,13 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   return (
     <section className="checkout-page">
       <div className="menu-intro"><p className="eyebrow">Checkout</p><h1>How would you like your order?</h1><p>Choose how you will receive your food, then provide the details we need.</p></div>
-      {paymentNotCompleted &&       <div className="checkout-payment-notice" role="status">
-        <strong>Online payment wasn't completed.</strong>
-        <span>You can try again whenever you're ready.</span>
-        <button type="button" className="button button-primary" onClick={() => { setPaymentNotCompleted(false); setPaymentMethod('online'); setShowPaymentModal(true); }}>Try Payment Again</button>
-      </div>
+      {paymentNotCompleted && (
+        <div className="checkout-payment-notice" role="status">
+          <strong>Online payment wasn't completed.</strong>
+          <span>You can try again whenever you're ready.</span>
+          <button type="button" className="button button-primary" onClick={() => { setPaymentNotCompleted(false); setPaymentMethod('online'); setShowPaymentModal(true); }}>Try Payment Again</button>
+        </div>
+      )}
       <div className="checkout-layout">
         <form className="checkout-form" onSubmit={(event) => event.preventDefault()}>
           <fieldset className="checkout-section"><legend>Order type</legend><div className="order-type-grid">
