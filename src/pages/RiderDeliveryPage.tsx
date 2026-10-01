@@ -21,6 +21,8 @@ type Delivery = {
   total: number;
   items: DeliveryItem[];
   status: DeliveryStatus;
+  paymentMethod: 'cash' | 'gcash';
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
 };
 
 const deliveryStatuses = [
@@ -79,7 +81,7 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
 
       const { data: order, error: orderError } = await supabase
         .from('orders')
-        .select('id,order_number,customer_name,mobile_number,delivery_address,delivery_barangay,total,delivery_status')
+        .select('id,order_number,customer_name,mobile_number,delivery_address,delivery_barangay,total,delivery_status,payment_method,payment_status')
         .eq('id', orderId)
         .eq('rider_id', rider.id)
         .maybeSingle();
@@ -107,6 +109,8 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
           total: Number(item.line_total),
         })),
         status: (order.delivery_status ?? 'assigned') as DeliveryStatus,
+        paymentMethod: (order.payment_method ?? 'cash') as 'cash' | 'gcash',
+        paymentStatus: (order.payment_status ?? 'pending') as 'pending' | 'paid' | 'failed' | 'refunded',
       };
 
       setDelivery(nextDelivery);
@@ -177,7 +181,7 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
       if (assignmentError) throw assignmentError;
 
       const orderUpdate = nextStatus === 'delivered'
-        ? { delivery_status: 'delivered', status: 'completed' }
+        ? { delivery_status: 'delivered', status: 'completed', ...(delivery.paymentMethod === 'cash' ? { payment_status: 'paid' } : {}) }
         : { delivery_status: 'delivering' };
 
       const { error: orderError } = await supabase
@@ -364,12 +368,12 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
 
             {!isDelivered ? (
               <div className="rider-delivery-slider" data-status={statusIndex === 0 ? 'start' : 'delivered'}>
-                <input className="rider-delivery-slider-input" type="range" min="0" max="100" value={slideValue} aria-label={statusIndex === 0 ? 'Slide to start delivery' : 'Slide to mark delivered'} onChange={(event) => handleDeliverySlide(Number(event.target.value))} disabled={savingStatus} />
-                <span className="rider-delivery-slider-label" aria-hidden="true">{savingStatus ? 'Updating…' : statusIndex === 0 ? 'Slide to start delivery' : 'Slide to mark delivered'}</span>
+                <input className="rider-delivery-slider-input" type="range" min="0" max="100" value={slideValue} aria-label={statusIndex === 0 ? 'Slide to start delivery' : delivery.paymentMethod === 'cash' ? 'Slide to collect cash' : 'Slide to mark delivered'} onChange={(event) => handleDeliverySlide(Number(event.target.value))} disabled={savingStatus} />
+                <span className="rider-delivery-slider-label" aria-hidden="true">{savingStatus ? 'Updating…' : statusIndex === 0 ? 'Slide to start delivery' : delivery.paymentMethod === 'cash' ? 'Slide to collect cash' : 'Slide to mark delivered'}</span>
                 <span className="rider-delivery-slider-arrow" aria-hidden="true">›</span>
               </div>
             ) : (
-              <div className="rider-delivery-complete">Delivery completed</div>
+              <div className="rider-delivery-complete">{delivery.paymentMethod === 'cash' ? 'Cash collected · Delivery completed' : 'Payment received online · Delivery completed'}</div>
             )}
           </section>
         </aside>
