@@ -129,7 +129,7 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
   );
   const boardOrders = filter === 'active' ? activeOrders : orders;
   const normalizedSearch = searchQuery.trim().toLowerCase();
-  const searchedOrders = normalizedSearch
+  const searchedOrders = openedColumn?.key === 'new' && normalizedSearch
     ? boardOrders.filter((order) =>
         order.orderNumber.toLowerCase().includes(normalizedSearch) ||
         order.customerName.toLowerCase().includes(normalizedSearch),
@@ -318,19 +318,6 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
                   </div>
                   <span>{columnOrders.length}</span>
                 </button>
-                {column.key === 'new' && (
-                  <div className="restaurant-orders-search" style={{ padding: '0 14px 14px' }}>
-                    <input
-                      type="search"
-                      value={searchQuery}
-                      onChange={(event) => setSearchQuery(event.target.value)}
-                      placeholder="Search by order number or customer name"
-                      aria-label="Search new orders by order number or customer name"
-                      onClick={(event) => event.stopPropagation()}
-                      style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: 10, fontSize: 14, outline: 'none' }}
-                    />
-                  </div>
-                )}
               </section>
             );
           })}
@@ -347,7 +334,21 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
           <div className="restaurant-order-list-modal" role="dialog" aria-modal="true" aria-label={`${openedColumn.title} orders`}>
             <button className="restaurant-order-list-modal-close" type="button" onClick={closeOrderList}>×</button>
             <h2 className="restaurant-order-list-modal-title">{openedColumn.title}</h2>
-            <p className="restaurant-order-list-modal-subtitle">{openedColumn.description}{normalizedSearch ? ` · ${openedColumnOrders.length} matching order${openedColumnOrders.length === 1 ? '' : 's'}` : ''}</p>
+            <p className="restaurant-order-list-modal-subtitle">{openedColumn.description}{normalizedSearch && openedColumn.key === 'new' ? ` · ${openedColumnOrders.length} matching order${openedColumnOrders.length === 1 ? '' : 's'}` : ''}</p>
+
+            {openedColumn.key === 'new' && (
+              <div style={{ margin: '18px 0 16px' }}>
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search by order number or customer name"
+                  aria-label="Search new orders by order number or customer name"
+                  autoFocus
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '12px 14px', border: '1px solid #cbd5e1', borderRadius: 10, fontSize: 14, outline: 'none' }}
+                />
+              </div>
+            )}
 
             {openedColumnOrders.length === 0 ? (
               <div className="restaurant-order-list-empty">No orders in this stage.</div>
@@ -361,6 +362,7 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
                     onClick={() => setSelectedOrder(order)}
                   >
                     <span className="restaurant-order-list-number">{order.orderNumber}</span>
+                    <span style={{ display: 'block', marginTop: 3, fontSize: 13, color: '#64748b' }}>{order.customerName}</span>
                     <span className="restaurant-order-list-meta">
                       <span className="restaurant-order-list-status">{statusLabels[order.status]}</span>
                       <span className="restaurant-order-list-total">₱{order.total.toFixed(2)}</span>
