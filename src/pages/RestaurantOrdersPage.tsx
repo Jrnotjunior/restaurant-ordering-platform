@@ -358,7 +358,13 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
                 </div>
               ))}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #e2e8f0', marginTop: 12, paddingTop: 14 }}>
+            {selectedOrder.orderType === 'delivery' && selectedOrder.shippingFee > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, paddingTop: 12, borderTop: '1px solid #e2e8f0', color: '#64748b' }}>
+                <span>Shipping fee</span>
+                <span>₱{selectedOrder.shippingFee.toFixed(2)}</span>
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: selectedOrder.orderType === 'delivery' && selectedOrder.shippingFee > 0 ? '0' : '1px solid #e2e8f0', marginTop: selectedOrder.orderType === 'delivery' && selectedOrder.shippingFee > 0 ? 0 : 12, paddingTop: selectedOrder.orderType === 'delivery' && selectedOrder.shippingFee > 0 ? 8 : 14 }}>
               <strong>Total</strong>
               <strong className="restaurant-order-modal-total">₱{selectedOrder.total.toFixed(2)}</strong>
             </div>
