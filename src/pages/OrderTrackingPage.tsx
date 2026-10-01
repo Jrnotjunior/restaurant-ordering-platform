@@ -7,6 +7,8 @@ type OrderTrackingPageProps = {
   orderNumber: string;
 };
 
+const ACTIVE_ORDER_KEY = 'restaurant-ordering-active-order';
+
 type CustomerStatus = OrderStatus | 'out_for_delivery';
 
 const deliverySteps: Array<{ key: CustomerStatus; label: string; description: string }> = [
@@ -42,6 +44,12 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
         const result = await getOrderStatus(orderNumber);
         if (!cancelled) {
           setOrder(result);
+          if (result.status === 'completed' || result.status === 'cancelled' || result.deliveryStatus === 'delivered' || result.deliveryStatus === 'failed') {
+            if (window.localStorage.getItem(ACTIVE_ORDER_KEY) === result.orderNumber) {
+              window.localStorage.removeItem(ACTIVE_ORDER_KEY);
+              window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
+            }
+          }
           setError('');
 
           // Only clear a persisted cart after the online payment for that exact order
