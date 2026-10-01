@@ -5,10 +5,20 @@ function appBaseUrl() {
   return `${window.location.origin}${import.meta.env.BASE_URL}`;
 }
 
+function getCallbackParams() {
+  const search = new URLSearchParams(window.location.search);
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+
+  return {
+    tokenHash: search.get('token_hash') ?? hash.get('token_hash') ?? '',
+    tokenType: search.get('type') ?? hash.get('type') ?? '',
+    errorCode: search.get('error_code') ?? hash.get('error_code') ?? '',
+    errorDescription: search.get('error_description') ?? hash.get('error_description') ?? '',
+  };
+}
+
 function getAuthCallbackError() {
-  const params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-  const errorCode = params.get('error_code');
-  const errorDescription = params.get('error_description');
+  const { errorCode, errorDescription } = getCallbackParams();
 
   if (!errorCode && !errorDescription) return '';
   if (errorCode === 'otp_expired') {
@@ -51,13 +61,8 @@ export function RiderInvitePage() {
         return;
       }
 
-      const searchParams = new URLSearchParams(window.location.search);
-      const tokenHash = searchParams.get('token_hash');
-      const tokenType = searchParams.get('type');
+      const { tokenHash, tokenType } = getCallbackParams();
 
-      // The invite email uses a token_hash callback so the email provider can
-      // safely open the link without consuming the one-time invite token.
-      // We only verify the token after the rider explicitly clicks Accept.
       if (tokenHash && tokenType === 'invite') {
         if (mounted) {
           setInviteTokenHash(tokenHash);
