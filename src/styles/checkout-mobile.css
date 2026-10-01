@@ -567,14 +567,29 @@
 /* Compact order type choices */
 .order-type-card {
   min-height: 3.5rem;
-  padding: 0.75rem 0.9rem;
-  grid-template-columns: minmax(0, 1fr) auto;
+  height: 3.5rem;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
   align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0.9rem;
+}
+
+.order-type-card input {
+  order: 2;
+  flex: 0 0 auto;
+  width: 2.35rem;
+  height: 2.35rem;
+  margin: 0;
 }
 
 .order-type-content {
+  order: 1;
   display: flex;
   align-items: center;
+  min-width: 0;
 }
 
 .order-type-content strong {
