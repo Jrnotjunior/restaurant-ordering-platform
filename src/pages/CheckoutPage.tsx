@@ -91,7 +91,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
   if (confirmedOrder) return <OrderConfirmationPage orderNumber={confirmedOrder.orderNumber} paymentMethod={confirmedOrder.paymentMethod} orderType={confirmedOrder.orderType} total={confirmedOrder.total} onReturnHome={() => { window.location.hash = ''; }} />;
 
-  const canContinue = items.length > 0 && Boolean(customerName.trim()) && (orderType === 'dine_in' || Boolean(mobileNumber.trim())) && (!isDelivery || (thirdPartyCourierDelivery ? Boolean(restaurantPickupPoint) : cityIsSupported && deliveryBarangay.trim() && address.trim() && Boolean(selectedDeliveryZone?.isSupported) && !loadingDeliveryZones));
+  const canContinue = items.length > 0 && Boolean(customerName.trim()) && (orderType === 'dine_in' || /^09\d{9}$/.test(mobileNumber)) && (!isDelivery || (thirdPartyCourierDelivery ? Boolean(restaurantPickupPoint) : cityIsSupported && deliveryBarangay.trim() && address.trim() && Boolean(selectedDeliveryZone?.isSupported) && !loadingDeliveryZones));
 
   function resetPayment() { setShowPayment(false); setShowPaymentModal(false); setPaymentMethod(''); setSubmitError(''); }
 
@@ -200,8 +200,8 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
           </div></fieldset>
 
           <fieldset className="checkout-section"><legend>Customer information</legend><div className="checkout-fields">
-            <label><span>Full name</span><input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} autoComplete="name" placeholder="Your name" required /></label>
-            {orderType !== 'dine_in' && <label><span>Mobile number</span><input type="tel" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} autoComplete="tel" placeholder="09XXXXXXXXX" required /></label>}
+            <label><span>Full name</span><input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} autoComplete="name" required /></label>
+            {orderType !== 'dine_in' && <label><span>Mobile number</span><input type="tel" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, '').slice(0, 11))} autoComplete="tel" inputMode="numeric" maxLength={11} pattern="09[0-9]{9}" title="Enter an 11-digit Philippine mobile number starting with 09." required /></label>}
           </div></fieldset>
 
           {isDelivery && <fieldset className="checkout-section"><legend>{thirdPartyCourierDelivery ? 'Third-party courier delivery' : 'Delivery address'}</legend>
