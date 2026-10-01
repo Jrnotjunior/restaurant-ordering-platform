@@ -12,7 +12,8 @@ returns table (
   total numeric,
   delivery_status text,
   rider_name text,
-  rider_phone text
+  rider_phone text,
+  delivery_failure_reason text
 )
 language sql
 security definer
@@ -28,7 +29,8 @@ as $function$
     o.total,
     o.delivery_status,
     rr.name,
-    rr.mobile_number
+    rr.mobile_number,
+    o.delivery_failure_reason
   from public.orders o
   left join public.restaurant_riders rr
     on rr.id = o.rider_id
