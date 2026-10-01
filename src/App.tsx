@@ -53,6 +53,68 @@ function normalizeHashRoute(hash: string) {
   return hash.replace(/^#\//, '#');
 }
 
+function RiderRouteGuard({ children }: { children: ReactNode }) {
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function checkRiderAccess() {
+      if (!supabase) {
+        if (mounted) setChecking(false);
+        return;
+      }
+
+      const { data } = await supabase.auth.getUser();
+      const user = data.user;
+      const role = user?.app_metadata?.role ?? user?.user_metadata?.role;
+
+      if (!mounted) return;
+
+      if (role === 'rider') {
+        setChecking(false);
+        return;
+      }
+
+      if (role === 'customer') {
+        window.location.hash = '#menu';
+        return;
+      }
+
+      if (user) {
+        const { data: ownerRestaurant } = await supabase
+          .from('restaurants')
+          .select('id')
+          .eq('owner_id', user.id)
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle();
+
+        if (!mounted) return;
+
+        if (ownerRestaurant) {
+          window.location.hash = '#restaurant/orders';
+          return;
+        }
+      }
+
+      window.location.hash = '#account';
+    }
+
+    void checkRiderAccess();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (checking) {
+    return <section className="restaurant-owner-auth-loading">Checking account access…</section>;
+  }
+
+  return <>{children}</>;
+}
+
 function CartPage({ items, onIncrease, onDecrease, onRemove }: { items: CartItem[]; onIncrease: (productId: string) => void; onDecrease: (productId: string) => void; onRemove: (productId: string) => void; }) {
   const subtotal = items.reduce((total, item) => total + item.product.price * item.quantity, 0);
   return <section className="cart-page"><div className="menu-intro"><p className="eyebrow">Your order</p><h1>Your cart.</h1><p>Review your items before checkout.</p></div>{items.length === 0 ? <div className="cart-empty"><p>Your cart is empty.</p><a className="button button-primary" href={withBasePath('/menu')}>Browse Menu</a></div> : <div className="cart-layout"><div className="cart-items" aria-label="Cart items">{items.map((item) => <article className="cart-item" key={item.product.id}><div className="cart-item-main"><div><h2>{item.product.name}</h2><p>₱{item.product.price.toFixed(2)} each</p></div><strong>₱{(item.product.price * item.quantity).toFixed(2)}</strong></div><div className="cart-item-actions"><div className="quantity-control" aria-label={`Quantity for ${item.product.name}`}><button type="button" onClick={() => onDecrease(item.product.id)}>−</button><span>{item.quantity}</span><button type="button" onClick={() => onIncrease(item.product.id)}>+</button></div><button className="cart-remove" type="button" onClick={() => onRemove(item.product.id)}>Remove</button></div></article>)}</div><aside className="cart-summary"><div className="cart-summary-row"><span>Subtotal</span><strong>₱{subtotal.toFixed(2)}</strong></div><p>Delivery fees and payment details will be calculated during checkout.</p><a className="button button-primary" href={withBasePath('/checkout')}>Continue to Checkout</a></aside></div>}</section>;
@@ -109,7 +171,7 @@ function AppContent() {
   if (isRiderInvitePage) return <RiderInvitePage />;
   if (isSignUpPage) return <CustomerSignUpPage />;
   if (isAccountPage) return <RestaurantOwnerLoginPage />;
-  if (isRiderDashboardPage) return <RiderDashboardPage />;
+  if (isRiderDashboardPage) return <RiderRouteGuard><RiderDashboardPage /></RiderRouteGuard>;
   if (riderDeliveryMatch) return <RiderDeliveryPage orderId={decodeURIComponent(riderDeliveryMatch[1])} />;
 
   const publicContent = isMenuPage || (!isCartPage && !isCheckoutPage && !trackingMatch) ? <MenuPage onAddToCart={addToCart} cartCount={cartCount} /> : isCartPage ? <CartPage items={cartItems} onIncrease={(id) => changeQuantity(id, 1)} onDecrease={(id) => changeQuantity(id, -1)} onRemove={(id) => removeFromCart(id)} /> : isCheckoutPage ? <CheckoutPage items={cartItems} /> : <OrderTrackingPage orderNumber={decodeURIComponent(trackingMatch![1])} />;
