@@ -53,7 +53,7 @@ export function Header({ cartCount = 0 }: HeaderProps) {
         {activeOrderNumber ? (
           <a
             className="header-track-order"
-            href={withBasePath('/menu') + '?trackOrder=' + encodeURIComponent(activeOrderNumber)}
+            href={`${import.meta.env.BASE_URL}?trackOrder=${encodeURIComponent(activeOrderNumber)}#menu`}
             aria-label={"Track order " + activeOrderNumber}
             title="Track my order"
           >
