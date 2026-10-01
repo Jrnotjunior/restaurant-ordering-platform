@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const riderInviteRedirectTo = "https://jrnotjunior.github.io/restaurant-ordering-platform/?invite=1";
+const riderInviteRedirectTo = "https://jrnotjunior.github.io/restaurant-ordering-platform/invite";
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
