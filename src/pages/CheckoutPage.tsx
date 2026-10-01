@@ -14,6 +14,7 @@ type PaymentMethod = 'cash' | 'online';
 type CheckoutPageProps = { items: CartItem[] };
 type ConfirmedOrder = { orderNumber: string; paymentMethod: PaymentMethod; orderType: OrderType; total: number };
 const PENDING_PAYMENT_CHECKOUT_URL_KEY = 'restaurant-ordering-pending-payment-checkout-url';
+const ACTIVE_ORDER_KEY = 'restaurant-ordering-active-order';
 const PENDING_PAYMENT_REFERENCE_KEY = 'restaurant-ordering-pending-payment-reference';
 
 const orderTypes: Array<{ value: OrderType; label: string; description: string }> = [
@@ -88,7 +89,9 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             window.dispatchEvent(new Event(CART_CLEAR_EVENT));
             if (!cancelled) {
               setPaymentProcessing(false);
-              setConfirmedOrder({
+              window.localStorage.setItem(ACTIVE_ORDER_KEY, result.orderNumber);
+            window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
+            setConfirmedOrder({
                 orderNumber: result.orderNumber,
                 paymentMethod: 'online',
                 orderType,
@@ -253,6 +256,8 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
     try {
       const createdOrder = await createPendingOrder('cash');
+      window.localStorage.setItem(ACTIVE_ORDER_KEY, createdOrder.orderNumber);
+      window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
       window.dispatchEvent(new Event(CART_CLEAR_EVENT));
       setConfirmedOrder({ orderNumber: createdOrder.orderNumber, paymentMethod: 'cash', orderType, total: createdOrder.total });
     } catch (error) {
