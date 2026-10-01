@@ -436,7 +436,7 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
                     >
                       {updating === selectedOrder.orderId ? 'Printing & Sending…' : 'Print Order & Send to Kitchen'}
                     </button>
-                  )
+                  )}
                   <button
                     className="button button-secondary"
                     type="button"
