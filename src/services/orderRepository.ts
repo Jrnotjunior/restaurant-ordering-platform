@@ -41,7 +41,7 @@ export type TrackedOrder = {
   deliveryStatus: DeliveryStatus | null;
   riderName: string | null;
   riderPhone: string | null;
-  deliveryFailureReason?: string | null;
+  deliveryFailureReason: string | null;
 };
 
 type CreatedOrderRow = {
