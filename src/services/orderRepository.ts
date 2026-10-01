@@ -28,7 +28,7 @@ export type CreatedOrder = {
 };
 
 export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'completed' | 'cancelled';
-export type DeliveryStatus = 'assigned' | 'delivering' | 'out_for_delivery' | 'delivered';
+export type DeliveryStatus = 'assigned' | 'delivering' | 'out_for_delivery' | 'arrived' | 'delivered' | 'failed';
 
 export type TrackedOrder = {
   orderId: string;
@@ -41,6 +41,7 @@ export type TrackedOrder = {
   deliveryStatus: DeliveryStatus | null;
   riderName: string | null;
   riderPhone: string | null;
+  deliveryFailureReason?: string | null;
 };
 
 type CreatedOrderRow = {
@@ -62,6 +63,7 @@ type TrackedOrderRow = {
   delivery_status?: DeliveryStatus | null;
   rider_name?: string | null;
   rider_phone?: string | null;
+  delivery_failure_reason?: string | null;
 };
 
 export async function createOrder(input: CreateOrderInput): Promise<CreatedOrder> {
@@ -110,5 +112,6 @@ export async function getOrderStatus(orderNumber: string): Promise<TrackedOrder>
     deliveryStatus: row.delivery_status ?? null,
     riderName: row.rider_name ?? null,
     riderPhone: row.rider_phone ?? null,
+    deliveryFailureReason: row.delivery_failure_reason ?? null,
   };
 }
