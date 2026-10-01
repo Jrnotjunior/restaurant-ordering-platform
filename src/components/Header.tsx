@@ -3,6 +3,8 @@ import { useRestaurant } from './RestaurantProvider';
 import '../styles/cart-badge.css';
 import '../styles/header-actions.css';
 
+const ACTIVE_ORDER_KEY = 'restaurant-ordering-active-order';
+
 function withBasePath(path: string) {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   if (path === '/') return `${base}/`;
