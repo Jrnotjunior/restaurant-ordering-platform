@@ -200,7 +200,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
           </div></fieldset>
 
           <fieldset className="checkout-section"><legend>Customer information</legend><div className="checkout-fields">
-            <label><span>Full name</span><input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} autoComplete="name" required /></label>
+            <label><span>Full name</span><input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value.replace(/[0-9]/g, ''))} autoComplete="name" aria-invalid={/[0-9]/.test(customerName)} required />{/[0-9]/.test(customerName) && <span className="checkout-field-error" role="alert">Full name must not contain numbers.</span>}</label>
             {orderType !== 'dine_in' && <label><span>Mobile number</span><input type="tel" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, '').slice(0, 11))} autoComplete="tel" inputMode="numeric" maxLength={11} pattern="09[0-9]{9}" title="Enter an 11-digit Philippine mobile number starting with 09." aria-invalid={mobileNumber.length >= 2 && !mobileNumber.startsWith('09')} required />{mobileNumber.length >= 2 && !mobileNumber.startsWith('09') && <span className="checkout-field-error" role="alert">Mobile number must start with 09.</span>}{mobileNumber.length > 0 && mobileNumber.startsWith('09') && mobileNumber.length < 11 && <span className="checkout-field-hint">Enter all 11 digits.</span>}</label>}
           </div></fieldset>
 
