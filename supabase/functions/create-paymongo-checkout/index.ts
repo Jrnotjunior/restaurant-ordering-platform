@@ -103,6 +103,7 @@ Deno.serve(async (request) => {
         data: {
           attributes: {
             line_items: lineItems,
+            payment_method_types: ["card", "gcash", "qrph", "grab_pay", "paymaya", "billease", "dob"],
             description: `Online payment for order ${order.order_number}`,
             reference_number: order.order_number,
             success_url: `${siteBaseUrl}#order/${encodeURIComponent(order.order_number)}`,
