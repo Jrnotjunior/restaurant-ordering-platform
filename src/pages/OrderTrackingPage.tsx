@@ -34,6 +34,13 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
         if (!cancelled) {
           setOrder(result);
           setError('');
+
+          // Only clear a persisted cart after the online payment for that exact order
+          // has been confirmed. A cancelled/failed payment keeps the cart intact.
+          const pendingPaymentOrder = window.localStorage.getItem('restaurant-ordering-pending-payment-order');
+          if (result.paymentStatus === 'paid' && pendingPaymentOrder === result.orderNumber) {
+            window.dispatchEvent(new Event('restaurant-ordering-cart-clear'));
+          }
         }
       } catch (loadError) {
         if (!cancelled) setError(loadError instanceof Error ? loadError.message : 'Unable to load this order.');
