@@ -100,7 +100,7 @@ Deno.serve(async (request) => {
       headers: {
         Authorization: `Basic ${btoa(`${paymongoSecretKey}:`)}`,
         "Content-Type": "application/json",
-        "Idempotency-Key": crypto.randomUUID(),
+        "Idempotency-Key": `online-payment-${pendingPayment.id}`,
       },
       body: JSON.stringify({
         data: {
