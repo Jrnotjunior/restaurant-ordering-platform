@@ -271,17 +271,6 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
         </span>
       </div>
 
-      <div className="restaurant-orders-search" style={{ margin: '18px 0', position: 'relative' }}>
-        <input
-          type="search"
-          value={searchQuery}
-          onChange={(event) => setSearchQuery(event.target.value)}
-          placeholder="Search by order number or customer name"
-          aria-label="Search orders by order number or customer name"
-          style={{ width: '100%', boxSizing: 'border-box', padding: '12px 14px', border: '1px solid #cbd5e1', borderRadius: 12, fontSize: 15, outline: 'none' }}
-        />
-      </div>
-
       <div className="restaurant-orders-tabs">
         <button
           className={filter === 'active' ? 'is-active' : ''}
@@ -329,6 +318,19 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
                   </div>
                   <span>{columnOrders.length}</span>
                 </button>
+                {column.key === 'new' && (
+                  <div className="restaurant-orders-search" style={{ padding: '0 14px 14px' }}>
+                    <input
+                      type="search"
+                      value={searchQuery}
+                      onChange={(event) => setSearchQuery(event.target.value)}
+                      placeholder="Search by order number or customer name"
+                      aria-label="Search new orders by order number or customer name"
+                      onClick={(event) => event.stopPropagation()}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: 10, fontSize: 14, outline: 'none' }}
+                    />
+                  </div>
+                )}
               </section>
             );
           })}
