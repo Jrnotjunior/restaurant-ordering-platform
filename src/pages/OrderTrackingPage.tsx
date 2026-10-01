@@ -164,7 +164,7 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
 
         <div className="order-tracking-meta">
           <span>{order.orderType === 'dine_in' ? 'Dine-in' : order.orderType === 'pickup' ? 'Pickup / Take-out' : 'Delivery'}</span>
-          <span>{order.paymentMethod === 'gcash' ? 'GCash' : 'Cash'}</span>
+          <span>{order.paymentMethod === 'gcash' ? 'Online Payment' : 'Cash'}</span>
         </div>
       </div>
     </section>
