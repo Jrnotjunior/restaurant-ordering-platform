@@ -4,7 +4,7 @@ import { supabase } from '../services/supabaseClient';
 type NavigationItem = {
   label: string;
   href: string;
-  icon: 'orders' | 'products' | 'riders' | 'shipping' | 'sales' | 'dispatch';
+  icon: 'orders' | 'products' | 'riders' | 'shipping' | 'sales' | 'dispatch' | 'settings';
 };
 
 const navigationItems: NavigationItem[] = [
@@ -14,6 +14,7 @@ const navigationItems: NavigationItem[] = [
   { label: 'Dispatch', href: '#restaurant/delivery-dispatch', icon: 'dispatch' },
   { label: 'Shipping Fee', href: '#restaurant/shipping-fee', icon: 'shipping' },
   { label: 'Sales', href: '#restaurant/sales', icon: 'sales' },
+  { label: 'Store Settings', href: '#restaurant/settings', icon: 'settings' },
 ];
 
 function NavigationIcon({ type }: { type: NavigationItem['icon'] }) {
@@ -47,6 +48,10 @@ function NavigationIcon({ type }: { type: NavigationItem['icon'] }) {
 
   if (type === 'shipping') {
     return <svg {...common}><path d="M3.5 6.5h10v10h-10zM13.5 10h4l3 3v3.5h-7z" /><circle cx="7.5" cy="18" r="2" /><circle cx="17.5" cy="18" r="2" /></svg>;
+  }
+
+  if (type === 'settings') {
+    return <svg {...common}><path d="M12 3v2M12 19v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M3 12h2M19 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42" /><circle cx="12" cy="12" r="3.5" /></svg>;
   }
 
   return <svg {...common}><path d="M4 19.5V10M10 19.5V6M16 19.5v-9M22 19.5V3" /><path d="M2.5 19.5h20" /></svg>;
