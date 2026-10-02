@@ -18,6 +18,7 @@ import { RestaurantOwnerLoginPage } from './pages/RestaurantOwnerLoginPage';
 import { RestaurantEmployeesPage } from './pages/RestaurantEmployeesPage';
 import { RestaurantEmployeeInvitePage } from './pages/RestaurantEmployeeInvitePage';
 import { RestaurantRoleDashboardPage } from './pages/RestaurantRoleDashboardPage';
+import { RestaurantKitchenPage } from './pages/RestaurantKitchenPage';
 import { CustomerSignUpPage } from './pages/CustomerSignUpPage';
 import { RiderDeliveryPage } from './pages/RiderDeliveryPage';
 import { RiderDashboardPage } from './pages/RiderDashboardPage';
@@ -361,7 +362,7 @@ function AppContent() {
       <RestaurantProvider restaurant={staffRestaurant}>
         <ThemeProvider restaurant={staffRestaurant}>
           <RestaurantLayout hideChrome role="kitchen">
-            <RestaurantOrdersPage restaurantId={staffRestaurant.id!} role="kitchen" />
+            <RestaurantKitchenPage restaurantId={staffRestaurant.id!} />
           </RestaurantLayout>
         </ThemeProvider>
       </RestaurantProvider>
