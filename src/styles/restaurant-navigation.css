@@ -239,3 +239,5 @@
     height: 44px;
   }
 }
+
+.restaurant-navigation-row.is-dispatcher{justify-content:flex-end}
