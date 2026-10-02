@@ -60,7 +60,7 @@ function columnFor(order: RestaurantOrder): BoardColumn | null {
 }
 
 const columns: Array<{ key: BoardColumn; title: string; description: string }> = [
-  { key: 'new', title: 'New Orders', description: 'Paid orders waiting for receipt printing' },
+  { key: 'new', title: 'New Orders', description: 'New customer orders waiting for cashier review' },
   { key: 'kitchen', title: 'In the Kitchen', description: 'Orders being prepared' },
   { key: 'ready', title: 'Ready', description: 'Ready for pickup or dine-in' },
   { key: 'completed', title: 'Completed', description: 'Finished orders' },
@@ -326,9 +326,109 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
 
       {loading ? (
         <div className="restaurant-orders-empty">Loading orders…</div>
+      ) : isCashier ? (
+        (() => {
+          const cashierNewOrders = boardOrders
+            .filter((order) => columnFor(order) === 'new')
+            .filter((order) => {
+              if (!normalizedSearch) return true;
+              return (
+                order.orderNumber.toLowerCase().includes(normalizedSearch) ||
+                order.customerName.toLowerCase().includes(normalizedSearch)
+              );
+            });
+
+          const visibleCashierOrders = cashierNewOrders.filter((order) =>
+            newOrderPaymentFilter === 'all'
+              ? true
+              : newOrderPaymentFilter === 'online-paid'
+                ? isOnlinePaid(order)
+                : !isOnlinePaid(order),
+          );
+
+          return (
+            <section className="restaurant-cashier-orders">
+              <div style={{ marginBottom: 18 }}>
+                <p className="eyebrow">Cashier workspace</p>
+                <h2 style={{ margin: '0 0 5px' }}>New Orders</h2>
+                <p style={{ margin: 0, color: '#64748b' }}>
+                  New customer orders waiting for cashier review and receipt printing.
+                </p>
+              </div>
+
+              <div style={{ marginBottom: 14 }}>
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search by order number or customer name"
+                  aria-label="Search new orders by order number or customer name"
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '12px 14px', border: '1px solid #cbd5e1', borderRadius: 10, fontSize: 14, outline: 'none' }}
+                />
+              </div>
+
+              <div className="restaurant-order-payment-tabs" role="tablist" aria-label="New order payment filter">
+                {[
+                  ['all', 'All'],
+                  ['online-paid', 'Online Paid'],
+                  ['unpaid', 'Unpaid'],
+                ].map(([key, label]) => {
+                  const count = key === 'all'
+                    ? cashierNewOrders.length
+                    : key === 'online-paid'
+                      ? cashierNewOrders.filter(isOnlinePaid).length
+                      : cashierNewOrders.filter((order) => !isOnlinePaid(order)).length;
+
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      role="tab"
+                      aria-selected={newOrderPaymentFilter === key}
+                      className={newOrderPaymentFilter === key ? 'is-active' : ''}
+                      onClick={() => setNewOrderPaymentFilter(key as 'all' | 'online-paid' | 'unpaid')}
+                    >
+                      {label} <span>{count}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {visibleCashierOrders.length === 0 ? (
+                <div className="restaurant-order-list-empty">
+                  {cashierNewOrders.length === 0
+                    ? 'No new customer orders right now.'
+                    : 'No orders match the current filter.'}
+                </div>
+              ) : (
+                <div className="restaurant-order-list restaurant-order-list-scroll">
+                  {visibleCashierOrders.map((order) => (
+                    <button
+                      className="restaurant-order-list-item"
+                      key={order.orderId}
+                      type="button"
+                      onClick={() => setSelectedOrder(order)}
+                    >
+                      <span>
+                        <span className="restaurant-order-list-number">{order.orderNumber}</span>
+                        <span style={{ display: 'block', marginTop: 3, fontSize: 13, color: '#64748b' }}>
+                          {order.customerName}
+                        </span>
+                      </span>
+                      <span className="restaurant-order-list-meta">
+                        <span className="restaurant-order-list-status">{paymentLabel(order)}</span>
+                        <span className="restaurant-order-list-total">₱{order.total.toFixed(2)}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </section>
+          );
+        })()
       ) : (
         <div className="restaurant-order-board">
-          {columns.filter((column) => isCashier ? column.key === 'new' : isKitchen ? (column.key === 'kitchen' || column.key === 'ready') : true).map((column) => {
+          {columns.filter((column) => isKitchen ? (column.key === 'kitchen' || column.key === 'ready') : true).map((column) => {
             const columnOrders = boardOrders.filter((order) => {
               if (isKitchen && order.status === 'ready') return column.key === 'ready';
               return columnFor(order) === column.key;
