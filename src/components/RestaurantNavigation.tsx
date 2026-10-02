@@ -11,7 +11,7 @@ const navigationItems: NavigationItem[] = [
   { label: 'Orders', href: '#restaurant/orders', icon: 'orders' },
   { label: 'Products', href: '#restaurant/menu', icon: 'products' },
   { label: 'Riders', href: '#restaurant/riders', icon: 'riders' },
-  { label: 'Delivery Dispatch', href: '#restaurant/delivery-dispatch', icon: 'dispatch' },
+  { label: 'Dispatch', href: '#restaurant/delivery-dispatch', icon: 'dispatch' },
   { label: 'Shipping Fee', href: '#restaurant/shipping-fee', icon: 'shipping' },
   { label: 'Sales', href: '#restaurant/sales', icon: 'sales' },
 ];
