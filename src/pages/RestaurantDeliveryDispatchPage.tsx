@@ -269,7 +269,6 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
     if (!supabase || assigning) return;
     setAssigning(true);
     setError('');
-    setMessage('');
     try {
       const { error: orderError } = await supabase
         .from('orders')
@@ -379,7 +378,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
                   <small>Ready at {order.readyAt}</small>
                 </div>
                 {activeTab === 'delivery' ? (
-                  <button className="restaurant-dispatch-assign-button" type="button" onClick={() => { setSelectedOrder(order); setMessage(''); setError(''); }}>
+                  <button className="restaurant-dispatch-assign-button" type="button" onClick={() => { setSelectedOrder(order); setError(''); }}>
                     Assign to Rider
                   </button>
                 ) : (
