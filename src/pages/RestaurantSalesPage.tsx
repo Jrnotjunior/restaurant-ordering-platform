@@ -157,7 +157,19 @@ export function RestaurantSalesPage({ restaurantId }: Props) {
 
   return (
     <section className="restaurant-sales-page">
-            {error && <div className="restaurant-sales-error" role="alert">{error}</div>}
+            <div className="restaurant-sales-header">
+        <div>
+          <p className="eyebrow">Restaurant operations</p>
+          <h1>Sales</h1>
+          <p>View your completed sales by day and download a daily sales report.</p>
+        </div>
+        <span className={`restaurant-dashboard-live-status is-${realtimeStatus}`}>
+          <span className="restaurant-dashboard-live-dot" />
+          {realtimeStatus === 'live' ? 'Live' : realtimeStatus === 'connecting' ? 'Connecting…' : 'Reconnecting…'}
+        </span>
+      </div>
+
+      {error && <div className="restaurant-sales-error" role="alert">{error}</div>}
 
       {loading ? (
         <div className="restaurant-sales-empty">Loading sales…</div>
