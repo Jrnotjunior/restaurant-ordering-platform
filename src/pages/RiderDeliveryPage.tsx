@@ -170,8 +170,10 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
       if (!user) throw new Error('Please sign in again.');
 
       const { data: rider, error: riderError } = await supabase
-        .from('restaurant_riders')
+        .from('restaurant_staff')
         .select('id')
+        .eq('role', 'rider')
+        .eq('is_active', true)
         .eq('auth_user_id', user.id)
         .maybeSingle();
       if (riderError) throw riderError;
