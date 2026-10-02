@@ -9,6 +9,7 @@ type ReadyOrder = {
   total: number;
   readyAt: string;
   pickupMethod: 'customer' | 'third_party_courier' | null;
+  orderType: 'delivery' | 'pickup' | 'dine_in';
 };
 
 type Rider = {
@@ -30,6 +31,7 @@ type OrderRow = {
   total: number | string;
   created_at: string;
   pickup_method: 'customer' | 'third_party_courier' | null;
+  order_type: 'delivery' | 'pickup' | 'dine_in';
 };
 
 type RiderRow = {
@@ -84,9 +86,9 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
       const [orderResult, riderResult, assignmentResult] = await Promise.all([
         supabase
           .from('orders')
-          .select('id,order_number,customer_name,delivery_address,delivery_barangay,notes,total,created_at,pickup_method')
+          .select('id,order_number,customer_name,delivery_address,delivery_barangay,notes,total,created_at,pickup_method,order_type')
           .eq('restaurant_id', restaurantId)
-          .eq('order_type', 'delivery')
+          .in('order_type', ['delivery', 'dine_in'])
           .eq('status', 'ready')
           .eq('delivery_status', 'unassigned')
           .order('created_at', { ascending: true }),
@@ -132,14 +134,15 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
         total: Number(order.total),
         readyAt: formatReadyTime(order.created_at),
         pickupMethod: order.pickup_method,
+        orderType: order.order_type,
       });
       setOrders(((orderResult.data ?? []) as OrderRow[]).map(mapOrder));
 
       const pickupResult = await supabase
         .from('orders')
-        .select('id,order_number,customer_name,delivery_address,delivery_barangay,notes,total,created_at,pickup_method')
+        .select('id,order_number,customer_name,delivery_address,delivery_barangay,notes,total,created_at,pickup_method,order_type')
         .eq('restaurant_id', restaurantId)
-        .eq('order_type', 'pickup')
+        .in('order_type', ['pickup', 'dine_in'])
         .eq('status', 'ready')
         .order('created_at', { ascending: true });
       if (pickupResult.error) throw pickupResult.error;
@@ -266,7 +269,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
         .update({ status: 'completed' })
         .eq('id', order.id)
         .eq('restaurant_id', restaurantId)
-        .eq('order_type', 'pickup')
+        .in('order_type', ['pickup', 'dine_in'])
         .eq('status', 'ready');
       if (orderError) throw orderError;
       setMessage(order.orderNumber + ' marked as handed off.');
@@ -332,8 +335,8 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
         <section className="restaurant-dispatch-card restaurant-dispatch-ready-card">
           <div className="restaurant-dispatch-card-heading">
             <div>
-              <p className="restaurant-dispatch-label">Pickup handoff</p>
-              <h2>Customer & courier pickups</h2>
+              <p className="restaurant-dispatch-label">Handoff</p>
+              <h2>Customer, courier & dine-in orders</h2>
             </div>
             <span className="restaurant-dispatch-count">{pickupOrders.length}</span>
           </div>
@@ -349,12 +352,20 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
                   </div>
                   <span>{order.customerName}</span>
                   <span className="restaurant-dispatch-address">
-                    {order.pickupMethod === 'third_party_courier' ? 'Customer courier pickup' : 'Customer pickup'}
+                    {order.orderType === 'dine_in'
+                      ? 'Dine-in order'
+                      : order.pickupMethod === 'third_party_courier'
+                        ? 'Customer courier pickup'
+                        : 'Customer pickup'}
                   </span>
                   <small>Ready at {order.readyAt}</small>
                 </div>
                 <button className="restaurant-dispatch-assign-button" type="button" disabled={assigning} onClick={() => void completePickup(order)}>
-                  {order.pickupMethod === 'third_party_courier' ? 'Mark Handed to Courier' : 'Confirm Pickup'}
+                  {order.orderType === 'dine_in'
+                    ? 'Confirm Served'
+                    : order.pickupMethod === 'third_party_courier'
+                      ? 'Mark Handed to Courier'
+                      : 'Confirm Pickup'}
                 </button>
               </article>
             ))}
