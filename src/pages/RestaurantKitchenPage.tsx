@@ -61,7 +61,7 @@ export function RestaurantKitchenPage({ restaurantId }: Props) {
     setError('');
 
     try {
-      await setProductAvailability(product.id, !product.isAvailable);
+      await setProductAvailability(product.id, !product.isAvailable, restaurantId);
       setProducts((current) =>
         current.map((item) =>
           item.id === product.id ? { ...item, isAvailable: !item.isAvailable } : item
