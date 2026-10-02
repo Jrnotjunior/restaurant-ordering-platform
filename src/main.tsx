@@ -12,6 +12,8 @@ import './styles/restaurant-sales.css';
 import './styles/restaurant-auth.css';
 import './styles/restaurant-navigation.css';
 import './styles/restaurant-riders.css';
+import './styles/restaurant-employees.css';
+import './styles/restaurant-employee-invite.css';
 import './styles/restaurant-search.css';
 import './styles/delivery-navigation.css';
 import './styles/customer-contact.css';
