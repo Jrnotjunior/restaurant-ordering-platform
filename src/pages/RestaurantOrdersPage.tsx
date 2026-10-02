@@ -355,7 +355,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
                   onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder="Search by order number or customer name"
                   aria-label="Search new orders by order number or customer name"
-                  style={{ width: '100%', boxSizing: 'border-box', padding: '12px 14px', border: '1px solid #cbd5e1', borderRadius: 10, fontSize: 14, outline: 'none' }}
+                  style={{ width: '100%', maxWidth: 360, boxSizing: 'border-box', padding: '12px 14px', border: '1px solid #cbd5e1', borderRadius: 10, fontSize: 14, outline: 'none' }}
                 />
               </div>
 
