@@ -52,6 +52,26 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
   }, [restaurant.id]);
 
   useEffect(() => {
+    if (!restaurant.id || !supabase) return;
+
+    const channel = supabase
+      .channel(`menu-availability:${restaurant.id}`)
+      .on('broadcast', { event: 'restaurant_menu_changed' }, () => {
+        void getMenu(restaurant.id!, true)
+          .then((menu) => {
+            setCategories(menu.categories);
+            setProducts(menu.products);
+          })
+          .catch((loadError: unknown) => console.error('Unable to refresh menu availability.', loadError));
+      })
+      .subscribe();
+
+    return () => {
+      void supabase?.removeChannel(channel);
+    };
+  }, [restaurant.id]);
+
+  useEffect(() => {
     function handleOutsideClick(event: MouseEvent) {
       if (!categorySelectRef.current?.contains(event.target as Node)) setCategoryOpen(false);
     }
