@@ -277,7 +277,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
 
             <div className="restaurant-pos-discount-types">
               <button type="button" onClick={() => addBeneficiary('senior')} disabled={saving || beneficiaries.length >= effectiveGroupSize}>+ Senior Citizen</button>
-              <button type="button" onClick={() => addBeneficiary('pwd')} disabled={saving || beneficiaries.length >= groupSize}>+ PWD</button>
+              <button type="button" onClick={() => addBeneficiary('pwd')} disabled={saving || beneficiaries.length >= effectiveGroupSize}>+ PWD</button>
             </div>
 
             {beneficiaries.map((beneficiary, index) => (
