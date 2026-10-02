@@ -97,6 +97,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
           .from('restaurant_riders')
           .select('id,name,mobile_number')
           .eq('restaurant_id', restaurantId)
+          .eq('is_active', true)
           .order('name', { ascending: true }),
         supabase
           .from('delivery_assignments')
