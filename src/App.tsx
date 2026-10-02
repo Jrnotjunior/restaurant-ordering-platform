@@ -14,6 +14,7 @@ import { RestaurantCashierPosPage } from './pages/RestaurantCashierPosPage';
 import { RestaurantRidersPage } from './pages/RestaurantRidersPage';
 import { RestaurantDeliveryDispatchPage } from './pages/RestaurantDeliveryDispatchPage';
 import { RestaurantSettingsPage } from './pages/RestaurantSettingsPage';
+import { RestaurantLoyaltyPage } from './pages/RestaurantLoyaltyPage';
 import { RestaurantOwnerLoginPage } from './pages/RestaurantOwnerLoginPage';
 import { RestaurantEmployeesPage } from './pages/RestaurantEmployeesPage';
 import { RestaurantEmployeeInvitePage } from './pages/RestaurantEmployeeInvitePage';
@@ -55,6 +56,7 @@ function withBasePath(path: string) {
   if (path === '/restaurant/riders') return `${base}/#restaurant/riders`;
   if (path === '/restaurant/delivery-dispatch') return `${base}/#restaurant/delivery-dispatch`;
   if (path === '/restaurant/settings') return `${base}/#restaurant/settings`;
+  if (path === '/restaurant/loyalty') return `${base}/#restaurant/loyalty`;
   if (path === '/restaurant/employees') return `${base}/#restaurant/employees`;
   if (path === '/rider/dashboard') return `${base}/#rider/dashboard`;
   if (path === '/rider/delivery-preview') return `${base}/#rider/dashboard`;
@@ -314,6 +316,7 @@ function AppContent() {
   const isRestaurantRidersPage = route === '#restaurant/riders';
   const isRestaurantDeliveryDispatchPage = route === '#restaurant/delivery-dispatch';
   const isRestaurantSettingsPage = route === '#restaurant/settings';
+  const isRestaurantLoyaltyPage = route === '#restaurant/loyalty';
   const isRestaurantEmployeesPage = route === '#restaurant/employees';
   const isCashierPage = route === '#restaurant/cashier';
   const isKitchenPage = route === '#restaurant/kitchen';
@@ -325,7 +328,7 @@ function AppContent() {
   const isRiderInvitePath = window.location.pathname.endsWith('/invite') || window.location.pathname.endsWith('/invite/');
   const isRiderInvitePage = isRiderInvitePath || searchParams.get('invite') === '1' || isInviteCallback;
   const isEmployeeInvitePage = window.location.pathname.endsWith('/employee-invite') || window.location.pathname.endsWith('/employee-invite/') || searchParams.get('employee-invite') === '1';
-  const isRestaurantOperationsPage = isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantShippingFeePage || isRestaurantSalesPage || isRestaurantRidersPage || isRestaurantDeliveryDispatchPage || isRestaurantSettingsPage || isRestaurantEmployeesPage;
+  const isRestaurantOperationsPage = isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantShippingFeePage || isRestaurantSalesPage || isRestaurantRidersPage || isRestaurantDeliveryDispatchPage || isRestaurantSettingsPage || isRestaurantLoyaltyPage || isRestaurantEmployeesPage;
   const trackingMatch = route.match(/^#order\/(.+)$/);
 
   if (isEmployeeInvitePage) return <RestaurantEmployeeInvitePage />;
@@ -444,6 +447,7 @@ function AppContent() {
               : isRestaurantEmployeesPage ? <RestaurantEmployeesPage restaurantId={ownerRestaurant.id!} />
               : isRestaurantDeliveryDispatchPage ? <RestaurantDeliveryDispatchPage restaurantId={ownerRestaurant.id!} />
               : isRestaurantSettingsPage ? <RestaurantSettingsPage restaurantId={ownerRestaurant.id!} />
+              : isRestaurantLoyaltyPage ? <RestaurantLoyaltyPage restaurantId={ownerRestaurant.id!} />
               : <RestaurantSalesPage restaurantId={ownerRestaurant.id!} />}
           </RestaurantLayout>
         </ThemeProvider>
