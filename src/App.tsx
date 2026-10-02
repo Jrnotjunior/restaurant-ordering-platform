@@ -263,8 +263,8 @@ function AppContent() {
   const isRestaurantOperationsPage = isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantShippingFeePage || isRestaurantSalesPage || isRestaurantRidersPage || isRestaurantDeliveryDispatchPage || isRestaurantSettingsPage || isRestaurantEmployeesPage;
   const trackingMatch = route.match(/^#order\/(.+)$/);
 
-  if (isRiderInvitePage) return <RiderInvitePage />;
   if (isEmployeeInvitePage) return <RestaurantEmployeeInvitePage />;
+  if (isRiderInvitePage) return <RiderInvitePage />;
   if (isSignUpPage) return <CustomerSignUpPage />;
   if (isAccountPage) return <RestaurantOwnerLoginPage />;
   if (isRiderDashboardPage) return <RiderRouteGuard><RiderDashboardPage /></RiderRouteGuard>;
