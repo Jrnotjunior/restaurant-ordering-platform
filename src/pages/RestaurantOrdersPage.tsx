@@ -55,7 +55,7 @@ function columnFor(order: RestaurantOrder): BoardColumn | null {
 }
 
 const columns: Array<{ key: BoardColumn; title: string; description: string }> = [
-  { key: 'new', title: 'New Orders', description: 'Waiting for payment confirmation' },
+  { key: 'new', title: 'New Orders', description: 'Paid orders waiting for receipt printing' },
   { key: 'kitchen', title: 'In the Kitchen', description: 'Orders being prepared' },
   { key: 'ready', title: 'Ready', description: 'Ready for pickup or dine-in' },
   { key: 'completed', title: 'Completed', description: 'Finished orders' },
@@ -79,18 +79,6 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
       const data = await getRestaurantOrders(restaurantId);
       setOrders(data);
 
-      const paidNewOrders = data.filter(
-        (o) => o.status === 'pending' && o.paymentMethod === 'gcash' && o.paymentStatus === 'paid',
-      );
-
-      if (paidNewOrders.length) {
-        await Promise.all(paidNewOrders.map((o) => updateOrderStatus(o.orderId, 'confirmed')));
-        setOrders((current) =>
-          current.map((o) =>
-            paidNewOrders.some((p) => p.orderId === o.orderId) ? { ...o, status: 'confirmed' } : o,
-          ),
-        );
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to load orders.');
     } finally {
