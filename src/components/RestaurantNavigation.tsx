@@ -6,13 +6,14 @@ export type RestaurantNavigationRole = 'owner' | 'cashier' | 'kitchen' | 'dispat
 type NavigationItem = {
   label: string;
   href: string;
-  icon: 'orders' | 'products' | 'riders' | 'shipping' | 'sales' | 'dispatch' | 'settings';
+  icon: 'dashboard' | 'orders' | 'products' | 'riders' | 'shipping' | 'sales' | 'dispatch' | 'settings';
 };
 
 const ownerNavigationItems: NavigationItem[] = [
+  { label: 'Dashboard', href: '#restaurant/owner', icon: 'dashboard' },
   { label: 'Orders', href: '#restaurant/orders', icon: 'orders' },
   { label: 'Products', href: '#restaurant/menu', icon: 'products' },
-  { label: 'Riders', href: '#restaurant/riders', icon: 'riders' },
+  { label: 'Dashboard', href: '#restaurant/owner', icon: 'dashboard' },
   { label: 'Employees', href: '#restaurant/employees', icon: 'riders' },
   { label: 'Dispatch', href: '#restaurant/delivery-dispatch', icon: 'dispatch' },
   { label: 'Shipping Fee', href: '#restaurant/shipping-fee', icon: 'shipping' },
@@ -32,6 +33,10 @@ function NavigationIcon({ type }: { type: NavigationItem['icon'] }) {
     strokeLinejoin: 'round' as const,
     'aria-hidden': true,
   };
+
+  if (type === 'dashboard') {
+    return <svg {...common}><path d="M4 13h6V4H4zM14 20h6v-9h-6zM14 8h6V4h-6zM4 20h6v-3H4z" /></svg>;
+  }
 
   if (type === 'orders') {
     return <svg {...common}><path d="M6 3.5h9l3 3V20.5H6z" /><path d="M14 3.5v4h4" /><path d="M9 12h6M9 15.5h6" /></svg>;
@@ -84,6 +89,7 @@ export function RestaurantNavigation({ role = 'owner' }: { role?: RestaurantNavi
   const [accountOpen, setAccountOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [email, setEmail] = useState('');
+  const [displayName, setDisplayName] = useState('Restaurant Owner');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
@@ -92,7 +98,13 @@ export function RestaurantNavigation({ role = 'owner' }: { role?: RestaurantNavi
 
   useEffect(() => {
     if (!supabase) return;
-    void supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? ''));
+    void supabase.auth.getUser().then(({ data }) => {
+      const user = data.user;
+      const metadata = user?.user_metadata as Record<string, unknown> | undefined;
+      const name = typeof metadata?.full_name === 'string' ? metadata.full_name : typeof metadata?.name === 'string' ? metadata.name : '';
+      setEmail(user?.email ?? '');
+      setDisplayName(name || user?.email?.split('@')[0] || 'Restaurant Owner');
+    });
   }, []);
 
   function openPasswordChange() {
@@ -130,6 +142,48 @@ export function RestaurantNavigation({ role = 'owner' }: { role?: RestaurantNavi
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
+
+  if (role === 'owner') {
+    return (
+      <>
+        <aside className="restaurant-owner-sidebar" aria-label="Restaurant management navigation">
+          <a className="restaurant-owner-brand" href="#restaurant/owner" aria-label="Restaurant Dashboard">
+            <span className="restaurant-owner-brand-mark" aria-hidden="true">🍴</span>
+            <span><strong>Restaurant</strong><small>Management System</small></span>
+          </a>
+          <nav className="restaurant-owner-sidebar-nav">
+            {ownerNavigationItems.map((item) => {
+              const active = currentRoute === item.href;
+              return (
+                <a key={item.href} className={active ? 'is-active' : ''} href={item.href} aria-current={active ? 'page' : undefined}>
+                  <NavigationIcon type={item.icon} />
+                  <span>{item.label}</span>
+                </a>
+              );
+            })}
+          </nav>
+        </aside>
+        <header className="restaurant-owner-topbar">
+          <div className="restaurant-owner-topbar-status"><span /> <div><strong>Live</strong><small>System Online</small></div></div>
+          <div className="restaurant-owner-topbar-divider" />
+          <div className="restaurant-account-menu">
+            <button className="restaurant-owner-user" type="button" aria-label="Open account menu" aria-expanded={accountOpen} onClick={() => setAccountOpen((open) => !open)}>
+              <span className="restaurant-owner-avatar">{displayName.slice(0, 2).toUpperCase()}</span>
+              <span className="restaurant-owner-user-copy"><strong>{displayName}</strong><small>Store Owner</small></span>
+              <span className="restaurant-owner-chevron" aria-hidden="true">⌄</span>
+            </button>
+            {accountOpen ? (
+              <div className="restaurant-account-dropdown">
+                <div className="restaurant-account-email">{email || 'Restaurant account'}</div>
+                <button type="button" onClick={openPasswordChange}>Change password</button>
+                <button type="button" onClick={() => void handleLogout()} disabled={logoutSaving}>{logoutSaving ? 'Logging out…' : 'Log out'}</button>
+              </div>
+            ) : null}
+          </div>
+        </header>
+      </>
+    );
+  }
 
   return (
     <>
