@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { confirmDineInPayment, getRestaurantOrders, updateOrderStatus, type RestaurantOrder, type RestaurantOrderStatus } from '../services/restaurantOrderRepository';
 import { supabase } from '../services/supabaseClient';
 
-type Props = { restaurantId: string };
+type Props = { restaurantId: string; role?: 'owner' | 'cashier' };
 type BoardColumn = 'new' | 'kitchen' | 'ready' | 'completed';
 
 const statusLabels: Record<RestaurantOrderStatus, string> = {
@@ -65,7 +65,8 @@ const columns: Array<{ key: BoardColumn; title: string; description: string }> =
   { key: 'completed', title: 'Completed', description: 'Finished orders' },
 ];
 
-export function RestaurantOrdersPage({ restaurantId }: Props) {
+export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
+  const isCashier = role === 'cashier';
   const [orders, setOrders] = useState<RestaurantOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -120,7 +121,7 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
     () => orders.filter((o) => !['completed', 'cancelled'].includes(o.status)),
     [orders],
   );
-  const boardOrders = filter === 'active' ? activeOrders : orders;
+  const boardOrders = isCashier ? orders : filter === 'active' ? activeOrders : orders;
   const openedColumn = columns.find((column) => column.key === openColumn) ?? null;
   const normalizedSearch = searchQuery.trim().toLowerCase();
   const searchedOrders = openedColumn?.key === 'new' && normalizedSearch
@@ -283,7 +284,7 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
         </span>
       </div>
 
-      <div className="restaurant-orders-tabs">
+      {!isCashier && <div className="restaurant-orders-tabs">
         <button
           className={filter === 'active' ? 'is-active' : ''}
           type="button"
@@ -304,7 +305,7 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
         >
           All ({orders.length})
         </button>
-      </div>
+      </div>}
 
       {error && <div className="restaurant-orders-error" role="alert">{error}</div>}
 
@@ -312,7 +313,7 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
         <div className="restaurant-orders-empty">Loading orders…</div>
       ) : (
         <div className="restaurant-order-board">
-          {columns.map((column) => {
+          {columns.filter((column) => !isCashier || column.key === 'new').map((column) => {
             const columnOrders = boardOrders.filter((order) => columnFor(order) === column.key);
             return (
               <section className="restaurant-order-column" key={column.key}>
