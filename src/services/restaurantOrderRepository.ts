@@ -8,6 +8,7 @@ export type RestaurantOrder = {
   orderNumber: string;
   customerName: string;
   orderType: 'delivery' | 'pickup' | 'dine_in';
+  pickupMethod: 'customer' | 'third_party_courier' | null;
   paymentMethod: 'cash' | 'gcash';
   paymentStatus: RestaurantPaymentStatus;
   status: RestaurantOrderStatus;
@@ -34,6 +35,7 @@ type Row = {
   customer_name?: string | null;
   order_type: RestaurantOrder['orderType'];
   payment_method: RestaurantOrder['paymentMethod'];
+  pickup_method?: 'customer' | 'third_party_courier' | null;
   payment_status?: RestaurantPaymentStatus | null;
   status: RestaurantOrderStatus;
   total: number | string;
@@ -50,6 +52,7 @@ export async function getRestaurantOrders(restaurantId: string): Promise<Restaur
     orderNumber: row.order_number,
     customerName: row.customer_name ?? '',
     orderType: row.order_type,
+    pickupMethod: row.pickup_method ?? null,
     paymentMethod: row.payment_method,
     paymentStatus: row.payment_status ?? 'pending',
     status: row.status,
