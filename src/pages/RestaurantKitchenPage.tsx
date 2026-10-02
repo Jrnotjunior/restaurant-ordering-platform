@@ -80,7 +80,8 @@ export function RestaurantKitchenPage({ restaurantId, view = 'orders' }: Props) 
     <section className="restaurant-kitchen-page">
       {view === 'orders' ? <RestaurantOrdersPage restaurantId={restaurantId} role="kitchen" /> : null}
 
-      {view === 'menu' ? <div className="restaurant-kitchen-products-section">
+      {view === 'menu' ? (
+        <div className="restaurant-kitchen-products-section">
       <style>{`
         .restaurant-kitchen-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
         .restaurant-kitchen-header h1{margin-bottom:6px}
@@ -186,7 +187,8 @@ export function RestaurantKitchenPage({ restaurantId, view = 'orders' }: Props) 
             ))}
           </div>
         )}
-      </div> : null}
+        </div>
+      ) : null}
     </section>
   );
 }
