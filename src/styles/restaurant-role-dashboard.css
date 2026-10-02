@@ -22,3 +22,19 @@
 .restaurant-owner-dashboard-error{padding:12px 14px;margin-bottom:16px;border:1px solid #fecaca;border-radius:10px;background:#fff7f7;color:#991b1b;font-size:14px}
 @media(max-width:1050px){.restaurant-owner-dashboard-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){.restaurant-role-dashboard{width:min(calc(100% - 1.25rem),1060px);padding-top:16px}.restaurant-owner-dashboard-stats{grid-template-columns:1fr}.restaurant-owner-dashboard-links{grid-template-columns:1fr}.restaurant-owner-dashboard-section-heading{align-items:flex-start;flex-direction:column}.restaurant-owner-dashboard-heading h1{font-size:34px}}
+
+.restaurant-owner-dashboard-chart{margin-top:26px;padding:22px;background:#fff;border:1px solid #e2e8f0;border-radius:14px}
+.restaurant-owner-dashboard-chart-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:20px}
+.restaurant-owner-dashboard-chart-heading h2{margin:0;font-size:21px;letter-spacing:-.02em}
+.restaurant-owner-dashboard-chart-heading .eyebrow{margin-bottom:5px}
+.restaurant-owner-dashboard-chart-heading>span{color:#64748b;font-size:13px;font-weight:600}
+.restaurant-owner-dashboard-chart-empty{min-height:250px;display:grid;place-items:center;border:1px dashed #dbe1e8;border-radius:10px;color:#64748b}
+.restaurant-owner-dashboard-sales-chart{display:grid;grid-template-columns:55px 1fr;gap:12px;min-height:280px}
+.restaurant-owner-dashboard-sales-axis{display:flex;flex-direction:column;justify-content:space-between;padding:8px 0 28px;color:#94a3b8;font-size:11px;text-align:right}
+.restaurant-owner-dashboard-sales-bars{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:16px;align-items:end;min-width:0;border-bottom:1px solid #e2e8f0;padding:8px 4px 0}
+.restaurant-owner-dashboard-sales-column{display:grid;grid-template-rows:24px 1fr 28px;align-items:end;min-width:0;height:100%;text-align:center}
+.restaurant-owner-dashboard-sales-value{font-size:11px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.restaurant-owner-dashboard-sales-track{height:100%;min-height:190px;display:flex;align-items:flex-end;justify-content:center}
+.restaurant-owner-dashboard-sales-bar{width:min(42px,70%);min-height:2px;border-radius:7px 7px 2px 2px;background:#0f172a;transition:height .2s ease}
+.restaurant-owner-dashboard-sales-column>span{padding-top:8px;color:#64748b;font-size:12px;font-weight:600}
+@media(max-width:700px){.restaurant-owner-dashboard-chart-heading{align-items:flex-start;flex-direction:column}.restaurant-owner-dashboard-sales-chart{grid-template-columns:42px 1fr}.restaurant-owner-dashboard-sales-bars{gap:7px}.restaurant-owner-dashboard-sales-track{min-height:150px}.restaurant-owner-dashboard-sales-bar{width:70%}}
