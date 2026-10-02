@@ -157,17 +157,17 @@ export function RestaurantSalesPage({ restaurantId, role = 'owner' }: Props) {
 
   return (
     <section className="restaurant-sales-page">
-            {role !== 'owner' && <div className="restaurant-sales-header">
+            <div className="restaurant-sales-header">
         <div>
           <p className="eyebrow">Restaurant operations</p>
-          <h1>Sales</h1>
+          <h1>Sales Overview</h1>
           <p>View your completed sales by day and download a daily sales report.</p>
         </div>
         <span className={`restaurant-dashboard-live-status is-${realtimeStatus}`}>
           <span className="restaurant-dashboard-live-dot" />
           {realtimeStatus === 'live' ? 'Live' : realtimeStatus === 'connecting' ? 'Connecting…' : 'Reconnecting…'}
         </span>
-      </div>}
+      </div>
 
       {error && <div className="restaurant-sales-error" role="alert">{error}</div>}
 
