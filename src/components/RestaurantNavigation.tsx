@@ -43,7 +43,7 @@ function NavigationIcon({ type }: { type: NavigationItem['icon'] }) {
   }
 
   if (type === 'products') {
-    return <svg {...common}><path d="m12 3 7 4v10l-7 4-7-4V7z" /><path d="m5 7 7 4 7-4M12 11v10" /></svg>;
+    return <svg {...common}><path d="M4 9h16" /><path d="M5 9l1.5-4h11L19 9" /><path d="M6 9v9.5h12V9" /><path d="M9 18.5v-5h6v5" /><path d="M10 5v4M14 5v4" /></svg>;
   }
 
   if (type === 'riders') {
@@ -55,7 +55,7 @@ function NavigationIcon({ type }: { type: NavigationItem['icon'] }) {
   }
 
   if (type === 'shipping') {
-    return <svg {...common}><path d="M3.5 6.5h10v10h-10zM13.5 10h4l3 3v3.5h-7z" /><circle cx="7.5" cy="18" r="2" /><circle cx="17.5" cy="18" r="2" /></svg>;
+    return <svg {...common}><circle cx="7" cy="17.5" r="2.5" /><circle cx="18" cy="17.5" r="2.5" /><path d="M9.5 17.5h6M4.5 17.5H3v-5h2l2-5h6l3 3h3l2 3v4h-1.5" /><path d="M7 7.5h6M13 10.5h3" /></svg>;
   }
 
   if (type === 'loyalty') {
