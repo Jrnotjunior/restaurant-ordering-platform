@@ -11,6 +11,7 @@ type DraftBeneficiary = { discountType: PosDiscountType; idType: PosDiscountIdTy
 type PosPrintOrder = {
   orderNumber: string;
   customerName: string;
+  cashierName: string;
   orderType: 'dine_in' | 'pickup';
   createdAt: string;
   items: CartItem[];
@@ -51,6 +52,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orderType, setOrderType] = useState<'dine_in' | 'pickup'>('dine_in');
   const [customerName, setCustomerName] = useState('Walk-in Customer');
+  const [cashierName, setCashierName] = useState('Cashier');
   const [groupSize, setGroupSize] = useState(1);
   const [beneficiaries, setBeneficiaries] = useState<DraftBeneficiary[]>([]);
   const [taxSettings, setTaxSettings] = useState<RestaurantTaxSettings | null>(null);
@@ -76,7 +78,28 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
     }
   }
 
-  useEffect(() => { void loadMenu(); }, [restaurantId]);
+  useEffect(() => { void loadMenu(); void loadCashierName(); }, [restaurantId]);
+  async function loadCashierName() {
+    if (!supabase) return;
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+      if (!userId) return;
+      const { data, error: cashierError } = await supabase
+        .from('restaurant_staff')
+        .select('preferred_name,name')
+        .eq('restaurant_id', restaurantId)
+        .eq('auth_user_id', userId)
+        .eq('role', 'cashier')
+        .eq('is_active', true)
+        .maybeSingle();
+      if (cashierError) throw cashierError;
+      setCashierName(data?.preferred_name?.trim() || data?.name?.trim() || 'Cashier');
+    } catch {
+      setCashierName('Cashier');
+    }
+  }
+
 
   useEffect(() => {
     if (!supabase) return;
@@ -180,6 +203,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
       setPrintOrder({
         orderNumber: created.orderNumber,
         customerName: customerName.trim() || 'Walk-in Customer',
+        cashierName,
         orderType,
         createdAt: new Date().toISOString(),
         items: cart.map((item) => ({ ...item })),
@@ -368,6 +392,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
               <div className="pos-receipt-label">Customer</div>
               <div>{printOrder.customerName}</div>
             </div>
+            <div className="pos-receipt-row"><span>Cashier</span><span>{printOrder.cashierName}</span></div>
             <hr className="pos-receipt-divider" />
             <div>
               {printOrder.items.map((item) => (
