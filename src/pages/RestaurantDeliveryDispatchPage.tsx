@@ -48,6 +48,7 @@ type AssignmentRow = {
 };
 
 type Props = { restaurantId: string };
+type DispatchTab = 'dine_in' | 'delivery' | 'pickup';
 
 function formatReadyTime(value: string) {
   return new Intl.DateTimeFormat('en-PH', {
@@ -63,7 +64,7 @@ function todayStartIso() {
 
 export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
   const [orders, setOrders] = useState<ReadyOrder[]>([]);
-  const [pickupOrders, setPickupOrders] = useState<ReadyOrder[]>([]);
+  const [activeTab, setActiveTab] = useState<DispatchTab>('delivery');
   const [riders, setRiders] = useState<Rider[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<ReadyOrder | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,9 +89,8 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
           .from('orders')
           .select('id,order_number,customer_name,delivery_address,delivery_barangay,notes,total,created_at,pickup_method,order_type,rider_id')
           .eq('restaurant_id', restaurantId)
-          .in('order_type', ['delivery', 'dine_in'])
+          .in('order_type', ['delivery', 'pickup', 'dine_in'])
           .eq('status', 'ready')
-          .is('rider_id', null)
           .order('created_at', { ascending: true }),
         supabase
           .from('restaurant_riders')
@@ -137,16 +137,6 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
         orderType: order.order_type,
       });
       setOrders(((orderResult.data ?? []) as OrderRow[]).map(mapOrder));
-
-      const pickupResult = await supabase
-        .from('orders')
-        .select('id,order_number,customer_name,delivery_address,delivery_barangay,notes,total,created_at,pickup_method,order_type')
-        .eq('restaurant_id', restaurantId)
-        .in('order_type', ['pickup', 'dine_in'])
-        .eq('status', 'ready')
-        .order('created_at', { ascending: true });
-      if (pickupResult.error) throw pickupResult.error;
-      setPickupOrders(((pickupResult.data ?? []) as OrderRow[]).map(mapOrder));
 
       setRiders(((riderResult.data ?? []) as RiderRow[]).map((rider) => {
         const activeDeliveries = activeByRider.get(rider.id) ?? 0;
@@ -198,7 +188,24 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
     };
   }, [restaurantId]);
 
-  const availableOrders = useMemo(() => orders, [orders]);
+  const deliveryOrders = useMemo(
+    () => orders.filter((order) => order.orderType === 'delivery' && order.pickupMethod !== 'third_party_courier'),
+    [orders],
+  );
+  const pickupOrders = useMemo(
+    () => orders.filter((order) => order.orderType === 'pickup'),
+    [orders],
+  );
+  const dineInOrders = useMemo(
+    () => orders.filter((order) => order.orderType === 'dine_in'),
+    [orders],
+  );
+
+  const activeOrders = activeTab === 'delivery'
+    ? deliveryOrders
+    : activeTab === 'pickup'
+      ? pickupOrders
+      : dineInOrders;
 
   const statusLabel = (status: Rider['status']) => ({
     available: 'Available',
@@ -299,51 +306,62 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
       {error ? <div className="restaurant-dispatch-message" role="alert">{error}</div> : null}
 
       <main className="restaurant-dispatch-workflow">
+        <nav className="restaurant-dispatch-tabs" aria-label="Dispatch order type">
+          <button
+            type="button"
+            className={'restaurant-dispatch-tab' + (activeTab === 'delivery' ? ' is-active' : '')}
+            onClick={() => setActiveTab('delivery')}
+          >
+            <span>Delivery</span>
+            <span className="restaurant-dispatch-tab-count">{deliveryOrders.length}</span>
+          </button>
+          <button
+            type="button"
+            className={'restaurant-dispatch-tab' + (activeTab === 'pickup' ? ' is-active' : '')}
+            onClick={() => setActiveTab('pickup')}
+          >
+            <span>Pick Up</span>
+            <span className="restaurant-dispatch-tab-count">{pickupOrders.length}</span>
+          </button>
+          <button
+            type="button"
+            className={'restaurant-dispatch-tab' + (activeTab === 'dine_in' ? ' is-active' : '')}
+            onClick={() => setActiveTab('dine_in')}
+          >
+            <span>Dine In</span>
+            <span className="restaurant-dispatch-tab-count">{dineInOrders.length}</span>
+          </button>
+        </nav>
+
         <section className="restaurant-dispatch-card restaurant-dispatch-ready-card">
           <div className="restaurant-dispatch-card-heading">
             <div>
-              <p className="restaurant-dispatch-label">In-house delivery</p>
-              <h2>Orders waiting for a rider</h2>
+              <p className="restaurant-dispatch-label">
+                {activeTab === 'delivery' ? 'In-house delivery' : activeTab === 'pickup' ? 'Handoff' : 'Table service'}
+              </p>
+              <h2>
+                {activeTab === 'delivery'
+                  ? 'Orders waiting for a rider'
+                  : activeTab === 'pickup'
+                    ? 'Orders ready for pickup'
+                    : 'Orders ready to be served'}
+              </h2>
             </div>
-            <span className="restaurant-dispatch-count">{availableOrders.length}</span>
+            <span className="restaurant-dispatch-count">{activeOrders.length}</span>
           </div>
 
           <div className="restaurant-dispatch-order-list">
             {loading ? (
               <div className="restaurant-dispatch-empty">Loading ready orders…</div>
-            ) : availableOrders.length === 0 ? (
-              <div className="restaurant-dispatch-empty">There are no ready orders waiting for rider assignment.</div>
-            ) : availableOrders.map((order) => (
-              <article className="restaurant-dispatch-order" key={order.id}>
-                <div className="restaurant-dispatch-order-main">
-                  <div className="restaurant-dispatch-order-top">
-                    <strong>{order.orderNumber}</strong>
-                    <strong>₱{order.total.toFixed(2)}</strong>
-                  </div>
-                  <span>{order.customerName}</span>
-                  <span className="restaurant-dispatch-address">{order.address}</span>
-                  <small>Ready at {order.readyAt}</small>
-                </div>
-                <button className="restaurant-dispatch-assign-button" type="button" onClick={() => { setSelectedOrder(order); setMessage(''); setError(''); }}>
-                  Assign to Rider
-                </button>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="restaurant-dispatch-card restaurant-dispatch-ready-card">
-          <div className="restaurant-dispatch-card-heading">
-            <div>
-              <p className="restaurant-dispatch-label">Handoff</p>
-              <h2>Customer, courier & dine-in orders</h2>
-            </div>
-            <span className="restaurant-dispatch-count">{pickupOrders.length}</span>
-          </div>
-          <div className="restaurant-dispatch-order-list">
-            {pickupOrders.length === 0 ? (
-              <div className="restaurant-dispatch-empty">There are no ready pickup orders waiting for handoff.</div>
-            ) : pickupOrders.map((order) => (
+            ) : activeOrders.length === 0 ? (
+              <div className="restaurant-dispatch-empty">
+                {activeTab === 'delivery'
+                  ? 'There are no ready delivery orders waiting for rider assignment.'
+                  : activeTab === 'pickup'
+                    ? 'There are no ready pickup orders waiting for handoff.'
+                    : 'There are no ready dine-in orders waiting to be served.'}
+              </div>
+            ) : activeOrders.map((order) => (
               <article className="restaurant-dispatch-order" key={order.id}>
                 <div className="restaurant-dispatch-order-main">
                   <div className="restaurant-dispatch-order-top">
@@ -352,21 +370,29 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
                   </div>
                   <span>{order.customerName}</span>
                   <span className="restaurant-dispatch-address">
-                    {order.orderType === 'dine_in'
-                      ? 'Dine-in order'
-                      : order.pickupMethod === 'third_party_courier'
-                        ? 'Customer courier pickup'
-                        : 'Customer pickup'}
+                    {activeTab === 'delivery'
+                      ? order.address
+                      : activeTab === 'pickup'
+                        ? order.pickupMethod === 'third_party_courier'
+                          ? 'Customer courier pickup'
+                          : 'Customer pickup'
+                        : 'Dine-in order'}
                   </span>
                   <small>Ready at {order.readyAt}</small>
                 </div>
-                <button className="restaurant-dispatch-assign-button" type="button" disabled={assigning} onClick={() => void completePickup(order)}>
-                  {order.orderType === 'dine_in'
-                    ? 'Confirm Served'
-                    : order.pickupMethod === 'third_party_courier'
-                      ? 'Mark Handed to Courier'
-                      : 'Confirm Pickup'}
-                </button>
+                {activeTab === 'delivery' ? (
+                  <button className="restaurant-dispatch-assign-button" type="button" onClick={() => { setSelectedOrder(order); setMessage(''); setError(''); }}>
+                    Assign to Rider
+                  </button>
+                ) : (
+                  <button className="restaurant-dispatch-assign-button" type="button" disabled={assigning} onClick={() => void completePickup(order)}>
+                    {activeTab === 'dine_in'
+                      ? 'Confirm Served'
+                      : order.pickupMethod === 'third_party_courier'
+                        ? 'Mark Handed to Courier'
+                        : 'Confirm Pickup'}
+                  </button>
+                )}
               </article>
             ))}
           </div>
