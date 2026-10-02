@@ -12,7 +12,7 @@ declare
   v_restaurant public.restaurants%rowtype;
   v_eligible_amount numeric(12,2);
   v_points integer;
-  v_inserted boolean;
+  v_rows_affected integer;
 begin
   if old.status = 'completed' or new.status <> 'completed' or new.customer_id is null then
     return new;
@@ -73,8 +73,8 @@ begin
   )
   on conflict (order_id, transaction_type) do nothing;
 
-  get diagnostics v_inserted = row_count;
-  if not v_inserted then
+  get diagnostics v_rows_affected = row_count;
+  if v_rows_affected = 0 then
     return new;
   end if;
 
