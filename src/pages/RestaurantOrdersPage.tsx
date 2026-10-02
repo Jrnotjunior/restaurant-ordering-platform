@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { confirmDineInPayment, getRestaurantOrders, updateOrderStatus, type RestaurantOrder, type RestaurantOrderStatus } from '../services/restaurantOrderRepository';
 import { supabase } from '../services/supabaseClient';
 
-type Props = { restaurantId: string; role?: 'owner' | 'cashier' };
+type Props = { restaurantId: string; role?: 'owner' | 'cashier' | 'kitchen' };
 type BoardColumn = 'new' | 'kitchen' | 'ready' | 'completed';
 
 const statusLabels: Record<RestaurantOrderStatus, string> = {
@@ -67,6 +67,7 @@ const columns: Array<{ key: BoardColumn; title: string; description: string }> =
 
 export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
   const isCashier = role === 'cashier';
+  const isKitchen = role === 'kitchen';
   const [orders, setOrders] = useState<RestaurantOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -121,7 +122,13 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
     () => orders.filter((o) => !['completed', 'cancelled'].includes(o.status)),
     [orders],
   );
-  const boardOrders = isCashier ? orders : filter === 'active' ? activeOrders : orders;
+  const boardOrders = isCashier
+    ? orders
+    : isKitchen
+      ? activeOrders
+      : filter === 'active'
+        ? activeOrders
+        : orders;
   const openedColumn = columns.find((column) => column.key === openColumn) ?? null;
   const normalizedSearch = searchQuery.trim().toLowerCase();
   const searchedOrders = openedColumn?.key === 'new' && normalizedSearch
@@ -132,7 +139,10 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
     : boardOrders;
 
   const openedColumnOrders = openedColumn
-    ? searchedOrders.filter((order) => columnFor(order) === openedColumn.key)
+    ? searchedOrders.filter((order) => {
+        if (isKitchen && order.status === 'ready') return openedColumn.key === 'ready';
+        return columnFor(order) === openedColumn.key;
+      })
     : [];
 
   async function advance(order: RestaurantOrder) {
@@ -313,8 +323,11 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
         <div className="restaurant-orders-empty">Loading orders…</div>
       ) : (
         <div className="restaurant-order-board">
-          {columns.filter((column) => !isCashier || column.key === 'new').map((column) => {
-            const columnOrders = boardOrders.filter((order) => columnFor(order) === column.key);
+          {columns.filter((column) => isCashier ? column.key === 'new' : isKitchen ? (column.key === 'kitchen' || column.key === 'ready') : true).map((column) => {
+            const columnOrders = boardOrders.filter((order) => {
+              if (isKitchen && order.status === 'ready') return column.key === 'ready';
+              return columnFor(order) === column.key;
+            });
             return (
               <section className="restaurant-order-column" key={column.key}>
                 <button
