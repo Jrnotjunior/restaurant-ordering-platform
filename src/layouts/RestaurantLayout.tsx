@@ -9,15 +9,16 @@ type RestaurantLayoutProps = {
   hideChrome?: boolean;
   cartCount?: number;
   role?: RestaurantNavigationRole;
+  ownerDashboard?: boolean;
 };
 
-export function RestaurantLayout({ children, hideChrome = false, cartCount = 0, role = 'owner' }: RestaurantLayoutProps) {
+export function RestaurantLayout({ children, hideChrome = false, cartCount = 0, role = 'owner', ownerDashboard = false }: RestaurantLayoutProps) {
   useRestaurant();
 
   if (hideChrome) {
     return (
       <main className={`restaurant-operations-shell${role === 'owner' ? ' restaurant-operations-shell-owner' : ''}`}>
-        <RestaurantNavigation role={role} />
+        <RestaurantNavigation role={role} ownerDashboard={ownerDashboard} />
         {children}
       </main>
     );
