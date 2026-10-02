@@ -49,7 +49,7 @@ type AssignmentRow = {
   delivered_at: string | null;
 };
 
-type Props = { restaurantId: string };
+type Props = { restaurantId: string; role?: 'owner' | 'dispatcher' };
 type DispatchTab = 'dine_in' | 'delivery' | 'pickup';
 
 function formatReadyTime(value: string) {
