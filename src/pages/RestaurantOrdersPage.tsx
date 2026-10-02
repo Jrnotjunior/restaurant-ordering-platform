@@ -250,12 +250,25 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
           .restaurant-order-list-status{display:none}
           .restaurant-order-modal-actions .button{flex:1;min-width:130px}
         }
+        .restaurant-order-print-receipt{display:none}
         @media print{
+          @page{size:80mm auto;margin:0}
+          html,body{width:80mm!important;margin:0!important;padding:0!important;background:#fff!important}
           body *{visibility:hidden!important}
-          .restaurant-order-modal-backdrop,.restaurant-order-modal-backdrop *{visibility:visible!important}
-          .restaurant-order-modal-backdrop{position:static!important;padding:0!important;background:#fff!important;display:block!important}
-          .restaurant-order-modal{width:100%!important;max-height:none!important;overflow:visible!important;box-shadow:none!important;border-radius:0!important;padding:20px!important}
-          .restaurant-order-modal-close,.restaurant-order-modal-actions{display:none!important}
+          .restaurant-order-print-receipt,.restaurant-order-print-receipt *{visibility:visible!important}
+          .restaurant-order-print-receipt{display:block!important;width:80mm!important;box-sizing:border-box!important;margin:0!important;padding:5mm 4mm!important;font-family:Arial,sans-serif!important;font-size:11px!important;line-height:1.35!important;color:#000!important;background:#fff!important}
+          .restaurant-order-print-receipt *{box-sizing:border-box!important}
+          .receipt-center{text-align:center!important}
+          .receipt-title{font-size:16px!important;font-weight:800!important;margin:0 0 4px!important}
+          .receipt-order-number{font-size:12px!important;font-weight:800!important;word-break:break-word!important}
+          .receipt-muted{font-size:10px!important}
+          .receipt-divider{border:0!important;border-top:1px dashed #000!important;margin:8px 0!important}
+          .receipt-row{display:flex!important;justify-content:space-between!important;gap:10px!important}
+          .receipt-row span:last-child{white-space:nowrap!important;text-align:right!important}
+          .receipt-label{font-weight:700!important}
+          .receipt-item{display:flex!important;justify-content:space-between!important;gap:8px!important}
+          .receipt-item-name{min-width:0!important;overflow-wrap:anywhere!important}
+          .receipt-total{font-size:14px!important;font-weight:800!important}
         }
       `}</style>
 
@@ -461,6 +474,65 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
                 </button>
               ) : null}
             </div>
+          </div>
+
+          <div className="restaurant-order-print-receipt" aria-hidden="true">
+            <div className="receipt-center">
+              <div className="receipt-title">Restaurant Order</div>
+              <div className="receipt-order-number">{selectedOrder.orderNumber}</div>
+              <div className="receipt-muted">
+                {new Date(selectedOrder.createdAt).toLocaleString()}
+              </div>
+            </div>
+
+            <hr className="receipt-divider" />
+
+            <div className="receipt-center">
+              <div className="receipt-label">
+                {selectedOrder.orderType === 'dine_in'
+                  ? 'DINE-IN'
+                  : selectedOrder.orderType === 'pickup'
+                    ? 'PICKUP / TAKE-OUT'
+                    : 'DELIVERY'}
+              </div>
+              <div>{paymentLabel(selectedOrder)}</div>
+            </div>
+
+            <hr className="receipt-divider" />
+
+            <div>
+              <div className="receipt-label">Customer</div>
+              <div>{selectedOrder.customerName || 'Guest'}</div>
+            </div>
+
+            <hr className="receipt-divider" />
+
+            <div>
+              {selectedOrder.items.map((item) => (
+                <div className="receipt-item" key={item.id}>
+                  <span className="receipt-item-name">{item.quantity} × {item.productName}</span>
+                  <span>₱{item.lineTotal.toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+
+            <hr className="receipt-divider" />
+
+            {selectedOrder.orderType === 'delivery' && selectedOrder.shippingFee > 0 && (
+              <div className="receipt-row">
+                <span>Shipping fee</span>
+                <span>₱{selectedOrder.shippingFee.toFixed(2)}</span>
+              </div>
+            )}
+
+            <div className="receipt-row receipt-total">
+              <span>TOTAL</span>
+              <span>₱{selectedOrder.total.toFixed(2)}</span>
+            </div>
+
+            <hr className="receipt-divider" />
+
+            <div className="receipt-center">Thank you for your order!</div>
           </div>
         </div>
       )}
