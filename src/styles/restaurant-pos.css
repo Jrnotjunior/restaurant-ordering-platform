@@ -7,3 +7,27 @@
 .restaurant-pos-beneficiary .restaurant-pos-field{margin-top:10px}
 
 .restaurant-pos-tax-status{margin:12px 0 0;padding:8px 10px;border-radius:8px;background:#f1f5f9;color:#475569;font-size:12px;font-weight:700;text-align:center}
+
+.restaurant-pos-print-area{display:none}
+@media print{
+  @page{size:80mm auto;margin:0}
+  html,body{width:80mm!important;margin:0!important;padding:0!important;background:#fff!important}
+  body *{visibility:hidden!important}
+  .restaurant-pos-print-area,.restaurant-pos-print-area *{visibility:visible!important}
+  .restaurant-pos-print-area{display:block!important;position:static!important;width:80mm!important;max-width:80mm!important}
+  .restaurant-pos-print-receipt{display:block!important;width:80mm!important;max-width:80mm!important;box-sizing:border-box!important;margin:0!important;padding:4mm 4mm 6mm!important;font-family:Arial,sans-serif!important;font-size:12px!important;line-height:1.4!important;color:#000!important;background:#fff!important}
+  .restaurant-pos-kitchen-receipt{page-break-after:always!important;break-after:page!important}
+  .pos-receipt-center{text-align:center!important}
+  .pos-receipt-title{font-size:18px!important;line-height:1.2!important;font-weight:800!important;margin:0 0 5px!important}
+  .pos-receipt-order-number{font-size:13px!important;line-height:1.25!important;font-weight:800!important;word-break:break-word!important}
+  .pos-receipt-muted{font-size:11px!important}
+  .pos-receipt-divider{border:0!important;border-top:1px dashed #000!important;margin:9px 0!important}
+  .pos-receipt-label{font-weight:700!important}
+  .pos-receipt-kitchen-item{display:grid!important;grid-template-columns:35px minmax(0,1fr)!important;gap:8px!important;font-size:15px!important;font-weight:700!important;margin-bottom:8px!important}
+  .pos-receipt-row{display:flex!important;justify-content:space-between!important;align-items:flex-start!important;gap:12px!important}
+  .pos-receipt-row span:first-child{min-width:0!important}
+  .pos-receipt-row span:last-child{white-space:nowrap!important;text-align:right!important}
+  .pos-receipt-total{font-size:16px!important;line-height:1.25!important;font-weight:800!important}
+  .pos-receipt-discount-detail{margin-top:6px!important;font-size:10px!important;line-height:1.35!important}
+  .pos-receipt-signature{margin-top:14px!important;font-size:10px!important}
+}
