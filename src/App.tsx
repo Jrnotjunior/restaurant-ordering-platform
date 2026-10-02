@@ -10,6 +10,7 @@ import { RestaurantOrdersPage } from './pages/RestaurantOrdersPage';
 import { RestaurantMenuPage } from './pages/RestaurantMenuPage';
 import { RestaurantShippingFeePage } from './pages/RestaurantShippingFeePage';
 import { RestaurantSalesPage } from './pages/RestaurantSalesPage';
+import { RestaurantCashierPosPage } from './pages/RestaurantCashierPosPage';
 import { RestaurantRidersPage } from './pages/RestaurantRidersPage';
 import { RestaurantDeliveryDispatchPage } from './pages/RestaurantDeliveryDispatchPage';
 import { RestaurantSettingsPage } from './pages/RestaurantSettingsPage';
@@ -305,6 +306,7 @@ function AppContent() {
   const isRestaurantShippingFeePage = route === '#restaurant/shipping-fee';
   const isRestaurantSalesPage = route === '#restaurant/sales';
   const isCashierSalesPage = isRestaurantSalesPage;
+  const isCashierPosPage = route === '#restaurant/cashier-pos';
   const isRestaurantRidersPage = route === '#restaurant/riders';
   const isRestaurantDeliveryDispatchPage = route === '#restaurant/delivery-dispatch';
   const isRestaurantSettingsPage = route === '#restaurant/settings';
@@ -329,6 +331,18 @@ function AppContent() {
   if (riderDeliveryMatch) return <RiderRouteGuard><RiderDeliveryPage orderId={decodeURIComponent(riderDeliveryMatch[1])} /></RiderRouteGuard>;
 
   const publicContent = trackOrderNumber ? <OrderTrackingPage orderNumber={trackOrderNumber} /> : isMenuPage || (!isCartPage && !isCheckoutPage && !trackingMatch) ? <MenuPage onAddToCart={addToCart} cartCount={cartCount} /> : isCartPage ? <CartPage items={cartItems} onIncrease={(id) => changeQuantity(id, 1)} onDecrease={(id) => changeQuantity(id, -1)} onRemove={(id) => removeFromCart(id)} /> : isCheckoutPage ? <CheckoutPage items={cartItems} /> : <OrderTrackingPage orderNumber={decodeURIComponent(trackingMatch![1])} />;
+
+  if (isCashierPosPage) {
+    return <StaffRoleGuard role="cashier">{(staffRestaurant) => (
+      <RestaurantProvider restaurant={staffRestaurant}>
+        <ThemeProvider restaurant={staffRestaurant}>
+          <RestaurantLayout hideChrome role="cashier">
+            <RestaurantCashierPosPage restaurantId={staffRestaurant.id!} />
+          </RestaurantLayout>
+        </ThemeProvider>
+      </RestaurantProvider>
+    )}</StaffRoleGuard>;
+  }
 
   if (isCashierPage) {
     return <StaffRoleGuard role="cashier">{(staffRestaurant) => (
