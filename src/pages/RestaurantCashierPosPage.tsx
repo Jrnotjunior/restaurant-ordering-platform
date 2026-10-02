@@ -195,6 +195,15 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
 
     try {
       const enteredCustomerName = customerName.trim() || 'Walk-in Customer';
+
+      // Resolve the loyalty customer before creating the order so the order
+      // is never completed without its intended loyalty identity.
+      const loyaltyCustomer = enteredCustomerName.toLowerCase() !== 'walk-in customer'
+        ? selectedCustomerId
+          ? { customerId: selectedCustomerId, name: enteredCustomerName }
+          : await getOrCreateWalkInCustomer(restaurantId, enteredCustomerName)
+        : null;
+
       const created = await createOrder({
         restaurantId,
         customerName: enteredCustomerName,
@@ -207,12 +216,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
         items: cart.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
       });
 
-      // A selected suggestion reuses an existing loyalty customer. A new
-      // walk-in name creates a loyalty record on first completed order.
-      if (enteredCustomerName.toLowerCase() !== 'walk-in customer') {
-        const loyaltyCustomer = selectedCustomerId
-          ? { customerId: selectedCustomerId, name: enteredCustomerName }
-          : await getOrCreateWalkInCustomer(restaurantId, enteredCustomerName);
+      if (loyaltyCustomer) {
         await attachCustomerToOrder(created.orderId, loyaltyCustomer.customerId);
       }
 
