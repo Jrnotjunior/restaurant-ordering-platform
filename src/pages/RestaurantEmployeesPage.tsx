@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { supabase, supabaseGet } from '../services/supabaseClient';
 
-type StaffRole = 'cashier' | 'kitchen' | 'dispatcher';
+type StaffRole = 'cashier' | 'kitchen' | 'dispatcher' | 'rider';
 
 type RiderAccount = {
   id: string;
@@ -47,10 +47,8 @@ const roleLabels: Record<StaffRole, string> = {
 
 export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string }) {
   const [staff, setStaff] = useState<StaffAccount[]>([]);
-  const [riders, setRiders] = useState<RiderAccount[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffAccount | null>(null);
-  const [editingRider, setEditingRider] = useState<RiderAccount | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -59,18 +57,11 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
     setLoading(true);
     setError('');
     try {
-      const [rows, riderRows] = await Promise.all([
-        supabaseGet<StaffRow>('restaurant_staff', {
-          select: 'id,name,preferred_name,mobile_number,email,role,is_active',
-          restaurant_id: `eq.${restaurantId}`,
-          order: 'created_at.asc',
-        }),
-        supabaseGet<RiderRow>('restaurant_riders', {
-          select: 'id,name,mobile_number,email,is_active',
-          restaurant_id: `eq.${restaurantId}`,
-          order: 'created_at.asc',
-        }),
-      ]);
+      const rows = await supabaseGet<StaffRow>('restaurant_staff', {
+        select: 'id,name,preferred_name,mobile_number,email,role,is_active',
+        restaurant_id: `eq.${restaurantId}`,
+        order: 'created_at.asc',
+      });
       setStaff(rows.map((row) => ({
         id: row.id,
         name: row.name,
@@ -78,13 +69,6 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
         mobileNumber: row.mobile_number,
         email: row.email,
         role: row.role,
-        isActive: row.is_active,
-      })));
-      setRiders(riderRows.map((row) => ({
-        id: row.id,
-        name: row.name,
-        mobileNumber: row.mobile_number,
-        email: row.email ?? '',
         isActive: row.is_active,
       })));
     } catch (loadError) {
@@ -95,53 +79,6 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
   }
 
   useEffect(() => { void loadStaff(); }, [restaurantId]);
-
-  async function handleRiderEdit(event: FormEvent<HTMLFormElement>, rider: RiderAccount) {
-    event.preventDefault();
-    if (!supabase) return;
-
-    const form = new FormData(event.currentTarget);
-    const name = String(form.get('name') || '').trim();
-    const mobileNumber = String(form.get('mobileNumber') || '').trim();
-    const email = String(form.get('email') || '').trim();
-
-    setSaving(true);
-    setError('');
-    try {
-      const { error: updateError } = await supabase
-        .from('restaurant_riders')
-        .update({ name, mobile_number: mobileNumber, email: email || null })
-        .eq('id', rider.id)
-        .eq('restaurant_id', restaurantId);
-
-      if (updateError) throw updateError;
-      await loadStaff();
-    } catch (updateError) {
-      setError(updateError instanceof Error ? updateError.message : 'Unable to update rider.');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function toggleRiderActive(rider: RiderAccount) {
-    if (!supabase) return;
-    setSaving(true);
-    setError('');
-    try {
-      const { error: updateError } = await supabase
-        .from('restaurant_riders')
-        .update({ is_active: !rider.isActive })
-        .eq('id', rider.id)
-        .eq('restaurant_id', restaurantId);
-
-      if (updateError) throw updateError;
-      await loadStaff();
-    } catch (updateError) {
-      setError(updateError instanceof Error ? updateError.message : 'Unable to update rider status.');
-    } finally {
-      setSaving(false);
-    }
-  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -208,6 +145,16 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
         .eq('restaurant_id', restaurantId);
 
       if (updateError) throw updateError;
+
+      if (editingStaff.role === 'rider') {
+        const { error: riderUpdateError } = await supabase
+          .from('restaurant_riders')
+          .update({ name, mobile_number: mobileNumber })
+          .eq('restaurant_id', restaurantId)
+          .ilike('email', editingStaff.email);
+        if (riderUpdateError) throw riderUpdateError;
+      }
+
       setEditingStaff(null);
       await loadStaff();
     } catch (updateError) {
@@ -229,6 +176,16 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
         .eq('restaurant_id', restaurantId);
 
       if (updateError) throw updateError;
+
+      if (employee.role === 'rider') {
+        const { error: riderUpdateError } = await supabase
+          .from('restaurant_riders')
+          .update({ is_active: !employee.isActive })
+          .eq('restaurant_id', restaurantId)
+          .ilike('email', employee.email);
+        if (riderUpdateError) throw riderUpdateError;
+      }
+
       await loadStaff();
     } catch (updateError) {
       setError(updateError instanceof Error ? updateError.message : 'Unable to update employee status.');
@@ -240,7 +197,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
   return (
     <section className="restaurant-employees-page">
       <div className="restaurant-employees-toolbar">
-        <span>{staff.length + riders.length} {(staff.length + riders.length) === 1 ? 'employee' : 'employees'}</span>
+        <span>{staff.length} {staff.length === 1 ? 'employee' : 'employees'}</span>
         <button className="button button-primary" type="button" onClick={() => setShowForm((current) => !current)}>
           {showForm ? 'Close' : 'Add Employee'}
         </button>
@@ -252,14 +209,14 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
         <form className="restaurant-employee-form" onSubmit={(event) => void handleSubmit(event)}>
           <div className="restaurant-employee-form-heading">
             <div><p className="eyebrow">New employee</p><h2>Add employee</h2></div>
-            <p>Kitchen and Dispatcher are shared accounts. Only one active account of each role can exist for this restaurant.</p>
+            <p>Kitchen and Dispatcher are shared accounts. Rider accounts are also created through this employee invitation flow.</p>
           </div>
           <div className="restaurant-employee-form-grid">
             <label>Full name<input name="name" type="text" placeholder="e.g. Juan Dela Cruz" required /></label>
             <label>Preferred name<input name="preferredName" type="text" placeholder="e.g. Juan" required /></label>
             <label>Mobile number<input name="mobileNumber" type="tel" placeholder="09XX XXX XXXX" required /></label>
             <label>Login email<input name="email" type="email" placeholder="employee@example.com" required /></label>
-            <label>Role<select name="role" defaultValue="cashier"><option value="cashier">Cashier</option><option value="kitchen">Kitchen</option><option value="dispatcher">Dispatcher</option></select></label>
+            <label>Role<select name="role" defaultValue="cashier"><option value="cashier">Cashier</option><option value="kitchen">Kitchen</option><option value="dispatcher">Dispatcher</option><option value="rider">Rider</option></select></label>
           </div>
           <p className="restaurant-employee-form-help">A Supabase Auth account is created automatically and an invitation email is sent so the employee can set a password.</p>
           <div className="restaurant-employee-form-actions">
@@ -270,7 +227,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
       ) : null}
 
       <div className="restaurant-employees-list">
-        {loading ? <div className="restaurant-employees-empty">Loading employees…</div> : staff.length === 0 && riders.length === 0 ? <div className="restaurant-employees-empty">No employees have been added yet.</div> : <>
+        {loading ? <div className="restaurant-employees-empty">Loading employees…</div> : staff.length === 0 ? <div className="restaurant-employees-empty">No employees have been added yet.</div> : <>
           {staff.map((employee) => (
           <article className={`restaurant-employee-card${employee.isActive ? '' : ' is-inactive'}`} key={employee.id}>
             <div className="restaurant-employee-avatar" aria-hidden="true">{employee.name.charAt(0).toUpperCase()}</div>
@@ -288,50 +245,9 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
             </div>
           </article>
           ))}
-          {riders.map((rider) => (
-            <article className="restaurant-employee-card" key={`rider-${rider.id}`}>
-              <div className="restaurant-employee-avatar" aria-hidden="true">{rider.name.charAt(0).toUpperCase()}</div>
-              <div className="restaurant-employee-details">
-                <div className="restaurant-employee-name-row"><h2>{rider.name}</h2><span className="restaurant-employee-role">Rider</span></div>
-                <p>{rider.mobileNumber}</p>
-                {rider.email ? <p>{rider.email}</p> : null}
-                {!rider.isActive ? <p className="restaurant-employee-status">Inactive</p> : null}
-              </div>
-              <div className="restaurant-employee-actions">
-                <button className="button button-secondary" type="button" onClick={() => setEditingRider(rider)} disabled={saving}>
-                  Edit
-                </button>
-                <button className="button button-secondary" type="button" onClick={() => void toggleRiderActive(rider)} disabled={saving}>
-                  {rider.isActive ? 'Deactivate' : 'Activate'}
-                </button>
-              </div>
-            </article>
-          ))}
+
         </>}
       </div>
-
-      {editingRider ? (
-        <div className="restaurant-employee-modal-backdrop" role="presentation" onMouseDown={(event) => {
-          if (event.target === event.currentTarget && !saving) setEditingRider(null);
-        }}>
-          <form className="restaurant-employee-modal restaurant-employee-edit-modal" onSubmit={(event) => void handleRiderEdit(event, editingRider)}>
-            <div className="restaurant-employee-modal-header">
-              <div><p className="eyebrow">Edit rider</p><h2>Update employee details</h2></div>
-              <button className="restaurant-employee-modal-close" type="button" onClick={() => setEditingRider(null)} disabled={saving} aria-label="Close">×</button>
-            </div>
-            <div className="restaurant-employee-form-grid">
-              <label>Full name<input name="name" type="text" defaultValue={editingRider.name} required /></label>
-              <label>Mobile number<input name="mobileNumber" type="tel" defaultValue={editingRider.mobileNumber} required /></label>
-              <label>Login email<input name="email" type="email" defaultValue={editingRider.email} /></label>
-              <label>Role<input value="Rider" readOnly /></label>
-            </div>
-            <div className="restaurant-employee-modal-actions">
-              <button className="button button-secondary" type="button" onClick={() => setEditingRider(null)} disabled={saving}>Cancel</button>
-              <button className="button button-primary" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save Changes'}</button>
-            </div>
-          </form>
-        </div>
-      ) : null}
 
       {editingStaff ? (
         <div className="restaurant-employee-modal-backdrop" role="presentation" onMouseDown={(event) => {
