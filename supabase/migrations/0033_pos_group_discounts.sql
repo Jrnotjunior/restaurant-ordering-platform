@@ -42,6 +42,8 @@ create unique index if not exists order_discount_beneficiaries_order_id_number_i
 
 alter table public.order_discount_beneficiaries enable row level security;
 
+grant select on table public.order_discount_beneficiaries to authenticated;
+
 drop policy if exists "Restaurant owners can read order discount beneficiaries" on public.order_discount_beneficiaries;
 create policy "Restaurant owners can read order discount beneficiaries"
 on public.order_discount_beneficiaries
