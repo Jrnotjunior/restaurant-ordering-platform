@@ -249,6 +249,11 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
         .restaurant-order-cancel-modal-text{margin:0;color:#64748b;line-height:1.5}
         .restaurant-order-cancel-modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
         .restaurant-order-cancel-button{border:0;border-radius:10px;padding:11px 16px;background:#dc2626;color:#fff;font-weight:700;cursor:pointer}
+        .restaurant-kitchen-order-item{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:13px 0;border-bottom:1px solid #e2e8f0;color:#0f172a}
+        .restaurant-kitchen-order-item:last-child{border-bottom:0}
+        .restaurant-kitchen-order-item .restaurant-order-item-name{min-width:0;font-size:14px;font-weight:600;line-height:1.4}
+        .restaurant-kitchen-order-quantity{flex:0 0 auto;min-width:42px;text-align:right;color:#475569;font-size:14px;font-weight:700}
+
         .restaurant-order-cancel-button:disabled{opacity:.6;cursor:not-allowed}
         @media(max-width:600px){
           .restaurant-order-list-modal-backdrop,.restaurant-order-modal-backdrop{padding:10px;align-items:flex-end}
