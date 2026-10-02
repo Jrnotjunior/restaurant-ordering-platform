@@ -103,7 +103,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
       const created = await createOrder({
         restaurantId,
         customerName: customerName.trim() || 'Walk-in Customer',
-        mobileNumber: '',
+        mobileNumber: 'N/A',
         orderType,
         deliveryBarangay: '',
         deliveryAddress: '',
