@@ -116,19 +116,11 @@ function OwnerDashboard({ restaurantName, restaurantId }: { restaurantName?: str
 
   return (
     <div className="restaurant-owner-dashboard">
-      <header className="restaurant-owner-dashboard-topbar">
-        <div>
-          <p className="eyebrow">Store owner</p>
-          <h2>{restaurantName || 'Restaurant'}</h2>
-        </div>
-        <span className="restaurant-owner-dashboard-live"><span /> System Online</span>
-      </header>
-
       <div className="restaurant-owner-dashboard-heading">
         <div>
-          <p className="eyebrow">Overview</p>
-          <h1>Restaurant Dashboard</h1>
-          <p>Monitor today's activity and access your restaurant operations.</p>
+          <p className="eyebrow">Restaurant Operations</p>
+          <h1>Dashboard</h1>
+          <p>Monitor today's activity and manage your restaurant operations.</p>
         </div>
       </div>
 
