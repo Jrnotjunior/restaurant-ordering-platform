@@ -116,14 +116,6 @@ function OwnerDashboard({ restaurantName, restaurantId }: { restaurantName?: str
 
   return (
     <div className="restaurant-owner-dashboard">
-      <div className="restaurant-owner-dashboard-heading">
-        <div>
-          <p className="eyebrow">Restaurant Operations</p>
-          <h1>Dashboard</h1>
-          <p>Monitor today's activity and manage your restaurant operations.</p>
-        </div>
-      </div>
-
       {error && <div className="restaurant-owner-dashboard-error" role="alert">{error}</div>}
 
       <section className="restaurant-owner-dashboard-stats" aria-label="Restaurant overview">
