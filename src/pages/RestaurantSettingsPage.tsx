@@ -172,14 +172,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         @media(max-width:700px){.restaurant-settings-day{grid-template-columns:1fr 1fr}.restaurant-settings-day-name{grid-column:1/-1}.restaurant-settings-toggle{grid-column:1/-1}.restaurant-settings-actions .button{width:100%}}
       `}</style>
 
-            <div className="restaurant-shipping-header">
-        <div>
-          <p className="eyebrow">Restaurant settings</p>
-          <h1>Store Settings</h1>
-          <p>Set the store address and operating hours customers should use for pickup.</p>
-        </div>
-      </div>
-
       {error && <div className="restaurant-shipping-message is-error" role="alert">{error}</div>}
       {message && <div className="restaurant-shipping-message is-success" role="status">{message}</div>}
 
