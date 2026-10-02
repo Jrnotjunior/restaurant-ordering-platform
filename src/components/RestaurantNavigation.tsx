@@ -66,7 +66,10 @@ function getCurrentRoute() {
 
 const roleNavigationItems: Record<RestaurantNavigationRole, NavigationItem[]> = {
   owner: ownerNavigationItems,
-  cashier: [{ label: 'Orders', href: '#restaurant/cashier', icon: 'orders' }],
+  cashier: [
+    { label: 'Orders', href: '#restaurant/cashier', icon: 'orders' },
+    { label: 'Sales', href: '#restaurant/sales', icon: 'sales' },
+  ],
   kitchen: [{ label: 'Kitchen', href: '#restaurant/kitchen', icon: 'orders' }],
   dispatcher: [{ label: 'Dispatch', href: '#restaurant/dispatcher', icon: 'dispatch' }],
   rider: [{ label: 'Deliveries', href: '#rider/dashboard', icon: 'dispatch' }],
