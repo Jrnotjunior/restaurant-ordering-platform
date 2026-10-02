@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { RestaurantOrdersPage } from './RestaurantOrdersPage';
 import { getMenu, setProductAvailability } from '../services/menuRepository';
 import { supabase } from '../services/supabaseClient';
 import type { RestaurantCategory, RestaurantProduct } from '../types/menu';
@@ -77,6 +78,9 @@ export function RestaurantKitchenPage({ restaurantId }: Props) {
 
   return (
     <section className="restaurant-kitchen-page">
+      <RestaurantOrdersPage restaurantId={restaurantId} role="kitchen" />
+
+      <div className="restaurant-kitchen-products-section">
       <style>{`
         .restaurant-kitchen-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
         .restaurant-kitchen-header h1{margin-bottom:6px}
@@ -182,6 +186,7 @@ export function RestaurantKitchenPage({ restaurantId }: Props) {
             ))}
           </div>
         )}
+      </div>
       </div>
     </section>
   );
