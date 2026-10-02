@@ -45,7 +45,7 @@ async function loadOwnerStats(restaurantId: string): Promise<OwnerStats> {
 
   const [orders, products, employees, riders] = await Promise.all([
     supabase.from('orders').select('id,total,status,created_at,order_type,delivery_status').eq('restaurant_id', restaurantId).gte('created_at', start).lt('created_at', end),
-    supabase.from('products').select('id').eq('restaurant_id', restaurantId).eq('is_active', true),
+    supabase.from('products').select('id').eq('restaurant_id', restaurantId),
     supabase.from('restaurant_staff').select('id').eq('restaurant_id', restaurantId).eq('is_active', true),
     supabase.from('restaurant_riders').select('id').eq('restaurant_id', restaurantId).eq('is_active', true),
   ]);
