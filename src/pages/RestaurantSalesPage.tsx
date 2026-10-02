@@ -278,4 +278,5 @@ export function RestaurantSalesPage({ restaurantId, role = 'owner' }: Props) {
         )}
       </div>
     </section>
+  );
 }
