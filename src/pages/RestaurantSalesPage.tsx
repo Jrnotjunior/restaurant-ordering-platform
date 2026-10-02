@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx';
 import { getRestaurantOrders, type RestaurantOrder } from '../services/restaurantOrderRepository';
 import { supabase } from '../services/supabaseClient';
 
-type Props = { restaurantId: string };
+type Props = { restaurantId: string; role?: 'owner' | 'cashier' };
 
 type DailySales = {
   dateKey: string;
