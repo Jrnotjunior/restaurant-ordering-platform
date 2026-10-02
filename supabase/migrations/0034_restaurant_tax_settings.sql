@@ -71,7 +71,7 @@ $$;
 
 grant execute on function public.get_restaurant_tax_settings(uuid) to authenticated;
 
-create or replace function public.apply_pos_group_discounts(
+drop function if exists public.apply_pos_group_discounts(uuid, integer, jsonb);\n\ncreate or replace function public.apply_pos_group_discounts(
   p_order_id uuid,
   p_group_size integer,
   p_beneficiaries jsonb
