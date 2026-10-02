@@ -136,7 +136,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .eq('id', restaurantId);
 
       if (saveError) throw saveError;
-      setMessage('Store address and operating hours saved.');
+      setMessage('Store and tax settings saved successfully.');
       await loadSettings();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Unable to save store settings.');
