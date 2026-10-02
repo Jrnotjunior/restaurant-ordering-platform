@@ -79,12 +79,13 @@ function OwnerDashboard({ restaurantName, restaurantId }: { restaurantName?: str
 
   useEffect(() => {
     if (!restaurantId) return;
+    const ownerRestaurantId = restaurantId;
     let mounted = true;
     async function load() {
       try {
         setLoading(true);
         setError('');
-        const data = await loadOwnerStats(restaurantId);
+        const data = await loadOwnerStats(ownerRestaurantId);
         if (mounted) setStats(data);
       } catch (err) {
         if (mounted) setError(err instanceof Error ? err.message : 'Unable to load dashboard data.');
@@ -93,10 +94,10 @@ function OwnerDashboard({ restaurantName, restaurantId }: { restaurantName?: str
       }
     }
     void load();
-    const channel = supabase?.channel(`owner-dashboard:${restaurantId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `restaurant_id=eq.${restaurantId}` }, () => { void load(); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'products', filter: `restaurant_id=eq.${restaurantId}` }, () => { void load(); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'restaurant_staff', filter: `restaurant_id=eq.${restaurantId}` }, () => { void load(); })
+    const channel = supabase?.channel(`owner-dashboard:${ownerRestaurantId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `restaurant_id=eq.${ownerRestaurantId}` }, () => { void load(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products', filter: `restaurant_id=eq.${ownerRestaurantId}` }, () => { void load(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'restaurant_staff', filter: `restaurant_id=eq.${ownerRestaurantId}` }, () => { void load(); })
       .subscribe();
     return () => {
       mounted = false;
