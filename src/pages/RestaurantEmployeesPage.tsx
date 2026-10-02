@@ -3,6 +3,13 @@ import { supabase, supabaseGet } from '../services/supabaseClient';
 
 type StaffRole = 'cashier' | 'kitchen' | 'dispatcher';
 
+type RiderAccount = {
+  id: string;
+  name: string;
+  mobileNumber: string;
+  email: string;
+};
+
 type StaffAccount = {
   id: string;
   name: string;
@@ -23,6 +30,13 @@ type StaffRow = {
   is_active: boolean;
 };
 
+type RiderRow = {
+  id: string;
+  name: string;
+  mobile_number: string;
+  email: string | null;
+};
+
 const roleLabels: Record<StaffRole, string> = {
   cashier: 'Cashier',
   kitchen: 'Kitchen',
@@ -31,6 +45,7 @@ const roleLabels: Record<StaffRole, string> = {
 
 export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string }) {
   const [staff, setStaff] = useState<StaffAccount[]>([]);
+  const [riders, setRiders] = useState<RiderAccount[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffAccount | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,11 +56,18 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
     setLoading(true);
     setError('');
     try {
-      const rows = await supabaseGet<StaffRow>('restaurant_staff', {
-        select: 'id,name,preferred_name,mobile_number,email,role,is_active',
-        restaurant_id: `eq.${restaurantId}`,
-        order: 'created_at.asc',
-      });
+      const [rows, riderRows] = await Promise.all([
+        supabaseGet<StaffRow>('restaurant_staff', {
+          select: 'id,name,preferred_name,mobile_number,email,role,is_active',
+          restaurant_id: `eq.${restaurantId}`,
+          order: 'created_at.asc',
+        }),
+        supabaseGet<RiderRow>('restaurant_riders', {
+          select: 'id,name,mobile_number,email',
+          restaurant_id: `eq.${restaurantId}`,
+          order: 'created_at.asc',
+        }),
+      ]);
       setStaff(rows.map((row) => ({
         id: row.id,
         name: row.name,
@@ -54,6 +76,12 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
         email: row.email,
         role: row.role,
         isActive: row.is_active,
+      })));
+      setRiders(riderRows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        mobileNumber: row.mobile_number,
+        email: row.email ?? '',
       })));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load employees.');
@@ -161,7 +189,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
   return (
     <section className="restaurant-employees-page">
       <div className="restaurant-employees-toolbar">
-        <span>{staff.length} {staff.length === 1 ? 'employee' : 'employees'}</span>
+        <span>{staff.length + riders.length} {(staff.length + riders.length) === 1 ? 'employee' : 'employees'}</span>
         <button className="button button-primary" type="button" onClick={() => setShowForm((current) => !current)}>
           {showForm ? 'Close' : 'Add Employee'}
         </button>
@@ -191,7 +219,8 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
       ) : null}
 
       <div className="restaurant-employees-list">
-        {loading ? <div className="restaurant-employees-empty">Loading employees…</div> : staff.length === 0 ? <div className="restaurant-employees-empty">No employees have been added yet.</div> : staff.map((employee) => (
+        {loading ? <div className="restaurant-employees-empty">Loading employees…</div> : staff.length === 0 && riders.length === 0 ? <div className="restaurant-employees-empty">No employees have been added yet.</div> : <>
+          {staff.map((employee) => (
           <article className={`restaurant-employee-card${employee.isActive ? '' : ' is-inactive'}`} key={employee.id}>
             <div className="restaurant-employee-avatar" aria-hidden="true">{employee.name.charAt(0).toUpperCase()}</div>
             <div className="restaurant-employee-details">
@@ -207,7 +236,21 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
               </button>
             </div>
           </article>
-        ))}
+          ))}
+          {riders.map((rider) => (
+            <article className="restaurant-employee-card" key={`rider-${rider.id}`}>
+              <div className="restaurant-employee-avatar" aria-hidden="true">{rider.name.charAt(0).toUpperCase()}</div>
+              <div className="restaurant-employee-details">
+                <div className="restaurant-employee-name-row"><h2>{rider.name}</h2><span className="restaurant-employee-role">Rider</span></div>
+                <p>{rider.mobileNumber}</p>
+                {rider.email ? <p>{rider.email}</p> : null}
+              </div>
+              <div className="restaurant-employee-actions">
+                <a className="button button-secondary" href="#restaurant/riders">Manage Rider</a>
+              </div>
+            </article>
+          ))}
+        </>}
       </div>
 
       {editingStaff ? (
