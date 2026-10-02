@@ -51,9 +51,9 @@ function isOnlinePaid(order: RestaurantOrder) {
 function columnFor(order: RestaurantOrder): BoardColumn | null {
   if (order.status === 'pending') return 'new';
   if (order.status === 'confirmed' || order.status === 'preparing') return 'kitchen';
-  // Delivery orders leave the restaurant Orders board once they are ready.
-  // They are handled in Delivery Dispatch instead.
-  if (order.status === 'ready' && order.orderType !== 'delivery') return 'ready';
+  // Delivery and pickup orders leave the restaurant Orders board once they are ready.
+  // They are handled in Dispatch instead. Dine-in orders remain on the Ready board.
+  if (order.status === 'ready' && order.orderType === 'dine_in') return 'ready';
   if (order.status === 'completed') return 'completed';
   return null;
 }
@@ -448,7 +448,7 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
               {statusLabels[selectedOrder.status]} · {new Date(selectedOrder.createdAt).toLocaleString()}
             </p>
             <div className="restaurant-order-meta">
-              <span>{selectedOrder.orderType === 'dine_in' ? 'Dine-in' : selectedOrder.orderType === 'pickup' ? 'Pickup / Take-out' : 'Delivery'}</span>
+              <span>{selectedOrder.orderType === 'dine_in' ? 'Dine-in' : selectedOrder.orderType === 'pickup' ? (selectedOrder.pickupMethod === 'third_party_courier' ? 'Customer Courier Pickup' : 'Pickup / Take-out') : 'Delivery'}</span>
               <span>{paymentLabel(selectedOrder)}</span>
             </div>
             <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 10, background: '#f8fafc', color: '#334155' }}>
