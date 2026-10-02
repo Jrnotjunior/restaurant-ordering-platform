@@ -27,15 +27,7 @@ const roleInfo = {
   dispatcher: { eyebrow: 'Dispatch', title: 'Dispatcher Dashboard', description: 'Manage ready orders, rider assignments, pickups, and courier handoffs.' },
 } as const;
 
-const ownerLinks = [
-  { label: 'Orders', href: '#restaurant/orders', description: 'Review and manage customer orders.' },
-  { label: 'Products', href: '#restaurant/menu', description: 'Manage your menu and product availability.' },
-  { label: 'Employees', href: '#restaurant/employees', description: 'Manage cashiers, kitchen staff, dispatchers, and riders.' },
-  { label: 'Dispatch', href: '#restaurant/delivery-dispatch', description: 'Handle ready deliveries, pickups, and dine-in service.' },
-  { label: 'Shipping Fee', href: '#restaurant/shipping-fee', description: 'Configure delivery zones and fees.' },
-  { label: 'Sales', href: '#restaurant/sales', description: 'Review sales activity and reports.' },
-  { label: 'Store Settings', href: '#restaurant/settings', description: 'Manage restaurant settings and tax configuration.' },
-];
+
 
 async function loadOwnerStats(restaurantId: string): Promise<OwnerStats> {
   if (!supabase) throw new Error('Supabase is not configured.');
@@ -168,7 +160,7 @@ function OwnerDashboard({ restaurantName, restaurantId }: { restaurantName?: str
         ) : (
           <div className="restaurant-owner-dashboard-sales-chart" role="img" aria-label="Daily completed sales for the last 7 days">
             <div className="restaurant-owner-dashboard-sales-axis">
-              <span>₱{Math.round(Math.max(...(stats?.dailySales ?? [{ total: 0 }].map(() => ({ total: 0 }))), (point) => point.total) / 1000)}k</span>
+              <span>₱{Math.round((Math.max(...(stats?.dailySales.map((point) => point.total) ?? [0]), 0)) / 1000)}k</span>
               <span>₱0</span>
             </div>
             <div className="restaurant-owner-dashboard-sales-bars">
