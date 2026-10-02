@@ -17,7 +17,7 @@ export function RestaurantLayout({ children, hideChrome = false, cartCount = 0, 
 
   if (hideChrome) {
     return (
-      <main className={`restaurant-operations-shell${role === 'owner' ? ' restaurant-operations-shell-owner' : ''}`}>
+      <main className={`restaurant-operations-shell${role === 'owner' && ownerDashboard ? ' restaurant-operations-shell-owner' : ''}`}>
         <RestaurantNavigation role={role} ownerDashboard={ownerDashboard} />
         {children}
       </main>
