@@ -177,6 +177,7 @@ function OwnerRestaurantGuard({ children }: { children: (restaurant: RestaurantC
         .from('restaurant_riders')
         .select('id')
         .eq('auth_user_id', user.id)
+        .eq('is_active', true)
         .maybeSingle();
 
       if (!mounted) return;
