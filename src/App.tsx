@@ -314,6 +314,7 @@ function AppContent() {
   const isRestaurantEmployeesPage = route === '#restaurant/employees';
   const isCashierPage = route === '#restaurant/cashier';
   const isKitchenPage = route === '#restaurant/kitchen';
+  const isKitchenMenuPage = route === '#restaurant/kitchen-menu';
   const isDispatcherPage = route === '#restaurant/dispatcher';
   const restaurantRoleRoute = route.match(/^#restaurant\/(owner|cashier|kitchen|dispatcher)$/)?.[1] as 'owner' | 'cashier' | 'kitchen' | 'dispatcher' | undefined;
   const isRiderDashboardPage = route === '#rider/dashboard' || route === '#rider/delivery-preview';
@@ -357,12 +358,12 @@ function AppContent() {
     )}</StaffRoleGuard>;
   }
 
-  if (isKitchenPage) {
+  if (isKitchenPage || isKitchenMenuPage) {
     return <StaffRoleGuard role="kitchen">{(staffRestaurant) => (
       <RestaurantProvider restaurant={staffRestaurant}>
         <ThemeProvider restaurant={staffRestaurant}>
           <RestaurantLayout hideChrome role="kitchen">
-            <RestaurantKitchenPage restaurantId={staffRestaurant.id!} />
+            <RestaurantKitchenPage restaurantId={staffRestaurant.id!} view={isKitchenMenuPage ? 'menu' : 'orders'} />
           </RestaurantLayout>
         </ThemeProvider>
       </RestaurantProvider>
