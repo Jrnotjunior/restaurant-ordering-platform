@@ -264,6 +264,10 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
           body *{visibility:hidden!important}
           .restaurant-order-print-receipt,.restaurant-order-print-receipt *{visibility:visible!important}
           .restaurant-order-print-receipt{display:block!important;width:80mm!important;max-width:80mm!important;box-sizing:border-box!important;margin:0!important;padding:4mm 4mm 6mm!important;font-family:Arial,sans-serif!important;font-size:12px!important;line-height:1.4!important;color:#000!important;background:#fff!important}
+          .restaurant-kitchen-receipt{page-break-after:always!important;break-after:page!important}
+          .receipt-kitchen-item{display:grid!important;grid-template-columns:35px minmax(0,1fr)!important;gap:8px!important;font-size:15px!important;font-weight:700!important;margin-bottom:8px!important}
+          .receipt-discount-detail{margin-top:6px!important;font-size:10px!important;line-height:1.35!important}
+          .receipt-signature-line{margin-top:14px!important;font-size:10px!important}
           .restaurant-order-print-receipt *{box-sizing:border-box!important}
           .receipt-center{text-align:center!important}
           .receipt-title{font-size:18px!important;line-height:1.2!important;font-weight:800!important;margin:0 0 5px!important}
@@ -538,17 +542,43 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
             </div>
           </div>
 
-          <div className="restaurant-order-print-receipt" aria-hidden="true">
+          <div className="restaurant-order-print-receipt restaurant-kitchen-receipt" aria-hidden="true">
             <div className="receipt-center">
-              <div className="receipt-title">Restaurant Order</div>
+              <div className="receipt-title">KITCHEN ORDER</div>
               <div className="receipt-order-number">{selectedOrder.orderNumber}</div>
-              <div className="receipt-muted">
-                {new Date(selectedOrder.createdAt).toLocaleString()}
-              </div>
+              <div className="receipt-muted">{new Date(selectedOrder.createdAt).toLocaleString()}</div>
             </div>
-
             <hr className="receipt-divider" />
+            <div className="receipt-center">
+              <div className="receipt-label">
+                {selectedOrder.orderType === 'dine_in'
+                  ? 'DINE-IN'
+                  : selectedOrder.orderType === 'pickup'
+                    ? 'PICKUP / TAKE-OUT'
+                    : 'DELIVERY'}
+              </div>
+              {selectedOrder.customerName && <div>{selectedOrder.customerName}</div>}
+            </div>
+            <hr className="receipt-divider" />
+            <div>
+              {selectedOrder.items.map((item) => (
+                <div className="receipt-kitchen-item" key={item.id}>
+                  <strong>{item.quantity} ×</strong>
+                  <span>{item.productName}</span>
+                </div>
+              ))}
+            </div>
+            <hr className="receipt-divider" />
+            <div className="receipt-center">Prepare this order.</div>
+          </div>
 
+          <div className="restaurant-order-print-receipt restaurant-customer-receipt" aria-hidden="true">
+            <div className="receipt-center">
+              <div className="receipt-title">CUSTOMER RECEIPT</div>
+              <div className="receipt-order-number">{selectedOrder.orderNumber}</div>
+              <div className="receipt-muted">{new Date(selectedOrder.createdAt).toLocaleString()}</div>
+            </div>
+            <hr className="receipt-divider" />
             <div className="receipt-center">
               <div className="receipt-label">
                 {selectedOrder.orderType === 'dine_in'
@@ -559,16 +589,12 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
               </div>
               <div>{paymentLabel(selectedOrder)}</div>
             </div>
-
             <hr className="receipt-divider" />
-
             <div>
               <div className="receipt-label">Customer</div>
               <div>{selectedOrder.customerName || 'Guest'}</div>
             </div>
-
             <hr className="receipt-divider" />
-
             <div>
               {selectedOrder.items.map((item) => (
                 <div className="receipt-item" key={item.id}>
@@ -577,25 +603,41 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
                 </div>
               ))}
             </div>
-
             <hr className="receipt-divider" />
-
-            {selectedOrder.orderType === 'delivery' && selectedOrder.shippingFee > 0 && (
-              <div className="receipt-row">
-                <span>Shipping fee</span>
-                <span>₱{selectedOrder.shippingFee.toFixed(2)}</span>
-              </div>
+            {selectedOrder.taxGrossSales > 0 ? (
+              <>
+                <div className="receipt-row"><span>Gross sales</span><span>₱{selectedOrder.taxGrossSales.toFixed(2)}</span></div>
+                <div className="receipt-row"><span>VATable sales</span><span>₱{selectedOrder.taxVatableSales.toFixed(2)}</span></div>
+                {selectedOrder.taxVatAmount > 0 && <div className="receipt-row"><span>VAT {selectedOrder.taxVatRate.toFixed(2)}%</span><span>₱{selectedOrder.taxVatAmount.toFixed(2)}</span></div>}
+                {selectedOrder.taxVatExemptSales > 0 && <div className="receipt-row"><span>VAT-exempt sales</span><span>₱{selectedOrder.taxVatExemptSales.toFixed(2)}</span></div>}
+                {selectedOrder.discountAmount > 0 && <div className="receipt-row"><span>SC/PWD discount</span><span>-₱{selectedOrder.discountAmount.toFixed(2)}</span></div>}
+              </>
+            ) : (
+              <div className="receipt-row"><span>Subtotal</span><span>₱{selectedOrder.items.reduce((sum, item) => sum + item.lineTotal, 0).toFixed(2)}</span></div>
             )}
-
+            {selectedOrder.orderType === 'delivery' && selectedOrder.shippingFee > 0 && (
+              <div className="receipt-row"><span>Delivery fee</span><span>₱{selectedOrder.shippingFee.toFixed(2)}</span></div>
+            )}
             <div className="receipt-row receipt-total">
               <span>TOTAL</span>
               <span>₱{selectedOrder.total.toFixed(2)}</span>
             </div>
-
+            {selectedOrder.discountBeneficiaries.length > 0 && (
+              <>
+                <hr className="receipt-divider" />
+                <div className="receipt-label">SC/PWD DETAILS</div>
+                {selectedOrder.discountBeneficiaries.map((beneficiary, index) => (
+                  <div key={index} className="receipt-discount-detail">
+                    <div>{beneficiary.discountType.toUpperCase()} ID: {beneficiary.idNumber}</div>
+                    <div>Eligible: ₱{beneficiary.eligibleAmount.toFixed(2)} · Discount: ₱{beneficiary.discountAmount.toFixed(2)}</div>
+                  </div>
+                ))}
+                <div className="receipt-signature-line">Customer signature: ____________________</div>
+              </>
+            )}
             <hr className="receipt-divider" />
-
             <div className="receipt-center">Thank you for your order!</div>
-          </div>
+          </div>          </div>
         </div>,
         document.body,
       )}
