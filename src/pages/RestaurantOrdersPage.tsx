@@ -176,8 +176,9 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
       await updateOrderStatus(order.orderId, 'confirmed');
       const updated = { ...order, status: 'confirmed' as RestaurantOrderStatus };
       setOrders((current) => current.map((item) => (item.orderId === order.orderId ? updated : item)));
-      // Keep the order detail modal open after printing/sending.
-      // The cashier can close it explicitly when they are finished.
+      // Close only the order-detail modal and return to the New Orders list.
+      // Keep the parent New Orders modal open for the cashier. 
+      setSelectedOrder(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to send order to the kitchen.');
     } finally {
