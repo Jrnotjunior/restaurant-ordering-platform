@@ -80,26 +80,16 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
   return (
     <section className="restaurant-loyalty-page">
       <style>{`
-        .restaurant-loyalty-page{max-width:920px}
-        .restaurant-loyalty-card{padding:28px;border:1px solid #e1e5eb;border-radius:14px;background:#fff}
-        .restaurant-loyalty-card h1{margin:0 0 8px}
-        .restaurant-loyalty-help{margin:0 0 24px;color:#64748b;line-height:1.6}
-        .restaurant-loyalty-form{display:grid;gap:20px}
-        .restaurant-loyalty-toggle{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px;border:1px solid #e5e7eb;border-radius:12px;background:#f8fafc}
-        .restaurant-loyalty-toggle-copy{display:grid;gap:4px}
-        .restaurant-loyalty-toggle-copy strong{font-size:15px}
-        .restaurant-loyalty-toggle-copy span{color:#64748b;font-size:13px}
-        .restaurant-loyalty-switch{width:48px;height:26px}
-        .restaurant-loyalty-rule{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-        .restaurant-loyalty-field{display:grid;gap:7px;font-weight:600;font-size:14px}
-        .restaurant-loyalty-field input{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:10px;padding:12px;font:inherit;background:#fff}
-        .restaurant-loyalty-field input:focus{outline:none;border-color:#94a3b8;box-shadow:0 0 0 3px rgba(148,163,184,.18)}
-        .restaurant-loyalty-preview{padding:16px;border-radius:12px;background:#f8fafc;color:#334155;line-height:1.6}
-        .restaurant-loyalty-actions{display:flex;justify-content:flex-end}
-        .restaurant-loyalty-message{margin-bottom:16px;padding:12px 14px;border-radius:10px}
-        .restaurant-loyalty-message.is-success{background:#ecfdf5;color:#166534}
-        .restaurant-loyalty-message.is-error{background:#fef2f2;color:#b91c1c}
-        @media(max-width:700px){.restaurant-loyalty-rule{grid-template-columns:1fr}.restaurant-loyalty-actions .button{width:100%}}
+        .restaurant-loyalty-settings-form{display:grid;gap:22px}
+        .restaurant-loyalty-settings-form .restaurant-settings-toggle{justify-content:flex-start;align-items:flex-start;padding:14px 0;border:0;background:transparent}
+        .restaurant-loyalty-settings-form .restaurant-settings-toggle input{width:18px;height:18px;margin-top:2px;flex:0 0 auto}
+        .restaurant-loyalty-settings-form .restaurant-settings-toggle span{display:grid;gap:4px}
+        .restaurant-loyalty-settings-form .restaurant-settings-toggle strong{font-size:14px}
+        .restaurant-loyalty-settings-form .restaurant-settings-toggle small{color:#64748b;font-size:13px;font-weight:400}
+        .restaurant-loyalty-rule-preview{display:grid;gap:4px;padding:14px 16px;border:1px solid #e1e5eb;border-radius:10px;background:#f8fafc}
+        .restaurant-loyalty-rule-preview span{font-size:11px;font-weight:600;color:#64748b}
+        .restaurant-loyalty-rule-preview strong{font-size:15px;color:#0f172a}
+        .restaurant-loyalty-rule-preview small{color:#64748b;line-height:1.5}
       `}</style>
       {error && <div className="restaurant-loyalty-message is-error" role="alert">{error}</div>}
       {message && <div className="restaurant-loyalty-message is-success" role="status">{message}</div>}
