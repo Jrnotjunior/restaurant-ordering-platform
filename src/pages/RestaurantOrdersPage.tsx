@@ -299,7 +299,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
         </span>
       </div>
 
-      {!isCashier && <div className="restaurant-orders-tabs">
+      {!isCashier && !isKitchen && <div className="restaurant-orders-tabs">
         <button
           className={filter === 'active' ? 'is-active' : ''}
           type="button"
@@ -326,6 +326,36 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
 
       {loading ? (
         <div className="restaurant-orders-empty">Loading orders…</div>
+      ) : isKitchen ? (
+        (() => {
+          const kitchenOrders = orders.filter((order) => order.status === 'confirmed' || order.status === 'preparing');
+
+          return kitchenOrders.length === 0 ? (
+            <div className="restaurant-order-list-empty">No orders currently in the kitchen.</div>
+          ) : (
+            <div className="restaurant-order-list restaurant-order-list-scroll">
+              {kitchenOrders.map((order) => (
+                <button
+                  className="restaurant-order-list-item"
+                  key={order.orderId}
+                  type="button"
+                  onClick={() => setSelectedOrder(order)}
+                >
+                  <span>
+                    <span className="restaurant-order-list-number">{order.orderNumber}</span>
+                    <span style={{ display: 'block', marginTop: 3, fontSize: 13, color: '#64748b' }}>
+                      {order.customerName}
+                    </span>
+                  </span>
+                  <span className="restaurant-order-list-meta">
+                    <span className="restaurant-order-list-status">{statusLabels[order.status]}</span>
+                    <span className="restaurant-order-list-total">₱{order.total.toFixed(2)}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          );
+        })()
       ) : isCashier ? (
         (() => {
           const cashierNewOrders = boardOrders
