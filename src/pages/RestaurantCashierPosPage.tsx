@@ -270,7 +270,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
           <div className="restaurant-pos-cart-items">
             {cart.length === 0 ? <p>No items added yet.</p> : cart.map((item) => (
               <div className="restaurant-pos-cart-item" key={item.product.id}>
-                <div><strong>{item.product.name}</strong><span>₱{item.product.price.toFixed(2)} each</span></div>
+                <div><strong>{item.product.name}</strong><span>₱{item.product.price.toFixed(2)}</span></div>
                 <div className="restaurant-pos-quantity">
                   <button type="button" onClick={() => changeQuantity(item.product.id, -1)} aria-label={`Decrease ${item.product.name}`}>−</button>
                   <strong>{item.quantity}</strong>
