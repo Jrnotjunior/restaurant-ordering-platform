@@ -28,8 +28,8 @@ const paymentMethods: Array<{ value: PaymentMethod; label: string; description: 
   { value: 'online', label: 'Online Payment', description: 'Pay securely through our online payment gateway.' },
 ];
 
-const outsideCityMessage = 'We currently deliver only within selected barangays in Valenzuela City. If you are outside Valenzuela, you can proceed using your own courier.';
-const outsideDeliveryAreaMessage = 'The address is not within the store delivery area. If you want to proceed, please book your own delivery courier like Lalamove or Grab Express.';
+const outsideCityMessage = 'We currently deliver only within selected barangays in Valenzuela City. If you are outside our delivery area, you can proceed using your own courier.';
+const outsideDeliveryAreaMessage = 'This address is outside the store delivery area. You can still order by choosing your own courier to pick up the order from the restaurant.';
 const PENDING_PAYMENT_ORDER_KEY = 'restaurant-ordering-pending-payment-order';
 const CART_CLEAR_EVENT = 'restaurant-ordering-cart-clear';
 const thirdPartyCourierNote = 'THIRD-PARTY COURIER: Customer is responsible for booking and paying the delivery courier (such as Lalamove or Grab Express). The restaurant will prepare the food for courier pickup at the listed restaurant pickup point.';
@@ -164,6 +164,13 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
   function resetPayment() { setShowPayment(false); setShowPaymentModal(false); setPaymentMethod(''); setSubmitError(''); }
 
+  function openThirdPartyCourierTerms() {
+    setThirdPartyCourierTermsAccepted(false);
+    setThirdPartyCourier('');
+    setThirdPartyCourierName('');
+    setShowDeliveryTerms(true);
+  }
+
   function commitCity() {
     const city = deliveryCity.trim();
     if (!city || thirdPartyCourierDelivery) return;
@@ -171,9 +178,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       setShowDeliveryTerms(false);
       return;
     }
-    setThirdPartyCourierTermsAccepted(false);
-    setThirdPartyCourierTermsAccepted(false);
-    setShowDeliveryTerms(true);
+    openThirdPartyCourierTerms();
   }
 
   function handleCityKeyboard(event: React.KeyboardEvent<HTMLInputElement>) {
@@ -314,6 +319,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             {!thirdPartyCourierDelivery && deliveryCity.trim() && !cityIsSupported && <p className="checkout-error" role="alert">{outsideCityMessage}</p>}
             {!thirdPartyCourierDelivery && loadingDeliveryZones && <p className="checkout-hint">Loading delivery areas…</p>}
             {!thirdPartyCourierDelivery && cityIsSupported && deliveryBarangay.trim() && !selectedDeliveryZone && <p className="checkout-error" role="alert">{outsideDeliveryAreaMessage}</p>}
+            {!thirdPartyCourierDelivery && cityIsSupported && selectedDeliveryZone && !selectedDeliveryZone.isSupported && <div className="checkout-outside-scope-card"><p className="checkout-error" role="alert">{selectedDeliveryZone.outOfScopeMessage || outsideDeliveryAreaMessage}</p><button className="button button-secondary" type="button" onClick={openThirdPartyCourierTerms}>Use my own courier instead</button></div>}
             {!thirdPartyCourierDelivery && selectedDeliveryZone?.isSupported && <p className="checkout-hint">Delivery fee: ₱{deliveryFee.toFixed(2)}</p>}
           </fieldset>}
 
@@ -354,7 +360,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         </div>
       </div>}
 
-      {showDeliveryTerms && <div className="delivery-terms-backdrop" role="presentation"><div className="delivery-terms-modal" role="dialog" aria-modal="true" aria-labelledby="delivery-terms-title"><h2 id="delivery-terms-title">Delivery Terms</h2><p className="terms-intro">This city is outside Valenzuela City. The restaurant cannot deliver to this destination directly.</p><div className="terms-box"><p><strong>Proceed with your own courier.</strong> You may book Lalamove, Grab Express, or another courier to collect your order from the restaurant.</p><p>You are responsible for booking and paying the courier, and for providing the courier with your destination address.</p><p>The restaurant will pack your order securely and prepare it as fresh as possible for courier pickup at its listed restaurant pickup point.</p><p>After the order is handed over to your courier, the restaurant is not responsible for courier-related delays, loss, spills, damage, or other issues that happen during transit.</p><label className="delivery-terms-checkbox"><input type="checkbox" checked={thirdPartyCourierTermsAccepted} onChange={(event) => setThirdPartyCourierTermsAccepted(event.target.checked)} /><span>I understand and agree to these third-party courier terms.</span></label></div><div className="terms-actions"><button className="button" type="button" onClick={handleCancelThirdPartyDelivery}>Cancel</button><button className="button button-primary" type="button" onClick={handleProceedWithThirdPartyCourier} disabled={!thirdPartyCourierTermsAccepted}>Proceed with Order</button></div></div></div>}
+      {showDeliveryTerms && <div className="delivery-terms-backdrop" role="presentation"><div className="delivery-terms-modal" role="dialog" aria-modal="true" aria-labelledby="delivery-terms-title"><h2 id="delivery-terms-title">Delivery Terms</h2><p className="terms-intro">This destination is outside the restaurant's in-house delivery area. The restaurant cannot deliver to this destination directly.</p><div className="terms-box"><p><strong>Proceed with your own courier.</strong> You may book Lalamove, Grab Express, or another courier to collect your order from the restaurant.</p><p>You are responsible for booking and paying the courier, and for providing the courier with your destination address.</p><p>The restaurant will pack your order securely and prepare it as fresh as possible for courier pickup at its listed restaurant pickup point.</p><p>After the order is handed over to your courier, the restaurant is not responsible for courier-related delays, loss, spills, damage, or other issues that happen during transit.</p><label className="delivery-terms-checkbox"><input type="checkbox" checked={thirdPartyCourierTermsAccepted} onChange={(event) => setThirdPartyCourierTermsAccepted(event.target.checked)} /><span>I understand and agree to these third-party courier terms.</span></label></div><div className="terms-actions"><button className="button" type="button" onClick={handleCancelThirdPartyDelivery}>Cancel</button><button className="button button-primary" type="button" onClick={handleProceedWithThirdPartyCourier} disabled={!thirdPartyCourierTermsAccepted}>Proceed with Order</button></div></div></div>}
     </section>
   );
 }
