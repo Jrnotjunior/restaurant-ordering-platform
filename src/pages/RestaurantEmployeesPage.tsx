@@ -43,6 +43,7 @@ const roleLabels: Record<StaffRole, string> = {
   cashier: 'Cashier',
   kitchen: 'Kitchen',
   dispatcher: 'Dispatcher',
+  rider: 'Rider',
 };
 
 export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string }) {
