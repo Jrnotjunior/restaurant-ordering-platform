@@ -146,6 +146,30 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
       : order.deliveryStatus === 'delivered'
         ? 'Delivered'
         : 'Rider assigned';
+  const showPickupLocation = isPickup && order.status === 'completed' && Boolean(order.storeAddress);
+
+  function formatOperatingHours() {
+    if (!order.operatingHours) return [];
+    return ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+      .map((day) => {
+        const hours = order.operatingHours?.[day];
+        if (!hours) return null;
+        const label = day.charAt(0).toUpperCase() + day.slice(1);
+        return { label, value: hours.isOpen ? `${hours.open}–${hours.close}` : 'Closed' };
+      })
+      .filter((entry): entry is { label: string; value: string } => Boolean(entry));
+  }
+
+  function openStoreLocation() {
+    if (!order.storeAddress) return;
+    const query = encodeURIComponent(order.storeAddress);
+    window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank', 'noopener,noreferrer');
+  }
+
+  async function copyStoreAddress() {
+    if (!order.storeAddress || !navigator.clipboard) return;
+    await navigator.clipboard.writeText(order.storeAddress);
+  }
 
   return (
     <section className="order-tracking-page">
@@ -184,6 +208,30 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
               );
             })}
           </div>
+        )}
+
+        {showPickupLocation && (
+          <section className="order-pickup-location-card" aria-label="Store pickup location">
+            <div className="order-pickup-location-header">
+              <div>
+                <p className="order-rider-label">Pickup location</p>
+                <h2>Pick up your order here</h2>
+              </div>
+              <span className="order-rider-status">Store</span>
+            </div>
+            <p className="order-pickup-location-message">Your order is complete. Please pick up your order at our store:</p>
+            <strong className="order-pickup-address">{order.storeAddress}</strong>
+            {formatOperatingHours().length > 0 && (
+              <div className="order-pickup-hours">
+                <strong>Store hours</strong>
+                {formatOperatingHours().map((entry) => <span key={entry.label}>{entry.label}: {entry.value}</span>)}
+              </div>
+            )}
+            <div className="order-rider-actions">
+              <button className="button button-primary" type="button" onClick={openStoreLocation}>Open / Pin in Google Maps</button>
+              <button className="button button-secondary" type="button" onClick={() => void copyStoreAddress()}>Copy Address</button>
+            </div>
+          </section>
         )}
 
         {riderAssigned && !isCancelled && (
