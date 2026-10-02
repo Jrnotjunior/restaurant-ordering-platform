@@ -147,6 +147,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
     : [];
 
   async function advance(order: RestaurantOrder) {
+    if (role !== 'kitchen') return;
     const status = nextStatus[order.status];
     if (!status) return;
 
@@ -165,6 +166,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
   }
 
   async function confirmDineInCashPayment(order: RestaurantOrder) {
+    if (role !== 'cashier') return;
     try {
       setError(''); setUpdating(order.orderId);
       await confirmDineInPayment(order.orderId);
@@ -176,6 +178,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
   }
 
   async function printAndSendToKitchen(order: RestaurantOrder) {
+    if (role !== 'cashier') return;
     if (!isPaymentReady(order)) {
       setError('This online order cannot be sent to the kitchen until the payment is completed.');
       return;
@@ -631,7 +634,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
             {selectedOrder.status === 'pending' && !isPaymentReady(selectedOrder) && !(selectedOrder.orderType === 'dine_in' && selectedOrder.paymentMethod === 'cash') && (
               <p style={{ marginTop: 16 }}>Online payment is required before this order can enter the kitchen.</p>
             )}
-            <div className="restaurant-order-modal-actions">
+            {role !== 'owner' && <div className="restaurant-order-modal-actions">
               {selectedOrder.status === 'pending' ? (
                 <>
                   {selectedOrder.orderType === 'dine_in' && selectedOrder.paymentMethod === 'cash' && selectedOrder.paymentStatus !== 'paid' ? (
@@ -672,7 +675,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
                   {updating === selectedOrder.orderId ? 'Updating…' : actionLabels[selectedOrder.status]}
                 </button>
               ) : null}
-            </div>
+            </div>}
           </div>
 
           <div className="restaurant-order-print-receipt restaurant-kitchen-receipt" aria-hidden="true">
