@@ -167,7 +167,6 @@ export async function applyPosGroupDiscounts(
     group_size: number;
     beneficiary_count: number;
     discount_amount: number | string;
-    discount_amount: number | string;
     gross_sales: number | string;
     vatable_sales: number | string;
     vat_amount: number | string;
