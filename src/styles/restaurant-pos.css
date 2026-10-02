@@ -5,3 +5,5 @@
 .restaurant-pos-beneficiary-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .restaurant-pos-beneficiary-header button{border:0;background:transparent;color:#b91c1c;font-size:12px;font-weight:700;cursor:pointer}
 .restaurant-pos-beneficiary .restaurant-pos-field{margin-top:10px}
+
+.restaurant-pos-tax-status{margin:12px 0 0;padding:8px 10px;border-radius:8px;background:#f1f5f9;color:#475569;font-size:12px;font-weight:700;text-align:center}
