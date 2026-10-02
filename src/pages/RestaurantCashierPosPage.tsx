@@ -24,6 +24,8 @@ type PosPrintOrder = {
     netSales: number;
     total: number;
   };
+  cashReceived: number;
+  change: number;
 };
 
 const idOptions: Record<PosDiscountType, { value: PosDiscountIdType; label: string }[]> = {
@@ -56,6 +58,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [cashReceived, setCashReceived] = useState('');
   const [printOrder, setPrintOrder] = useState<PosPrintOrder | null>(null);
 
   async function loadMenu() {
@@ -110,6 +113,9 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const vatExemptSales = beneficiaries.length ? Math.max(Number((eligibleShare * beneficiaries.length - discountAmount).toFixed(2)), 0) : 0;
   const netSales = Number((vatableSales + vatExemptSales).toFixed(2));
   const total = Math.max(Number((netSales + vatAmount).toFixed(2)), 0);
+  const cashReceivedAmount = Number(cashReceived) || 0;
+  const change = Math.max(Number((cashReceivedAmount - total).toFixed(2)), 0);
+  const cashPaymentReady = cart.length > 0 && cashReceivedAmount >= total;
 
   function addProduct(product: RestaurantProduct) {
     setCart((current) => {
@@ -149,7 +155,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   }
 
   async function placeOrder() {
-    if (!cart.length || saving) return;
+    if (!cart.length || saving || !cashPaymentReady) return;
     setSaving(true);
     setError('');
     setSuccess('');
@@ -179,10 +185,13 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
         items: cart.map((item) => ({ ...item })),
         beneficiaries: beneficiaries.map((beneficiary) => ({ ...beneficiary })),
         financials,
+        cashReceived: cashReceivedAmount,
+        change,
       });
 
       setCart([]);
       clearDiscounts();
+      setCashReceived('');
       setSuccess(`Order ${created.orderNumber} was paid and sent directly to the kitchen. Print preview opened.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to create POS order.');
@@ -283,8 +292,31 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             <div className="restaurant-pos-total restaurant-pos-grand-total"><span>Total</span><strong>₱{total.toFixed(2)}</strong></div>
           </div>
 
+          <div className="restaurant-pos-cash-payment">
+            <label className="restaurant-pos-field">
+              <span>Money received</span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                inputMode="decimal"
+                value={cashReceived}
+                onChange={(event) => setCashReceived(event.target.value)}
+                placeholder="0.00"
+                disabled={saving}
+              />
+            </label>
+            <div className="restaurant-pos-cash-change">
+              <span>Change</span>
+              <strong>₱{change.toFixed(2)}</strong>
+            </div>
+            {cart.length > 0 && cashReceivedAmount < total && (
+              <p className="restaurant-pos-cash-warning">Amount received must be at least ₱{total.toFixed(2)}.</p>
+            )}
+          </div>
+
           {taxSettings && <p className="restaurant-pos-tax-status">{taxSettings.vatRegistered ? `VAT registered · ${taxSettings.vatRate.toFixed(2)}%${taxSettings.pricesVatInclusive ? ' · prices VAT-inclusive' : ' · prices VAT-exclusive'}` : 'Non-VAT registered'}</p>}
-          <button className="button button-primary restaurant-pos-submit" type="button" disabled={!cart.length || saving || !discountReady || !taxSettings} onClick={() => void placeOrder()}>
+          <button className="button button-primary restaurant-pos-submit" type="button" disabled={!cart.length || saving || !discountReady || !taxSettings || !cashPaymentReady} onClick={() => void placeOrder()}>
             {saving ? 'Creating Order…' : 'Cash Paid — Send to Kitchen'}
           </button>
         </aside>
@@ -361,6 +393,8 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
               <span>TOTAL</span>
               <span>₱{printOrder.financials.total.toFixed(2)}</span>
             </div>
+            <div className="pos-receipt-row"><span>Cash received</span><span>₱{printOrder.cashReceived.toFixed(2)}</span></div>
+            <div className="pos-receipt-row"><span>Change</span><span>₱{printOrder.change.toFixed(2)}</span></div>
             {printOrder.beneficiaries.length > 0 && (
               <>
                 <hr className="pos-receipt-divider" />
