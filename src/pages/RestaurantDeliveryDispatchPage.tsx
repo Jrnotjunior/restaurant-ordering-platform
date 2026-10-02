@@ -64,7 +64,7 @@ function todayStartIso() {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
 }
 
-export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
+export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }: Props) {
   const [orders, setOrders] = useState<ReadyOrder[]>([]);
   const [activeTab, setActiveTab] = useState<DispatchTab>('delivery');
   const [riders, setRiders] = useState<Rider[]>([]);
@@ -288,7 +288,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
 
   return (
     <section className="restaurant-dispatch-page">
-            <header className="restaurant-dispatch-header">
+            {role !== 'owner' && <header className="restaurant-dispatch-header">
         <div>
           <h1>Restaurant Operations</h1>
           <h2>Dispatch</h2>
@@ -298,7 +298,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
           <span className="restaurant-dashboard-live-dot" />
           {realtimeStatus === 'live' ? 'Live' : realtimeStatus === 'connecting' ? 'Connecting…' : 'Reconnecting…'}
         </span>
-      </header>
+      </header>}
 
       {error ? <div className="restaurant-dispatch-message" role="alert">{error}</div> : null}
 
