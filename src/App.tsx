@@ -16,6 +16,7 @@ import { RestaurantSettingsPage } from './pages/RestaurantSettingsPage';
 import { RestaurantOwnerLoginPage } from './pages/RestaurantOwnerLoginPage';
 import { RestaurantEmployeesPage } from './pages/RestaurantEmployeesPage';
 import { RestaurantEmployeeInvitePage } from './pages/RestaurantEmployeeInvitePage';
+import { RestaurantRoleDashboardPage } from './pages/RestaurantRoleDashboardPage';
 import { CustomerSignUpPage } from './pages/CustomerSignUpPage';
 import { RiderDeliveryPage } from './pages/RiderDeliveryPage';
 import { RiderDashboardPage } from './pages/RiderDashboardPage';
@@ -255,6 +256,7 @@ function AppContent() {
   const isRestaurantDeliveryDispatchPage = route === '#restaurant/delivery-dispatch';
   const isRestaurantSettingsPage = route === '#restaurant/settings';
   const isRestaurantEmployeesPage = route === '#restaurant/employees';
+  const restaurantRoleRoute = route.match(/^#restaurant\/(owner|cashier|kitchen|dispatcher)$/)?.[1] as 'owner' | 'cashier' | 'kitchen' | 'dispatcher' | undefined;
   const isRiderDashboardPage = route === '#rider/dashboard' || route === '#rider/delivery-preview';
   const riderDeliveryMatch = route.match(/^#rider\/delivery\/([^/]+)$/);
   const isRiderInvitePath = window.location.pathname.endsWith('/invite') || window.location.pathname.endsWith('/invite/');
@@ -271,6 +273,38 @@ function AppContent() {
   if (riderDeliveryMatch) return <RiderRouteGuard><RiderDeliveryPage orderId={decodeURIComponent(riderDeliveryMatch[1])} /></RiderRouteGuard>;
 
   const publicContent = trackOrderNumber ? <OrderTrackingPage orderNumber={trackOrderNumber} /> : isMenuPage || (!isCartPage && !isCheckoutPage && !trackingMatch) ? <MenuPage onAddToCart={addToCart} cartCount={cartCount} /> : isCartPage ? <CartPage items={cartItems} onIncrease={(id) => changeQuantity(id, 1)} onDecrease={(id) => changeQuantity(id, -1)} onRemove={(id) => removeFromCart(id)} /> : isCheckoutPage ? <CheckoutPage items={cartItems} /> : <OrderTrackingPage orderNumber={decodeURIComponent(trackingMatch![1])} />;
+
+  if (restaurantRoleRoute) {
+    if (authLoading) return <section className="restaurant-owner-auth-loading">Loading restaurant session…</section>;
+    if (authError && !isSupabaseConfigured) return <section className="restaurant-owner-auth-loading">{authError}</section>;
+    return <OwnerRestaurantGuard>{(ownerRestaurant) => (
+      <RestaurantProvider restaurant={ownerRestaurant}>
+        <ThemeProvider restaurant={ownerRestaurant}>
+          <RestaurantRoleDashboardPage role={restaurantRoleRoute} restaurantName={ownerRestaurant.name}>
+            <div className="restaurant-role-dashboard-card">
+              <h2>{restaurantRoleRoute === 'owner' ? 'Restaurant management' : restaurantRoleRoute === 'cashier' ? 'Cashier workspace' : restaurantRoleRoute === 'kitchen' ? 'Kitchen workspace' : 'Dispatch workspace'}</h2>
+              <p>This is the dedicated workspace for the {restaurantRoleRoute} role. Page permissions and employee login protection will be connected next.</p>
+              <div className="restaurant-role-dashboard-links">
+                {restaurantRoleRoute === 'owner' ? <>
+                  <a href="#restaurant/orders">Orders</a>
+                  <a href="#restaurant/menu">Products</a>
+                  <a href="#restaurant/employees">Employees</a>
+                  <a href="#restaurant/riders">Riders</a>
+                  <a href="#restaurant/delivery-dispatch">Dispatch</a>
+                  <a href="#restaurant/shipping-fee">Shipping Fee</a>
+                  <a href="#restaurant/sales">Sales</a>
+                  <a href="#restaurant/settings">Store Settings</a>
+                </> : null}
+                {restaurantRoleRoute === 'cashier' ? <a href="#restaurant/orders">Open Orders</a> : null}
+                {restaurantRoleRoute === 'kitchen' ? <a href="#restaurant/orders">Open Kitchen Orders</a> : null}
+                {restaurantRoleRoute === 'dispatcher' ? <a href="#restaurant/delivery-dispatch">Open Dispatch</a> : null}
+              </div>
+            </div>
+          </RestaurantRoleDashboardPage>
+        </ThemeProvider>
+      </RestaurantProvider>
+    )}</OwnerRestaurantGuard>;
+  }
 
   if (isRestaurantOperationsPage) {
     if (authLoading) return <section className="restaurant-owner-auth-loading">Loading owner session…</section>;
