@@ -335,7 +335,7 @@ function AppContent() {
       <RestaurantProvider restaurant={staffRestaurant}>
         <ThemeProvider restaurant={staffRestaurant}>
           <RestaurantLayout hideChrome role="cashier">
-            <RestaurantOrdersPage restaurantId={staffRestaurant.id!} />
+            <RestaurantOrdersPage restaurantId={staffRestaurant.id!} role="cashier" />
           </RestaurantLayout>
         </ThemeProvider>
       </RestaurantProvider>
