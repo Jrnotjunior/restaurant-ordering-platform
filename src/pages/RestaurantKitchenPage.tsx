@@ -76,6 +76,10 @@ export function RestaurantKitchenPage({ restaurantId, view = 'orders' }: Props) 
     }
   }
 
+  if (view === 'orders') {
+    return <RestaurantOrdersPage restaurantId={restaurantId} role="kitchen" />;
+  }
+
   return (
     <section className="restaurant-orders-page restaurant-kitchen-menu-page">
       <header className="restaurant-orders-header">
