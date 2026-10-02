@@ -94,9 +94,10 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
           .eq('status', 'ready')
           .order('created_at', { ascending: true }),
         supabase
-          .from('restaurant_riders')
+          .from('restaurant_staff')
           .select('id,name,mobile_number')
           .eq('restaurant_id', restaurantId)
+          .eq('role', 'rider')
           .eq('is_active', true)
           .order('name', { ascending: true }),
         supabase
@@ -175,7 +176,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `restaurant_id=eq.${restaurantId}` }, () => {
         void loadDispatchData();
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'restaurant_riders', filter: `restaurant_id=eq.${restaurantId}` }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'restaurant_staff', filter: `restaurant_id=eq.${restaurantId}` }, () => {
         void loadDispatchData();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'delivery_assignments', filter: `restaurant_id=eq.${restaurantId}` }, () => {
