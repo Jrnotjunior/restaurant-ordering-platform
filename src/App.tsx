@@ -430,7 +430,22 @@ function AppContent() {
   if (isRestaurantOperationsPage) {
     if (authLoading) return <section className="restaurant-owner-auth-loading">Loading owner session…</section>;
     if (authError && !isSupabaseConfigured) return <section className="restaurant-owner-auth-loading">{authError}</section>;
-    return <OwnerRestaurantGuard>{(ownerRestaurant) => <RestaurantProvider restaurant={ownerRestaurant}><ThemeProvider restaurant={ownerRestaurant}><RestaurantLayout hideChrome role="owner"> ? <RestaurantOrdersPage restaurantId={ownerRestaurant.id!} /> : isRestaurantMenuPage ? <RestaurantMenuPage restaurantId={ownerRestaurant.id!} /> : isRestaurantShippingFeePage ? <RestaurantShippingFeePage restaurantId={ownerRestaurant.id!} /> : isRestaurantRidersPage ? <RestaurantRidersPage restaurantId={ownerRestaurant.id!} /> : isRestaurantEmployeesPage ? <RestaurantEmployeesPage restaurantId={ownerRestaurant.id!} /> : isRestaurantDeliveryDispatchPage ? <RestaurantDeliveryDispatchPage restaurantId={ownerRestaurant.id!} /> : isRestaurantSettingsPage ? <RestaurantSettingsPage restaurantId={ownerRestaurant.id!} /> : <RestaurantSalesPage restaurantId={ownerRestaurant.id!} />}</RestaurantLayout></ThemeProvider></RestaurantProvider>}</OwnerRestaurantGuard>;
+    return <OwnerRestaurantGuard>{(ownerRestaurant) => (
+      <RestaurantProvider restaurant={ownerRestaurant}>
+        <ThemeProvider restaurant={ownerRestaurant}>
+          <RestaurantLayout hideChrome role="owner">
+            {isRestaurantOrdersPage ? <RestaurantOrdersPage restaurantId={ownerRestaurant.id!} />
+              : isRestaurantMenuPage ? <RestaurantMenuPage restaurantId={ownerRestaurant.id!} />
+              : isRestaurantShippingFeePage ? <RestaurantShippingFeePage restaurantId={ownerRestaurant.id!} />
+              : isRestaurantRidersPage ? <RestaurantRidersPage restaurantId={ownerRestaurant.id!} />
+              : isRestaurantEmployeesPage ? <RestaurantEmployeesPage restaurantId={ownerRestaurant.id!} />
+              : isRestaurantDeliveryDispatchPage ? <RestaurantDeliveryDispatchPage restaurantId={ownerRestaurant.id!} />
+              : isRestaurantSettingsPage ? <RestaurantSettingsPage restaurantId={ownerRestaurant.id!} />
+              : <RestaurantSalesPage restaurantId={ownerRestaurant.id!} />}
+          </RestaurantLayout>
+        </ThemeProvider>
+      </RestaurantProvider>
+    )}</OwnerRestaurantGuard>;
   }
 
   return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}>{publicContent}{cartNotification ? <div className="cart-notification" role="status" aria-live="polite"><div className="cart-notification-icon" aria-hidden="true">✓</div><div className="cart-notification-content"><strong>Added to cart</strong><span>{cartNotification}</span></div><a className="cart-notification-link" href={withBasePath('/cart')}>View cart</a><button className="cart-notification-close" type="button" aria-label="Dismiss notification" onClick={() => setCartNotification('')}>×</button></div> : null}</RestaurantLayout></ThemeProvider></RestaurantProvider>;
