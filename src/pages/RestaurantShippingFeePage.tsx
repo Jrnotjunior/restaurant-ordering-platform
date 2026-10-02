@@ -180,14 +180,6 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
         @media(max-width:700px){.restaurant-delivery-zone-row{grid-template-columns:1fr auto;gap:10px}.restaurant-delivery-zone-row .restaurant-delivery-zone-cell:nth-child(2),.restaurant-delivery-zone-row .restaurant-delivery-zone-cell:nth-child(3){grid-column:1}.restaurant-delivery-zone-chevron{grid-column:2;grid-row:1 / span 3;align-self:center}.restaurant-shipping-modal-backdrop{padding:10px;align-items:flex-end}.restaurant-shipping-modal{max-height:92vh;border-radius:18px 18px 12px 12px;padding:20px}.restaurant-shipping-modal-actions{flex-wrap:wrap}.restaurant-shipping-modal-actions .button{flex:1}.restaurant-shipping-delete{flex-basis:100%;margin-right:0}}
       `}</style>
 
-            <div className="restaurant-shipping-header">
-        <div>
-          <p className="eyebrow">Restaurant settings</p>
-          <h1>Shipping Fee</h1>
-          <p>Set delivery fees by barangay and choose which areas are within your delivery coverage.</p>
-        </div>
-      </div>
-
       {error && <div className="restaurant-shipping-message is-error" role="alert">{error}</div>}
       {message && <div className="restaurant-shipping-message is-success" role="status">{message}</div>}
 
