@@ -292,7 +292,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
         }
       `}</style>
 
-            <div className="restaurant-orders-header">
+            {role !== 'owner' && <div className="restaurant-orders-header">
         <div>
           <p className="eyebrow">Restaurant operations</p>
           <h1>Orders</h1>
@@ -302,7 +302,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
           <span className="restaurant-dashboard-live-dot" />
           {realtimeStatus === 'live' ? 'Live' : realtimeStatus === 'connecting' ? 'Connecting…' : 'Reconnecting…'}
         </span>
-      </div>
+      </div>}
 
       {!isCashier && !isKitchen && <div className="restaurant-orders-tabs">
         <button
