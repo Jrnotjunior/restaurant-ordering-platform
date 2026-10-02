@@ -177,22 +177,15 @@ export function RestaurantSalesPage({ restaurantId }: Props) {
         <div className="restaurant-sales-empty">No completed sales yet.</div>
       ) : (
         <section className="restaurant-sales-panel">
-          <div className="restaurant-sales-panel-header">
-            <div>
-              <p className="eyebrow">Daily sales</p>
-              <h2>Sales by day</h2>
-            </div>
-          </div>
-
-          <div className="restaurant-sales-search">
-            <label htmlFor="restaurant-sales-date-search">Search date</label>
-            <div className="restaurant-sales-search-input-wrap">
+          <div className="restaurant-sales-search" style={{ marginTop: 0 }}>
+            <div className="restaurant-sales-search-input-wrap" style={{ maxWidth: 360 }}>
               <input
                 id="restaurant-sales-date-search"
                 type="search"
                 value={searchDate}
                 onChange={(event) => setSearchDate(event.target.value)}
                 placeholder="Search by date, e.g. September 27 or 2026-09-27"
+                style={{ maxWidth: 360 }}
               />
               {searchDate && (
                 <button
