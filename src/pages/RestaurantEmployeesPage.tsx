@@ -210,99 +210,107 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
 
   return (
     <section className="restaurant-employees-page">
-      <div className="restaurant-employees-toolbar">
-        <span>{staff.length} {staff.length === 1 ? 'employee' : 'employees'}</span>
-        <button className="button button-primary" type="button" onClick={() => setShowForm((current) => !current)}>
-          {showForm ? 'Close' : 'Add Employee'}
-        </button>
-      </div>
+      <div className="restaurant-employees-card">
+        <div className="restaurant-employees-card-header">
+          <div>
+            <h1>Employees</h1>
+            <p>Manage your restaurant employees and their access to the management system.</p>
+          </div>
+          <button className="button button-primary" type="button" onClick={() => setShowForm((current) => !current)}>
+            {showForm ? 'Close' : 'Add Employee'}
+          </button>
+        </div>
 
-      <div className="restaurant-employees-search">
-        <label htmlFor="restaurant-employee-search">Search employees</label>
-        <div className="restaurant-employees-search-input-wrap">
-          <input
-            id="restaurant-employee-search"
-            type="search"
-            value={searchEmployee}
-            onChange={(event) => setSearchEmployee(event.target.value)}
-            placeholder="Search by name, mobile, email, or role"
-          />
-          {searchEmployee && (
-            <button
-              type="button"
-              className="restaurant-employees-search-clear"
-              onClick={() => setSearchEmployee('')}
-              aria-label="Clear employee search"
-            >
-              ×
-            </button>
+        <div className="restaurant-employees-search">
+          <label htmlFor="restaurant-employee-search">Search employees</label>
+          <div className="restaurant-employees-search-input-wrap">
+            <input
+              id="restaurant-employee-search"
+              type="search"
+              value={searchEmployee}
+              onChange={(event) => setSearchEmployee(event.target.value)}
+              placeholder="Search by name, mobile, email, or role"
+            />
+            {searchEmployee && (
+              <button
+                type="button"
+                className="restaurant-employees-search-clear"
+                onClick={() => setSearchEmployee('')}
+                aria-label="Clear employee search"
+              >
+                ×
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="restaurant-employees-count">
+          {staff.length} {staff.length === 1 ? 'employee' : 'employees'}
+        </div>
+
+        {error ? <div className="restaurant-employees-error" role="alert">{error}</div> : null}
+
+        {showForm ? (
+          <form className="restaurant-employee-form" onSubmit={(event) => void handleSubmit(event)}>
+            <div className="restaurant-employee-form-heading">
+              <div><p className="eyebrow">New employee</p><h2>Add employee</h2></div>
+              <p>Kitchen and Dispatcher are shared accounts. Rider accounts are also created through this employee invitation flow.</p>
+            </div>
+            <div className="restaurant-employee-form-grid">
+              <label>Full name<input name="name" type="text" placeholder="e.g. Juan Dela Cruz" required /></label>
+              <label>Preferred name<input name="preferredName" type="text" placeholder="e.g. Juan" required /></label>
+              <label>Mobile number<input name="mobileNumber" type="tel" placeholder="09XX XXX XXXX" required /></label>
+              <label>Login email<input name="email" type="email" placeholder="employee@example.com" required /></label>
+              <label>Role<select name="role" defaultValue="cashier"><option value="cashier">Cashier</option><option value="kitchen">Kitchen</option><option value="dispatcher">Dispatcher</option><option value="rider">Rider</option></select></label>
+            </div>
+            <p className="restaurant-employee-form-help">A Supabase Auth account is created automatically and an invitation email is sent so the employee can set a password.</p>
+            <div className="restaurant-employee-form-actions">
+              <button className="button button-secondary" type="button" onClick={() => setShowForm(false)} disabled={saving}>Cancel</button>
+              <button className="button button-primary" type="submit" disabled={saving}>{saving ? 'Creating…' : 'Add Employee'}</button>
+            </div>
+          </form>
+        ) : null}
+
+        <div className="restaurant-employees-list">
+          {loading ? <div className="restaurant-employees-empty">Loading employees…</div> : staff.length === 0 ? <div className="restaurant-employees-empty">No employees have been added yet.</div> : filteredStaff.length === 0 ? <div className="restaurant-employees-empty">No employees found for “{searchEmployee}”.</div> : (
+            filteredStaff.map((employee) => (
+              <article className={`restaurant-employee-card${employee.isActive ? '' : ' is-inactive'}`} key={employee.id}>
+                <div className="restaurant-employee-avatar" aria-hidden="true">{employee.name.charAt(0).toUpperCase()}</div>
+                <div className="restaurant-employee-details">
+                  <div className="restaurant-employee-name-row"><h2>{employee.preferredName}</h2><span className="restaurant-employee-role">{roleLabels[employee.role]}</span></div>
+                  <p>{employee.mobileNumber}</p>
+                  <p>{employee.email}</p>
+                  {!employee.isActive ? <p className="restaurant-employee-status">Inactive</p> : null}
+                </div>
+                <div className="restaurant-employee-actions">
+                  <button className="button button-secondary" type="button" onClick={() => setEditingStaff(employee)} disabled={saving}>Edit</button>
+                  <button className="button button-secondary" type="button" onClick={() => void toggleActive(employee)} disabled={saving}>
+                    {employee.isActive ? 'Deactivate' : 'Activate'}
+                  </button>
+                </div>
+              </article>
+            ))
           )}
         </div>
+
+        {editingStaff ? (
+          <div className="restaurant-employee-modal-backdrop" role="presentation" onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !saving) setEditingStaff(null);
+          }}>
+            <form className="restaurant-employee-modal restaurant-employee-edit-modal" onSubmit={(event) => void handleEdit(event)}>
+              <div className="restaurant-employee-modal-header"><div><p className="eyebrow">Edit employee</p><h2>Update employee details</h2></div><button className="restaurant-employee-modal-close" type="button" onClick={() => setEditingStaff(null)} disabled={saving} aria-label="Close">×</button></div>
+              <div className="restaurant-employee-form-grid">
+                <label>Full name<input name="name" type="text" defaultValue={editingStaff.name} required /></label>
+                <label>Preferred name<input name="preferredName" type="text" defaultValue={editingStaff.preferredName} required /></label>
+                <label>Mobile number<input name="mobileNumber" type="tel" defaultValue={editingStaff.mobileNumber} required /></label>
+                <label>Role<input value={roleLabels[editingStaff.role]} readOnly /></label>
+                <label>Login email<input value={editingStaff.email} readOnly /></label>
+              </div>
+              <div className="restaurant-employee-modal-actions"><button className="button button-secondary" type="button" onClick={() => setEditingStaff(null)} disabled={saving}>Cancel</button><button className="button button-primary" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save Changes'}</button></div>
+            </form>
+          </div>
+        ) : null}
       </div>
-
-      {error ? <div className="restaurant-employees-error" role="alert">{error}</div> : null}
-
-      {showForm ? (
-        <form className="restaurant-employee-form" onSubmit={(event) => void handleSubmit(event)}>
-          <div className="restaurant-employee-form-heading">
-            <div><p className="eyebrow">New employee</p><h2>Add employee</h2></div>
-            <p>Kitchen and Dispatcher are shared accounts. Rider accounts are also created through this employee invitation flow.</p>
-          </div>
-          <div className="restaurant-employee-form-grid">
-            <label>Full name<input name="name" type="text" placeholder="e.g. Juan Dela Cruz" required /></label>
-            <label>Preferred name<input name="preferredName" type="text" placeholder="e.g. Juan" required /></label>
-            <label>Mobile number<input name="mobileNumber" type="tel" placeholder="09XX XXX XXXX" required /></label>
-            <label>Login email<input name="email" type="email" placeholder="employee@example.com" required /></label>
-            <label>Role<select name="role" defaultValue="cashier"><option value="cashier">Cashier</option><option value="kitchen">Kitchen</option><option value="dispatcher">Dispatcher</option><option value="rider">Rider</option></select></label>
-          </div>
-          <p className="restaurant-employee-form-help">A Supabase Auth account is created automatically and an invitation email is sent so the employee can set a password.</p>
-          <div className="restaurant-employee-form-actions">
-            <button className="button button-secondary" type="button" onClick={() => setShowForm(false)} disabled={saving}>Cancel</button>
-            <button className="button button-primary" type="submit" disabled={saving}>{saving ? 'Creating…' : 'Add Employee'}</button>
-          </div>
-        </form>
-      ) : null}
-
-      <div className="restaurant-employees-list">
-        {loading ? <div className="restaurant-employees-empty">Loading employees…</div> : staff.length === 0 ? <div className="restaurant-employees-empty">No employees have been added yet.</div> : filteredStaff.length === 0 ? <div className="restaurant-employees-empty">No employees found for “{searchEmployee}”.</div> : <>
-          {filteredStaff.map((employee) => (
-          <article className={`restaurant-employee-card${employee.isActive ? '' : ' is-inactive'}`} key={employee.id}>
-            <div className="restaurant-employee-avatar" aria-hidden="true">{employee.name.charAt(0).toUpperCase()}</div>
-            <div className="restaurant-employee-details">
-              <div className="restaurant-employee-name-row"><h2>{employee.preferredName}</h2><span className="restaurant-employee-role">{roleLabels[employee.role]}</span></div>
-              <p>{employee.mobileNumber}</p>
-              <p>{employee.email}</p>
-              {!employee.isActive ? <p className="restaurant-employee-status">Inactive</p> : null}
-            </div>
-            <div className="restaurant-employee-actions">
-              <button className="button button-secondary" type="button" onClick={() => setEditingStaff(employee)} disabled={saving}>Edit</button>
-              <button className="button button-secondary" type="button" onClick={() => void toggleActive(employee)} disabled={saving}>
-                {employee.isActive ? 'Deactivate' : 'Activate'}
-              </button>
-            </div>
-          </article>
-          ))}
-
-        </>}
-      </div>
-
-      {editingStaff ? (
-        <div className="restaurant-employee-modal-backdrop" role="presentation" onMouseDown={(event) => {
-          if (event.target === event.currentTarget && !saving) setEditingStaff(null);
-        }}>
-          <form className="restaurant-employee-modal restaurant-employee-edit-modal" onSubmit={(event) => void handleEdit(event)}>
-            <div className="restaurant-employee-modal-header"><div><p className="eyebrow">Edit employee</p><h2>Update employee details</h2></div><button className="restaurant-employee-modal-close" type="button" onClick={() => setEditingStaff(null)} disabled={saving} aria-label="Close">×</button></div>
-            <div className="restaurant-employee-form-grid">
-              <label>Full name<input name="name" type="text" defaultValue={editingStaff.name} required /></label>
-              <label>Preferred name<input name="preferredName" type="text" defaultValue={editingStaff.preferredName} required /></label>
-              <label>Mobile number<input name="mobileNumber" type="tel" defaultValue={editingStaff.mobileNumber} required /></label>
-              <label>Role<input value={roleLabels[editingStaff.role]} readOnly /></label>
-              <label>Login email<input value={editingStaff.email} readOnly /></label>
-            </div>
-            <div className="restaurant-employee-modal-actions"><button className="button button-secondary" type="button" onClick={() => setEditingStaff(null)} disabled={saving}>Cancel</button><button className="button button-primary" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save Changes'}</button></div>
-          </form>
-        </div>
-      ) : null}
     </section>
   );
 }
