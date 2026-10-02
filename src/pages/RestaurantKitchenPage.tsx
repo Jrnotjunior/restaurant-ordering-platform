@@ -188,6 +188,7 @@ export function RestaurantKitchenPage({ restaurantId, view = 'orders' }: Props) 
           </div>
         )}
         </div>
+        </div>
       ) : null}
     </section>
   );
