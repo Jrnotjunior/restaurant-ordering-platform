@@ -1,6 +1,12 @@
 -- Unify Riders with restaurant staff while preserving the delivery-specific rider profile.
 -- New Riders are created through create-staff; restaurant_riders remains the delivery profile.
 
+alter table public.restaurant_riders
+  add column if not exists is_active boolean not null default true;
+
+create index if not exists restaurant_riders_active_idx
+  on public.restaurant_riders (restaurant_id, is_active, created_at);
+
 alter table public.restaurant_staff
   drop constraint if exists restaurant_staff_role_check;
 
