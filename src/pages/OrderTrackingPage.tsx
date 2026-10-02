@@ -17,6 +17,7 @@ const deliverySteps: Array<{ key: CustomerStatus; label: string; description: st
   { key: 'preparing', label: 'Preparing', description: 'The kitchen is preparing your food.' },
   { key: 'ready', label: 'Ready', description: 'Your order is ready.' },
   { key: 'out_for_delivery', label: 'Out for delivery', description: 'Your rider is on the way to you.' },
+  { key: 'arrived', label: 'Arrived at customer', description: 'Your rider has arrived at your location.' },
   { key: 'completed', label: 'Completed', description: 'Your order has been delivered.' },
 ];
 
@@ -28,7 +29,7 @@ const pickupSteps: Array<{ key: CustomerStatus; label: string; description: stri
   { key: 'completed', label: 'Picked up', description: 'Your order has been picked up.' },
 ];
 
-const deliveryStatusOrder: CustomerStatus[] = ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'completed'];
+const deliveryStatusOrder: CustomerStatus[] = ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'arrived', 'completed'];
 const pickupStatusOrder: CustomerStatus[] = ['pending', 'confirmed', 'preparing', 'ready', 'completed'];
 
 export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
@@ -128,7 +129,9 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
     ? 'completed'
     : (order.deliveryStatus === 'delivering' || order.deliveryStatus === 'out_for_delivery')
       ? 'out_for_delivery'
-      : order.status === 'confirmed'
+      : order.deliveryStatus === 'arrived'
+        ? 'arrived'
+        : order.status === 'confirmed'
         ? 'preparing'
         : order.status;
   const isPickup = order.orderType === 'pickup';
@@ -138,9 +141,11 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
   const riderAssigned = order.orderType === 'delivery' && Boolean(order.riderName && order.riderPhone);
   const deliveryStatusLabel = order.deliveryStatus === 'delivering' || order.deliveryStatus === 'out_for_delivery'
     ? 'Out for delivery'
-    : order.deliveryStatus === 'delivered'
-      ? 'Delivered'
-      : 'Rider assigned';
+    : order.deliveryStatus === 'arrived'
+      ? 'Arrived at customer'
+      : order.deliveryStatus === 'delivered'
+        ? 'Delivered'
+        : 'Rider assigned';
 
   return (
     <section className="order-tracking-page">
