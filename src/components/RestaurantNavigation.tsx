@@ -6,7 +6,7 @@ export type RestaurantNavigationRole = 'owner' | 'cashier' | 'kitchen' | 'dispat
 type NavigationItem = {
   label: string;
   href: string;
-  icon: 'dashboard' | 'orders' | 'products' | 'riders' | 'shipping' | 'sales' | 'dispatch' | 'settings';
+  icon: 'dashboard' | 'orders' | 'products' | 'riders' | 'shipping' | 'sales' | 'dispatch' | 'settings' | 'loyalty';
 };
 
 const ownerNavigationItems: NavigationItem[] = [
@@ -17,6 +17,7 @@ const ownerNavigationItems: NavigationItem[] = [
   { label: 'Dispatch', href: '#restaurant/delivery-dispatch', icon: 'dispatch' },
   { label: 'Shipping Fee', href: '#restaurant/shipping-fee', icon: 'shipping' },
   { label: 'Sales', href: '#restaurant/sales', icon: 'sales' },
+  { label: 'Loyalty', href: '#restaurant/loyalty', icon: 'loyalty' },
   { label: 'Store Settings', href: '#restaurant/settings', icon: 'settings' },
 ];
 
@@ -55,6 +56,10 @@ function NavigationIcon({ type }: { type: NavigationItem['icon'] }) {
 
   if (type === 'shipping') {
     return <svg {...common}><path d="M3.5 6.5h10v10h-10zM13.5 10h4l3 3v3.5h-7z" /><circle cx="7.5" cy="18" r="2" /><circle cx="17.5" cy="18" r="2" /></svg>;
+  }
+
+  if (type === 'loyalty') {
+    return <svg {...common}><path d="M12 3.5l2.1 2.2 3-.2.8 2.9 2.5 1.7-1.4 2.7 1.4 2.7-2.5 1.7-.8 2.9-3-.2-2.1 2.2-2.1-2.2-3 .2-.8-2.9-2.5-1.7 1.4-2.7-1.4-2.7 2.5-1.7.8-2.9 3 .2z"/><circle cx="12" cy="12" r="2.5"/></svg>;
   }
 
   if (type === 'settings') {
