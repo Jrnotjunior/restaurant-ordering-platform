@@ -35,7 +35,7 @@ function paymentLabel(order: RestaurantOrder) {
   return order.paymentStatus === 'paid' ? 'Cash' : 'Cash • Unpaid';
 }
 
-export function RestaurantSalesPage({ restaurantId }: Props) {
+export function RestaurantSalesPage({ restaurantId, role = 'owner' }: Props) {
   const [orders, setOrders] = useState<RestaurantOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -157,7 +157,7 @@ export function RestaurantSalesPage({ restaurantId }: Props) {
 
   return (
     <section className="restaurant-sales-page">
-            <div className="restaurant-sales-header">
+            {role !== 'owner' && <div className="restaurant-sales-header">
         <div>
           <p className="eyebrow">Restaurant operations</p>
           <h1>Sales</h1>
@@ -167,7 +167,7 @@ export function RestaurantSalesPage({ restaurantId }: Props) {
           <span className="restaurant-dashboard-live-dot" />
           {realtimeStatus === 'live' ? 'Live' : realtimeStatus === 'connecting' ? 'Connecting…' : 'Reconnecting…'}
         </span>
-      </div>
+      </div>}
 
       {error && <div className="restaurant-sales-error" role="alert">{error}</div>}
 
