@@ -211,7 +211,15 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
         @media(max-width:600px){.restaurant-menu-section-header{flex-direction:column}.restaurant-menu-add-button{width:100%}.restaurant-menu-search{align-items:stretch;flex-direction:column}.restaurant-menu-search-label{white-space:normal}.restaurant-menu-search-input-wrap{max-width:none}.restaurant-product-modal-backdrop{padding:10px;align-items:flex-end}.restaurant-product-modal{max-height:92vh;border-radius:18px 18px 12px 12px;padding:20px}.restaurant-product-form-actions .button{flex:1}}
       `}</style>
 
-            {error && <div className="restaurant-dashboard-error" role="alert">{error}</div>}
+            <header className="restaurant-menu-header">
+        <div>
+          <p className="eyebrow">Restaurant operations</p>
+          <h1>Products</h1>
+          <p>Manage the products customers can order from your restaurant.</p>
+        </div>
+      </header>
+
+      {error && <div className="restaurant-dashboard-error" role="alert">{error}</div>}
 
       <div className="restaurant-menu-management-card">
         <div className="restaurant-menu-section-header">
