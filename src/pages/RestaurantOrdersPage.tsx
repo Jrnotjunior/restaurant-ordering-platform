@@ -76,6 +76,7 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
   const [cancelConfirmationOrder, setCancelConfirmationOrder] = useState<RestaurantOrder | null>(null);
   const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
   const [searchQuery, setSearchQuery] = useState('');
+  const [newOrderPaymentFilter, setNewOrderPaymentFilter] = useState<'all' | 'online-paid' | 'unpaid'>('all');
 
   async function loadOrders() {
     try {
@@ -346,88 +347,83 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
             <p className="restaurant-order-list-modal-subtitle">{openedColumn.description}{normalizedSearch && openedColumn.key === 'new' ? ` · ${openedColumnOrders.length} matching order${openedColumnOrders.length === 1 ? '' : 's'}` : ''}</p>
 
             {openedColumn.key === 'new' && (
-              <div style={{ margin: '18px 0 16px' }}>
-                <input
-                  type="search"
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Search by order number or customer name"
-                  aria-label="Search new orders by order number or customer name"
-                  autoFocus
-                  style={{ width: '100%', boxSizing: 'border-box', padding: '12px 14px', border: '1px solid #cbd5e1', borderRadius: 10, fontSize: 14, outline: 'none' }}
-                />
-              </div>
+              <>
+                <div style={{ margin: '18px 0 12px' }}>
+                  <input
+                    type="search"
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    placeholder="Search by order number or customer name"
+                    aria-label="Search new orders by order number or customer name"
+                    autoFocus
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '12px 14px', border: '1px solid #cbd5e1', borderRadius: 10, fontSize: 14, outline: 'none' }}
+                  />
+                </div>
+                <div className="restaurant-order-payment-tabs" role="tablist" aria-label="New order payment filter">
+                  {[
+                    ['all', 'All'],
+                    ['online-paid', 'Online Paid'],
+                    ['unpaid', 'Unpaid'],
+                  ].map(([key, label]) => {
+                    const count = key === 'all'
+                      ? openedColumnOrders.length
+                      : key === 'online-paid'
+                        ? openedColumnOrders.filter(isOnlinePaid).length
+                        : openedColumnOrders.filter((order) => !isOnlinePaid(order)).length;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        role="tab"
+                        aria-selected={newOrderPaymentFilter === key}
+                        className={newOrderPaymentFilter === key ? 'is-active' : ''}
+                        onClick={() => setNewOrderPaymentFilter(key as 'all' | 'online-paid' | 'unpaid')}
+                      >
+                        {label} <span>{count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
             )}
 
-            {openedColumnOrders.length === 0 ? (
-              <div className="restaurant-order-list-empty">No orders in this stage.</div>
-            ) : openedColumn.key === 'new' ? (
-              <div className="restaurant-order-payment-groups">
-                {[
-                  {
-                    key: 'online-paid',
-                    title: 'Online Paid',
-                    description: 'Online payments confirmed and ready for receipt printing',
-                    orders: openedColumnOrders.filter(isOnlinePaid),
-                  },
-                  {
-                    key: 'unpaid',
-                    title: 'Unpaid',
-                    description: 'Orders that still need payment before entering the kitchen',
-                    orders: openedColumnOrders.filter((order) => !isOnlinePaid(order)),
-                  },
-                ].map((group) => (
-                  <section className="restaurant-order-payment-group" key={group.key}>
-                    <div className="restaurant-order-payment-group-header">
-                      <div>
-                        <h3>{group.title}</h3>
-                        <p>{group.description}</p>
-                      </div>
-                      <span>{group.orders.length}</span>
-                    </div>
-                    {group.orders.length === 0 ? (
-                      <div className="restaurant-order-payment-group-empty">No {group.title.toLowerCase()} orders.</div>
-                    ) : (
-                      <div className="restaurant-order-list">
-                        {group.orders.map((order) => (
-                          <button
-                            className="restaurant-order-list-item"
-                            key={order.orderId}
-                            type="button"
-                            onClick={() => setSelectedOrder(order)}
-                          >
-                            <span className="restaurant-order-list-number">{order.orderNumber}</span>
-                            <span style={{ display: 'block', marginTop: 3, fontSize: 13, color: '#64748b' }}>{order.customerName}</span>
-                            <span className="restaurant-order-list-meta">
-                              <span className="restaurant-order-list-status">{paymentLabel(order)}</span>
-                              <span className="restaurant-order-list-total">₱{order.total.toFixed(2)}</span>
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </section>
-                ))}
-              </div>
-            ) : (
-              <div className="restaurant-order-list">
-                {openedColumnOrders.map((order) => (
-                  <button
-                    className="restaurant-order-list-item"
-                    key={order.orderId}
-                    type="button"
-                    onClick={() => setSelectedOrder(order)}
-                  >
-                    <span className="restaurant-order-list-number">{order.orderNumber}</span>
-                    <span style={{ display: 'block', marginTop: 3, fontSize: 13, color: '#64748b' }}>{order.customerName}</span>
-                    <span className="restaurant-order-list-meta">
-                      <span className="restaurant-order-list-status">{statusLabels[order.status]}</span>
-                      <span className="restaurant-order-list-total">₱{order.total.toFixed(2)}</span>
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
+            {(() => {
+              const visibleOrders = openedColumn.key === 'new'
+                ? openedColumnOrders.filter((order) =>
+                    newOrderPaymentFilter === 'all'
+                      ? true
+                      : newOrderPaymentFilter === 'online-paid'
+                        ? isOnlinePaid(order)
+                        : !isOnlinePaid(order),
+                  )
+                : openedColumnOrders;
+
+              if (visibleOrders.length === 0) {
+                return <div className="restaurant-order-list-empty">No orders in this stage.</div>;
+              }
+
+              return (
+                <div className="restaurant-order-list restaurant-order-list-scroll">
+                  {visibleOrders.map((order) => (
+                    <button
+                      className="restaurant-order-list-item"
+                      key={order.orderId}
+                      type="button"
+                      onClick={() => setSelectedOrder(order)}
+                    >
+                      <span className="restaurant-order-list-number">{order.orderNumber}</span>
+                      <span style={{ display: 'block', marginTop: 3, fontSize: 13, color: '#64748b' }}>{order.customerName}</span>
+                      <span className="restaurant-order-list-meta">
+                        <span className="restaurant-order-list-status">
+                          {openedColumn.key === 'new' ? paymentLabel(order) : statusLabels[order.status]}
+                        </span>
+                        <span className="restaurant-order-list-total">₱{order.total.toFixed(2)}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
