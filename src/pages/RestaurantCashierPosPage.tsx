@@ -4,7 +4,7 @@ import { createOrder } from '../services/orderRepository';
 import { applyPosGroupDiscounts, confirmDineInPayment, getRestaurantTaxSettings, type PosDiscountIdType, type PosDiscountType, type RestaurantTaxSettings } from '../services/restaurantOrderRepository';
 import type { RestaurantProduct } from '../types/menu';
 import { supabase } from '../services/supabaseClient';
-import { attachCustomerToOrder, findCustomersByName, getOrCreateWalkInCustomer, type LoyaltyCustomerSuggestion } from '../services/loyaltyRepository';
+import { attachCustomerToOrder, findCustomersByName, type LoyaltyCustomerSuggestion } from '../services/loyaltyRepository';
 
 type Props = { restaurantId: string };
 type CartItem = { product: RestaurantProduct; quantity: number };
@@ -224,12 +224,10 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
     try {
       const enteredCustomerName = customerName.trim() || 'Walk-in Customer';
 
-      // Resolve the loyalty customer before creating the order so the order
-      // is never completed without its intended loyalty identity.
-      const loyaltyCustomer = enteredCustomerName.toLowerCase() !== 'walk-in customer'
-        ? selectedCustomerId
-          ? { customerId: selectedCustomerId, name: enteredCustomerName }
-          : await getOrCreateWalkInCustomer(restaurantId, enteredCustomerName)
+      // Only a selected registered customer account can earn loyalty points.
+      // If no registered account is selected, the order remains a guest order.
+      const loyaltyCustomer = selectedCustomerId
+        ? { customerId: selectedCustomerId, name: enteredCustomerName }
         : null;
 
       const created = await createOrder({
@@ -349,13 +347,13 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
                   >
                     <span>
                       <strong>{customer.name}</strong>
-                      <small>{customer.isRegistered ? 'Registered account' : 'Walk-in loyalty customer'}</small>
+                      <small>Registered account</small>
                     </span>
                     <em>{customer.pointsBalance} pts</em>
                   </button>
                 ))}
                 {!customerSuggestionsLoading && customerSuggestions.length === 0 && (
-                  <div className="restaurant-pos-customer-suggestion-status">No existing customer. This name will be added as a new loyalty customer.</div>
+                  <div className="restaurant-pos-customer-suggestion-status">No registered customer found. This order will remain a guest order and earn 0 points.</div>
                 )}
               </div>
             )}
