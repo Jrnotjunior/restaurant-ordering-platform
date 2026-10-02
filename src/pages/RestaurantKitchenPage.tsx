@@ -68,15 +68,6 @@ export function RestaurantKitchenPage({ restaurantId }: Props) {
         )
       );
 
-      if (supabase) {
-        await supabase
-          .channel(`kitchen-menu-broadcast:${restaurantId}`)
-          .send({
-            type: 'broadcast',
-            event: 'restaurant_menu_changed',
-            payload: { productId: product.id, isAvailable: !product.isAvailable },
-          });
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to update product availability.');
     } finally {
