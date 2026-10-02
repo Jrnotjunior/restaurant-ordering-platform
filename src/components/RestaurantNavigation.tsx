@@ -133,7 +133,7 @@ export function RestaurantNavigation({ role = 'owner' }: { role?: RestaurantNavi
 
   return (
     <>
-      <div className="restaurant-navigation-row">
+      <div className={`restaurant-navigation-row${role === 'dispatcher' ? ' is-dispatcher' : ''}`}>
         {role !== 'dispatcher' ? (
           <nav className="restaurant-navigation" aria-label="Restaurant operations navigation">
             {roleNavigationItems[role].map((item) => {
