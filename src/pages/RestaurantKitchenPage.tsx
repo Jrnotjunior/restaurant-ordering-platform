@@ -77,8 +77,8 @@ export function RestaurantKitchenPage({ restaurantId, view = 'orders' }: Props) 
   }
 
   return (
-    <section className="restaurant-menu-page">
-      <header className="restaurant-menu-header">
+    <section className="restaurant-orders-page restaurant-kitchen-menu-page">
+      <header className="restaurant-orders-header">
         <div>
           <p className="eyebrow">Kitchen operations</p>
           <h1>Menu</h1>
@@ -92,114 +92,91 @@ export function RestaurantKitchenPage({ restaurantId, view = 'orders' }: Props) 
 
       {error ? <div className="restaurant-dashboard-error" role="alert">{error}</div> : null}
 
-      <div className="restaurant-menu-management-card">
-        <div className="restaurant-menu-section-header">
-          <div>
-            <h2>Product Menu</h2>
-            <p>Mark products as sold out or make them available again.</p>
-          </div>
-        </div>
+      <div className="restaurant-kitchen-menu-toolbar">
+        <label className="restaurant-kitchen-menu-search" htmlFor="kitchen-product-search">
+          <span>Search products</span>
+          <input
+            id="kitchen-product-search"
+            type="search"
+            value={searchProduct}
+            onChange={(event) => setSearchProduct(event.target.value)}
+            placeholder="Search products"
+          />
+        </label>
 
-        <div className="restaurant-menu-search">
-          <label className="restaurant-menu-search-label" htmlFor="kitchen-product-search">
-            Search products
-          </label>
-          <div className="restaurant-menu-search-input-wrap">
-            <input
-              id="kitchen-product-search"
-              type="search"
-              value={searchProduct}
-              onChange={(event) => setSearchProduct(event.target.value)}
-              placeholder="Search by product name"
-            />
-            {searchProduct ? (
-              <button
-                type="button"
-                className="restaurant-menu-search-clear"
-                onClick={() => setSearchProduct('')}
-                aria-label="Clear product search"
-              >
-                ×
-              </button>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="restaurant-menu-toolbar">
-          <div className="restaurant-menu-categories" aria-label="Product categories">
+        <div className="restaurant-orders-tabs restaurant-kitchen-menu-categories" aria-label="Product categories">
+          <button
+            className={selectedCategory === 'all' ? 'is-active' : ''}
+            type="button"
+            onClick={() => setSelectedCategory('all')}
+          >
+            All
+          </button>
+          {categories.map((category) => (
             <button
-              className={selectedCategory === 'all' ? 'is-active' : ''}
+              key={category.id}
+              className={selectedCategory === category.id ? 'is-active' : ''}
               type="button"
-              onClick={() => setSelectedCategory('all')}
+              onClick={() => setSelectedCategory(category.id)}
             >
-              All
+              {category.name}
             </button>
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                className={selectedCategory === category.id ? 'is-active' : ''}
-                type="button"
-                onClick={() => setSelectedCategory(category.id)}
-              >
-                {category.name}
-              </button>
-            ))}
-          </div>
+          ))}
         </div>
-
-        {loading ? (
-          <div className="restaurant-dashboard-empty">Loading products…</div>
-        ) : visibleProducts.length === 0 ? (
-          <div className="restaurant-dashboard-empty">No products match this filter.</div>
-        ) : (
-          <div className="restaurant-menu-grid">
-            {visibleProducts.map((product) => (
-              <article
-                className={`restaurant-menu-card ${product.isAvailable ? '' : 'is-unavailable'}`}
-                key={product.id}
-              >
-                {product.imageUrl ? (
-                  <img src={product.imageUrl} alt="" className="restaurant-menu-image" />
-                ) : (
-                  <div className="restaurant-menu-image-placeholder" aria-hidden="true">
-                    {product.name.charAt(0).toUpperCase()}
-                  </div>
-                )}
-
-                <div className="restaurant-menu-card-content">
-                  <div className="restaurant-menu-card-heading">
-                    <div>
-                      <h2>{product.name}</h2>
-                      <p>{product.description || 'No description.'}</p>
-                    </div>
-                    <strong>₱{product.price.toFixed(2)}</strong>
-                  </div>
-
-                  <div className="restaurant-menu-card-footer">
-                    <span className={`restaurant-menu-status ${product.isAvailable ? 'is-available' : 'is-unavailable'}`}>
-                      {product.isAvailable ? 'Available' : 'Sold Out'}
-                    </span>
-
-                    <button
-                      className="button button-secondary"
-                      type="button"
-                      disabled={savingId === product.id}
-                      onClick={() => void toggleAvailability(product)}
-                    >
-                      {savingId === product.id
-                        ? 'Saving…'
-                        : product.isAvailable
-                          ? 'Mark Sold Out'
-                          : 'Mark Available'}
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
       </div>
+
+      {loading ? (
+        <div className="restaurant-orders-empty">Loading products…</div>
+      ) : visibleProducts.length === 0 ? (
+        <div className="restaurant-orders-empty">No products match this filter.</div>
+      ) : (
+        <div className="restaurant-kitchen-menu-grid">
+          {visibleProducts.map((product) => (
+            <article
+              className={`restaurant-kitchen-menu-card${product.isAvailable ? '' : ' is-unavailable'}`}
+              key={product.id}
+            >
+              {product.imageUrl ? (
+                <img src={product.imageUrl} alt="" className="restaurant-kitchen-menu-image" />
+              ) : (
+                <div className="restaurant-kitchen-menu-image-placeholder" aria-hidden="true">
+                  {product.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+
+              <div className="restaurant-kitchen-menu-card-body">
+                <div className="restaurant-kitchen-menu-card-top">
+                  <div>
+                    <h2>{product.name}</h2>
+                    <p>{product.description || 'No description.'}</p>
+                  </div>
+                  <strong>₱{product.price.toFixed(2)}</strong>
+                </div>
+
+                <div className="restaurant-kitchen-menu-card-footer">
+                  <span className={`restaurant-menu-status ${product.isAvailable ? 'is-available' : 'is-unavailable'}`}>
+                    {product.isAvailable ? 'Available' : 'Sold Out'}
+                  </span>
+                  <button
+                    className="button button-secondary"
+                    type="button"
+                    disabled={savingId === product.id}
+                    onClick={() => void toggleAvailability(product)}
+                  >
+                    {savingId === product.id
+                      ? 'Saving…'
+                      : product.isAvailable
+                        ? 'Mark Sold Out'
+                        : 'Mark Available'}
+                  </button>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
     </section>
   );
+
 
 }
