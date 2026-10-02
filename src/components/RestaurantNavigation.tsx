@@ -134,22 +134,24 @@ export function RestaurantNavigation({ role = 'owner' }: { role?: RestaurantNavi
   return (
     <>
       <div className="restaurant-navigation-row">
-        <nav className="restaurant-navigation" aria-label="Restaurant operations navigation">
-          {roleNavigationItems[role].map((item) => {
-            const active = currentRoute === item.href;
-            return (
-              <a
-                key={item.href}
-                className={`restaurant-navigation-item${active ? ' is-active' : ''}`}
-                href={item.href}
-                aria-current={active ? 'page' : undefined}
-              >
-                <span className="restaurant-navigation-icon"><NavigationIcon type={item.icon} /></span>
-                <span>{item.label}</span>
-              </a>
-            );
-          })}
-        </nav>
+        {role !== 'dispatcher' ? (
+          <nav className="restaurant-navigation" aria-label="Restaurant operations navigation">
+            {roleNavigationItems[role].map((item) => {
+              const active = currentRoute === item.href;
+              return (
+                <a
+                  key={item.href}
+                  className={`restaurant-navigation-item${active ? ' is-active' : ''}`}
+                  href={item.href}
+                  aria-current={active ? 'page' : undefined}
+                >
+                  <span className="restaurant-navigation-icon"><NavigationIcon type={item.icon} /></span>
+                  <span>{item.label}</span>
+                </a>
+              );
+            })}
+          </nav>
+        ) : null}
 
         <div className="restaurant-account-menu">
           <button className="restaurant-account-button" type="button" aria-label="Open account menu" aria-expanded={accountOpen} onClick={() => setAccountOpen((open) => !open)}>
