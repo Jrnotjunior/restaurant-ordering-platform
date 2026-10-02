@@ -109,7 +109,7 @@ export async function getOrCreateCategory(restaurantId: string, name: string) {
   return String(data);
 }
 
-export async function setProductAvailability(productId: string, isAvailable: boolean) {
+export async function setProductAvailability(productId: string, isAvailable: boolean, restaurantId?: string) {
   if (!supabase) throw new Error('Supabase environment variables are not configured.');
 
   const { error } = await supabase.rpc('update_product_availability', {
@@ -119,7 +119,9 @@ export async function setProductAvailability(productId: string, isAvailable: boo
 
   if (error) throw new Error(`Unable to update product availability: ${error.message}`);
 
-  const channel = supabase.channel(`restaurant-menu-changes:${productId}`);
+  if (!restaurantId) return;
+
+  const channel = supabase.channel(`restaurant-menu-changes:${restaurantId}`);
   channel.subscribe((status) => {
     if (status === 'SUBSCRIBED') {
       void channel.send({
