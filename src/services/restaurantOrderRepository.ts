@@ -76,3 +76,30 @@ export async function updateOrderStatus(orderId: string, status: RestaurantOrder
 export async function confirmDineInPayment(orderId: string) {
   await supabaseRpc('confirm_dine_in_payment', { p_order_id: orderId });
 }
+
+export type PosDiscountType = 'senior' | 'pwd';
+
+export async function applyPosDiscount(orderId: string, discountType: PosDiscountType, idNumber: string) {
+  const rows = await supabaseRpc<{
+    order_id: string;
+    discount_type: PosDiscountType;
+    discount_id_number: string;
+    discount_amount: number | string;
+    total: number | string;
+  }>('apply_pos_discount', {
+    p_order_id: orderId,
+    p_discount_type: discountType,
+    p_discount_id_number: idNumber.trim(),
+  });
+
+  const row = rows[0];
+  if (!row) throw new Error('The discount could not be applied.');
+
+  return {
+    orderId: row.order_id,
+    discountType: row.discount_type,
+    idNumber: row.discount_id_number,
+    discountAmount: Number(row.discount_amount),
+    total: Number(row.total),
+  };
+}
