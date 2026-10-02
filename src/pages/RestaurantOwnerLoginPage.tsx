@@ -31,6 +31,31 @@ export function RestaurantOwnerLoginPage() {
         return;
       }
 
+      // Employee accounts are identified by their restaurant_staff link.
+      // The staff table is authoritative for employee role and restaurant.
+      if (user) {
+        const { data: staffProfile, error: staffLookupError } = await supabase
+          .from('restaurant_staff')
+          .select('restaurant_id,role')
+          .eq('auth_user_id', user.id)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (staffLookupError) throw staffLookupError;
+        if (staffProfile?.role === 'cashier') {
+          window.location.hash = '#restaurant/cashier';
+          return;
+        }
+        if (staffProfile?.role === 'kitchen') {
+          window.location.hash = '#restaurant/kitchen';
+          return;
+        }
+        if (staffProfile?.role === 'dispatcher') {
+          window.location.hash = '#restaurant/dispatcher';
+          return;
+        }
+      }
+
       // Rider accounts are identified by their restaurant_riders link.
       // This keeps rider routing working even if older invited accounts
       // do not have the role metadata populated.
