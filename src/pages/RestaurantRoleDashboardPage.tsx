@@ -43,17 +43,15 @@ async function loadOwnerStats(restaurantId: string): Promise<OwnerStats> {
   const start = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
   const end = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
 
-  const [orders, products, employees, riders] = await Promise.all([
+  const [orders, products, employees] = await Promise.all([
     supabase.from('orders').select('id,total,status,created_at,order_type,delivery_status').eq('restaurant_id', restaurantId).gte('created_at', start).lt('created_at', end),
     supabase.from('products').select('id').eq('restaurant_id', restaurantId),
     supabase.from('restaurant_staff').select('id').eq('restaurant_id', restaurantId).eq('is_active', true),
-    supabase.from('restaurant_riders').select('id').eq('restaurant_id', restaurantId),
   ]);
 
   if (orders.error) throw orders.error;
   if (products.error) throw products.error;
   if (employees.error) throw employees.error;
-  if (riders.error) throw riders.error;
 
   const orderRows = orders.data ?? [];
   const completedStatuses = new Set(['completed']);
@@ -67,7 +65,7 @@ async function loadOwnerStats(restaurantId: string): Promise<OwnerStats> {
     orders: orderRows.length,
     pendingOrders,
     products: products.data?.length ?? 0,
-    employees: (employees.data?.length ?? 0) + (riders.data?.length ?? 0),
+    employees: employees.data?.length ?? 0,
     activeDeliveries,
   };
 }
