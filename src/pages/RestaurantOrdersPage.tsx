@@ -44,6 +44,10 @@ function isPaymentReady(order: RestaurantOrder) {
   return order.paymentMethod !== 'gcash' || order.paymentStatus === 'paid';
 }
 
+function isOnlinePaid(order: RestaurantOrder) {
+  return order.paymentMethod === 'gcash' && order.paymentStatus === 'paid';
+}
+
 function columnFor(order: RestaurantOrder): BoardColumn | null {
   if (order.status === 'pending') return 'new';
   if (order.status === 'confirmed' || order.status === 'preparing') return 'kitchen';
@@ -357,6 +361,54 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
 
             {openedColumnOrders.length === 0 ? (
               <div className="restaurant-order-list-empty">No orders in this stage.</div>
+            ) : openedColumn.key === 'new' ? (
+              <div className="restaurant-order-payment-groups">
+                {[
+                  {
+                    key: 'online-paid',
+                    title: 'Online Paid',
+                    description: 'Online payments confirmed and ready for receipt printing',
+                    orders: openedColumnOrders.filter(isOnlinePaid),
+                  },
+                  {
+                    key: 'unpaid',
+                    title: 'Unpaid',
+                    description: 'Orders that still need payment before entering the kitchen',
+                    orders: openedColumnOrders.filter((order) => !isOnlinePaid(order)),
+                  },
+                ].map((group) => (
+                  <section className="restaurant-order-payment-group" key={group.key}>
+                    <div className="restaurant-order-payment-group-header">
+                      <div>
+                        <h3>{group.title}</h3>
+                        <p>{group.description}</p>
+                      </div>
+                      <span>{group.orders.length}</span>
+                    </div>
+                    {group.orders.length === 0 ? (
+                      <div className="restaurant-order-payment-group-empty">No {group.title.toLowerCase()} orders.</div>
+                    ) : (
+                      <div className="restaurant-order-list">
+                        {group.orders.map((order) => (
+                          <button
+                            className="restaurant-order-list-item"
+                            key={order.orderId}
+                            type="button"
+                            onClick={() => setSelectedOrder(order)}
+                          >
+                            <span className="restaurant-order-list-number">{order.orderNumber}</span>
+                            <span style={{ display: 'block', marginTop: 3, fontSize: 13, color: '#64748b' }}>{order.customerName}</span>
+                            <span className="restaurant-order-list-meta">
+                              <span className="restaurant-order-list-status">{paymentLabel(order)}</span>
+                              <span className="restaurant-order-list-total">₱{order.total.toFixed(2)}</span>
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+                ))}
+              </div>
             ) : (
               <div className="restaurant-order-list">
                 {openedColumnOrders.map((order) => (
