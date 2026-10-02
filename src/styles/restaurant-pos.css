@@ -6,7 +6,7 @@
 .restaurant-pos-beneficiary-header button{border:0;background:transparent;color:#b91c1c;font-size:12px;font-weight:700;cursor:pointer}
 .restaurant-pos-beneficiary .restaurant-pos-field{margin-top:10px}
 
-.restaurant-pos-cash-payment input[type=number]::-webkit-inner-spin-button,.restaurant-pos-cash-payment input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.restaurant-pos-cash-payment input[type=number]{-moz-appearance:textfield;appearance:textfield}
+.restaurant-pos-page input[type=number]::-webkit-inner-spin-button,.restaurant-pos-page input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.restaurant-pos-page input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .restaurant-pos-cash-payment{margin-top:14px;padding:12px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc}.restaurant-pos-cash-payment .restaurant-pos-field{margin-top:0}.restaurant-pos-cash-change{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid #e2e8f0}.restaurant-pos-cash-change span{font-size:13px;font-weight:700;color:#475569}.restaurant-pos-cash-change strong{font-size:20px}.restaurant-pos-cash-warning{margin:8px 0 0;color:#b91c1c;font-size:12px;font-weight:600}
 .restaurant-pos-tax-status{margin:12px 0 0;padding:8px 10px;border-radius:8px;background:#f1f5f9;color:#475569;font-size:12px;font-weight:700;text-align:center}
 
