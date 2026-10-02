@@ -11,7 +11,6 @@ import { RestaurantMenuPage } from './pages/RestaurantMenuPage';
 import { RestaurantShippingFeePage } from './pages/RestaurantShippingFeePage';
 import { RestaurantSalesPage } from './pages/RestaurantSalesPage';
 import { RestaurantCashierPosPage } from './pages/RestaurantCashierPosPage';
-import { RestaurantRidersPage } from './pages/RestaurantRidersPage';
 import { RestaurantDeliveryDispatchPage } from './pages/RestaurantDeliveryDispatchPage';
 import { RestaurantSettingsPage } from './pages/RestaurantSettingsPage';
 import { RestaurantLoyaltyPage } from './pages/RestaurantLoyaltyPage';
@@ -93,9 +92,10 @@ function RiderRouteGuard({ children }: { children: ReactNode }) {
       if (role === 'rider' || user) {
         if (user) {
           const { data: riderProfile } = await supabase
-            .from('restaurant_riders')
+            .from('restaurant_staff')
             .select('id')
             .eq('auth_user_id', user.id)
+            .eq('role', 'rider')
             .eq('is_active', true)
             .maybeSingle();
 
@@ -177,9 +177,10 @@ function OwnerRestaurantGuard({ children }: { children: (restaurant: RestaurantC
       }
 
       const { data: riderProfile, error: riderLookupError } = await supabase
-        .from('restaurant_riders')
+        .from('restaurant_staff')
         .select('id')
         .eq('auth_user_id', user.id)
+        .eq('role', 'rider')
         .eq('is_active', true)
         .maybeSingle();
 
@@ -313,7 +314,6 @@ function AppContent() {
   const isRestaurantSalesPage = route === '#restaurant/sales';
   const isCashierSalesPage = route === '#restaurant/cashier-sales';
   const isCashierPosPage = route === '#restaurant/cashier-pos';
-  const isRestaurantRidersPage = route === '#restaurant/riders';
   const isRestaurantDeliveryDispatchPage = route === '#restaurant/delivery-dispatch';
   const isRestaurantSettingsPage = route === '#restaurant/settings';
   const isRestaurantLoyaltyPage = route === '#restaurant/loyalty';
@@ -328,7 +328,7 @@ function AppContent() {
   const isRiderInvitePath = window.location.pathname.endsWith('/invite') || window.location.pathname.endsWith('/invite/');
   const isRiderInvitePage = isRiderInvitePath || searchParams.get('invite') === '1' || isInviteCallback;
   const isEmployeeInvitePage = window.location.pathname.endsWith('/employee-invite') || window.location.pathname.endsWith('/employee-invite/') || searchParams.get('employee-invite') === '1';
-  const isRestaurantOperationsPage = isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantShippingFeePage || isRestaurantSalesPage || isRestaurantRidersPage || isRestaurantDeliveryDispatchPage || isRestaurantSettingsPage || isRestaurantLoyaltyPage || isRestaurantEmployeesPage;
+  const isRestaurantOperationsPage = isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantShippingFeePage || isRestaurantSalesPage || isRestaurantDeliveryDispatchPage || isRestaurantSettingsPage || isRestaurantLoyaltyPage || isRestaurantEmployeesPage;
   const trackingMatch = route.match(/^#order\/(.+)$/);
 
   if (isEmployeeInvitePage) return <RestaurantEmployeeInvitePage />;
@@ -443,7 +443,6 @@ function AppContent() {
             {isRestaurantOrdersPage ? <RestaurantOrdersPage restaurantId={ownerRestaurant.id!} />
               : isRestaurantMenuPage ? <RestaurantMenuPage restaurantId={ownerRestaurant.id!} />
               : isRestaurantShippingFeePage ? <RestaurantShippingFeePage restaurantId={ownerRestaurant.id!} />
-              : isRestaurantRidersPage ? <RestaurantRidersPage restaurantId={ownerRestaurant.id!} />
               : isRestaurantEmployeesPage ? <RestaurantEmployeesPage restaurantId={ownerRestaurant.id!} />
               : isRestaurantDeliveryDispatchPage ? <RestaurantDeliveryDispatchPage restaurantId={ownerRestaurant.id!} />
               : isRestaurantSettingsPage ? <RestaurantSettingsPage restaurantId={ownerRestaurant.id!} />
