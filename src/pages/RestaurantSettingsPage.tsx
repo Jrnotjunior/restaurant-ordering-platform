@@ -158,18 +158,20 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .restaurant-settings-field{display:grid;gap:7px;font-weight:600;font-size:14px}
         .restaurant-settings-field input[type=text]{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:10px;padding:12px;font:inherit;color:#0f172a;background:#fff}
         .restaurant-settings-field input:focus{outline:none;border-color:#94a3b8;box-shadow:0 0 0 3px rgba(148,163,184,.18)}
-        .restaurant-settings-days{display:grid;gap:10px}
-        .restaurant-settings-day{display:grid;grid-template-columns:150px minmax(90px,1fr) minmax(90px,1fr) auto;align-items:center;gap:12px;padding:12px 14px;border:1px solid #e5e7eb;border-radius:10px}
+        .restaurant-settings-days{display:grid;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden}
+        .restaurant-settings-hours-head,.restaurant-settings-day{display:grid;grid-template-columns:140px minmax(120px,1fr) minmax(120px,1fr) 72px;align-items:center;gap:12px;padding:10px 14px}
+        .restaurant-settings-hours-head{background:#f8fafc;color:#64748b;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+        .restaurant-settings-day{border-top:1px solid #e5e7eb}
         .restaurant-settings-day-name{font-weight:600}
-        .restaurant-settings-day input[type=time]{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:8px;padding:9px;font:inherit}
+        .restaurant-settings-day input[type=time]{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:8px;padding:8px 9px;font:inherit;background:#fff}
         .restaurant-settings-day input[type=time]:disabled{background:#f8fafc;color:#94a3b8}
-        .restaurant-settings-toggle{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:600;white-space:nowrap}
-        .restaurant-settings-summary{font-size:14px;color:#64748b}
+        .restaurant-settings-toggle{display:flex;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:600;white-space:nowrap}
+        .restaurant-settings-toggle input{margin:0}
         .restaurant-settings-tax-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:end}
-        .restaurant-settings-tax-grid .restaurant-settings-toggle{min-height:44px}
+        .restaurant-settings-tax-grid .restaurant-settings-toggle{min-height:44px;justify-content:flex-start}
         @media(max-width:700px){.restaurant-settings-tax-grid{grid-template-columns:1fr}}
         .restaurant-settings-actions{display:flex;justify-content:flex-end}
-        @media(max-width:700px){.restaurant-settings-day{grid-template-columns:1fr 1fr}.restaurant-settings-day-name{grid-column:1/-1}.restaurant-settings-toggle{grid-column:1/-1}.restaurant-settings-actions .button{width:100%}}
+        @media(max-width:700px){.restaurant-settings-hours-head{display:none}.restaurant-settings-day{grid-template-columns:1fr 1fr;padding:12px}.restaurant-settings-day-name{grid-column:1/-1}.restaurant-settings-toggle{justify-content:flex-start}.restaurant-settings-actions .button{width:100%}}
       `}</style>
 
       {error && <div className="restaurant-shipping-message is-error" role="alert">{error}</div>}
@@ -220,21 +222,39 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           <h2>Operating hours</h2>
           <p className="restaurant-settings-help">Set the hours customers can visit the store. {openDays} of 7 days are currently open.</p>
           <div className="restaurant-settings-days">
+            <div className="restaurant-settings-hours-head" aria-hidden="true">
+              <span>Day</span>
+              <span>Opens</span>
+              <span>Closes</span>
+              <span>Status</span>
+            </div>
             {DAYS.map((day) => {
               const value = hours[day.key];
               return (
                 <div className="restaurant-settings-day" key={day.key}>
                   <span className="restaurant-settings-day-name">{day.label}</span>
-                  <label>
-                    <span className="sr-only">Opening time for {day.label}</span>
-                    <input type="time" value={value.open} disabled={!value.isOpen || loading || saving} onChange={(event) => updateDay(day.key, { open: event.target.value })} />
-                  </label>
-                  <label>
-                    <span className="sr-only">Closing time for {day.label}</span>
-                    <input type="time" value={value.close} disabled={!value.isOpen || loading || saving} onChange={(event) => updateDay(day.key, { close: event.target.value })} />
-                  </label>
+                  <input
+                    aria-label={day.label + ' opening time'}
+                    type="time"
+                    value={value.open}
+                    disabled={!value.isOpen || loading || saving}
+                    onChange={(event) => updateDay(day.key, { open: event.target.value })}
+                  />
+                  <input
+                    aria-label={day.label + ' closing time'}
+                    type="time"
+                    value={value.close}
+                    disabled={!value.isOpen || loading || saving}
+                    onChange={(event) => updateDay(day.key, { close: event.target.value })}
+                  />
                   <label className="restaurant-settings-toggle">
-                    <input type="checkbox" checked={value.isOpen} disabled={loading || saving} onChange={(event) => updateDay(day.key, { isOpen: event.target.checked })} />
+                    <input
+                      aria-label={day.label + ' open'}
+                      type="checkbox"
+                      checked={value.isOpen}
+                      disabled={loading || saving}
+                      onChange={(event) => updateDay(day.key, { isOpen: event.target.checked })}
+                    />
                     Open
                   </label>
                 </div>
