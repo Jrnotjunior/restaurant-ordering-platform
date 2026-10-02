@@ -10,6 +10,7 @@ type ReadyOrder = {
   readyAt: string;
   pickupMethod: 'customer' | 'third_party_courier' | null;
   orderType: 'delivery' | 'pickup' | 'dine_in';
+  riderId: string | null;
 };
 
 type Rider = {
@@ -32,6 +33,7 @@ type OrderRow = {
   created_at: string;
   pickup_method: 'customer' | 'third_party_courier' | null;
   order_type: 'delivery' | 'pickup' | 'dine_in';
+  rider_id: string | null;
 };
 
 type RiderRow = {
@@ -135,6 +137,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
         readyAt: formatReadyTime(order.created_at),
         pickupMethod: order.pickup_method,
         orderType: order.order_type,
+        riderId: order.rider_id,
       });
       setOrders(((orderResult.data ?? []) as OrderRow[]).map(mapOrder));
 
@@ -189,7 +192,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
   }, [restaurantId]);
 
   const deliveryOrders = useMemo(
-    () => orders.filter((order) => order.orderType === 'delivery' && order.pickupMethod !== 'third_party_courier'),
+    () => orders.filter((order) => order.orderType === 'delivery' && order.riderId === null),
     [orders],
   );
   const pickupOrders = useMemo(
