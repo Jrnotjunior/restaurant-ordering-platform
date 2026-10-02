@@ -107,7 +107,7 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
     }
 
     const channel = client
-      .channel(`restaurant-orders-page:${restaurantId}`)
+      .channel(`restaurant-orders:${restaurantId}`)
       .on('broadcast', { event: 'restaurant_order_changed' }, () => {
         void loadOrders();
       })
