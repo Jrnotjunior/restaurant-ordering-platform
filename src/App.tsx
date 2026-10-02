@@ -433,7 +433,7 @@ function AppContent() {
     return <OwnerRestaurantGuard>{(ownerRestaurant) => (
       <RestaurantProvider restaurant={ownerRestaurant}>
         <ThemeProvider restaurant={ownerRestaurant}>
-          <RestaurantLayout hideChrome role="owner">
+          <RestaurantLayout hideChrome role="owner" ownerDashboard>
             {isRestaurantOrdersPage ? <RestaurantOrdersPage restaurantId={ownerRestaurant.id!} />
               : isRestaurantMenuPage ? <RestaurantMenuPage restaurantId={ownerRestaurant.id!} />
               : isRestaurantShippingFeePage ? <RestaurantShippingFeePage restaurantId={ownerRestaurant.id!} />
