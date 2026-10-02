@@ -56,14 +56,15 @@ export function RestaurantOwnerLoginPage() {
         }
       }
 
-      // Rider accounts are identified by their restaurant_riders link.
-      // This keeps rider routing working even if older invited accounts
-      // do not have the role metadata populated.
+      // Rider accounts are employees in restaurant_staff.
+      // The staff table is authoritative for the rider role.
       if (user) {
         const { data: riderProfile, error: riderLookupError } = await supabase
-          .from('restaurant_riders')
+          .from('restaurant_staff')
           .select('id')
           .eq('auth_user_id', user.id)
+          .eq('role', 'rider')
+          .eq('is_active', true)
           .maybeSingle();
 
         if (riderLookupError) throw riderLookupError;
