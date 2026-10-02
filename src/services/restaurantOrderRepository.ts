@@ -79,27 +79,55 @@ export async function confirmDineInPayment(orderId: string) {
 
 export type PosDiscountType = 'senior' | 'pwd';
 
-export async function applyPosDiscount(orderId: string, discountType: PosDiscountType, idNumber: string) {
+export type PosDiscountIdType =
+  | 'osca_id'
+  | 'national_senior_id'
+  | 'pwd_id'
+  | 'passport'
+  | 'other_government_id';
+
+export type PosDiscountBeneficiary = {
+  discountType: PosDiscountType;
+  idType: PosDiscountIdType;
+  idNumber: string;
+  eligibleAmount: number;
+  discountAmount: number;
+};
+
+export async function applyPosGroupDiscounts(
+  orderId: string,
+  groupSize: number,
+  beneficiaries: Omit<PosDiscountBeneficiary, 'eligibleAmount' | 'discountAmount'>[],
+) {
   const rows = await supabaseRpc<{
     order_id: string;
-    discount_type: PosDiscountType;
-    discount_id_number: string;
+    group_size: number;
+    beneficiary_count: number;
     discount_amount: number | string;
     total: number | string;
-  }>('apply_pos_discount', {
+  }>('apply_pos_group_discounts', {
     p_order_id: orderId,
-    p_discount_type: discountType,
-    p_discount_id_number: idNumber.trim(),
+    p_group_size: groupSize,
+    p_beneficiaries: beneficiaries.map((beneficiary) => ({
+      discount_type: beneficiary.discountType,
+      discount_id_type: beneficiary.idType,
+      discount_id_number: beneficiary.idNumber.trim(),
+    })),
   });
 
   const row = rows[0];
   if (!row) throw new Error('The discount could not be applied.');
 
+  const discountAmount = Number(row.discount_amount);
+  const beneficiaryCount = Number(row.beneficiary_count);
+  const groupSizeResult = Number(row.group_size);
+
   return {
     orderId: row.order_id,
-    discountType: row.discount_type,
-    idNumber: row.discount_id_number,
-    discountAmount: Number(row.discount_amount),
+    groupSize: groupSizeResult,
+    beneficiaryCount,
+    discountAmount,
     total: Number(row.total),
+    eligibleShare: Number(((discountAmount / 0.20) / beneficiaryCount).toFixed(2)),
   };
 }
