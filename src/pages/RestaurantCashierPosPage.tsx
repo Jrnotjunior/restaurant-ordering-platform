@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getMenu } from '../services/menuRepository';
 import { createOrder } from '../services/orderRepository';
-import { confirmDineInPayment } from '../services/restaurantOrderRepository';
+import { applyPosDiscount, confirmDineInPayment, type PosDiscountType } from '../services/restaurantOrderRepository';
 import type { RestaurantProduct } from '../types/menu';
 import { supabase } from '../services/supabaseClient';
 
@@ -24,6 +24,9 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [discountType, setDiscountType] = useState<PosDiscountType | ''>('');
+  const [discountIdNumber, setDiscountIdNumber] = useState('');
+  const [appliedDiscount, setAppliedDiscount] = useState(0);
 
   async function loadMenu() {
     try {
@@ -58,10 +61,12 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
     );
   }, [products, category, search]);
 
-  const total = useMemo(
+  const subtotal = useMemo(
     () => cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0),
     [cart],
   );
+  const discountAmount = appliedDiscount > 0 ? appliedDiscount : (discountType ? Number((subtotal * 0.20).toFixed(2)) : 0);
+  const total = Math.max(Number((subtotal - discountAmount).toFixed(2)), 0);
 
   function addProduct(product: RestaurantProduct) {
     setCart((current) => {
@@ -80,6 +85,12 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
     setCart((current) => current
       .map((item) => item.product.id === productId ? { ...item, quantity: item.quantity + amount } : item)
       .filter((item) => item.quantity > 0));
+  }
+
+  function clearDiscount() {
+    setDiscountType('');
+    setDiscountIdNumber('');
+    setAppliedDiscount(0);
   }
 
   async function placeOrder() {
@@ -101,10 +112,16 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
         items: cart.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
       });
 
+      if (discountType) {
+        const applied = await applyPosDiscount(created.orderId, discountType, discountIdNumber);
+        setAppliedDiscount(applied.discountAmount);
+      }
+
       await confirmDineInPayment(created.orderId);
 
       window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
       setCart([]);
+      clearDiscount();
       setSuccess(`Order ${created.orderNumber} created and sent to the kitchen.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to create POS order.');
@@ -185,6 +202,24 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             </div>
           </div>
 
+          <div className="restaurant-pos-discount">
+            <div className="restaurant-pos-discount-header">
+              <strong>Senior / PWD Discount</strong>
+              <span>20%</span>
+            </div>
+            <div className="restaurant-pos-discount-types">
+              <button type="button" className={discountType === 'senior' ? 'is-active' : ''} onClick={() => { setDiscountType(discountType === 'senior' ? '' : 'senior'); setAppliedDiscount(0); }} disabled={saving}>Senior Citizen</button>
+              <button type="button" className={discountType === 'pwd' ? 'is-active' : ''} onClick={() => { setDiscountType(discountType === 'pwd' ? '' : 'pwd'); setAppliedDiscount(0); }} disabled={saving}>PWD</button>
+            </div>
+            {discountType && (
+              <label className="restaurant-pos-field">
+                <span>{discountType === 'senior' ? 'Senior Citizen ID number' : 'PWD ID number'}</span>
+                <input value={discountIdNumber} onChange={(event) => setDiscountIdNumber(event.target.value)} placeholder="Enter ID number" disabled={saving} />
+              </label>
+            )}
+            {discountType && <p className="restaurant-pos-discount-note">One customer may use either Senior Citizen or PWD discount for this transaction, not both. Verify the ID before applying the discount.</p>}
+          </div>
+
           <div className="restaurant-pos-cart-items">
             {cart.length === 0 ? <p>No items added yet.</p> : cart.map((item) => (
               <div className="restaurant-pos-cart-item" key={item.product.id}>
@@ -201,12 +236,13 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             ))}
           </div>
 
-          <div className="restaurant-pos-total">
-            <span>Total</span>
-            <strong>₱{total.toFixed(2)}</strong>
+          <div className="restaurant-pos-totals">
+            <div className="restaurant-pos-total"><span>Subtotal</span><strong>₱{subtotal.toFixed(2)}</strong></div>
+            {discountType && <div className="restaurant-pos-total restaurant-pos-discount-total"><span>{discountType === 'senior' ? 'Senior Citizen Discount' : 'PWD Discount'}</span><strong>-₱{discountAmount.toFixed(2)}</strong></div>}
+            <div className="restaurant-pos-total restaurant-pos-grand-total"><span>Total</span><strong>₱{total.toFixed(2)}</strong></div>
           </div>
 
-          <button className="button button-primary restaurant-pos-submit" type="button" disabled={!cart.length || saving} onClick={() => void placeOrder()}>
+          <button className="button button-primary restaurant-pos-submit" type="button" disabled={!cart.length || saving || Boolean(discountType && !discountIdNumber.trim())} onClick={() => void placeOrder()}>
             {saving ? 'Creating Order…' : 'Cash Paid — Send to Kitchen'}
           </button>
         </aside>
