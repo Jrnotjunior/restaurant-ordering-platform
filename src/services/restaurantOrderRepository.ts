@@ -3,6 +3,12 @@ import { supabaseRpc } from './supabaseClient';
 export type RestaurantOrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'completed' | 'cancelled';
 export type RestaurantPaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 
+export type RestaurantTaxSettings = {
+  vatRegistered: boolean;
+  pricesVatInclusive: boolean;
+  vatRate: number;
+};
+
 export type RestaurantOrder = {
   orderId: string;
   orderNumber: string;
@@ -14,6 +20,18 @@ export type RestaurantOrder = {
   status: RestaurantOrderStatus;
   total: number;
   shippingFee: number;
+  taxVatRegistered: boolean;
+  taxPricesVatInclusive: boolean;
+  taxVatRate: number;
+  taxGrossSales: number;
+  taxVatableSales: number;
+  taxVatAmount: number;
+  taxVatExemptSales: number;
+  taxNetSales: number;
+  discountAmount: number;
+  discountBeneficiaryCount: number;
+  discountGroupSize: number;
+  discountBeneficiaries: { discountType: PosDiscountType; idType: string; idNumber: string; eligibleAmount: number; discountAmount: number }[];
   createdAt: string;
   items: { id: string; productName: string; quantity: number; unitPrice: number; lineTotal: number }[];
 };
@@ -42,6 +60,18 @@ type Row = {
   shipping_fee?: number | string | null;
   created_at: string;
   items?: RawOrderItem[] | null;
+  tax_vat_registered?: boolean | null;
+  tax_prices_vat_inclusive?: boolean | null;
+  tax_vat_rate?: number | string | null;
+  tax_gross_sales?: number | string | null;
+  tax_vatable_sales?: number | string | null;
+  tax_vat_amount?: number | string | null;
+  tax_vat_exempt_sales?: number | string | null;
+  tax_net_sales?: number | string | null;
+  discount_amount?: number | string | null;
+  discount_beneficiary_count?: number | null;
+  discount_group_size?: number | null;
+  discount_beneficiaries?: { discountType?: string; discount_type?: string; idType?: string; discount_id_type?: string; idNumber?: string; discount_id_number?: string; eligibleAmount?: number | string; eligible_amount?: number | string; discountAmount?: number | string; discount_amount?: number | string }[] | null;
 };
 
 export async function getRestaurantOrders(restaurantId: string): Promise<RestaurantOrder[]> {
@@ -58,6 +88,24 @@ export async function getRestaurantOrders(restaurantId: string): Promise<Restaur
     status: row.status,
     total: Number(row.total),
     shippingFee: Number(row.shipping_fee ?? 0),
+    taxVatRegistered: Boolean(row.tax_vat_registered),
+    taxPricesVatInclusive: Boolean(row.tax_prices_vat_inclusive),
+    taxVatRate: Number(row.tax_vat_rate ?? 0),
+    taxGrossSales: Number(row.tax_gross_sales ?? 0),
+    taxVatableSales: Number(row.tax_vatable_sales ?? 0),
+    taxVatAmount: Number(row.tax_vat_amount ?? 0),
+    taxVatExemptSales: Number(row.tax_vat_exempt_sales ?? 0),
+    taxNetSales: Number(row.tax_net_sales ?? 0),
+    discountAmount: Number(row.discount_amount ?? 0),
+    discountBeneficiaryCount: Number(row.discount_beneficiary_count ?? 0),
+    discountGroupSize: Number(row.discount_group_size ?? 1),
+    discountBeneficiaries: (row.discount_beneficiaries ?? []).map((item) => ({
+      discountType: (item.discountType ?? item.discount_type ?? 'senior') as PosDiscountType,
+      idType: item.idType ?? item.discount_id_type ?? '',
+      idNumber: item.idNumber ?? item.discount_id_number ?? '',
+      eligibleAmount: Number(item.eligibleAmount ?? item.eligible_amount ?? 0),
+      discountAmount: Number(item.discountAmount ?? item.discount_amount ?? 0),
+    })),
     createdAt: row.created_at,
     items: (row.items ?? []).map((item) => ({
       id: item.id,
@@ -67,6 +115,21 @@ export async function getRestaurantOrders(restaurantId: string): Promise<Restaur
       lineTotal: Number(item.lineTotal ?? item.line_total ?? 0),
     })),
   }));
+}
+
+export async function getRestaurantTaxSettings(restaurantId: string): Promise<RestaurantTaxSettings> {
+  const rows = await supabaseRpc<{
+    vat_registered: boolean;
+    prices_vat_inclusive: boolean;
+    vat_rate: number | string;
+  }>('get_restaurant_tax_settings', { p_restaurant_id: restaurantId });
+  const row = rows[0];
+  if (!row) throw new Error('Restaurant tax settings were not found.');
+  return {
+    vatRegistered: Boolean(row.vat_registered),
+    pricesVatInclusive: Boolean(row.prices_vat_inclusive),
+    vatRate: Number(row.vat_rate ?? 0),
+  };
 }
 
 export async function updateOrderStatus(orderId: string, status: RestaurantOrderStatus) {
@@ -104,6 +167,12 @@ export async function applyPosGroupDiscounts(
     group_size: number;
     beneficiary_count: number;
     discount_amount: number | string;
+    discount_amount: number | string;
+    gross_sales: number | string;
+    vatable_sales: number | string;
+    vat_amount: number | string;
+    vat_exempt_sales: number | string;
+    net_sales: number | string;
     total: number | string;
   }>('apply_pos_group_discounts', {
     p_order_id: orderId,
@@ -116,7 +185,7 @@ export async function applyPosGroupDiscounts(
   });
 
   const row = rows[0];
-  if (!row) throw new Error('The discount could not be applied.');
+  if (!row) throw new Error('POS financials could not be finalized.');
 
   const discountAmount = Number(row.discount_amount);
   const beneficiaryCount = Number(row.beneficiary_count);
@@ -127,7 +196,12 @@ export async function applyPosGroupDiscounts(
     groupSize: groupSizeResult,
     beneficiaryCount,
     discountAmount,
+    grossSales: Number(row.gross_sales),
+    vatableSales: Number(row.vatable_sales),
+    vatAmount: Number(row.vat_amount),
+    vatExemptSales: Number(row.vat_exempt_sales),
+    netSales: Number(row.net_sales),
     total: Number(row.total),
-    eligibleShare: Number(((discountAmount / 0.20) / beneficiaryCount).toFixed(2)),
+    eligibleShare: beneficiaryCount > 0 ? Number(((discountAmount / 0.20) / beneficiaryCount).toFixed(2)) : 0,
   };
 }
