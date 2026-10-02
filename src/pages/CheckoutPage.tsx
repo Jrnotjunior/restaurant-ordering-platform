@@ -207,7 +207,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       restaurantId: items[0].product.restaurantId,
       customerName: customerName.trim(),
       mobileNumber: orderType === 'dine_in' ? '' : mobileNumber.trim(),
-      orderType,
+      orderType: isDelivery && thirdPartyCourierDelivery ? 'pickup' : orderType,
       deliveryBarangay: isDelivery && !thirdPartyCourierDelivery ? deliveryBarangay.trim() : '',
       deliveryAddress: isDelivery ? (thirdPartyCourierDelivery ? restaurantPickupPoint : [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')) : address.trim(),
       notes: finalNotes,
@@ -220,6 +220,10 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
   async function handleOnlinePayment() {
     if (!canContinue || items.length === 0 || isSubmitting) return;
+    if (thirdPartyCourierDelivery && (!thirdPartyCourier || (thirdPartyCourier === 'Other' && !thirdPartyCourierName.trim()))) {
+      setSubmitError('Please select your courier before continuing.');
+      return;
+    }
     setIsSubmitting(true);
     setSubmitError('');
     setPaymentMethod('online');
