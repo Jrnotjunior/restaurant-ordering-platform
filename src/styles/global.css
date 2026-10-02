@@ -217,3 +217,20 @@ main { flex: 1; }
     max-width: 100% !important;
   }
 }
+
+
+/* Customer menu: keep sold-out products visible but non-orderable. */
+.product-card-sold-out {
+  opacity: 0.62;
+  filter: grayscale(0.35);
+}
+.product-card-sold-out .product-card-image {
+  filter: grayscale(0.55);
+}
+.product-card-sold-out-action {
+  width: 100%;
+  background: #e5e7eb;
+  color: #64748b;
+  border-color: #d1d5db;
+  cursor: not-allowed;
+}
