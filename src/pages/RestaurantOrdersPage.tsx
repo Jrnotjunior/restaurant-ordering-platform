@@ -600,20 +600,22 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
               {selectedOrder.items.map((item) => (
                 <div className="restaurant-order-item" key={item.id}>
                   <span><strong>{item.quantity}×</strong> {item.productName}</span>
-                  <span>₱{item.lineTotal.toFixed(2)}</span>
+                  {!isKitchen ? <span>₱{item.lineTotal.toFixed(2)}</span> : null}
                 </div>
               ))}
             </div>
-            {selectedOrder.orderType === 'delivery' && selectedOrder.shippingFee > 0 && (
+            {!isKitchen && selectedOrder.orderType === 'delivery' && selectedOrder.shippingFee > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, paddingTop: 12, borderTop: '1px solid #e2e8f0', color: '#64748b' }}>
                 <span>Shipping fee</span>
                 <span>₱{selectedOrder.shippingFee.toFixed(2)}</span>
               </div>
             )}
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: selectedOrder.orderType === 'delivery' && selectedOrder.shippingFee > 0 ? '0' : '1px solid #e2e8f0', marginTop: selectedOrder.orderType === 'delivery' && selectedOrder.shippingFee > 0 ? 0 : 12, paddingTop: selectedOrder.orderType === 'delivery' && selectedOrder.shippingFee > 0 ? 8 : 14 }}>
-              <strong>Total</strong>
-              <strong className="restaurant-order-modal-total">₱{selectedOrder.total.toFixed(2)}</strong>
-            </div>
+            {!isKitchen && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: selectedOrder.orderType === 'delivery' && selectedOrder.shippingFee > 0 ? '0' : '1px solid #e2e8f0', marginTop: selectedOrder.orderType === 'delivery' && selectedOrder.shippingFee > 0 ? 0 : 12, paddingTop: selectedOrder.orderType === 'delivery' && selectedOrder.shippingFee > 0 ? 8 : 14 }}>
+                <strong>Total</strong>
+                <strong className="restaurant-order-modal-total">₱{selectedOrder.total.toFixed(2)}</strong>
+              </div>
+            )}
             {selectedOrder.status === 'pending' && selectedOrder.orderType === 'dine_in' && selectedOrder.paymentMethod === 'cash' && selectedOrder.paymentStatus !== 'paid' && (
               <p style={{ marginTop: 16 }}>Customer must pay at the counter before this dine-in order can enter the kitchen.</p>
             )}
