@@ -8,6 +8,7 @@ type ReadyOrder = {
   address: string;
   total: number;
   readyAt: string;
+  pickupMethod: 'customer' | 'third_party_courier' | null;
 };
 
 type Rider = {
@@ -25,8 +26,10 @@ type OrderRow = {
   customer_name: string;
   delivery_address: string | null;
   delivery_barangay: string | null;
+  notes: string | null;
   total: number | string;
   created_at: string;
+  pickup_method: 'customer' | 'third_party_courier' | null;
 };
 
 type RiderRow = {
@@ -58,6 +61,7 @@ function todayStartIso() {
 
 export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
   const [orders, setOrders] = useState<ReadyOrder[]>([]);
+  const [pickupOrders, setPickupOrders] = useState<ReadyOrder[]>([]);
   const [riders, setRiders] = useState<Rider[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<ReadyOrder | null>(null);
   const [loading, setLoading] = useState(true);
@@ -80,7 +84,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
       const [orderResult, riderResult, assignmentResult] = await Promise.all([
         supabase
           .from('orders')
-          .select('id,order_number,customer_name,delivery_address,delivery_barangay,total,created_at')
+          .select('id,order_number,customer_name,delivery_address,delivery_barangay,notes,total,created_at,pickup_method')
           .eq('restaurant_id', restaurantId)
           .eq('order_type', 'delivery')
           .eq('status', 'ready')
@@ -120,14 +124,26 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
         }
       }
 
-      setOrders(((orderResult.data ?? []) as OrderRow[]).map((order) => ({
+      const mapOrder = (order: OrderRow): ReadyOrder => ({
         id: order.id,
         orderNumber: order.order_number,
         customerName: order.customer_name,
-        address: order.delivery_address ?? order.delivery_barangay ?? 'Delivery address not provided',
+        address: order.delivery_address ?? order.delivery_barangay ?? 'Pickup at restaurant',
         total: Number(order.total),
         readyAt: formatReadyTime(order.created_at),
-      })));
+        pickupMethod: order.pickup_method,
+      });
+      setOrders(((orderResult.data ?? []) as OrderRow[]).map(mapOrder));
+
+      const pickupResult = await supabase
+        .from('orders')
+        .select('id,order_number,customer_name,delivery_address,delivery_barangay,notes,total,created_at,pickup_method')
+        .eq('restaurant_id', restaurantId)
+        .eq('order_type', 'pickup')
+        .eq('status', 'ready')
+        .order('created_at', { ascending: true });
+      if (pickupResult.error) throw pickupResult.error;
+      setPickupOrders(((pickupResult.data ?? []) as OrderRow[]).map(mapOrder));
 
       setRiders(((riderResult.data ?? []) as RiderRow[]).map((rider) => {
         const activeDeliveries = activeByRider.get(rider.id) ?? 0;
@@ -239,6 +255,29 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
     }
   }
 
+  async function completePickup(order: ReadyOrder) {
+    if (!supabase || assigning) return;
+    setAssigning(true);
+    setError('');
+    setMessage('');
+    try {
+      const { error: orderError } = await supabase
+        .from('orders')
+        .update({ status: 'completed' })
+        .eq('id', order.id)
+        .eq('restaurant_id', restaurantId)
+        .eq('order_type', 'pickup')
+        .eq('status', 'ready');
+      if (orderError) throw orderError;
+      setMessage(order.orderNumber + ' marked as handed off.');
+      await loadDispatchData();
+    } catch (pickupError) {
+      setError(pickupError instanceof Error ? pickupError.message : 'Unable to complete this pickup.');
+    } finally {
+      setAssigning(false);
+    }
+  }
+
   return (
     <section className="restaurant-dispatch-page">
       <header className="restaurant-dispatch-header">
@@ -260,7 +299,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
         <section className="restaurant-dispatch-card restaurant-dispatch-ready-card">
           <div className="restaurant-dispatch-card-heading">
             <div>
-              <p className="restaurant-dispatch-label">Ready for delivery</p>
+              <p className="restaurant-dispatch-label">In-house delivery</p>
               <h2>Orders waiting for a rider</h2>
             </div>
             <span className="restaurant-dispatch-count">{availableOrders.length}</span>
@@ -284,6 +323,38 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
                 </div>
                 <button className="restaurant-dispatch-assign-button" type="button" onClick={() => { setSelectedOrder(order); setMessage(''); setError(''); }}>
                   Assign to Rider
+                </button>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="restaurant-dispatch-card restaurant-dispatch-ready-card">
+          <div className="restaurant-dispatch-card-heading">
+            <div>
+              <p className="restaurant-dispatch-label">Pickup handoff</p>
+              <h2>Customer & courier pickups</h2>
+            </div>
+            <span className="restaurant-dispatch-count">{pickupOrders.length}</span>
+          </div>
+          <div className="restaurant-dispatch-order-list">
+            {pickupOrders.length === 0 ? (
+              <div className="restaurant-dispatch-empty">There are no ready pickup orders waiting for handoff.</div>
+            ) : pickupOrders.map((order) => (
+              <article className="restaurant-dispatch-order" key={order.id}>
+                <div className="restaurant-dispatch-order-main">
+                  <div className="restaurant-dispatch-order-top">
+                    <strong>{order.orderNumber}</strong>
+                    <strong>₱{order.total.toFixed(2)}</strong>
+                  </div>
+                  <span>{order.customerName}</span>
+                  <span className="restaurant-dispatch-address">
+                    {order.pickupMethod === 'third_party_courier' ? 'Customer courier pickup' : 'Customer pickup'}
+                  </span>
+                  <small>Ready at {order.readyAt}</small>
+                </div>
+                <button className="restaurant-dispatch-assign-button" type="button" disabled={assigning} onClick={() => void completePickup(order)}>
+                  {order.pickupMethod === 'third_party_courier' ? 'Mark Handed to Courier' : 'Confirm Pickup'}
                 </button>
               </article>
             ))}
