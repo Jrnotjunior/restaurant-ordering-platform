@@ -107,6 +107,34 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
 
 
   useEffect(() => {
+    const query = customerName.trim();
+
+    if (query.length < 2 || query.toLowerCase() === 'walk-in customer') {
+      setCustomerSuggestions([]);
+      setCustomerSuggestionsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      try {
+        setCustomerSuggestionsLoading(true);
+        const suggestions = await findCustomersByName(restaurantId, query);
+        if (!cancelled) setCustomerSuggestions(suggestions);
+      } catch {
+        if (!cancelled) setCustomerSuggestions([]);
+      } finally {
+        if (!cancelled) setCustomerSuggestionsLoading(false);
+      }
+    }, 180);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [restaurantId, customerName]);
+
+  useEffect(() => {
     if (!supabase) return;
     const channel = supabase.channel(`restaurant-menu-changes:${restaurantId}`).on('broadcast', { event: 'restaurant_menu_changed' }, () => { void loadMenu(); }).subscribe();
     return () => { void supabase?.removeChannel(channel); };
