@@ -304,6 +304,7 @@ function AppContent() {
   const isRestaurantMenuPage = route === '#restaurant/menu';
   const isRestaurantShippingFeePage = route === '#restaurant/shipping-fee';
   const isRestaurantSalesPage = route === '#restaurant/sales';
+  const isCashierSalesPage = isRestaurantSalesPage;
   const isRestaurantRidersPage = route === '#restaurant/riders';
   const isRestaurantDeliveryDispatchPage = route === '#restaurant/delivery-dispatch';
   const isRestaurantSettingsPage = route === '#restaurant/settings';
@@ -349,6 +350,18 @@ function AppContent() {
             <RestaurantRoleDashboardPage role="kitchen" restaurantName={staffRestaurant.name}>
               <div className="restaurant-role-dashboard-card"><h2>Kitchen workspace</h2><p>The existing kitchen order workflow will be connected here next.</p></div>
             </RestaurantRoleDashboardPage>
+          </RestaurantLayout>
+        </ThemeProvider>
+      </RestaurantProvider>
+    )}</StaffRoleGuard>;
+  }
+
+  if (isCashierSalesPage) {
+    return <StaffRoleGuard role="cashier">{(staffRestaurant) => (
+      <RestaurantProvider restaurant={staffRestaurant}>
+        <ThemeProvider restaurant={staffRestaurant}>
+          <RestaurantLayout hideChrome role="cashier">
+            <RestaurantSalesPage restaurantId={staffRestaurant.id!} />
           </RestaurantLayout>
         </ThemeProvider>
       </RestaurantProvider>
