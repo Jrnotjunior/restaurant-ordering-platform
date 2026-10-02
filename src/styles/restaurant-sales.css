@@ -82,6 +82,7 @@
 
 .restaurant-sales-search-input-wrap {
   position: relative;
+  width: min(100%, 360px);
 }
 
 .restaurant-sales-search input {
