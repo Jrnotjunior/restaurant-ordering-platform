@@ -95,8 +95,7 @@ create table if not exists public.loyalty_transactions (
 );
 
 create unique index if not exists loyalty_transactions_order_type_uidx
-  on public.loyalty_transactions (order_id, transaction_type)
-  where order_id is not null;
+  on public.loyalty_transactions (order_id, transaction_type);
 
 create index if not exists loyalty_transactions_customer_idx
   on public.loyalty_transactions (customer_id, created_at desc);
