@@ -126,10 +126,6 @@ function OwnerDashboard({ restaurantName, restaurantId }: { restaurantName?: str
 
   const statCards = useMemo(() => [
     { label: 'Today\'s Sales', value: loading ? '—' : `₱${(stats?.sales ?? 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}` },
-    { label: 'Today\'s Orders', value: loading ? '—' : String(stats?.orders ?? 0) },
-    { label: 'Pending Orders', value: loading ? '—' : String(stats?.pendingOrders ?? 0) },
-    { label: 'Products', value: loading ? '—' : String(stats?.products ?? 0) },
-    { label: 'Active Deliveries', value: loading ? '—' : String(stats?.activeDeliveries ?? 0) },
   ], [loading, stats]);
 
   return (
