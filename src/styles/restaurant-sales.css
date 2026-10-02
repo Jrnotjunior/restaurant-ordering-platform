@@ -4,6 +4,32 @@
   padding: 32px 0 56px;
 }
 
+.restaurant-sales-card {
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 16px;
+  background: #fff;
+  padding: 20px;
+}
+
+.restaurant-sales-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.restaurant-sales-card-header h1 {
+  margin: 0 0 6px;
+  font-size: 20px;
+}
+
+.restaurant-sales-card-header p {
+  margin: 0;
+  color: #64748b;
+  line-height: 1.5;
+}
+
 .restaurant-sales-header {
   display: flex;
   align-items: flex-end;
@@ -110,11 +136,11 @@
 
 .restaurant-sales-day {
   width: 100%;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(220px, 1.5fr) minmax(260px, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 20px;
-  padding: 16px;
+  padding: 14px 16px;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   background: #fff;
@@ -135,11 +161,37 @@
   outline-offset: 2px;
 }
 
-.restaurant-sales-day strong {
+.restaurant-sales-day-main {
+  display: grid;
+  gap: 3px;
+}
+
+.restaurant-sales-day-label,
+.restaurant-sales-day-stats small {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.restaurant-sales-day-main strong {
   font-size: 14px;
 }
 
-.restaurant-sales-day > span {
+.restaurant-sales-day-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.restaurant-sales-day-stats span {
+  display: grid;
+  gap: 3px;
+}
+
+.restaurant-sales-day-stats strong {
+  font-size: 14px;
+}
+
+.restaurant-sales-day-arrow {
   color: #64748b;
   font-size: 24px;
   line-height: 1;
@@ -239,12 +291,21 @@
     padding: 24px 0 40px;
   }
 
-  .restaurant-sales-header {
-    align-items: stretch;
+  .restaurant-sales-card-header {
     flex-direction: column;
   }
 
+  .restaurant-sales-day {
+    grid-template-columns: 1fr auto;
+  }
+
+  .restaurant-sales-day-stats {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .restaurant-sales-panel,
+  .restaurant-sales-card,
   .restaurant-sales-modal {
     padding: 16px;
   }
