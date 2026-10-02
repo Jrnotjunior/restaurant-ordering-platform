@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { supabase } from '../services/supabaseClient';
 
 type Props = {
@@ -95,7 +95,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     setError('');
   }
 
-  async function handleSave(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!supabase) {
       setError('Supabase is not configured.');
