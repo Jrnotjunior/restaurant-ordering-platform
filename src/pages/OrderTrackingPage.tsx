@@ -9,7 +9,7 @@ type OrderTrackingPageProps = {
 
 const ACTIVE_ORDER_KEY = 'restaurant-ordering-active-order';
 
-type CustomerStatus = OrderStatus | 'out_for_delivery';
+type CustomerStatus = OrderStatus | 'out_for_delivery' | 'arrived';
 
 const deliverySteps: Array<{ key: CustomerStatus; label: string; description: string }> = [
   { key: 'pending', label: 'Order Received', description: 'Your order has been received by the restaurant.' },
