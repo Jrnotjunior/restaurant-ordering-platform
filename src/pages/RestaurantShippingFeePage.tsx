@@ -147,7 +147,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
     <section className="restaurant-shipping-page">
       <style>{`
         .restaurant-shipping-search{display:flex;align-items:center;gap:10px;margin:18px 0 14px}
-        .restaurant-shipping-search-input-wrap{position:relative;flex:1;max-width:620px}
+        .restaurant-shipping-search-input-wrap{position:relative;flex:1;max-width:360px}
         .restaurant-shipping-search input{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:10px;padding:11px 40px 11px 12px;font:inherit;color:#0f172a;background:#fff}
         .restaurant-shipping-search input:focus{outline:none;border-color:#94a3b8;box-shadow:0 0 0 3px rgba(148,163,184,.18)}
         .restaurant-shipping-search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:28px;height:28px;border:0;border-radius:999px;background:#f1f5f9;color:#475569;font-size:18px;line-height:1;cursor:pointer}
