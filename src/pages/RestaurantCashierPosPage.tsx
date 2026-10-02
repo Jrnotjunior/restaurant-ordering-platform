@@ -168,7 +168,6 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   }
 
   function changeGroupSize(value: string) {
-    const nextSize = Math.max(Number(value) || 1, 1);
     if (value === '') {
       setGroupSize('');
       return;
