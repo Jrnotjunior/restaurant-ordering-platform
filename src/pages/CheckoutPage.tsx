@@ -55,6 +55,8 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const [showDeliveryTerms, setShowDeliveryTerms] = useState(false);
   const [thirdPartyCourierDelivery, setThirdPartyCourierDelivery] = useState(false);
   const [thirdPartyCourier, setThirdPartyCourier] = useState('');
+  const [thirdPartyCourierName, setThirdPartyCourierName] = useState('');
+  const [thirdPartyDestination, setThirdPartyDestination] = useState('');
   const [thirdPartyCourierTermsAccepted, setThirdPartyCourierTermsAccepted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -128,7 +130,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   useEffect(() => {
     if (!restaurantId || orderType !== 'delivery') {
       setDeliveryZones([]); setDeliveryCity(''); setDeliveryBarangay(''); setDeliveryZonesError('');
-      setLoadingDeliveryZones(false); setThirdPartyCourierDelivery(false); setThirdPartyCourier(false); setThirdPartyCourierTermsAccepted(false); setShowDeliveryTerms(false); return;
+      setLoadingDeliveryZones(false); setThirdPartyCourierDelivery(false); setThirdPartyCourier(''); setThirdPartyCourierName(''); setThirdPartyDestination(''); setThirdPartyCourierTermsAccepted(false); setShowDeliveryTerms(false); return;
     }
     let cancelled = false;
     setLoadingDeliveryZones(true);
@@ -184,11 +186,13 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   }
 
   function handleCancelThirdPartyDelivery() {
-    setShowDeliveryTerms(false); setThirdPartyCourierDelivery(false); setThirdPartyCourier(''); setThirdPartyCourierTermsAccepted(false); setDeliveryCity(''); setDeliveryBarangay(''); setAddress(''); resetPayment();
+    setShowDeliveryTerms(false); setThirdPartyCourierDelivery(false); setThirdPartyCourier(''); setThirdPartyCourierName(''); setThirdPartyDestination(''); setThirdPartyCourierTermsAccepted(false); setDeliveryCity(''); setDeliveryBarangay(''); setAddress(''); resetPayment();
   }
 
   function handleProceedWithThirdPartyCourier() {
     if (!thirdPartyCourierTermsAccepted) return;
+    const destination = [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ');
+    setThirdPartyDestination(destination);
     setShowDeliveryTerms(false); setThirdPartyCourierDelivery(true); setThirdPartyCourierTermsAccepted(false); setDeliveryBarangay(''); setAddress(''); setPaymentMethod(''); setSubmitError(''); setShowPayment(true);
     window.requestAnimationFrame(() => document.getElementById('payment-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
@@ -198,7 +202,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     if (isDelivery && thirdPartyCourierDelivery && !restaurantPickupPoint) throw new Error('The restaurant pickup address is not configured yet. Please contact the restaurant.');
     if (isDelivery && !thirdPartyCourierDelivery && (!selectedDeliveryZone || !selectedDeliveryZone.isSupported)) throw new Error(outsideDeliveryAreaMessage);
 
-    const finalNotes = [notes.trim(), isDelivery && thirdPartyCourierDelivery ? `${thirdPartyCourierNote}\nCourier: ${thirdPartyCourier || 'Customer-selected courier'}\nDestination: ${[deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')}` : ''].filter(Boolean).join('\n\n');
+    const finalNotes = [notes.trim(), isDelivery && thirdPartyCourierDelivery ? `${thirdPartyCourierNote}\nCourier: ${thirdPartyCourier === 'Other' ? (thirdPartyCourierName || 'Other courier') : thirdPartyCourier}\nDestination: ${thirdPartyDestination || [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')}` : ''].filter(Boolean).join('\n\n');
     return createOrder({
       restaurantId: items[0].product.restaurantId,
       customerName: customerName.trim(),
@@ -235,7 +239,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         orderType: isDelivery && thirdPartyCourierDelivery ? 'pickup' : orderType,
         deliveryBarangay: isDelivery && !thirdPartyCourierDelivery ? deliveryBarangay.trim() : '',
         deliveryAddress: isDelivery ? (thirdPartyCourierDelivery ? restaurantPickupPoint : [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')) : address.trim(),
-        notes: [notes.trim(), isDelivery && thirdPartyCourierDelivery ? `${thirdPartyCourierNote}\\nCourier: ${thirdPartyCourier || 'Customer-selected courier'}\\nDestination: ${[deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')}` : ''].filter(Boolean).join('\\n\\n'),
+        notes: [notes.trim(), isDelivery && thirdPartyCourierDelivery ? `${thirdPartyCourierNote}\\nCourier: ${thirdPartyCourier === 'Other' ? (thirdPartyCourierName || 'Other courier') : thirdPartyCourier}\\nDestination: ${thirdPartyDestination || [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')}` : ''].filter(Boolean).join('\\n\\n'),
         isThirdPartyCourier: isDelivery && thirdPartyCourierDelivery,
         items: items.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
       });
