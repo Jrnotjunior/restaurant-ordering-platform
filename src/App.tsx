@@ -400,7 +400,8 @@ function AppContent() {
     return <OwnerRestaurantGuard>{(ownerRestaurant) => (
       <RestaurantProvider restaurant={ownerRestaurant}>
         <ThemeProvider restaurant={ownerRestaurant}>
-          <RestaurantRoleDashboardPage role={restaurantRoleRoute} restaurantName={ownerRestaurant.name} restaurantId={ownerRestaurant.id!}>
+          <RestaurantLayout hideChrome role={restaurantRoleRoute}>
+            <RestaurantRoleDashboardPage role={restaurantRoleRoute} restaurantName={ownerRestaurant.name} restaurantId={ownerRestaurant.id!}>
             <div className="restaurant-role-dashboard-card">
               <h2>{restaurantRoleRoute === 'owner' ? 'Restaurant management' : restaurantRoleRoute === 'cashier' ? 'Cashier workspace' : restaurantRoleRoute === 'kitchen' ? 'Kitchen workspace' : 'Dispatch workspace'}</h2>
               <p>This is the dedicated workspace for the {restaurantRoleRoute} role. Page permissions and employee login protection will be connected next.</p>
@@ -419,7 +420,8 @@ function AppContent() {
                 {restaurantRoleRoute === 'dispatcher' ? <a href="#restaurant/delivery-dispatch">Open Dispatch</a> : null}
               </div>
             </div>
-          </RestaurantRoleDashboardPage>
+            </RestaurantRoleDashboardPage>
+          </RestaurantLayout>
         </ThemeProvider>
       </RestaurantProvider>
     )}</OwnerRestaurantGuard>;
