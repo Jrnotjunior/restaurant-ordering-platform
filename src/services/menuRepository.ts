@@ -118,6 +118,19 @@ export async function setProductAvailability(productId: string, isAvailable: boo
   });
 
   if (error) throw new Error(`Unable to update product availability: ${error.message}`);
+
+  const channel = supabase.channel(`restaurant-menu-changes:${productId}`);
+  channel.subscribe((status) => {
+    if (status === 'SUBSCRIBED') {
+      void channel.send({
+        type: 'broadcast',
+        event: 'restaurant_menu_changed',
+        payload: { productId, isAvailable },
+      }).then(() => {
+        void supabase?.removeChannel(channel);
+      });
+    }
+  });
 }
 
 export async function createProduct(values: { restaurantId: string; name: string; description: string; price: number; categoryId: string }) {
