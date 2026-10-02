@@ -6,6 +6,7 @@ type StaffRole = 'cashier' | 'kitchen' | 'dispatcher';
 type StaffAccount = {
   id: string;
   name: string;
+  preferredName: string;
   mobileNumber: string;
   email: string;
   role: StaffRole;
@@ -15,6 +16,7 @@ type StaffAccount = {
 type StaffRow = {
   id: string;
   name: string;
+  preferred_name: string | null;
   mobile_number: string;
   email: string;
   role: StaffRole;
@@ -40,13 +42,14 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
     setError('');
     try {
       const rows = await supabaseGet<StaffRow>('restaurant_staff', {
-        select: 'id,name,mobile_number,email,role,is_active',
+        select: 'id,name,preferred_name,mobile_number,email,role,is_active',
         restaurant_id: `eq.${restaurantId}`,
         order: 'created_at.asc',
       });
       setStaff(rows.map((row) => ({
         id: row.id,
         name: row.name,
+        preferredName: row.preferred_name || row.name,
         mobileNumber: row.mobile_number,
         email: row.email,
         role: row.role,
@@ -71,6 +74,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
     const name = String(form.get('name') || '').trim();
+    const preferredName = String(form.get('preferredName') || '').trim();
     const mobileNumber = String(form.get('mobileNumber') || '').trim();
     const email = String(form.get('email') || '').trim();
     const role = String(form.get('role') || 'cashier') as StaffRole;
@@ -80,7 +84,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
 
     try {
       const { data, error: functionError } = await supabase.functions.invoke('create-staff', {
-        body: { restaurantId, name, mobileNumber, email, role },
+        body: { restaurantId, name, preferredName, mobileNumber, email, role },
       });
 
       if (functionError) {
@@ -113,13 +117,14 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
     const form = new FormData(event.currentTarget);
     const name = String(form.get('name') || '').trim();
     const mobileNumber = String(form.get('mobileNumber') || '').trim();
+    const preferredName = String(form.get('preferredName') || '').trim();
 
     setSaving(true);
     setError('');
     try {
       const { error: updateError } = await supabase
         .from('restaurant_staff')
-        .update({ name, mobile_number: mobileNumber })
+        .update({ name, preferred_name: preferredName, mobile_number: mobileNumber })
         .eq('id', editingStaff.id)
         .eq('restaurant_id', restaurantId);
 
@@ -176,7 +181,8 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
             <p>Kitchen and Dispatcher are shared accounts. Only one active account of each role can exist for this restaurant.</p>
           </div>
           <div className="restaurant-employee-form-grid">
-            <label>Employee name<input name="name" type="text" placeholder="e.g. Juan Dela Cruz" required /></label>
+            <label>Full name<input name="name" type="text" placeholder="e.g. Juan Dela Cruz" required /></label>
+            <label>Preferred name<input name="preferredName" type="text" placeholder="e.g. Juan" required /></label>
             <label>Mobile number<input name="mobileNumber" type="tel" placeholder="09XX XXX XXXX" required /></label>
             <label>Login email<input name="email" type="email" placeholder="employee@example.com" required /></label>
             <label>Role<select name="role" defaultValue="cashier"><option value="cashier">Cashier</option><option value="kitchen">Kitchen</option><option value="dispatcher">Dispatcher</option></select></label>
@@ -194,7 +200,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
           <article className={`restaurant-employee-card${employee.isActive ? '' : ' is-inactive'}`} key={employee.id}>
             <div className="restaurant-employee-avatar" aria-hidden="true">{employee.name.charAt(0).toUpperCase()}</div>
             <div className="restaurant-employee-details">
-              <div className="restaurant-employee-name-row"><h2>{employee.name}</h2><span className="restaurant-employee-role">{roleLabels[employee.role]}</span></div>
+              <div className="restaurant-employee-name-row"><h2>{employee.preferredName}</h2><span className="restaurant-employee-role">{roleLabels[employee.role]}</span></div>
               <p>{employee.mobileNumber}</p>
               <p>{employee.email}</p>
               {!employee.isActive ? <p className="restaurant-employee-status">Inactive</p> : null}
@@ -216,7 +222,8 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
           <form className="restaurant-employee-modal restaurant-employee-edit-modal" onSubmit={(event) => void handleEdit(event)}>
             <div className="restaurant-employee-modal-header"><div><p className="eyebrow">Edit employee</p><h2>Update employee details</h2></div><button className="restaurant-employee-modal-close" type="button" onClick={() => setEditingStaff(null)} disabled={saving} aria-label="Close">×</button></div>
             <div className="restaurant-employee-form-grid">
-              <label>Employee name<input name="name" type="text" defaultValue={editingStaff.name} required /></label>
+              <label>Full name<input name="name" type="text" defaultValue={editingStaff.name} required /></label>
+              <label>Preferred name<input name="preferredName" type="text" defaultValue={editingStaff.preferredName} required /></label>
               <label>Mobile number<input name="mobileNumber" type="tel" defaultValue={editingStaff.mobileNumber} required /></label>
               <label>Role<input value={roleLabels[editingStaff.role]} readOnly /></label>
               <label>Login email<input value={editingStaff.email} readOnly /></label>
