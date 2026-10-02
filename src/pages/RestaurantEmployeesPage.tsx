@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { supabase, supabaseGet } from '../services/supabaseClient';
 
 type StaffRole = 'cashier' | 'kitchen' | 'dispatcher' | 'rider';
@@ -53,6 +53,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [searchEmployee, setSearchEmployee] = useState('');
 
   async function loadStaff() {
     setLoading(true);
@@ -80,6 +81,18 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
   }
 
   useEffect(() => { void loadStaff(); }, [restaurantId]);
+
+  const filteredStaff = useMemo(() => {
+    const query = searchEmployee.trim().toLowerCase();
+    if (!query) return staff;
+    return staff.filter((employee) =>
+      employee.name.toLowerCase().includes(query)
+      || employee.preferredName.toLowerCase().includes(query)
+      || employee.mobileNumber.toLowerCase().includes(query)
+      || employee.email.toLowerCase().includes(query)
+      || roleLabels[employee.role].toLowerCase().includes(query)
+    );
+  }, [staff, searchEmployee]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -204,6 +217,29 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
         </button>
       </div>
 
+      <div className="restaurant-employees-search">
+        <label htmlFor="restaurant-employee-search">Search employees</label>
+        <div className="restaurant-employees-search-input-wrap">
+          <input
+            id="restaurant-employee-search"
+            type="search"
+            value={searchEmployee}
+            onChange={(event) => setSearchEmployee(event.target.value)}
+            placeholder="Search by name, mobile, email, or role"
+          />
+          {searchEmployee && (
+            <button
+              type="button"
+              className="restaurant-employees-search-clear"
+              onClick={() => setSearchEmployee('')}
+              aria-label="Clear employee search"
+            >
+              ×
+            </button>
+          )}
+        </div>
+      </div>
+
       {error ? <div className="restaurant-employees-error" role="alert">{error}</div> : null}
 
       {showForm ? (
@@ -228,8 +264,8 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
       ) : null}
 
       <div className="restaurant-employees-list">
-        {loading ? <div className="restaurant-employees-empty">Loading employees…</div> : staff.length === 0 ? <div className="restaurant-employees-empty">No employees have been added yet.</div> : <>
-          {staff.map((employee) => (
+        {loading ? <div className="restaurant-employees-empty">Loading employees…</div> : staff.length === 0 ? <div className="restaurant-employees-empty">No employees have been added yet.</div> : filteredStaff.length === 0 ? <div className="restaurant-employees-empty">No employees found for “{searchEmployee}”.</div> : <>
+          {filteredStaff.map((employee) => (
           <article className={`restaurant-employee-card${employee.isActive ? '' : ' is-inactive'}`} key={employee.id}>
             <div className="restaurant-employee-avatar" aria-hidden="true">{employee.name.charAt(0).toUpperCase()}</div>
             <div className="restaurant-employee-details">
