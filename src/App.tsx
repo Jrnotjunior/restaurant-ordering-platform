@@ -214,7 +214,7 @@ function OwnerRestaurantGuard({ children }: { children: (restaurant: RestaurantC
 }
 
 function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen' | 'dispatcher'; children: (restaurant: RestaurantConfig) => ReactNode }) {
-  const { user } = useRestaurantOwnerAuth();
+  const { user, loading: authLoading } = useRestaurantOwnerAuth();
   const [checking, setChecking] = useState(true);
   const [allowed, setAllowed] = useState(false);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
@@ -222,6 +222,7 @@ function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen' | 'dis
   useEffect(() => {
     let mounted = true;
     async function checkStaffAccess() {
+      if (authLoading) return;
       if (!user || !supabase) {
         if (mounted) setChecking(false);
         return;
