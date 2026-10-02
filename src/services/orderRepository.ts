@@ -32,6 +32,10 @@ export type DeliveryStatus = 'assigned' | 'delivering' | 'out_for_delivery' | 'a
 export type TrackedOrder = {
   orderId: string;
   orderNumber: string;
+  restaurantId: string;
+  restaurantName: string;
+  storeAddress: string | null;
+  operatingHours: Record<string, { isOpen: boolean; open: string; close: string }> | null;
   orderType: 'delivery' | 'pickup' | 'dine_in';
   paymentMethod: 'cash' | 'gcash';
   status: OrderStatus;
@@ -54,6 +58,10 @@ type CreatedOrderRow = {
 type TrackedOrderRow = {
   order_id: string;
   order_number: string;
+  restaurant_id: string;
+  restaurant_name: string;
+  store_address?: string | null;
+  operating_hours?: TrackedOrder['operatingHours'];
   order_type: TrackedOrder['orderType'];
   payment_method: TrackedOrder['paymentMethod'];
   status: OrderStatus;
@@ -104,6 +112,10 @@ export async function getOrderStatus(orderNumber: string): Promise<TrackedOrder>
   return {
     orderId: row.order_id,
     orderNumber: row.order_number,
+    restaurantId: row.restaurant_id,
+    restaurantName: row.restaurant_name,
+    storeAddress: row.store_address ?? null,
+    operatingHours: row.operating_hours ?? null,
     orderType: row.order_type,
     paymentMethod: row.payment_method,
     status: row.status,
