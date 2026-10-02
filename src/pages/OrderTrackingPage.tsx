@@ -75,15 +75,10 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
     }
 
     const channel = client
-      .channel(`order-tracking:${orderNumber}`)
+      .channel(`customer-order:${orderNumber}`)
       .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'orders',
-          filter: `order_number=eq.${orderNumber}`,
-        },
+        'broadcast',
+        { event: 'customer_order_changed' },
         () => {
           void load();
         },
