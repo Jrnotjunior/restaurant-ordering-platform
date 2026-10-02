@@ -4,9 +4,9 @@ import { getMenu, setProductAvailability } from '../services/menuRepository';
 import { supabase } from '../services/supabaseClient';
 import type { RestaurantCategory, RestaurantProduct } from '../types/menu';
 
-type Props = { restaurantId: string };
+type Props = { restaurantId: string; view?: 'orders' | 'menu' };
 
-export function RestaurantKitchenPage({ restaurantId }: Props) {
+export function RestaurantKitchenPage({ restaurantId, view = 'orders' }: Props) {
   const [categories, setCategories] = useState<RestaurantCategory[]>([]);
   const [products, setProducts] = useState<RestaurantProduct[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -78,9 +78,9 @@ export function RestaurantKitchenPage({ restaurantId }: Props) {
 
   return (
     <section className="restaurant-kitchen-page">
-      <RestaurantOrdersPage restaurantId={restaurantId} role="kitchen" />
+      {view === 'orders' ? <RestaurantOrdersPage restaurantId={restaurantId} role="kitchen" /> : null}
 
-      <div className="restaurant-kitchen-products-section">
+      {view === 'menu' ? <div className="restaurant-kitchen-products-section">
       <style>{`
         .restaurant-kitchen-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
         .restaurant-kitchen-header h1{margin-bottom:6px}
@@ -186,8 +186,7 @@ export function RestaurantKitchenPage({ restaurantId }: Props) {
             ))}
           </div>
         )}
-      </div>
-      </div>
+      </div> : null}
     </section>
   );
 }
