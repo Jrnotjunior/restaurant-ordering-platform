@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getMenu } from '../services/menuRepository';
 import { createOrder } from '../services/orderRepository';
-import { applyPosGroupDiscounts, confirmDineInPayment, type PosDiscountIdType, type PosDiscountType } from '../services/restaurantOrderRepository';
+import { applyPosGroupDiscounts, confirmDineInPayment, getRestaurantTaxSettings, type PosDiscountIdType, type PosDiscountType, type RestaurantTaxSettings } from '../services/restaurantOrderRepository';
 import type { RestaurantProduct } from '../types/menu';
 import { supabase } from '../services/supabaseClient';
 
@@ -34,6 +34,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const [customerName, setCustomerName] = useState('Walk-in Customer');
   const [groupSize, setGroupSize] = useState(1);
   const [beneficiaries, setBeneficiaries] = useState<DraftBeneficiary[]>([]);
+  const [taxSettings, setTaxSettings] = useState<RestaurantTaxSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -43,7 +44,8 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
     try {
       setLoading(true);
       setError('');
-      const menu = await getMenu(restaurantId);
+      const [menu, tax] = await Promise.all([getMenu(restaurantId), getRestaurantTaxSettings(restaurantId)]);
+      setTaxSettings(tax);
       setProducts(menu.products.filter((product) => product.isAvailable));
       setCategories(menu.categories);
     } catch (err) {
@@ -67,9 +69,16 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   }, [products, category, search]);
 
   const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0), [cart]);
-  const eligibleShare = beneficiaries.length > 0 ? Number((subtotal / groupSize).toFixed(2)) : 0;
+  const baseNetSales = taxSettings?.vatRegistered && taxSettings.pricesVatInclusive
+    ? subtotal / (1 + taxSettings.vatRate / 100)
+    : subtotal;
+  const eligibleShare = beneficiaries.length > 0 ? Number((baseNetSales / groupSize).toFixed(2)) : 0;
   const discountAmount = beneficiaries.length ? Number((eligibleShare * beneficiaries.length * 0.20).toFixed(2)) : 0;
-  const total = Math.max(Number((subtotal - discountAmount).toFixed(2)), 0);
+  const vatableSales = Math.max(Number((baseNetSales - eligibleShare * beneficiaries.length).toFixed(2)), 0);
+  const vatAmount = taxSettings?.vatRegistered ? Number((vatableSales * taxSettings.vatRate / 100).toFixed(2)) : 0;
+  const vatExemptSales = beneficiaries.length ? Math.max(Number((eligibleShare * beneficiaries.length - discountAmount).toFixed(2)), 0) : 0;
+  const netSales = Number((vatableSales + vatExemptSales).toFixed(2));
+  const total = Math.max(Number((netSales + vatAmount).toFixed(2)), 0);
 
   function addProduct(product: RestaurantProduct) {
     setCart((current) => {
@@ -127,10 +136,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
         items: cart.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
       });
 
-      if (beneficiaries.length) {
-        await applyPosGroupDiscounts(created.orderId, groupSize, beneficiaries);
-      }
-
+      await applyPosGroupDiscounts(created.orderId, groupSize, beneficiaries);
       await confirmDineInPayment(created.orderId);
       window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
       setCart([]);
@@ -225,13 +231,17 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
 
           <div className="restaurant-pos-totals">
             <div className="restaurant-pos-total"><span>Subtotal</span><strong>₱{subtotal.toFixed(2)}</strong></div>
+            {taxSettings?.vatRegistered && <div className="restaurant-pos-total"><span>VATable sales</span><strong>₱{vatableSales.toFixed(2)}</strong></div>}
+            {taxSettings?.vatRegistered && <div className="restaurant-pos-total"><span>VAT {taxSettings.vatRate.toFixed(2)}%</span><strong>₱{vatAmount.toFixed(2)}</strong></div>}
             {beneficiaries.length > 0 && <>
               <div className="restaurant-pos-total"><span>Eligible share × {beneficiaries.length}</span><strong>₱{(eligibleShare * beneficiaries.length).toFixed(2)}</strong></div>
+              {taxSettings?.vatRegistered && <div className="restaurant-pos-total"><span>VAT-exempt sales</span><strong>₱{vatExemptSales.toFixed(2)}</strong></div>}
               <div className="restaurant-pos-total restaurant-pos-discount-total"><span>Senior / PWD Discount</span><strong>-₱{discountAmount.toFixed(2)}</strong></div>
             </>}
             <div className="restaurant-pos-total restaurant-pos-grand-total"><span>Total</span><strong>₱{total.toFixed(2)}</strong></div>
           </div>
 
+          {taxSettings && <p className="restaurant-pos-tax-status">{taxSettings.vatRegistered ? `VAT registered · ${taxSettings.vatRate.toFixed(2)}%${taxSettings.pricesVatInclusive ? ' · prices VAT-inclusive' : ' · prices VAT-exclusive'}` : 'Non-VAT registered'}</p>}
           <button className="button button-primary restaurant-pos-submit" type="button" disabled={!cart.length || saving || !discountReady} onClick={() => void placeOrder()}>
             {saving ? 'Creating Order…' : 'Cash Paid — Send to Kitchen'}
           </button>
