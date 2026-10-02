@@ -319,6 +319,10 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
                   type="button"
                   onClick={() => {
                     setSelectedOrder(null);
+                    if (column.key === 'new') {
+                      setNewOrderPaymentFilter('all');
+                      setSearchQuery('');
+                    }
                     setOpenColumn(column.key);
                   }}
                 >
