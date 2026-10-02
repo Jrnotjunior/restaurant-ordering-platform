@@ -59,7 +59,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
     setSavingId(product.id);
     setError('');
     try {
-      await setProductAvailability(product.id, !product.isAvailable);
+      await setProductAvailability(product.id, !product.isAvailable, restaurantId);
       setProducts((current) => current.map((item) => item.id === product.id ? { ...item, isAvailable: !item.isAvailable } : item));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to update availability.');
