@@ -543,15 +543,16 @@
 
 @media (max-width: 560px) {
   .payment-modal-backdrop {
-    align-items: flex-end;
-    padding: 0.65rem;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
   }
 
   .payment-modal {
-    width: 100%;
+    width: min(100%, 500px);
     max-height: 90vh;
     padding: 1.15rem;
-    border-radius: 1rem 1rem 0.75rem 0.75rem;
+    border-radius: 1rem;
   }
 
   .payment-modal-actions {
