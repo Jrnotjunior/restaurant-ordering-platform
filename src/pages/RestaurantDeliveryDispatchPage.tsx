@@ -288,19 +288,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
 
   return (
     <section className="restaurant-dispatch-page">
-      <header className="restaurant-dispatch-header">
-        <div>
-          <h1>Restaurant Operations</h1>
-          <h2>Dispatch</h2>
-          <p>Handle in-house deliveries and customer pickup handoffs.</p>
-        </div>
-        <span className={`restaurant-dashboard-live-status is-${realtimeStatus}`}>
-          <span className="restaurant-dashboard-live-dot" />
-          {realtimeStatus === 'live' ? 'Live' : realtimeStatus === 'connecting' ? 'Connecting…' : 'Reconnecting…'}
-        </span>
-      </header>
-
-      {error ? <div className="restaurant-dispatch-message" role="alert">{error}</div> : null}
+            {error ? <div className="restaurant-dispatch-message" role="alert">{error}</div> : null}
 
       <main className="restaurant-dispatch-workflow">
         <nav className="restaurant-dispatch-tabs" aria-label="Dispatch order type">
