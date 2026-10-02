@@ -13,7 +13,6 @@ const ownerNavigationItems: NavigationItem[] = [
   { label: 'Dashboard', href: '#restaurant/owner', icon: 'dashboard' },
   { label: 'Orders', href: '#restaurant/orders', icon: 'orders' },
   { label: 'Products', href: '#restaurant/menu', icon: 'products' },
-  { label: 'Dashboard', href: '#restaurant/owner', icon: 'dashboard' },
   { label: 'Employees', href: '#restaurant/employees', icon: 'riders' },
   { label: 'Dispatch', href: '#restaurant/delivery-dispatch', icon: 'dispatch' },
   { label: 'Shipping Fee', href: '#restaurant/shipping-fee', icon: 'shipping' },
