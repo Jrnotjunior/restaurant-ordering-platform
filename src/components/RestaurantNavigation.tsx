@@ -16,7 +16,7 @@ const ownerNavigationItems: NavigationItem[] = [
   { label: 'Employees', href: '#restaurant/employees', icon: 'riders' },
   { label: 'Dispatch', href: '#restaurant/delivery-dispatch', icon: 'dispatch' },
   { label: 'Shipping Fee', href: '#restaurant/shipping-fee', icon: 'shipping' },
-  { label: 'Sales', href: '#restaurant/sales', icon: 'sales' },
+  { label: 'Sales', href: '#restaurant/cashier-sales', icon: 'sales' },
   { label: 'Store Settings', href: '#restaurant/settings', icon: 'settings' },
 ];
 
