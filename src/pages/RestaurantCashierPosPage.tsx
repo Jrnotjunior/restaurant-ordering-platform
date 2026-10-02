@@ -67,9 +67,9 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
     try {
       setLoading(true);
       setError('');
-      const [menu, tax] = await Promise.all([getMenu(restaurantId), getRestaurantTaxSettings(restaurantId)]);
+      const [menu, tax] = await Promise.all([getMenu(restaurantId, true), getRestaurantTaxSettings(restaurantId)]);
       setTaxSettings(tax);
-      setProducts(menu.products.filter((product) => product.isAvailable));
+      setProducts(menu.products);
       setCategories(menu.categories);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to load the menu.');
@@ -103,7 +103,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
 
   useEffect(() => {
     if (!supabase) return;
-    const channel = supabase.channel(`cashier-pos-menu:${restaurantId}`).on('broadcast', { event: 'restaurant_menu_changed' }, () => { void loadMenu(); }).subscribe();
+    const channel = supabase.channel(`restaurant-menu-changes:${restaurantId}`).on('broadcast', { event: 'restaurant_menu_changed' }, () => { void loadMenu(); }).subscribe();
     return () => { void supabase?.removeChannel(channel); };
   }, [restaurantId]);
 
@@ -247,8 +247,8 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
           {loading ? <div className="restaurant-pos-empty">Loading menu…</div> : (
             <div className="restaurant-pos-products">
               {visibleProducts.map((product) => (
-                <button key={product.id} type="button" className="restaurant-pos-product" onClick={() => addProduct(product)}>
-                  <span className="restaurant-pos-product-name">{product.name}</span><strong>₱{product.price.toFixed(2)}</strong>
+                <button key={product.id} type="button" className={`restaurant-pos-product${product.isAvailable ? '' : ' is-sold-out'}`} onClick={() => addProduct(product)} disabled={!product.isAvailable} aria-label={product.isAvailable ? `Add ${product.name}` : `${product.name} is sold out`}>
+                  <span className="restaurant-pos-product-name">{product.name}{!product.isAvailable && <small>Sold Out</small>}</span><strong>₱{product.price.toFixed(2)}</strong>
                 </button>
               ))}
               {!visibleProducts.length && <div className="restaurant-pos-empty">No available products found.</div>}
