@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { confirmDineInPayment, getRestaurantOrders, updateOrderStatus, type RestaurantOrder, type RestaurantOrderStatus } from '../services/restaurantOrderRepository';
 import { supabase } from '../services/supabaseClient';
 
@@ -354,7 +355,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
         </div>
       )}
 
-      {openedColumn && (
+      {openedColumn && createPortal(
         <div
           className="restaurant-order-list-modal-backdrop"
           onMouseDown={(event) => {
@@ -445,10 +446,11 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
               );
             })()}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
-      {selectedOrder && (
+      {selectedOrder && createPortal(
         <div
           className="restaurant-order-modal-backdrop"
           onMouseDown={(event) => {
@@ -594,10 +596,11 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
 
             <div className="receipt-center">Thank you for your order!</div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
-      {cancelConfirmationOrder && (
+      {cancelConfirmationOrder && createPortal(
         <div
           className="restaurant-order-cancel-modal-backdrop"
           onMouseDown={(event) => {
@@ -630,7 +633,8 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
     </section>
