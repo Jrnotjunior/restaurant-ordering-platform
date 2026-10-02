@@ -83,6 +83,18 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
           void load();
         },
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `order_number=eq.${orderNumber}`,
+        },
+        () => {
+          void load();
+        },
+      )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') setRealtimeStatus('live');
         else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') setRealtimeStatus('error');
@@ -90,7 +102,7 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
 
     const refreshInterval = window.setInterval(() => {
       void load();
-    }, 3000);
+    }, 1000);
 
     return () => {
       cancelled = true;
