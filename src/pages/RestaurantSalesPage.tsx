@@ -157,110 +157,125 @@ export function RestaurantSalesPage({ restaurantId, role = 'owner' }: Props) {
 
   return (
     <section className="restaurant-sales-page">
-            <div className="restaurant-sales-header">
-        <div>
-          <p className="eyebrow">Restaurant operations</p>
-          <h1>Sales Overview</h1>
-          <p>View your completed sales by day and download a daily sales report.</p>
+      <div className="restaurant-sales-card">
+        <div className="restaurant-sales-card-header">
+          <div>
+            <h1>Sales Overview</h1>
+            <p>
+              Your restaurant's completed sales are shown here. Click a date to view the daily sales report.
+            </p>
+          </div>
+          <span className={`restaurant-dashboard-live-status is-${realtimeStatus}`}>
+            <span className="restaurant-dashboard-live-dot" />
+            {realtimeStatus === 'live' ? 'Live' : realtimeStatus === 'connecting' ? 'Connecting…' : 'Reconnecting…'}
+          </span>
         </div>
-        <span className={`restaurant-dashboard-live-status is-${realtimeStatus}`}>
-          <span className="restaurant-dashboard-live-dot" />
-          {realtimeStatus === 'live' ? 'Live' : realtimeStatus === 'connecting' ? 'Connecting…' : 'Reconnecting…'}
-        </span>
-      </div>
 
-      {error && <div className="restaurant-sales-error" role="alert">{error}</div>}
+        {error && <div className="restaurant-sales-error" role="alert">{error}</div>}
 
-      {loading ? (
-        <div className="restaurant-sales-empty">Loading sales…</div>
-      ) : dailySales.length === 0 ? (
-        <div className="restaurant-sales-empty">No completed sales yet.</div>
-      ) : (
-        <section className="restaurant-sales-panel">
-          <div className="restaurant-sales-search" style={{ marginTop: 0 }}>
-            <div className="restaurant-sales-search-input-wrap" style={{ maxWidth: 360 }}>
-              <input
-                id="restaurant-sales-date-search"
-                type="search"
-                value={searchDate}
-                onChange={(event) => setSearchDate(event.target.value)}
-                placeholder="Search by date, e.g. September 27 or 2026-09-27"
-                style={{ maxWidth: 360 }}
-              />
-              {searchDate && (
+        {loading ? (
+          <div className="restaurant-sales-empty">Loading sales…</div>
+        ) : dailySales.length === 0 ? (
+          <div className="restaurant-sales-empty">No completed sales yet.</div>
+        ) : (
+          <>
+            <div className="restaurant-sales-search">
+              <label htmlFor="restaurant-sales-date-search">Search date</label>
+              <div className="restaurant-sales-search-input-wrap">
+                <input
+                  id="restaurant-sales-date-search"
+                  type="search"
+                  value={searchDate}
+                  onChange={(event) => setSearchDate(event.target.value)}
+                  placeholder="Search by date, e.g. September 27 or 2026-09-27"
+                />
+                {searchDate && (
+                  <button
+                    type="button"
+                    className="restaurant-sales-search-clear"
+                    onClick={() => setSearchDate('')}
+                    aria-label="Clear date search"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {filteredDailySales.length > 0 ? (
+              <div className="restaurant-sales-day-list">
+                {filteredDailySales.map((day) => (
+                  <button
+                    key={day.dateKey}
+                    type="button"
+                    className="restaurant-sales-day"
+                    onClick={() => openSalesModal(day.dateKey)}
+                    aria-label={`Open sales for ${day.dateLabel}`}
+                  >
+                    <span className="restaurant-sales-day-main">
+                      <span className="restaurant-sales-day-label">Sales date</span>
+                      <strong>{day.dateLabel}</strong>
+                    </span>
+                    <span className="restaurant-sales-day-stats">
+                      <span>
+                        <small>Total sales</small>
+                        <strong>₱ {day.total.toFixed(2)}</strong>
+                      </span>
+                      <span>
+                        <small>Completed orders</small>
+                        <strong>{day.orders.length}</strong>
+                      </span>
+                    </span>
+                    <span className="restaurant-sales-day-arrow" aria-hidden="true">›</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="restaurant-sales-search-empty">
+                No sales found for “{searchDate}”.
+              </div>
+            )}
+          </>
+        )}
+
+        {selectedDay && (
+          <div className="restaurant-sales-modal-backdrop" role="presentation" onMouseDown={closeSalesModal}>
+            <div
+              className="restaurant-sales-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="restaurant-sales-modal-title"
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <div className="restaurant-sales-modal-header">
+                <div>
+                  <p className="eyebrow">Daily sales</p>
+                  <h2 id="restaurant-sales-modal-title">{selectedDay.dateLabel}</h2>
+                </div>
                 <button
                   type="button"
-                  className="restaurant-sales-search-clear"
-                  onClick={() => setSearchDate('')}
-                  aria-label="Clear date search"
+                  className="restaurant-sales-modal-close"
+                  onClick={closeSalesModal}
+                  aria-label="Close"
                 >
                   ×
                 </button>
-              )}
-            </div>
-          </div>
-
-          {filteredDailySales.length > 0 ? (
-            <div className="restaurant-sales-day-list">
-              {filteredDailySales.map((day) => (
-                <button
-                  key={day.dateKey}
-                  type="button"
-                  className="restaurant-sales-day"
-                  onClick={() => openSalesModal(day.dateKey)}
-                  aria-label={`Open sales for ${day.dateLabel}`}
-                >
-                  <strong>{day.dateLabel}</strong>
-                  <span aria-hidden="true">›</span>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="restaurant-sales-search-empty">
-              No sales found for “{searchDate}”.
-            </div>
-          )}
-        </section>
-      )}
-
-      {selectedDay && (
-        <div className="restaurant-sales-modal-backdrop" role="presentation" onMouseDown={closeSalesModal}>
-          <div
-            className="restaurant-sales-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="restaurant-sales-modal-title"
-            onMouseDown={(event) => event.stopPropagation()}
-          >
-            <div className="restaurant-sales-modal-header">
-              <div>
-                <p className="eyebrow">Daily sales</p>
-                <h2 id="restaurant-sales-modal-title">{selectedDay.dateLabel}</h2>
               </div>
+
+              <p className="restaurant-sales-modal-description">
+                Save the completed sales for this date as an Excel spreadsheet.
+              </p>
+
               <button
+                className="button button-primary restaurant-sales-export"
                 type="button"
-                className="restaurant-sales-modal-close"
-                onClick={closeSalesModal}
-                aria-label="Close"
+                onClick={() => exportDailySales(selectedDay)}
               >
-                ×
+                Save as XLSX
               </button>
             </div>
-
-            <p className="restaurant-sales-modal-description">
-              Save the completed sales for this date as an Excel spreadsheet.
-            </p>
-
-            <button
-              className="button button-primary restaurant-sales-export"
-              type="button"
-              onClick={() => exportDailySales(selectedDay)}
-            >
-              Save as XLSX
-            </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </section>
-  );
 }
