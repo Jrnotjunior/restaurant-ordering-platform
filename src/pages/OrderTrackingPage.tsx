@@ -146,13 +146,15 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
       : order.deliveryStatus === 'delivered'
         ? 'Delivered'
         : 'Rider assigned';
-  const showPickupLocation = isPickup && order.status === 'completed' && Boolean(order.storeAddress);
+  const storeAddress = order.storeAddress;
+  const operatingHours = order.operatingHours;
+  const showPickupLocation = isPickup && order.status === 'completed' && Boolean(storeAddress);
 
   function formatOperatingHours() {
-    if (!order.operatingHours) return [];
+    if (!operatingHours) return [];
     return ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
       .map((day) => {
-        const hours = order.operatingHours?.[day];
+        const hours = operatingHours[day];
         if (!hours) return null;
         const label = day.charAt(0).toUpperCase() + day.slice(1);
         return { label, value: hours.isOpen ? `${hours.open}–${hours.close}` : 'Closed' };
@@ -161,14 +163,14 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
   }
 
   function openStoreLocation() {
-    if (!order.storeAddress) return;
-    const query = encodeURIComponent(order.storeAddress);
+    if (!storeAddress) return;
+    const query = encodeURIComponent(storeAddress);
     window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank', 'noopener,noreferrer');
   }
 
   async function copyStoreAddress() {
-    if (!order.storeAddress || !navigator.clipboard) return;
-    await navigator.clipboard.writeText(order.storeAddress);
+    if (!storeAddress || !navigator.clipboard) return;
+    await navigator.clipboard.writeText(storeAddress);
   }
 
   return (
@@ -220,7 +222,7 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
               <span className="order-rider-status">Store</span>
             </div>
             <p className="order-pickup-location-message">Your order is complete. Please pick up your order at our store:</p>
-            <strong className="order-pickup-address">{order.storeAddress}</strong>
+            <strong className="order-pickup-address">{storeAddress}</strong>
             {formatOperatingHours().length > 0 && (
               <div className="order-pickup-hours">
                 <strong>Store hours</strong>
