@@ -387,9 +387,7 @@ function AppContent() {
       <RestaurantProvider restaurant={staffRestaurant}>
         <ThemeProvider restaurant={staffRestaurant}>
           <RestaurantLayout hideChrome role="dispatcher">
-            <RestaurantRoleDashboardPage role="dispatcher" restaurantName={staffRestaurant.name}>
-              <div className="restaurant-role-dashboard-card"><h2>Dispatch workspace</h2><p>The existing dispatch workflow will be connected here next.</p></div>
-            </RestaurantRoleDashboardPage>
+            <RestaurantDeliveryDispatchPage restaurantId={staffRestaurant.id!} />
           </RestaurantLayout>
         </ThemeProvider>
       </RestaurantProvider>
