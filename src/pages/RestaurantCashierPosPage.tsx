@@ -4,6 +4,7 @@ import { createOrder } from '../services/orderRepository';
 import { applyPosGroupDiscounts, confirmDineInPayment, getRestaurantTaxSettings, type PosDiscountIdType, type PosDiscountType, type RestaurantTaxSettings } from '../services/restaurantOrderRepository';
 import type { RestaurantProduct } from '../types/menu';
 import { supabase } from '../services/supabaseClient';
+import { attachCustomerToOrder, findCustomersByName, getOrCreateWalkInCustomer, type LoyaltyCustomerSuggestion } from '../services/loyaltyRepository';
 
 type Props = { restaurantId: string };
 type CartItem = { product: RestaurantProduct; quantity: number };
@@ -52,6 +53,10 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orderType, setOrderType] = useState<'dine_in' | 'pickup'>('dine_in');
   const [customerName, setCustomerName] = useState('Walk-in Customer');
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [customerSuggestions, setCustomerSuggestions] = useState<LoyaltyCustomerSuggestion[]>([]);
+  const [customerSuggestionsLoading, setCustomerSuggestionsLoading] = useState(false);
+  const [showCustomerSuggestions, setShowCustomerSuggestions] = useState(false);
   const [cashierName, setCashierName] = useState('Cashier');
   const [groupSize, setGroupSize] = useState<number | ''>(1);
   const [beneficiaries, setBeneficiaries] = useState<DraftBeneficiary[]>([]);
@@ -189,9 +194,10 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
     setSuccess('');
 
     try {
+      const enteredCustomerName = customerName.trim() || 'Walk-in Customer';
       const created = await createOrder({
         restaurantId,
-        customerName: customerName.trim() || 'Walk-in Customer',
+        customerName: enteredCustomerName,
         mobileNumber: 'N/A',
         orderType,
         deliveryBarangay: '',
@@ -200,6 +206,15 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
         paymentMethod: 'cash',
         items: cart.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
       });
+
+      // A selected suggestion reuses an existing loyalty customer. A new
+      // walk-in name creates a loyalty record on first completed order.
+      if (enteredCustomerName.toLowerCase() !== 'walk-in customer') {
+        const loyaltyCustomer = selectedCustomerId
+          ? { customerId: selectedCustomerId, name: enteredCustomerName }
+          : await getOrCreateWalkInCustomer(restaurantId, enteredCustomerName);
+        await attachCustomerToOrder(created.orderId, loyaltyCustomer.customerId);
+      }
 
       const financials = await applyPosGroupDiscounts(created.orderId, effectiveGroupSize, beneficiaries);
       await confirmDineInPayment(created.orderId);
@@ -220,6 +235,10 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
 
       setCart([]);
       clearDiscounts();
+      setCustomerName('Walk-in Customer');
+      setSelectedCustomerId(null);
+      setCustomerSuggestions([]);
+      setShowCustomerSuggestions(false);
       setCashReceived('');
       setSuccess(`Order ${created.orderNumber} was paid and sent directly to the kitchen. Print preview opened.`);
     } catch (err) {
@@ -264,7 +283,51 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
         <aside className="restaurant-pos-cart">
           <div className="restaurant-pos-cart-header"><div><p className="eyebrow">Walk-in order</p><h2>Current Order</h2></div><strong>₱{total.toFixed(2)}</strong></div>
 
-          <label className="restaurant-pos-field"><span>Customer name</span><input value={customerName} onChange={(event) => setCustomerName(event.target.value)} /></label>
+          <div className="restaurant-pos-customer-field">
+            <label className="restaurant-pos-field">
+              <span>Customer name</span>
+              <input
+                value={customerName}
+                onFocus={() => setShowCustomerSuggestions(customerName.trim().length >= 2)}
+                onChange={(event) => {
+                  setCustomerName(event.target.value);
+                  setSelectedCustomerId(null);
+                  setShowCustomerSuggestions(true);
+                }}
+                onBlur={() => window.setTimeout(() => setShowCustomerSuggestions(false), 150)}
+                placeholder="Walk-in Customer"
+                autoComplete="off"
+                disabled={saving}
+              />
+            </label>
+            {showCustomerSuggestions && customerName.trim().length >= 2 && (
+              <div className="restaurant-pos-customer-suggestions" role="listbox" aria-label="Customer suggestions">
+                {customerSuggestionsLoading && <div className="restaurant-pos-customer-suggestion-status">Searching customers…</div>}
+                {!customerSuggestionsLoading && customerSuggestions.map((customer) => (
+                  <button
+                    key={customer.customerId}
+                    type="button"
+                    className="restaurant-pos-customer-suggestion"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => {
+                      setCustomerName(customer.name);
+                      setSelectedCustomerId(customer.customerId);
+                      setShowCustomerSuggestions(false);
+                    }}
+                  >
+                    <span>
+                      <strong>{customer.name}</strong>
+                      <small>{customer.isRegistered ? 'Registered account' : 'Walk-in loyalty customer'}</small>
+                    </span>
+                    <em>{customer.pointsBalance} pts</em>
+                  </button>
+                ))}
+                {!customerSuggestionsLoading && customerSuggestions.length === 0 && (
+                  <div className="restaurant-pos-customer-suggestion-status">No existing customer. This name will be added as a new loyalty customer.</div>
+                )}
+              </div>
+            )}
+          </div>
 
           <div className="restaurant-pos-type"><span>Order type</span><div>
             <button type="button" className={orderType === 'dine_in' ? 'is-active' : ''} onClick={() => setOrderType('dine_in')}>Dine-in</button>
