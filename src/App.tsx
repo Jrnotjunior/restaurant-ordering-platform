@@ -12,6 +12,7 @@ import { RestaurantShippingFeePage } from './pages/RestaurantShippingFeePage';
 import { RestaurantSalesPage } from './pages/RestaurantSalesPage';
 import { RestaurantRidersPage } from './pages/RestaurantRidersPage';
 import { RestaurantDeliveryDispatchPage } from './pages/RestaurantDeliveryDispatchPage';
+import { RestaurantSettingsPage } from './pages/RestaurantSettingsPage';
 import { RestaurantOwnerLoginPage } from './pages/RestaurantOwnerLoginPage';
 import { CustomerSignUpPage } from './pages/CustomerSignUpPage';
 import { RiderDeliveryPage } from './pages/RiderDeliveryPage';
@@ -48,6 +49,7 @@ function withBasePath(path: string) {
   if (path === '/restaurant/sales') return `${base}/#restaurant/sales`;
   if (path === '/restaurant/riders') return `${base}/#restaurant/riders`;
   if (path === '/restaurant/delivery-dispatch') return `${base}/#restaurant/delivery-dispatch`;
+  if (path === '/restaurant/settings') return `${base}/#restaurant/settings`;
   if (path === '/rider/dashboard') return `${base}/#rider/dashboard`;
   if (path === '/rider/delivery-preview') return `${base}/#rider/dashboard`;
   return `${base}${path.startsWith('/') ? path : `/${path}`}`;
@@ -248,11 +250,12 @@ function AppContent() {
   const isRestaurantSalesPage = route === '#restaurant/sales';
   const isRestaurantRidersPage = route === '#restaurant/riders';
   const isRestaurantDeliveryDispatchPage = route === '#restaurant/delivery-dispatch';
+  const isRestaurantSettingsPage = route === '#restaurant/settings';
   const isRiderDashboardPage = route === '#rider/dashboard' || route === '#rider/delivery-preview';
   const riderDeliveryMatch = route.match(/^#rider\/delivery\/([^/]+)$/);
   const isRiderInvitePath = window.location.pathname.endsWith('/invite') || window.location.pathname.endsWith('/invite/');
   const isRiderInvitePage = isRiderInvitePath || searchParams.get('invite') === '1' || isInviteCallback;
-  const isRestaurantOperationsPage = isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantShippingFeePage || isRestaurantSalesPage || isRestaurantRidersPage || isRestaurantDeliveryDispatchPage;
+  const isRestaurantOperationsPage = isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantShippingFeePage || isRestaurantSalesPage || isRestaurantRidersPage || isRestaurantDeliveryDispatchPage || isRestaurantSettingsPage;
   const trackingMatch = route.match(/^#order\/(.+)$/);
 
   if (isRiderInvitePage) return <RiderInvitePage />;
@@ -266,7 +269,7 @@ function AppContent() {
   if (isRestaurantOperationsPage) {
     if (authLoading) return <section className="restaurant-owner-auth-loading">Loading owner session…</section>;
     if (authError && !isSupabaseConfigured) return <section className="restaurant-owner-auth-loading">{authError}</section>;
-    return <OwnerRestaurantGuard>{(ownerRestaurant) => <RestaurantProvider restaurant={ownerRestaurant}><ThemeProvider restaurant={ownerRestaurant}><RestaurantLayout hideChrome>{isRestaurantOrdersPage ? <RestaurantOrdersPage restaurantId={ownerRestaurant.id!} /> : isRestaurantMenuPage ? <RestaurantMenuPage restaurantId={ownerRestaurant.id!} /> : isRestaurantShippingFeePage ? <RestaurantShippingFeePage restaurantId={ownerRestaurant.id!} /> : isRestaurantRidersPage ? <RestaurantRidersPage restaurantId={ownerRestaurant.id!} /> : isRestaurantDeliveryDispatchPage ? <RestaurantDeliveryDispatchPage restaurantId={ownerRestaurant.id!} /> : <RestaurantSalesPage restaurantId={ownerRestaurant.id!} />}</RestaurantLayout></ThemeProvider></RestaurantProvider>}</OwnerRestaurantGuard>;
+    return <OwnerRestaurantGuard>{(ownerRestaurant) => <RestaurantProvider restaurant={ownerRestaurant}><ThemeProvider restaurant={ownerRestaurant}><RestaurantLayout hideChrome>{isRestaurantOrdersPage ? <RestaurantOrdersPage restaurantId={ownerRestaurant.id!} /> : isRestaurantMenuPage ? <RestaurantMenuPage restaurantId={ownerRestaurant.id!} /> : isRestaurantShippingFeePage ? <RestaurantShippingFeePage restaurantId={ownerRestaurant.id!} /> : isRestaurantRidersPage ? <RestaurantRidersPage restaurantId={ownerRestaurant.id!} /> : isRestaurantDeliveryDispatchPage ? <RestaurantDeliveryDispatchPage restaurantId={ownerRestaurant.id!} /> : isRestaurantSettingsPage ? <RestaurantSettingsPage restaurantId={ownerRestaurant.id!} /> : <RestaurantSalesPage restaurantId={ownerRestaurant.id!} />}</RestaurantLayout></ThemeProvider></RestaurantProvider>}</OwnerRestaurantGuard>;
   }
 
   return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}>{publicContent}{cartNotification ? <div className="cart-notification" role="status" aria-live="polite"><div className="cart-notification-icon" aria-hidden="true">✓</div><div className="cart-notification-content"><strong>Added to cart</strong><span>{cartNotification}</span></div><a className="cart-notification-link" href={withBasePath('/cart')}>View cart</a><button className="cart-notification-close" type="button" aria-label="Dismiss notification" onClick={() => setCartNotification('')}>×</button></div> : null}</RestaurantLayout></ThemeProvider></RestaurantProvider>;
