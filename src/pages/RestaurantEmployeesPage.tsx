@@ -160,13 +160,8 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
 
   return (
     <section className="restaurant-employees-page">
-      <div className="restaurant-employees-header">
-        <div>
-          <p className="eyebrow">Restaurant team</p>
-          <h1>Employees</h1>
-          <p>Manage the accounts used by your restaurant team.</p>
-          <p className="restaurant-employees-count">{staff.length} {staff.length === 1 ? 'employee' : 'employees'}</p>
-        </div>
+      <div className="restaurant-employees-toolbar">
+        <span>{staff.length} {staff.length === 1 ? 'employee' : 'employees'}</span>
         <button className="button button-primary" type="button" onClick={() => setShowForm((current) => !current)}>
           {showForm ? 'Close' : 'Add Employee'}
         </button>
