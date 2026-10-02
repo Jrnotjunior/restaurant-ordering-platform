@@ -637,7 +637,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
             )}
             <hr className="receipt-divider" />
             <div className="receipt-center">Thank you for your order!</div>
-          </div>          </div>
+          </div>
         </div>,
         document.body,
       )}
