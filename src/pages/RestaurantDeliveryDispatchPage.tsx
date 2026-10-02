@@ -90,7 +90,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
           .eq('restaurant_id', restaurantId)
           .in('order_type', ['delivery', 'dine_in'])
           .eq('status', 'ready')
-          .eq('delivery_status', 'unassigned')
+          .or('delivery_status.eq.unassigned,delivery_status.is.null')
           .order('created_at', { ascending: true }),
         supabase
           .from('restaurant_riders')
