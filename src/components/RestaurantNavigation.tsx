@@ -83,7 +83,7 @@ const roleNavigationItems: Record<RestaurantNavigationRole, NavigationItem[]> = 
   rider: [{ label: 'Deliveries', href: '#rider/dashboard', icon: 'dispatch' }],
 };
 
-export function RestaurantNavigation({ role = 'owner' }: { role?: RestaurantNavigationRole }) {
+export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }: { role?: RestaurantNavigationRole; ownerDashboard?: boolean }) {
   const [currentRoute, setCurrentRoute] = useState(getCurrentRoute);
   const [accountOpen, setAccountOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
@@ -142,7 +142,7 @@ export function RestaurantNavigation({ role = 'owner' }: { role?: RestaurantNavi
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  if (role === 'owner') {
+  if (role === 'owner' && ownerDashboard) {
     return (
       <>
         <aside className="restaurant-owner-sidebar" aria-label="Restaurant management navigation">
