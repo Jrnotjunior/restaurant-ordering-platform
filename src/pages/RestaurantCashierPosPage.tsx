@@ -8,6 +8,23 @@ import { supabase } from '../services/supabaseClient';
 type Props = { restaurantId: string };
 type CartItem = { product: RestaurantProduct; quantity: number };
 type DraftBeneficiary = { discountType: PosDiscountType; idType: PosDiscountIdType; idNumber: string };
+type PosPrintOrder = {
+  orderNumber: string;
+  customerName: string;
+  orderType: 'dine_in' | 'pickup';
+  createdAt: string;
+  items: CartItem[];
+  beneficiaries: DraftBeneficiary[];
+  financials: {
+    discountAmount: number;
+    grossSales: number;
+    vatableSales: number;
+    vatAmount: number;
+    vatExemptSales: number;
+    netSales: number;
+    total: number;
+  };
+};
 
 const idOptions: Record<PosDiscountType, { value: PosDiscountIdType; label: string }[]> = {
   senior: [
@@ -39,6 +56,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [printOrder, setPrintOrder] = useState<PosPrintOrder | null>(null);
 
   async function loadMenu() {
     try {
@@ -62,6 +80,19 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
     const channel = supabase.channel(`cashier-pos-menu:${restaurantId}`).on('broadcast', { event: 'restaurant_menu_changed' }, () => { void loadMenu(); }).subscribe();
     return () => { void supabase?.removeChannel(channel); };
   }, [restaurantId]);
+
+  useEffect(() => {
+    if (!printOrder) return;
+
+    const handleAfterPrint = () => setPrintOrder(null);
+    window.addEventListener('afterprint', handleAfterPrint);
+
+    const timer = window.setTimeout(() => window.print(), 0);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('afterprint', handleAfterPrint);
+    };
+  }, [printOrder]);
 
   const visibleProducts = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -136,12 +167,23 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
         items: cart.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
       });
 
-      await applyPosGroupDiscounts(created.orderId, groupSize, beneficiaries);
+      const financials = await applyPosGroupDiscounts(created.orderId, groupSize, beneficiaries);
       await confirmDineInPayment(created.orderId);
       window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
+
+      setPrintOrder({
+        orderNumber: created.orderNumber,
+        customerName: customerName.trim() || 'Walk-in Customer',
+        orderType,
+        createdAt: new Date().toISOString(),
+        items: cart.map((item) => ({ ...item })),
+        beneficiaries: beneficiaries.map((beneficiary) => ({ ...beneficiary })),
+        financials,
+      });
+
       setCart([]);
       clearDiscounts();
-      setSuccess(`Order ${created.orderNumber} created and sent to the kitchen.`);
+      setSuccess(`Order ${created.orderNumber} was paid and sent directly to the kitchen. Print preview opened.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to create POS order.');
     } finally {
@@ -247,6 +289,100 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
           </button>
         </aside>
       </div>
+
+      {printOrder && (
+        <div className="restaurant-pos-print-area" aria-hidden="true">
+          <div className="restaurant-pos-print-receipt restaurant-pos-kitchen-receipt">
+            <div className="pos-receipt-center">
+              <div className="pos-receipt-title">KITCHEN ORDER</div>
+              <div className="pos-receipt-order-number">{printOrder.orderNumber}</div>
+              <div className="pos-receipt-muted">{new Date(printOrder.createdAt).toLocaleString()}</div>
+            </div>
+            <hr className="pos-receipt-divider" />
+            <div className="pos-receipt-center">
+              <div className="pos-receipt-label">
+                {printOrder.orderType === 'dine_in' ? 'DINE-IN' : 'PICKUP / TAKE-OUT'}
+              </div>
+              <div>{printOrder.customerName}</div>
+            </div>
+            <hr className="pos-receipt-divider" />
+            <div>
+              {printOrder.items.map((item) => (
+                <div className="pos-receipt-kitchen-item" key={item.product.id}>
+                  <strong>{item.quantity} ×</strong>
+                  <span>{item.product.name}</span>
+                </div>
+              ))}
+            </div>
+            <hr className="pos-receipt-divider" />
+            <div className="pos-receipt-center">Prepare this order.</div>
+          </div>
+
+          <div className="restaurant-pos-print-receipt restaurant-pos-customer-receipt">
+            <div className="pos-receipt-center">
+              <div className="pos-receipt-title">CUSTOMER RECEIPT</div>
+              <div className="pos-receipt-order-number">{printOrder.orderNumber}</div>
+              <div className="pos-receipt-muted">{new Date(printOrder.createdAt).toLocaleString()}</div>
+            </div>
+            <hr className="pos-receipt-divider" />
+            <div className="pos-receipt-center">
+              <div className="pos-receipt-label">
+                {printOrder.orderType === 'dine_in' ? 'DINE-IN' : 'PICKUP / TAKE-OUT'}
+              </div>
+              <div>Cash • Paid</div>
+            </div>
+            <hr className="pos-receipt-divider" />
+            <div>
+              <div className="pos-receipt-label">Customer</div>
+              <div>{printOrder.customerName}</div>
+            </div>
+            <hr className="pos-receipt-divider" />
+            <div>
+              {printOrder.items.map((item) => (
+                <div className="pos-receipt-row" key={item.product.id}>
+                  <span>{item.quantity} × {item.product.name}</span>
+                  <span>₱{(item.product.price * item.quantity).toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+            <hr className="pos-receipt-divider" />
+            {printOrder.financials.grossSales > 0 ? (
+              <>
+                <div className="pos-receipt-row"><span>Gross sales</span><span>₱{printOrder.financials.grossSales.toFixed(2)}</span></div>
+                <div className="pos-receipt-row"><span>VATable sales</span><span>₱{printOrder.financials.vatableSales.toFixed(2)}</span></div>
+                {printOrder.financials.vatAmount > 0 && <div className="pos-receipt-row"><span>VAT {taxSettings?.vatRate.toFixed(2)}%</span><span>₱{printOrder.financials.vatAmount.toFixed(2)}</span></div>}
+                {printOrder.financials.vatExemptSales > 0 && <div className="pos-receipt-row"><span>VAT-exempt sales</span><span>₱{printOrder.financials.vatExemptSales.toFixed(2)}</span></div>}
+                {printOrder.financials.discountAmount > 0 && <div className="pos-receipt-row"><span>SC/PWD discount</span><span>-₱{printOrder.financials.discountAmount.toFixed(2)}</span></div>}
+              </>
+            ) : (
+              <div className="pos-receipt-row"><span>Subtotal</span><span>₱{printOrder.financials.grossSales.toFixed(2)}</span></div>
+            )}
+            <div className="pos-receipt-row pos-receipt-total">
+              <span>TOTAL</span>
+              <span>₱{printOrder.financials.total.toFixed(2)}</span>
+            </div>
+            {printOrder.beneficiaries.length > 0 && (
+              <>
+                <hr className="pos-receipt-divider" />
+                <div className="pos-receipt-label">SC/PWD DETAILS</div>
+                {printOrder.beneficiaries.map((beneficiary, index) => {
+                  const eligibleAmount = printOrder.financials.grossSales / printOrder.financials.total * 0 + (printOrder.financials.discountAmount / 0.20 / printOrder.beneficiaries.length);
+                  const beneficiaryDiscount = printOrder.financials.discountAmount / printOrder.beneficiaries.length;
+                  return (
+                    <div key={index} className="pos-receipt-discount-detail">
+                      <div>{beneficiary.discountType.toUpperCase()} ID: {beneficiary.idNumber}</div>
+                      <div>Eligible: ₱{eligibleAmount.toFixed(2)} · Discount: ₱{beneficiaryDiscount.toFixed(2)}</div>
+                    </div>
+                  );
+                })}
+                <div className="pos-receipt-signature">Customer signature: ____________________</div>
+              </>
+            )}
+            <hr className="pos-receipt-divider" />
+            <div className="pos-receipt-center">Thank you for your order!</div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
