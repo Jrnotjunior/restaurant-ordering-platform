@@ -17,6 +17,7 @@ type OwnerStats = {
   products: number;
   employees: number;
   activeDeliveries: number;
+  dailySales: { label: string; total: number }[];
 };
 
 const roleInfo = {
@@ -40,7 +41,9 @@ async function loadOwnerStats(restaurantId: string): Promise<OwnerStats> {
   if (!supabase) throw new Error('Supabase is not configured.');
 
   const today = new Date();
-  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const chartStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6);
+  const start = chartStart.toISOString();
   const end = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
 
   const [orders, products, employees] = await Promise.all([
@@ -55,18 +58,44 @@ async function loadOwnerStats(restaurantId: string): Promise<OwnerStats> {
 
   const orderRows = orders.data ?? [];
   const completedStatuses = new Set(['completed']);
-  const sales = orderRows.reduce((sum, order) => completedStatuses.has(order.status) ? sum + Number(order.total ?? 0) : sum, 0);
+  const todayKey = startOfToday.toDateString();
+
+  const sales = orderRows.reduce((sum, order) => {
+    const orderDate = new Date(order.created_at);
+    return orderDate.toDateString() === todayKey && completedStatuses.has(order.status)
+      ? sum + Number(order.total ?? 0)
+      : sum;
+  }, 0);
+
+  const todayOrders = orderRows.filter((order) => new Date(order.created_at).toDateString() === todayKey);
   const pendingStatuses = new Set(['new', 'confirmed', 'preparing', 'ready']);
-  const pendingOrders = orderRows.filter((order) => pendingStatuses.has(order.status)).length;
-  const activeDeliveries = orderRows.filter((order) => order.order_type === 'delivery' && ['assigned', 'picked_up', 'out_for_delivery'].includes(order.delivery_status ?? '')).length;
+  const pendingOrders = todayOrders.filter((order) => pendingStatuses.has(order.status)).length;
+  const activeDeliveries = todayOrders.filter((order) => order.order_type === 'delivery' && ['assigned', 'picked_up', 'out_for_delivery'].includes(order.delivery_status ?? '')).length;
+
+  const dailySales = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(chartStart.getFullYear(), chartStart.getMonth(), chartStart.getDate() + index);
+    const key = date.toDateString();
+    const total = orderRows.reduce((sum, order) => {
+      const orderDate = new Date(order.created_at);
+      return orderDate.toDateString() === key && completedStatuses.has(order.status)
+        ? sum + Number(order.total ?? 0)
+        : sum;
+    }, 0);
+
+    return {
+      label: date.toLocaleDateString('en-PH', { weekday: 'short' }),
+      total,
+    };
+  });
 
   return {
     sales,
-    orders: orderRows.length,
+    orders: todayOrders.length,
     pendingOrders,
     products: products.data?.length ?? 0,
     employees: employees.data?.length ?? 0,
     activeDeliveries,
+    dailySales,
   };
 }
 
@@ -125,23 +154,40 @@ function OwnerDashboard({ restaurantName, restaurantId }: { restaurantName?: str
         ))}
       </section>
 
-      <section className="restaurant-owner-dashboard-section">
-        <div className="restaurant-owner-dashboard-section-heading">
+      <section className="restaurant-owner-dashboard-chart">
+        <div className="restaurant-owner-dashboard-chart-heading">
           <div>
-            <p className="eyebrow">Management</p>
-            <h2>Restaurant Operations</h2>
+            <p className="eyebrow">Sales activity</p>
+            <h2>Daily Sales</h2>
           </div>
-          <span>Owner access</span>
+          <span>Last 7 days</span>
         </div>
-        <div className="restaurant-owner-dashboard-links">
-          {ownerLinks.map((link) => (
-            <a href={link.href} className="restaurant-owner-dashboard-link" key={link.href}>
-              <strong>{link.label}</strong>
-              <span>{link.description}</span>
-              <b aria-hidden="true">→</b>
-            </a>
-          ))}
-        </div>
+
+        {loading ? (
+          <div className="restaurant-owner-dashboard-chart-empty">Loading sales data…</div>
+        ) : (
+          <div className="restaurant-owner-dashboard-sales-chart" role="img" aria-label="Daily completed sales for the last 7 days">
+            <div className="restaurant-owner-dashboard-sales-axis">
+              <span>₱{Math.round(Math.max(...(stats?.dailySales ?? [{ total: 0 }].map(() => ({ total: 0 }))), (point) => point.total) / 1000)}k</span>
+              <span>₱0</span>
+            </div>
+            <div className="restaurant-owner-dashboard-sales-bars">
+              {(stats?.dailySales ?? []).map((point) => {
+                const max = Math.max(...(stats?.dailySales.map((item) => item.total) ?? [0]), 1);
+                const height = point.total > 0 ? Math.max((point.total / max) * 100, 5) : 2;
+                return (
+                  <div className="restaurant-owner-dashboard-sales-column" key={point.label}>
+                    <div className="restaurant-owner-dashboard-sales-value">{point.total > 0 ? `₱${point.total.toLocaleString('en-PH', { maximumFractionDigits: 0 })}` : '₱0'}</div>
+                    <div className="restaurant-owner-dashboard-sales-track">
+                      <div className="restaurant-owner-dashboard-sales-bar" style={{ height: `${height}%` }} />
+                    </div>
+                    <span>{point.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </section>
     </div>
   );
