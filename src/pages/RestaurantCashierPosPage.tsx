@@ -366,7 +366,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
                 <hr className="pos-receipt-divider" />
                 <div className="pos-receipt-label">SC/PWD DETAILS</div>
                 {printOrder.beneficiaries.map((beneficiary, index) => {
-                  const eligibleAmount = printOrder.financials.grossSales / printOrder.financials.total * 0 + (printOrder.financials.discountAmount / 0.20 / printOrder.beneficiaries.length);
+                  const eligibleAmount = printOrder.financials.discountAmount > 0 ? printOrder.financials.discountAmount / 0.20 / printOrder.beneficiaries.length : 0;
                   const beneficiaryDiscount = printOrder.financials.discountAmount / printOrder.beneficiaries.length;
                   return (
                     <div key={index} className="pos-receipt-discount-detail">
