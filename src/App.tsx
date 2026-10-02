@@ -306,7 +306,7 @@ function AppContent() {
   const isRestaurantMenuPage = route === '#restaurant/menu';
   const isRestaurantShippingFeePage = route === '#restaurant/shipping-fee';
   const isRestaurantSalesPage = route === '#restaurant/sales';
-  const isCashierSalesPage = isRestaurantSalesPage;
+  const isCashierSalesPage = route === '#restaurant/cashier-sales';
   const isCashierPosPage = route === '#restaurant/cashier-pos';
   const isRestaurantRidersPage = route === '#restaurant/riders';
   const isRestaurantDeliveryDispatchPage = route === '#restaurant/delivery-dispatch';
