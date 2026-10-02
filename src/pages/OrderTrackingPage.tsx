@@ -93,8 +93,13 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
         else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') setRealtimeStatus('error');
       });
 
+    const refreshInterval = window.setInterval(() => {
+      void load();
+    }, 3000);
+
     return () => {
       cancelled = true;
+      window.clearInterval(refreshInterval);
       void client.removeChannel(channel);
     };
   }, [orderNumber]);
@@ -124,7 +129,7 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
   const statusOrder = isPickup ? pickupStatusOrder : deliveryStatusOrder;
   const currentIndex = statusOrder.indexOf(customerStatus);
   const riderAssigned = order.orderType === 'delivery' && Boolean(order.riderName && order.riderPhone);
-  const deliveryStatusLabel = order.deliveryStatus === 'out_for_delivery'
+  const deliveryStatusLabel = order.deliveryStatus === 'delivering' || order.deliveryStatus === 'out_for_delivery'
     ? 'Out for delivery'
     : order.deliveryStatus === 'delivered'
       ? 'Delivered'
