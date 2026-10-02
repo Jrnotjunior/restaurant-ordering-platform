@@ -598,9 +598,13 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
             </div>
             <div className="restaurant-order-items" style={{ marginTop: 18 }}>
               {selectedOrder.items.map((item) => (
-                <div className="restaurant-order-item" key={item.id}>
-                  <span><strong>{item.quantity}×</strong> {item.productName}</span>
-                  {!isKitchen ? <span>₱{item.lineTotal.toFixed(2)}</span> : null}
+                <div className={`restaurant-order-item${isKitchen ? ' restaurant-kitchen-order-item' : ''}`} key={item.id}>
+                  <span className="restaurant-order-item-name">{item.productName}</span>
+                  {isKitchen ? (
+                    <strong className="restaurant-kitchen-order-quantity">×{item.quantity}</strong>
+                  ) : (
+                    <span>₱{item.lineTotal.toFixed(2)}</span>
+                  )}
                 </div>
               ))}
             </div>
