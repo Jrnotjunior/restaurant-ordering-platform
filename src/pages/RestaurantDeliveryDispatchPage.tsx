@@ -295,8 +295,8 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
     <section className="restaurant-dispatch-page">
       <header className="restaurant-dispatch-header">
         <div>
-          <p className="eyebrow">Restaurant operations</p>
-          <h1>Dispatch</h1>
+          <h1>Restaurant Operations</h1>
+          <h2>Dispatch</h2>
           <p>Handle in-house deliveries and customer pickup handoffs.</p>
         </div>
         <span className={`restaurant-dashboard-live-status is-${realtimeStatus}`}>
