@@ -270,7 +270,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
           .restaurant-order-print-receipt,.restaurant-order-print-receipt *{visibility:visible!important}
           .restaurant-order-print-receipt{display:block!important;width:80mm!important;max-width:80mm!important;box-sizing:border-box!important;margin:0!important;padding:4mm 4mm 6mm!important;font-family:Arial,sans-serif!important;font-size:12px!important;line-height:1.4!important;color:#000!important;background:#fff!important}
           .restaurant-kitchen-receipt{page-break-after:always!important;break-after:page!important}
-          .receipt-kitchen-item{display:grid!important;grid-template-columns:35px minmax(0,1fr)!important;gap:8px!important;font-size:15px!important;font-weight:700!important;margin-bottom:8px!important}
+          .receipt-kitchen-item{display:grid!important;grid-template-columns:minmax(0,1fr) 35px!important;gap:8px!important;font-size:15px!important;font-weight:700!important;margin-bottom:8px!important}.receipt-kitchen-item strong{text-align:right!important}
           .receipt-discount-detail{margin-top:6px!important;font-size:10px!important;line-height:1.35!important}
           .receipt-signature-line{margin-top:14px!important;font-size:10px!important}
           .restaurant-order-print-receipt *{box-sizing:border-box!important}
@@ -696,8 +696,8 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
             <div>
               {selectedOrder.items.map((item) => (
                 <div className="receipt-kitchen-item" key={item.id}>
-                  <strong>{item.quantity} ×</strong>
                   <span>{item.productName}</span>
+                  <strong>×{item.quantity}</strong>
                 </div>
               ))}
             </div>
