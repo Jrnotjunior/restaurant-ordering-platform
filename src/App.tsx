@@ -376,7 +376,7 @@ function AppContent() {
       <RestaurantProvider restaurant={staffRestaurant}>
         <ThemeProvider restaurant={staffRestaurant}>
           <RestaurantLayout hideChrome role="cashier">
-            <RestaurantSalesPage restaurantId={staffRestaurant.id!} />
+            <RestaurantSalesPage restaurantId={staffRestaurant.id!} role="cashier" />
           </RestaurantLayout>
         </ThemeProvider>
       </RestaurantProvider>
@@ -388,7 +388,7 @@ function AppContent() {
       <RestaurantProvider restaurant={staffRestaurant}>
         <ThemeProvider restaurant={staffRestaurant}>
           <RestaurantLayout hideChrome role="dispatcher">
-            <RestaurantDeliveryDispatchPage restaurantId={staffRestaurant.id!} />
+            <RestaurantDeliveryDispatchPage restaurantId={staffRestaurant.id!} role="dispatcher" />
           </RestaurantLayout>
         </ThemeProvider>
       </RestaurantProvider>
