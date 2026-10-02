@@ -86,11 +86,11 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
       const [orderResult, riderResult, assignmentResult] = await Promise.all([
         supabase
           .from('orders')
-          .select('id,order_number,customer_name,delivery_address,delivery_barangay,notes,total,created_at,pickup_method,order_type')
+          .select('id,order_number,customer_name,delivery_address,delivery_barangay,notes,total,created_at,pickup_method,order_type,rider_id')
           .eq('restaurant_id', restaurantId)
           .in('order_type', ['delivery', 'dine_in'])
           .eq('status', 'ready')
-          .or('delivery_status.eq.unassigned,delivery_status.is.null')
+          .is('rider_id', null)
           .order('created_at', { ascending: true }),
         supabase
           .from('restaurant_riders')
