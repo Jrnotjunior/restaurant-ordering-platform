@@ -348,14 +348,6 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
 
           return (
             <section className="restaurant-cashier-orders">
-              <div style={{ marginBottom: 18 }}>
-                <p className="eyebrow">Cashier workspace</p>
-                <h2 style={{ margin: '0 0 5px' }}>New Orders</h2>
-                <p style={{ margin: 0, color: '#64748b' }}>
-                  New customer orders waiting for cashier review and receipt printing.
-                </p>
-              </div>
-
               <div style={{ marginBottom: 14 }}>
                 <input
                   type="search"
