@@ -31,7 +31,7 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
     setLoading(true);
     setError('');
 
-    getMenu(restaurant.id)
+    getMenu(restaurant.id, true)
       .then((menu) => {
         if (cancelled) return;
         setCategories(menu.categories);
