@@ -211,6 +211,58 @@ function OwnerRestaurantGuard({ children }: { children: (restaurant: RestaurantC
   return children(ownerRestaurantConfig(restaurant));
 }
 
+function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen' | 'dispatcher'; children: (restaurant: RestaurantConfig) => ReactNode }) {
+  const { user } = useRestaurantOwnerAuth();
+  const [checking, setChecking] = useState(true);
+  const [allowed, setAllowed] = useState(false);
+  const [restaurantId, setRestaurantId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    async function checkStaffAccess() {
+      if (!user || !supabase) {
+        if (mounted) setChecking(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('restaurant_staff')
+        .select('restaurant_id,role')
+        .eq('auth_user_id', user.id)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (!mounted) return;
+
+      if (error) {
+        console.error('Unable to verify staff access.', error);
+        setChecking(false);
+        return;
+      }
+
+      if (data?.role === role && data.restaurant_id) {
+        setRestaurantId(data.restaurant_id);
+        setAllowed(true);
+      }
+
+      setChecking(false);
+    }
+
+    void checkStaffAccess();
+    return () => { mounted = false; };
+  }, [role, user]);
+
+  if (!user) return <RestaurantOwnerLoginPage />;
+  if (checking) return <section className="restaurant-owner-auth-loading">Checking employee access…</section>;
+
+  if (!allowed || !restaurantId) {
+    window.location.hash = '#account';
+    return <section className="restaurant-owner-auth-loading">Redirecting to sign in…</section>;
+  }
+
+  return children({ ...defaultRestaurant, id: restaurantId });
+}
+
 function AppContent() {
   const [restaurant, setRestaurant] = useState<RestaurantConfig>(defaultRestaurant);
   const [route, setRoute] = useState(() => normalizeHashRoute(window.location.hash || ''));
@@ -256,6 +308,9 @@ function AppContent() {
   const isRestaurantDeliveryDispatchPage = route === '#restaurant/delivery-dispatch';
   const isRestaurantSettingsPage = route === '#restaurant/settings';
   const isRestaurantEmployeesPage = route === '#restaurant/employees';
+  const isCashierPage = route === '#restaurant/cashier';
+  const isKitchenPage = route === '#restaurant/kitchen';
+  const isDispatcherPage = route === '#restaurant/dispatcher';
   const restaurantRoleRoute = route.match(/^#restaurant\/(owner|cashier|kitchen|dispatcher)$/)?.[1] as 'owner' | 'cashier' | 'kitchen' | 'dispatcher' | undefined;
   const isRiderDashboardPage = route === '#rider/dashboard' || route === '#rider/delivery-preview';
   const riderDeliveryMatch = route.match(/^#rider\/delivery\/([^/]+)$/);
@@ -273,6 +328,46 @@ function AppContent() {
   if (riderDeliveryMatch) return <RiderRouteGuard><RiderDeliveryPage orderId={decodeURIComponent(riderDeliveryMatch[1])} /></RiderRouteGuard>;
 
   const publicContent = trackOrderNumber ? <OrderTrackingPage orderNumber={trackOrderNumber} /> : isMenuPage || (!isCartPage && !isCheckoutPage && !trackingMatch) ? <MenuPage onAddToCart={addToCart} cartCount={cartCount} /> : isCartPage ? <CartPage items={cartItems} onIncrease={(id) => changeQuantity(id, 1)} onDecrease={(id) => changeQuantity(id, -1)} onRemove={(id) => removeFromCart(id)} /> : isCheckoutPage ? <CheckoutPage items={cartItems} /> : <OrderTrackingPage orderNumber={decodeURIComponent(trackingMatch![1])} />;
+
+  if (isCashierPage) {
+    return <StaffRoleGuard role="cashier">{(staffRestaurant) => (
+      <RestaurantProvider restaurant={staffRestaurant}>
+        <ThemeProvider restaurant={staffRestaurant}>
+          <RestaurantLayout hideChrome role="cashier">
+            <RestaurantOrdersPage restaurantId={staffRestaurant.id!} />
+          </RestaurantLayout>
+        </ThemeProvider>
+      </RestaurantProvider>
+    )}</StaffRoleGuard>;
+  }
+
+  if (isKitchenPage) {
+    return <StaffRoleGuard role="kitchen">{(staffRestaurant) => (
+      <RestaurantProvider restaurant={staffRestaurant}>
+        <ThemeProvider restaurant={staffRestaurant}>
+          <RestaurantLayout hideChrome role="kitchen">
+            <RestaurantRoleDashboardPage role="kitchen" restaurantName={staffRestaurant.name}>
+              <div className="restaurant-role-dashboard-card"><h2>Kitchen workspace</h2><p>The existing kitchen order workflow will be connected here next.</p></div>
+            </RestaurantRoleDashboardPage>
+          </RestaurantLayout>
+        </ThemeProvider>
+      </RestaurantProvider>
+    )}</StaffRoleGuard>;
+  }
+
+  if (isDispatcherPage) {
+    return <StaffRoleGuard role="dispatcher">{(staffRestaurant) => (
+      <RestaurantProvider restaurant={staffRestaurant}>
+        <ThemeProvider restaurant={staffRestaurant}>
+          <RestaurantLayout hideChrome role="dispatcher">
+            <RestaurantRoleDashboardPage role="dispatcher" restaurantName={staffRestaurant.name}>
+              <div className="restaurant-role-dashboard-card"><h2>Dispatch workspace</h2><p>The existing dispatch workflow will be connected here next.</p></div>
+            </RestaurantRoleDashboardPage>
+          </RestaurantLayout>
+        </ThemeProvider>
+      </RestaurantProvider>
+    )}</StaffRoleGuard>;
+  }
 
   if (restaurantRoleRoute) {
     if (authLoading) return <section className="restaurant-owner-auth-loading">Loading restaurant session…</section>;
