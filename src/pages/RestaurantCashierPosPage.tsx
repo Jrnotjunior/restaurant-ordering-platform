@@ -242,7 +242,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
           </div>
 
           {taxSettings && <p className="restaurant-pos-tax-status">{taxSettings.vatRegistered ? `VAT registered · ${taxSettings.vatRate.toFixed(2)}%${taxSettings.pricesVatInclusive ? ' · prices VAT-inclusive' : ' · prices VAT-exclusive'}` : 'Non-VAT registered'}</p>}
-          <button className="button button-primary restaurant-pos-submit" type="button" disabled={!cart.length || saving || !discountReady} onClick={() => void placeOrder()}>
+          <button className="button button-primary restaurant-pos-submit" type="button" disabled={!cart.length || saving || !discountReady || !taxSettings} onClick={() => void placeOrder()}>
             {saving ? 'Creating Order…' : 'Cash Paid — Send to Kitchen'}
           </button>
         </aside>
