@@ -51,6 +51,9 @@ function normalizeHours(value: unknown): OperatingHours {
 export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [address, setAddress] = useState('');
   const [hours, setHours] = useState<OperatingHours>(DEFAULT_HOURS);
+  const [vatRegistered, setVatRegistered] = useState(false);
+  const [pricesVatInclusive, setPricesVatInclusive] = useState(false);
+  const [vatRate, setVatRate] = useState('12');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -68,13 +71,16 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     try {
       const { data, error: loadError } = await supabase
         .from('restaurants')
-        .select('store_address,location_text,operating_hours')
+        .select('store_address,location_text,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate')
         .eq('id', restaurantId)
         .single();
 
       if (loadError) throw loadError;
       setAddress(data?.store_address ?? data?.location_text ?? '');
       setHours(normalizeHours(data?.operating_hours));
+      setVatRegistered(Boolean(data?.tax_vat_registered));
+      setPricesVatInclusive(Boolean(data?.tax_prices_vat_inclusive));
+      setVatRate(String(data?.tax_vat_rate ?? 12));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load store settings.');
     } finally {
@@ -107,6 +113,12 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       return;
     }
 
+    const parsedVatRate = Number(vatRate);
+    if (vatRegistered && (!Number.isFinite(parsedVatRate) || parsedVatRate < 0 || parsedVatRate > 100)) {
+      setError('Enter a valid VAT rate between 0 and 100.');
+      return;
+    }
+
     setSaving(true);
     setError('');
     setMessage('');
@@ -117,6 +129,9 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .update({
           store_address: address.trim(),
           operating_hours: hours,
+          tax_vat_registered: vatRegistered,
+          tax_prices_vat_inclusive: vatRegistered ? pricesVatInclusive : false,
+          tax_vat_rate: vatRegistered ? parsedVatRate : 0,
         })
         .eq('id', restaurantId);
 
@@ -150,6 +165,9 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .restaurant-settings-day input[type=time]:disabled{background:#f8fafc;color:#94a3b8}
         .restaurant-settings-toggle{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:600;white-space:nowrap}
         .restaurant-settings-summary{font-size:14px;color:#64748b}
+        .restaurant-settings-tax-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:end}
+        .restaurant-settings-tax-grid .restaurant-settings-toggle{min-height:44px}
+        @media(max-width:700px){.restaurant-settings-tax-grid{grid-template-columns:1fr}}
         .restaurant-settings-actions{display:flex;justify-content:flex-end}
         @media(max-width:700px){.restaurant-settings-day{grid-template-columns:1fr 1fr}.restaurant-settings-day-name{grid-column:1/-1}.restaurant-settings-toggle{grid-column:1/-1}.restaurant-settings-actions .button{width:100%}}
       `}</style>
@@ -180,6 +198,30 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
               required
             />
           </label>
+        </div>
+
+        <div className="restaurant-settings-card">
+          <h2>Tax &amp; receipt settings</h2>
+          <p className="restaurant-settings-help">These settings control POS tax calculations. The selected settings are copied into each finalized POS order so historical receipts remain unchanged if you update the store later.</p>
+          <div className="restaurant-settings-tax-grid">
+            <label className="restaurant-settings-toggle">
+              <input type="checkbox" checked={vatRegistered} disabled={loading || saving} onChange={(event) => { setVatRegistered(event.target.checked); setMessage(''); setError(''); }} />
+              VAT registered
+            </label>
+            {vatRegistered && (
+              <>
+                <label className="restaurant-settings-field">
+                  <span>VAT rate (%)</span>
+                  <input type="number" min="0" max="100" step="0.01" value={vatRate} onChange={(event) => { setVatRate(event.target.value); setMessage(''); setError(''); }} disabled={loading || saving} />
+                </label>
+                <label className="restaurant-settings-toggle">
+                  <input type="checkbox" checked={pricesVatInclusive} disabled={loading || saving} onChange={(event) => { setPricesVatInclusive(event.target.checked); setMessage(''); setError(''); }} />
+                  Menu prices are VAT-inclusive
+                </label>
+              </>
+            )}
+          </div>
+          <p className="restaurant-settings-help" style={{ marginTop: 12 }}>For Senior Citizen/PWD transactions, the POS applies the 20% discount to the eligible VAT-exclusive share and removes the corresponding VAT when the restaurant is VAT-registered. Verify the restaurant’s actual BIR registration and pricing treatment before enabling VAT settings.</p>
         </div>
 
         <div className="restaurant-settings-card">
