@@ -175,7 +175,8 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
         .restaurant-loyalty-rule{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
         .restaurant-loyalty-rule label{display:grid;gap:.4rem;color:var(--color-text);font-size:.85rem;font-weight:700}
         .restaurant-loyalty-rule label > span{color:var(--color-muted);font-size:.8rem;font-weight:800}
-        .restaurant-loyalty-rule input{width:100%;box-sizing:border-box;min-height:44px;padding:.7rem .8rem;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-background);color:var(--color-text);font:inherit}
+        .restaurant-loyalty-rule input{width:100%;box-sizing:border-box;min-height:44px;padding:.7rem .8rem;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-background);color:var(--color-text);font:inherit;appearance:textfield;-moz-appearance:textfield}
+        .restaurant-loyalty-rule input::-webkit-inner-spin-button,.restaurant-loyalty-rule input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
         .restaurant-loyalty-rule input:focus{border-color:var(--color-primary);outline:2px solid color-mix(in srgb,var(--color-primary) 15%,transparent)}
         .restaurant-loyalty-rule-preview{display:grid;gap:.25rem;padding:1rem;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-secondary)}
         .restaurant-loyalty-rule-preview span{color:var(--color-muted);font-size:.8rem;font-weight:800}
