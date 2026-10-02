@@ -294,8 +294,8 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
               <div className="restaurant-employee-details">
                 <div className="restaurant-employee-name-row"><h2>{rider.name}</h2><span className="restaurant-employee-role">Rider</span></div>
                 <p>{rider.mobileNumber}</p>
-                {rider.email ? {rider.email ? <p>{rider.email}</p> : null}
-                {!rider.isActive ? <p className="restaurant-employee-status">Inactive</p> : null} : null}
+                {rider.email ? <p>{rider.email}</p> : null}
+                {!rider.isActive ? <p className="restaurant-employee-status">Inactive</p> : null}
               </div>
               <div className="restaurant-employee-actions">
                 <button className="button button-secondary" type="button" onClick={() => setEditingRider(rider)} disabled={saving}>
