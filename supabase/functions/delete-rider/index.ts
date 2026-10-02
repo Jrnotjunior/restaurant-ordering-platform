@@ -69,10 +69,11 @@ Deno.serve(async (request) => {
     }
 
     const { data: rider, error: riderError } = await adminClient
-      .from("restaurant_riders")
-      .select("id,restaurant_id,auth_user_id,name")
+      .from("restaurant_staff")
+      .select("id,restaurant_id,auth_user_id,name,role")
       .eq("id", riderId)
       .eq("restaurant_id", restaurantId)
+      .eq("role", "rider")
       .maybeSingle();
 
     if (riderError) throw riderError;
@@ -92,7 +93,7 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: "You are not authorized to delete this rider." }, 403);
     }
 
-    // Delivery assignments currently reference riders with ON DELETE RESTRICT.
+    // Delivery assignments reference unified staff riders with ON DELETE RESTRICT.
     // Remove those assignment records first so a rider can be deleted without
     // deleting the associated order history. Orders keep their history because
     // orders.rider_id uses ON DELETE SET NULL.
@@ -105,14 +106,14 @@ Deno.serve(async (request) => {
     if (deleteAssignmentsError) throw deleteAssignmentsError;
 
     const { error: deleteRiderError } = await adminClient
-      .from("restaurant_riders")
+      .from("restaurant_staff")
       .delete()
       .eq("id", rider.id)
       .eq("restaurant_id", restaurantId);
 
     if (deleteRiderError) throw deleteRiderError;
 
-    // The database relation uses ON DELETE SET NULL, so removing the rider row
+    // The database relation uses ON DELETE SET NULL, so removing the staff rider row
     // does not remove the Supabase Auth account. Delete that account explicitly.
     if (rider.auth_user_id) {
       const { error: deleteAuthError } = await adminClient.auth.admin.deleteUser(rider.auth_user_id);
