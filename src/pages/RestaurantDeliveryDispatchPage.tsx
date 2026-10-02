@@ -215,6 +215,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
   }[status]);
 
   async function assignOrder(rider: Rider) {
+    if (role !== 'dispatcher') return;
     if (!supabase || !selectedOrder || assigning) return;
     const canAssign = rider.status === 'available';
     if (!canAssign) return;
@@ -266,6 +267,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
   }
 
   async function completePickup(order: ReadyOrder) {
+    if (role !== 'dispatcher') return;
     if (!supabase || assigning) return;
     setAssigning(true);
     setError('');
@@ -377,7 +379,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
                   </span>
                   <small>Ready at {order.readyAt}</small>
                 </div>
-                {activeTab === 'delivery' ? (
+                {role === 'dispatcher' && (activeTab === 'delivery' ? (
                   <button className="restaurant-dispatch-assign-button" type="button" onClick={() => { setSelectedOrder(order); setError(''); }}>
                     Assign to Rider
                   </button>
@@ -389,7 +391,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
                         ? 'Mark Handed to Courier'
                         : 'Confirm Pickup'}
                   </button>
-                )}
+                ))}
               </article>
             ))}
           </div>
