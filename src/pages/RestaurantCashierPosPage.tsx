@@ -53,7 +53,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const [orderType, setOrderType] = useState<'dine_in' | 'pickup'>('dine_in');
   const [customerName, setCustomerName] = useState('Walk-in Customer');
   const [cashierName, setCashierName] = useState('Cashier');
-  const [groupSize, setGroupSize] = useState(1);
+  const [groupSize, setGroupSize] = useState<number | ''>(1);
   const [beneficiaries, setBeneficiaries] = useState<DraftBeneficiary[]>([]);
   const [taxSettings, setTaxSettings] = useState<RestaurantTaxSettings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -129,7 +129,8 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const baseNetSales = taxSettings?.vatRegistered && taxSettings.pricesVatInclusive
     ? subtotal / (1 + taxSettings.vatRate / 100)
     : subtotal;
-  const eligibleShare = beneficiaries.length > 0 ? Number((baseNetSales / groupSize).toFixed(2)) : 0;
+  const effectiveGroupSize = Math.max(Number(groupSize) || 1, 1);
+  const eligibleShare = beneficiaries.length > 0 ? Number((baseNetSales / effectiveGroupSize).toFixed(2)) : 0;
   const discountAmount = beneficiaries.length ? Number((eligibleShare * beneficiaries.length * 0.20).toFixed(2)) : 0;
   const vatableSales = Math.max(Number((baseNetSales - eligibleShare * beneficiaries.length).toFixed(2)), 0);
   const vatAmount = taxSettings?.vatRegistered ? Number((vatableSales * taxSettings.vatRate / 100).toFixed(2)) : 0;
@@ -154,7 +155,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   }
 
   function addBeneficiary(type: PosDiscountType) {
-    if (beneficiaries.length >= groupSize) return;
+    if (beneficiaries.length >= effectiveGroupSize) return;
     setBeneficiaries((current) => [...current, { discountType: type, idType: defaultIdType(type), idNumber: '' }]);
   }
 
@@ -167,6 +168,11 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   }
 
   function changeGroupSize(value: string) {
+    const nextSize = Math.max(Number(value) || 1, 1);
+    if (value === '') {
+      setGroupSize('');
+      return;
+    }
     const nextSize = Math.max(Number(value) || 1, 1);
     setGroupSize(nextSize);
     setBeneficiaries((current) => current.slice(0, nextSize));
@@ -196,7 +202,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
         items: cart.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
       });
 
-      const financials = await applyPosGroupDiscounts(created.orderId, groupSize, beneficiaries);
+      const financials = await applyPosGroupDiscounts(created.orderId, effectiveGroupSize, beneficiaries);
       await confirmDineInPayment(created.orderId);
       window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
 
@@ -224,7 +230,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
     }
   }
 
-  const discountReady = beneficiaries.every((beneficiary) => beneficiary.idNumber.trim().length > 0) && beneficiaries.length <= groupSize;
+  const discountReady = beneficiaries.every((beneficiary) => beneficiary.idNumber.trim().length > 0) && beneficiaries.length <= effectiveGroupSize;
 
   return (
     <section className="restaurant-pos-page">
@@ -271,7 +277,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             <label className="restaurant-pos-field"><span>Number of customers</span><input type="number" min={1} value={groupSize} onChange={(event) => changeGroupSize(event.target.value)} disabled={saving} /></label>
 
             <div className="restaurant-pos-discount-types">
-              <button type="button" onClick={() => addBeneficiary('senior')} disabled={saving || beneficiaries.length >= groupSize}>+ Senior Citizen</button>
+              <button type="button" onClick={() => addBeneficiary('senior')} disabled={saving || beneficiaries.length >= effectiveGroupSize}>+ Senior Citizen</button>
               <button type="button" onClick={() => addBeneficiary('pwd')} disabled={saving || beneficiaries.length >= groupSize}>+ PWD</button>
             </div>
 
