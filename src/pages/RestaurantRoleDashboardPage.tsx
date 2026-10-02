@@ -129,7 +129,6 @@ function OwnerDashboard({ restaurantName, restaurantId }: { restaurantName?: str
     { label: 'Today\'s Orders', value: loading ? '—' : String(stats?.orders ?? 0) },
     { label: 'Pending Orders', value: loading ? '—' : String(stats?.pendingOrders ?? 0) },
     { label: 'Products', value: loading ? '—' : String(stats?.products ?? 0) },
-    { label: 'Employees', value: loading ? '—' : String(stats?.employees ?? 0) },
     { label: 'Active Deliveries', value: loading ? '—' : String(stats?.activeDeliveries ?? 0) },
   ], [loading, stats]);
 
