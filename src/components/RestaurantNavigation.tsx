@@ -1,13 +1,15 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { supabase } from '../services/supabaseClient';
 
+export type RestaurantNavigationRole = 'owner' | 'cashier' | 'kitchen' | 'dispatcher' | 'rider';
+
 type NavigationItem = {
   label: string;
   href: string;
   icon: 'orders' | 'products' | 'riders' | 'shipping' | 'sales' | 'dispatch' | 'settings';
 };
 
-const navigationItems: NavigationItem[] = [
+const ownerNavigationItems: NavigationItem[] = [
   { label: 'Orders', href: '#restaurant/orders', icon: 'orders' },
   { label: 'Products', href: '#restaurant/menu', icon: 'products' },
   { label: 'Riders', href: '#restaurant/riders', icon: 'riders' },
@@ -62,7 +64,15 @@ function getCurrentRoute() {
   return window.location.hash || '#restaurant/dashboard';
 }
 
-export function RestaurantNavigation() {
+const roleNavigationItems: Record<RestaurantNavigationRole, NavigationItem[]> = {
+  owner: ownerNavigationItems,
+  cashier: [{ label: 'Orders', href: '#restaurant/cashier', icon: 'orders' }],
+  kitchen: [{ label: 'Kitchen', href: '#restaurant/kitchen', icon: 'orders' }],
+  dispatcher: [{ label: 'Dispatch', href: '#restaurant/dispatcher', icon: 'dispatch' }],
+  rider: [{ label: 'Deliveries', href: '#rider/dashboard', icon: 'dispatch' }],
+};
+
+export function RestaurantNavigation({ role = 'owner' }: { role?: RestaurantNavigationRole }) {
   const [currentRoute, setCurrentRoute] = useState(getCurrentRoute);
   const [accountOpen, setAccountOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
@@ -118,7 +128,7 @@ export function RestaurantNavigation() {
     <>
       <div className="restaurant-navigation-row">
         <nav className="restaurant-navigation" aria-label="Restaurant operations navigation">
-          {navigationItems.map((item) => {
+          {roleNavigationItems[role].map((item) => {
             const active = currentRoute === item.href;
             return (
               <a
