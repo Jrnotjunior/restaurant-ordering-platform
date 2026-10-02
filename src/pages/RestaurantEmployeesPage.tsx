@@ -50,6 +50,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
   const [riders, setRiders] = useState<RiderAccount[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffAccount | null>(null);
+  const [editingRider, setEditingRider] = useState<RiderAccount | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -297,23 +298,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
                 {!rider.isActive ? <p className="restaurant-employee-status">Inactive</p> : null} : null}
               </div>
               <div className="restaurant-employee-actions">
-                <button className="button button-secondary" type="button" onClick={() => {
-                  const name = window.prompt('Rider name', rider.name);
-                  if (name === null) return;
-                  const mobileNumber = window.prompt('Mobile number', rider.mobileNumber);
-                  if (mobileNumber === null) return;
-                  const email = window.prompt('Login email', rider.email);
-                  if (email === null) return;
-                  const form = document.createElement('form');
-                  const fields = { name, mobileNumber, email };
-                  Object.entries(fields).forEach(([key, value]) => {
-                    const input = document.createElement('input');
-                    input.name = key;
-                    input.value = value;
-                    form.appendChild(input);
-                  });
-                  void handleRiderEdit({ preventDefault: () => undefined, currentTarget: form } as unknown as FormEvent<HTMLFormElement>, rider);
-                }} disabled={saving}>
+                <button className="button button-secondary" type="button" onClick={() => setEditingRider(rider)} disabled={saving}>
                   Edit
                 </button>
                 <button className="button button-secondary" type="button" onClick={() => void toggleRiderActive(rider)} disabled={saving}>
@@ -324,6 +309,29 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
           ))}
         </>}
       </div>
+
+      {editingRider ? (
+        <div className="restaurant-employee-modal-backdrop" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget && !saving) setEditingRider(null);
+        }}>
+          <form className="restaurant-employee-modal restaurant-employee-edit-modal" onSubmit={(event) => void handleRiderEdit(event, editingRider)}>
+            <div className="restaurant-employee-modal-header">
+              <div><p className="eyebrow">Edit rider</p><h2>Update employee details</h2></div>
+              <button className="restaurant-employee-modal-close" type="button" onClick={() => setEditingRider(null)} disabled={saving} aria-label="Close">×</button>
+            </div>
+            <div className="restaurant-employee-form-grid">
+              <label>Full name<input name="name" type="text" defaultValue={editingRider.name} required /></label>
+              <label>Mobile number<input name="mobileNumber" type="tel" defaultValue={editingRider.mobileNumber} required /></label>
+              <label>Login email<input name="email" type="email" defaultValue={editingRider.email} /></label>
+              <label>Role<input value="Rider" readOnly /></label>
+            </div>
+            <div className="restaurant-employee-modal-actions">
+              <button className="button button-secondary" type="button" onClick={() => setEditingRider(null)} disabled={saving}>Cancel</button>
+              <button className="button button-primary" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save Changes'}</button>
+            </div>
+          </form>
+        </div>
+      ) : null}
 
       {editingStaff ? (
         <div className="restaurant-employee-modal-backdrop" role="presentation" onMouseDown={(event) => {
