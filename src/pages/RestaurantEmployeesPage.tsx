@@ -8,6 +8,7 @@ type RiderAccount = {
   name: string;
   mobileNumber: string;
   email: string;
+  isActive: boolean;
 };
 
 type StaffAccount = {
@@ -35,6 +36,7 @@ type RiderRow = {
   name: string;
   mobile_number: string;
   email: string | null;
+  is_active: boolean;
 };
 
 const roleLabels: Record<StaffRole, string> = {
@@ -63,7 +65,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
           order: 'created_at.asc',
         }),
         supabaseGet<RiderRow>('restaurant_riders', {
-          select: 'id,name,mobile_number,email',
+          select: 'id,name,mobile_number,email,is_active',
           restaurant_id: `eq.${restaurantId}`,
           order: 'created_at.asc',
         }),
@@ -82,6 +84,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
         name: row.name,
         mobileNumber: row.mobile_number,
         email: row.email ?? '',
+        isActive: row.is_active,
       })));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load employees.');
@@ -91,6 +94,53 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
   }
 
   useEffect(() => { void loadStaff(); }, [restaurantId]);
+
+  async function handleRiderEdit(event: FormEvent<HTMLFormElement>, rider: RiderAccount) {
+    event.preventDefault();
+    if (!supabase) return;
+
+    const form = new FormData(event.currentTarget);
+    const name = String(form.get('name') || '').trim();
+    const mobileNumber = String(form.get('mobileNumber') || '').trim();
+    const email = String(form.get('email') || '').trim();
+
+    setSaving(true);
+    setError('');
+    try {
+      const { error: updateError } = await supabase
+        .from('restaurant_riders')
+        .update({ name, mobile_number: mobileNumber, email: email || null })
+        .eq('id', rider.id)
+        .eq('restaurant_id', restaurantId);
+
+      if (updateError) throw updateError;
+      await loadStaff();
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : 'Unable to update rider.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function toggleRiderActive(rider: RiderAccount) {
+    if (!supabase) return;
+    setSaving(true);
+    setError('');
+    try {
+      const { error: updateError } = await supabase
+        .from('restaurant_riders')
+        .update({ is_active: !rider.isActive })
+        .eq('id', rider.id)
+        .eq('restaurant_id', restaurantId);
+
+      if (updateError) throw updateError;
+      await loadStaff();
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : 'Unable to update rider status.');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -243,10 +293,32 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
               <div className="restaurant-employee-details">
                 <div className="restaurant-employee-name-row"><h2>{rider.name}</h2><span className="restaurant-employee-role">Rider</span></div>
                 <p>{rider.mobileNumber}</p>
-                {rider.email ? <p>{rider.email}</p> : null}
+                {rider.email ? {rider.email ? <p>{rider.email}</p> : null}
+                {!rider.isActive ? <p className="restaurant-employee-status">Inactive</p> : null} : null}
               </div>
               <div className="restaurant-employee-actions">
-                <a className="button button-secondary" href="#restaurant/riders">Manage Rider</a>
+                <button className="button button-secondary" type="button" onClick={() => {
+                  const name = window.prompt('Rider name', rider.name);
+                  if (name === null) return;
+                  const mobileNumber = window.prompt('Mobile number', rider.mobileNumber);
+                  if (mobileNumber === null) return;
+                  const email = window.prompt('Login email', rider.email);
+                  if (email === null) return;
+                  const form = document.createElement('form');
+                  const fields = { name, mobileNumber, email };
+                  Object.entries(fields).forEach(([key, value]) => {
+                    const input = document.createElement('input');
+                    input.name = key;
+                    input.value = value;
+                    form.appendChild(input);
+                  });
+                  void handleRiderEdit({ preventDefault: () => undefined, currentTarget: form } as unknown as FormEvent<HTMLFormElement>, rider);
+                }} disabled={saving}>
+                  Edit
+                </button>
+                <button className="button button-secondary" type="button" onClick={() => void toggleRiderActive(rider)} disabled={saving}>
+                  {rider.isActive ? 'Deactivate' : 'Activate'}
+                </button>
               </div>
             </article>
           ))}
