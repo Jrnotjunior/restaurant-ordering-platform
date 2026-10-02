@@ -292,7 +292,19 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
         }
       `}</style>
 
-            {!isCashier && !isKitchen && <div className="restaurant-orders-tabs">
+            <div className="restaurant-orders-header">
+        <div>
+          <p className="eyebrow">Restaurant operations</p>
+          <h1>Orders</h1>
+          <p>Track every order from payment confirmation to completion.</p>
+        </div>
+        <span className={`restaurant-dashboard-live-status is-${realtimeStatus}`}>
+          <span className="restaurant-dashboard-live-dot" />
+          {realtimeStatus === 'live' ? 'Live' : realtimeStatus === 'connecting' ? 'Connecting…' : 'Reconnecting…'}
+        </span>
+      </div>
+
+      {!isCashier && !isKitchen && <div className="restaurant-orders-tabs">
         <button
           className={filter === 'active' ? 'is-active' : ''}
           type="button"
