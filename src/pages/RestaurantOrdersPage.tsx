@@ -256,19 +256,23 @@ export function RestaurantOrdersPage({ restaurantId }: Props) {
           html,body{width:80mm!important;margin:0!important;padding:0!important;background:#fff!important}
           body *{visibility:hidden!important}
           .restaurant-order-print-receipt,.restaurant-order-print-receipt *{visibility:visible!important}
-          .restaurant-order-print-receipt{display:block!important;width:80mm!important;box-sizing:border-box!important;margin:0!important;padding:5mm 4mm!important;font-family:Arial,sans-serif!important;font-size:11px!important;line-height:1.35!important;color:#000!important;background:#fff!important}
+          .restaurant-order-print-receipt{display:block!important;width:80mm!important;max-width:80mm!important;box-sizing:border-box!important;margin:0!important;padding:4mm 4mm 6mm!important;font-family:Arial,sans-serif!important;font-size:12px!important;line-height:1.4!important;color:#000!important;background:#fff!important}
           .restaurant-order-print-receipt *{box-sizing:border-box!important}
           .receipt-center{text-align:center!important}
-          .receipt-title{font-size:16px!important;font-weight:800!important;margin:0 0 4px!important}
-          .receipt-order-number{font-size:12px!important;font-weight:800!important;word-break:break-word!important}
-          .receipt-muted{font-size:10px!important}
-          .receipt-divider{border:0!important;border-top:1px dashed #000!important;margin:8px 0!important}
-          .receipt-row{display:flex!important;justify-content:space-between!important;gap:10px!important}
+          .receipt-title{font-size:18px!important;line-height:1.2!important;font-weight:800!important;margin:0 0 5px!important}
+          .receipt-order-number{font-size:13px!important;line-height:1.25!important;font-weight:800!important;word-break:break-word!important}
+          .receipt-muted{font-size:11px!important}
+          .receipt-divider{border:0!important;border-top:1px dashed #000!important;margin:9px 0!important}
+          .receipt-row{display:flex!important;justify-content:space-between!important;align-items:flex-start!important;gap:12px!important}
+          .receipt-row span:first-child{min-width:0!important}
           .receipt-row span:last-child{white-space:nowrap!important;text-align:right!important}
           .receipt-label{font-weight:700!important}
-          .receipt-item{display:flex!important;justify-content:space-between!important;gap:8px!important}
+          .receipt-item{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:start!important;column-gap:10px!important}
+          .receipt-item + .receipt-item{margin-top:3px!important}
           .receipt-item-name{min-width:0!important;overflow-wrap:anywhere!important}
-          .receipt-total{font-size:14px!important;font-weight:800!important}
+          .receipt-item > span:last-child{white-space:nowrap!important;text-align:right!important}
+          .receipt-total{font-size:16px!important;line-height:1.25!important;font-weight:800!important}
+          .receipt-center:last-child{font-size:11px!important}
         }
       `}</style>
 
