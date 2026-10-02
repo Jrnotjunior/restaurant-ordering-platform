@@ -71,7 +71,6 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
   const [selectedOrder, setSelectedOrder] = useState<ReadyOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [assigning, setAssigning] = useState(false);
-  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
 
@@ -222,7 +221,6 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
 
     setAssigning(true);
     setError('');
-    setMessage('');
 
     try {
       const { error: assignmentError } = await supabase
@@ -259,7 +257,6 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
       }
 
       setSelectedOrder(null);
-      setMessage(`${selectedOrder.orderNumber} assigned to ${rider.name}.`);
       await loadDispatchData();
     } catch (assignError) {
       setError(assignError instanceof Error ? assignError.message : 'Unable to assign this delivery.');
@@ -282,7 +279,6 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
         .in('order_type', ['pickup', 'dine_in'])
         .eq('status', 'ready');
       if (orderError) throw orderError;
-      setMessage(order.orderNumber + ' marked as handed off.');
       await loadDispatchData();
     } catch (pickupError) {
       setError(pickupError instanceof Error ? pickupError.message : 'Unable to complete this pickup.');
@@ -305,7 +301,6 @@ export function RestaurantDeliveryDispatchPage({ restaurantId }: Props) {
         </span>
       </header>
 
-      {message ? <div className="restaurant-dispatch-message" role="status">{message}</div> : null}
       {error ? <div className="restaurant-dispatch-message" role="alert">{error}</div> : null}
 
       <main className="restaurant-dispatch-workflow">
