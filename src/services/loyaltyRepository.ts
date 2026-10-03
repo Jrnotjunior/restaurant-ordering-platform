@@ -130,3 +130,28 @@ export async function getMyCustomerProfileId(restaurantId: string): Promise<stri
   });
   return rows[0] ?? null;
 }
+
+export type CustomerCheckoutProfile = {
+  customerId: string;
+  name: string;
+  phone: string | null;
+};
+
+export async function getMyCustomerProfile(restaurantId: string): Promise<CustomerCheckoutProfile | null> {
+  const rows = await supabaseRpc<{
+    customer_id: string;
+    name: string;
+    phone: string | null;
+  }>('get_my_customer_profile', {
+    p_restaurant_id: restaurantId,
+  });
+
+  const row = rows[0];
+  if (!row) return null;
+
+  return {
+    customerId: row.customer_id,
+    name: row.name,
+    phone: row.phone ?? null,
+  };
+}
