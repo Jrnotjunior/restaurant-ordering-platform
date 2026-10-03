@@ -604,6 +604,12 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
             <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 10, background: '#f8fafc', color: '#334155' }}>
               <strong>Customer</strong><div>{selectedOrder.customerName}</div>
             </div>
+            {selectedOrder.notes.trim() && (
+              <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 10, background: '#fffbeb', color: '#334155' }}>
+                <strong>Special Instructions</strong>
+                <div style={{ marginTop: 4, whiteSpace: 'pre-wrap' }}>{selectedOrder.notes}</div>
+              </div>
+            )}
             <div className="restaurant-order-items" style={{ marginTop: 18 }}>
               {selectedOrder.items.map((item) => (
                 <div className={`restaurant-order-item${isKitchen ? ' restaurant-kitchen-order-item' : ''}`} key={item.id}>
@@ -701,6 +707,15 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
               </div>
               {selectedOrder.customerName && <div>{selectedOrder.customerName}</div>}
             </div>
+            {selectedOrder.notes.trim() && (
+              <>
+                <hr className="receipt-divider" />
+                <div>
+                  <div className="receipt-label">SPECIAL INSTRUCTIONS</div>
+                  <div style={{ whiteSpace: 'pre-wrap' }}>{selectedOrder.notes}</div>
+                </div>
+              </>
+            )}
             <hr className="receipt-divider" />
             <div>
               {selectedOrder.items.map((item) => (
