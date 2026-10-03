@@ -742,3 +742,109 @@ textarea {
   align-self: flex-start;
   padding-top: 6px;
 }
+
+
+/* Store-owner and kitchen menus use the same product card presentation as the customer menu. */
+.restaurant-management-product-card {
+  position: relative;
+  height: 166px;
+  min-height: 166px;
+  box-sizing: border-box;
+}
+.restaurant-management-product-card .product-card-main {
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  padding: 3px 120px 3px 3px;
+  align-items: flex-start;
+}
+.restaurant-management-product-card .product-card-media {
+  flex: 0 0 160px;
+}
+.restaurant-management-product-card .product-card-image,
+.restaurant-management-product-card .product-card-image-placeholder {
+  width: 160px;
+  height: 160px;
+  margin: 0;
+}
+.restaurant-management-product-card .product-card-content {
+  align-self: flex-start;
+  padding-top: 8px;
+}
+.restaurant-management-product-status {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+.restaurant-management-product-status { color: #18794e; }
+.product-card-sold-out .restaurant-management-product-status { color: #64748b; }
+.restaurant-management-product-action,
+.restaurant-management-product-icon {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  margin: 0;
+  padding: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 21px;
+  line-height: 1;
+}
+.restaurant-management-product-actions {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  gap: 5px;
+}
+.restaurant-management-product-actions .restaurant-management-product-icon {
+  position: static;
+}
+.restaurant-management-product-icon.is-danger {
+  background: #fff;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+@media (max-width: 480px) {
+  .restaurant-management-product-card {
+    height: 146px;
+    min-height: 146px;
+  }
+  .restaurant-management-product-card .product-card-main {
+    padding: 3px 92px 3px 3px;
+  }
+  .restaurant-management-product-card .product-card-media {
+    flex-basis: 140px;
+  }
+  .restaurant-management-product-card .product-card-image,
+  .restaurant-management-product-card .product-card-image-placeholder {
+    width: 140px;
+    height: 140px;
+  }
+  .restaurant-management-product-card .product-card-content {
+    padding-top: 8px;
+  }
+  .restaurant-management-product-action,
+  .restaurant-management-product-icon {
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+  }
+  .restaurant-management-product-actions {
+    right: 6px;
+    bottom: 6px;
+    gap: 4px;
+  }
+  .restaurant-management-product-status {
+    left: 6px;
+    bottom: 6px;
+  }
+}
