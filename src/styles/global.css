@@ -624,3 +624,23 @@ textarea {
   width: fit-content;
   margin: 1.5rem auto 0;
 }
+
+
+/* Compact two-column product cards */
+.menu-product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+.product-card-image-button { width: 100px; height: 100px; margin: 0.75rem auto 0; }
+.product-card-content { padding: 0.7rem; }
+.product-card-heading { gap: 0.4rem; }
+.product-card-heading h3,
+.product-card-price { font-size: 0.9rem; line-height: 1.25; }
+.product-card-content > p { margin-top: 0.35rem; font-size: 0.8rem; line-height: 1.35; }
+.product-card-action { min-height: 40px; margin-top: 0.7rem; font-size: 0.8rem; }
+@media (max-width: 480px) {
+  .menu-product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; }
+  .product-card-image-button { width: 90px; height: 90px; margin-top: 0.65rem; }
+  .product-card-content { padding: 0.6rem; }
+  .product-card-heading h3,
+  .product-card-price { font-size: 0.82rem; }
+  .product-card-content > p { font-size: 0.75rem; }
+  .product-card-action { min-height: 38px; margin-top: 0.6rem; font-size: 0.75rem; }
+}
