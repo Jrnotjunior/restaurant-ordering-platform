@@ -209,7 +209,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
   }
 
   return (
-    <section className="restaurant-employees-page">
+    <section className="restaurant-page restaurant-employees-page">
       <div className="restaurant-employees-card">
         <div className="restaurant-employees-card-header">
           <div>
