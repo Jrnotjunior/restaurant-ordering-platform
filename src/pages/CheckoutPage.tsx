@@ -455,7 +455,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
           </div>}
           {redeemPoints && loyaltyDiscountPreview > 0 && <div className="checkout-summary-row checkout-loyalty-discount"><span>Loyalty Discount</span><strong>-₱{loyaltyDiscountPreview.toFixed(2)}</strong></div>}
           <div className="checkout-summary-total"><span>Total</span><strong>₱{checkoutTotal.toFixed(2)}</strong></div></div>
-          <button className="button button-primary checkout-submit checkout-summary-submit" type="button" disabled={!canContinue} onClick={() => { setSubmitError(''); setPaymentMethod(''); setShowPaymentModal(true); }}>Continue to Payment</button>
+          <button className="button button-primary" type="button" disabled={!canContinue} onClick={() => { setSubmitError(''); setPaymentMethod(''); setShowPaymentModal(true); }}>Continue to Payment</button>
         </aside>
       </div>
 
