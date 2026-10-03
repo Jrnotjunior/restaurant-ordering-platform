@@ -2,12 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
 import { supabase } from '../services/supabaseClient';
 
-type RestaurantOwnerLoginPageProps = {
-  embedded?: boolean;
-  onClose?: () => void;
-};
-
-export function RestaurantOwnerLoginPage({ embedded = false, onClose }: RestaurantOwnerLoginPageProps) {
+export function RestaurantOwnerLoginPage() {
   const { user, loading: authLoading, signIn, signOut, error: authError } = useRestaurantOwnerAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -102,7 +97,7 @@ export function RestaurantOwnerLoginPage({ embedded = false, onClose }: Restaura
   }
 
   if (authLoading) {
-    return <main className={`restaurant-owner-auth-page${embedded ? " restaurant-owner-auth-page-embedded" : ""}`}><section className="restaurant-owner-auth-card"><p>Loading account…</p></section></main>;
+    return <main className="restaurant-owner-auth-page"><section className="restaurant-owner-auth-card"><p>Loading account…</p></section></main>;
   }
 
   const signedInCustomer = (user?.app_metadata?.role ?? user?.user_metadata?.role) === 'customer';
@@ -113,8 +108,8 @@ export function RestaurantOwnerLoginPage({ embedded = false, onClose }: Restaura
       : 'Customer';
 
     return (
-      <main className={`restaurant-owner-auth-page${embedded ? " restaurant-owner-auth-page-embedded" : ""}`}>
-        <section className="restaurant-owner-auth-card" aria-labelledby={embedded ? "account-modal-title" : "customer-account-title"}>
+      <main className="restaurant-owner-auth-page">
+        <section className="restaurant-owner-auth-card" aria-labelledby="customer-account-title">
           <p className="eyebrow">Customer account</p>
           <h1 id="customer-account-title">Welcome, {customerName}.</h1>
           <p>You are signed in to your customer account.</p>
@@ -123,8 +118,8 @@ export function RestaurantOwnerLoginPage({ embedded = false, onClose }: Restaura
             <span>{user.email}</span>
           </div>
           <div className="restaurant-owner-auth-actions">
-            {onClose ? <button className="button button-primary" type="button" onClick={onClose}>Back to menu</button> : <a className="button button-primary" href="#menu">Back to menu</a>}
-            <button className="button button-secondary" type="button" onClick={() => void signOut().then(() => { onClose?.(); window.location.hash = '#menu'; })}>
+            <a className="button button-primary" href="#menu">Back to menu</a>
+            <button className="button button-secondary" type="button" onClick={() => void signOut().then(() => { window.location.hash = '#menu'; })}>
               Sign out
             </button>
           </div>
@@ -134,8 +129,8 @@ export function RestaurantOwnerLoginPage({ embedded = false, onClose }: Restaura
   }
 
   return (
-    <main className={`restaurant-owner-auth-page${embedded ? " restaurant-owner-auth-page-embedded" : ""}`}>
-      <section className="restaurant-owner-auth-card" aria-labelledby={embedded ? "account-modal-title" : "account-login-title"}>
+    <main className="restaurant-owner-auth-page">
+      <section className="restaurant-owner-auth-card" aria-labelledby="account-login-title">
         <p className="eyebrow">Account access</p>
         <h1 id="account-login-title">Sign in</h1>
         <p>Use your account credentials. Your role determines which area of the system you can access.</p>
@@ -157,7 +152,7 @@ export function RestaurantOwnerLoginPage({ embedded = false, onClose }: Restaura
         </form>
 
         <p className="restaurant-auth-switch">
-          Don't have an account? <a href="#signup" onClick={onClose}>Create account</a>
+          Don't have an account? <a href="#signup">Create account</a>
         </p>
       </section>
     </main>
