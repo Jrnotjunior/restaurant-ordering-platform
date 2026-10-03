@@ -27,7 +27,7 @@ export function CustomerSignUpPage() {
       return;
     }
 
-    if (!/^09\\d{9}$/.test(trimmedPhone)) {
+    if (!/^09\d{9}$/.test(trimmedPhone)) {
       setError('Phone number must start with 09 and contain exactly 11 digits.');
       return;
     }
@@ -126,7 +126,7 @@ export function CustomerSignUpPage() {
               inputMode="numeric"
               autoComplete="tel"
               value={phone}
-              onChange={(event) => setPhone(event.target.value.replace(/\\D/g, '').slice(0, 11))}
+              onChange={(event) => setPhone(event.target.value.replace(/\D/g, '').slice(0, 11))}
               maxLength={11}
               required
               disabled={submitting}
