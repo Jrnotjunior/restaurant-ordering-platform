@@ -55,6 +55,8 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [pricesVatInclusive, setPricesVatInclusive] = useState(false);
   const [vatRate, setVatRate] = useState('12');
   const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
+  const [logoUrl, setLogoUrl] = useState('');
+  const [logoUploading, setLogoUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -72,12 +74,13 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     try {
       const { data, error: loadError } = await supabase
         .from('restaurants')
-        .select('store_address,location_text,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate,cash_on_delivery_enabled')
+        .select('store_address,location_text,logo_url,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate,cash_on_delivery_enabled')
         .eq('id', restaurantId)
         .single();
 
       if (loadError) throw loadError;
       setAddress(data?.store_address ?? data?.location_text ?? '');
+      setLogoUrl(data?.logo_url ?? '');
       setHours(normalizeHours(data?.operating_hours));
       setVatRegistered(Boolean(data?.tax_vat_registered));
       setPricesVatInclusive(Boolean(data?.tax_prices_vat_inclusive));
@@ -93,6 +96,53 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   useEffect(() => {
     void loadSettings();
   }, [restaurantId]);
+
+  async function handleLogoChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file || !supabase) return;
+
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      setError('Logo must be a PNG, JPG, or WebP image.');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setError('Logo must be 2 MB or smaller.');
+      return;
+    }
+
+    setLogoUploading(true);
+    setError('');
+    setMessage('');
+    try {
+      const extension = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
+      const path = `${restaurantId}/logo.${extension}`;
+      const { error: uploadError } = await supabase.storage
+        .from('restaurant-logos')
+        .upload(path, file, { upsert: true, contentType: file.type, cacheControl: '3600' });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('restaurant-logos')
+        .getPublicUrl(path);
+      const publicUrl = publicUrlData.publicUrl;
+
+      const { error: saveError } = await supabase
+        .from('restaurants')
+        .update({ logo_url: publicUrl })
+        .eq('id', restaurantId);
+
+      if (saveError) throw saveError;
+
+      setLogoUrl(publicUrl);
+      setMessage('Restaurant logo updated successfully.');
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : 'Unable to upload restaurant logo.');
+    } finally {
+      setLogoUploading(false);
+    }
+  }
 
   function updateDay(day: DayKey, patch: Partial<DayHours>) {
     setHours((current) => ({
@@ -163,6 +213,12 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .restaurant-settings-switch input:checked + .restaurant-settings-switch-track .restaurant-settings-switch-thumb{transform:translateX(20px)}
         .restaurant-settings-switch input:focus-visible + .restaurant-settings-switch-track{outline:2px solid #101b2f;outline-offset:2px}
         .restaurant-settings-switch input:disabled + .restaurant-settings-switch-track{opacity:.55}
+        .restaurant-settings-logo-row{display:flex;align-items:center;gap:16px;margin-top:16px;flex-wrap:wrap}
+        .restaurant-settings-logo-preview{width:96px;height:96px;border:1px solid #dbe2ea;border-radius:12px;background:#f8fafc;display:flex;align-items:center;justify-content:center;overflow:hidden;color:#94a3b8;font-size:12px}
+        .restaurant-settings-logo-preview img{width:100%;height:100%;object-fit:contain}
+        .restaurant-settings-logo-button{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center}
+        .restaurant-settings-logo-button input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+        .restaurant-settings-logo-button input:disabled{cursor:not-allowed}
         .restaurant-settings-card{padding:24px;border:1px solid #e1e5eb;border-radius:14px;background:#fff}
         .restaurant-settings-card h2{margin:0 0 8px}
         .restaurant-settings-help{margin:0;color:#64748b;line-height:1.6}
@@ -194,6 +250,25 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       {message && <div className="restaurant-shipping-message is-success" role="status">{message}</div>}
 
       <form className="restaurant-settings-form" onSubmit={handleSave}>
+        <div className="restaurant-settings-card">
+          <h2>Restaurant logo</h2>
+          <p className="restaurant-settings-help">Upload the logo customers will see in the restaurant header. PNG, JPG, or WebP up to 2 MB.</p>
+          <div className="restaurant-settings-logo-row">
+            <div className="restaurant-settings-logo-preview">
+              {logoUrl ? <img src={logoUrl} alt="Restaurant logo" /> : <span>No logo</span>}
+            </div>
+            <label className="button button-secondary restaurant-settings-logo-button">
+              {logoUploading ? 'Uploading…' : 'Choose logo'}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(event) => void handleLogoChange(event)}
+                disabled={loading || saving || logoUploading}
+              />
+            </label>
+          </div>
+        </div>
+
         <div className="restaurant-settings-card">
           <h2>Store address</h2>
           <p className="restaurant-settings-help">This address is shown to customers for pickup orders. It is stored per restaurant, so the platform can be reused by different restaurant owners.</p>
