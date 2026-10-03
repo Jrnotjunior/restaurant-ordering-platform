@@ -74,6 +74,11 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
   const [assigning, setAssigning] = useState(false);
   const [error, setError] = useState('');
   const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
+  const [dispatchTabsSlot, setDispatchTabsSlot] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setDispatchTabsSlot(document.getElementById('restaurant-dispatch-tabs-slot'));
+  }, []);
 
   async function loadDispatchData() {
     if (!supabase) {
@@ -308,38 +313,35 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
       {error ? <div className="restaurant-dispatch-message" role="alert">{error}</div> : null}
 
       <main className="restaurant-dispatch-workflow">
-        {(() => {
-          const slot = typeof document !== 'undefined' ? document.getElementById('restaurant-dispatch-tabs-slot') : null;
-          return slot ? createPortal(
-            <nav className="restaurant-dispatch-tabs" aria-label="Dispatch order type">
-          <button
-            type="button"
-            className={'restaurant-dispatch-tab' + (activeTab === 'delivery' ? ' is-active' : '')}
-            onClick={() => setActiveTab('delivery')}
-          >
-            <span>Delivery</span>
-            <span className="restaurant-dispatch-tab-count">{deliveryOrders.length}</span>
-          </button>
-          <button
-            type="button"
-            className={'restaurant-dispatch-tab' + (activeTab === 'pickup' ? ' is-active' : '')}
-            onClick={() => setActiveTab('pickup')}
-          >
-            <span>Pick Up</span>
-            <span className="restaurant-dispatch-tab-count">{pickupOrders.length}</span>
-          </button>
-          <button
-            type="button"
-            className={'restaurant-dispatch-tab' + (activeTab === 'dine_in' ? ' is-active' : '')}
-            onClick={() => setActiveTab('dine_in')}
-          >
-            <span>Dine In</span>
-            <span className="restaurant-dispatch-tab-count">{dineInOrders.length}</span>
-          </button>
-        </nav>,
-            slot,
-          ) : null;
-        })()}
+        {dispatchTabsSlot ? createPortal(
+  <nav className="restaurant-dispatch-tabs" aria-label="Dispatch order type">
+<button
+  type="button"
+  className={'restaurant-dispatch-tab' + (activeTab === 'delivery' ? ' is-active' : '')}
+  onClick={() => setActiveTab('delivery')}
+>
+  <span>Delivery</span>
+  <span className="restaurant-dispatch-tab-count">{deliveryOrders.length}</span>
+</button>
+<button
+  type="button"
+  className={'restaurant-dispatch-tab' + (activeTab === 'pickup' ? ' is-active' : '')}
+  onClick={() => setActiveTab('pickup')}
+>
+  <span>Pick Up</span>
+  <span className="restaurant-dispatch-tab-count">{pickupOrders.length}</span>
+</button>
+<button
+  type="button"
+  className={'restaurant-dispatch-tab' + (activeTab === 'dine_in' ? ' is-active' : '')}
+  onClick={() => setActiveTab('dine_in')}
+>
+  <span>Dine In</span>
+  <span className="restaurant-dispatch-tab-count">{dineInOrders.length}</span>
+</button>
+        </nav>,,
+          dispatchTabsSlot,
+        ) : null}
 
         <section className="restaurant-dispatch-card restaurant-dispatch-ready-card">
           <div className="restaurant-dispatch-card-heading">
