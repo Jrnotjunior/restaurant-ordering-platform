@@ -67,17 +67,34 @@ Deno.serve(async (request) => {
     const storedItems = Array.isArray(pendingPayment.items) ? pendingPayment.items : [];
     if (!storedItems.length) return jsonResponse({ error: "The payment has no items." }, 400);
 
-    const lineItems = storedItems.map((item: {
-      product_name: string;
-      unit_price: number;
-      quantity: number;
-    }) => ({
-      name: item.product_name,
-      description: item.product_name,
-      amount: Math.round(Number(item.unit_price) * 100),
-      currency: "PHP",
-      quantity: Number(item.quantity),
-    }));
+    const loyaltyDiscount = Math.round(Number(pendingPayment.loyalty_discount_amount ?? 0) * 100);
+    const productUnits: Array<{ name: string; description: string; amount: number; currency: "PHP"; quantity: number }> = [];
+
+    for (const item of storedItems as Array<{ product_name: string; unit_price: number; quantity: number }>) {
+      const unitAmount = Math.round(Number(item.unit_price) * 100);
+      for (let index = 0; index < Number(item.quantity); index += 1) {
+        productUnits.push({
+          name: item.product_name,
+          description: item.product_name,
+          amount: unitAmount,
+          currency: "PHP",
+          quantity: 1,
+        });
+      }
+    }
+
+    let remainingDiscount = loyaltyDiscount;
+    for (const item of productUnits) {
+      if (remainingDiscount <= 0) break;
+      const reduction = Math.min(item.amount, remainingDiscount);
+      item.amount -= reduction;
+      remainingDiscount -= reduction;
+    }
+
+    const lineItems = productUnits.filter((item) => item.amount > 0);
+    if (!lineItems.length) {
+      return jsonResponse({ error: "The discounted payment amount must be greater than zero." }, 409);
+    }
 
     const deliveryFee = Math.round(Number(pendingPayment.delivery_fee ?? 0) * 100);
     if (deliveryFee > 0) {
@@ -88,6 +105,10 @@ Deno.serve(async (request) => {
         currency: "PHP",
         quantity: 1,
       });
+    }
+
+    if (remainingDiscount > 0) {
+      return jsonResponse({ error: "The loyalty discount could not be applied to the payment items." }, 409);
     }
 
     const lineItemTotal = lineItems.reduce((sum, item) => sum + item.amount * item.quantity, 0);
