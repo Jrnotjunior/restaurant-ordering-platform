@@ -1,6 +1,5 @@
 /* Restaurant dashboard visual standard. Sales is the reference page. */
 :root {
-  --dashboard-width: var(--restaurant-content-width, 1140px);
   --dashboard-border: #e5e7eb;
   --dashboard-muted: #64748b;
   --dashboard-text: #0f172a;
