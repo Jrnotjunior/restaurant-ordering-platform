@@ -179,3 +179,73 @@ export async function saveMyDefaultDeliveryAddress(
     p_address: address,
   });
 }
+
+
+export type CustomerSavedAddress = {
+  id: string;
+  label: string;
+  city: string;
+  barangay: string;
+  address: string;
+  isDefault: boolean;
+};
+
+export async function getMyCustomerAddresses(restaurantId: string): Promise<CustomerSavedAddress[]> {
+  const rows = await supabaseRpc<{
+    id: string;
+    label: string;
+    city: string;
+    barangay: string;
+    address: string;
+    is_default: boolean;
+  }>('get_my_customer_addresses', { p_restaurant_id: restaurantId });
+
+  return rows.map((row) => ({
+    id: row.id,
+    label: row.label,
+    city: row.city,
+    barangay: row.barangay,
+    address: row.address,
+    isDefault: Boolean(row.is_default),
+  }));
+}
+
+export async function saveMyCustomerAddress(
+  restaurantId: string,
+  label: string,
+  city: string,
+  barangay: string,
+  address: string,
+  setDefault: boolean,
+): Promise<string> {
+  const rows = await supabaseRpc<string>('save_my_customer_address', {
+    p_restaurant_id: restaurantId,
+    p_label: label,
+    p_city: city,
+    p_barangay: barangay,
+    p_address: address,
+    p_set_default: setDefault,
+  });
+  if (!rows[0]) throw new Error('Unable to save the address.');
+  return rows[0];
+}
+
+export async function setMyCustomerAddressDefault(
+  restaurantId: string,
+  addressId: string,
+): Promise<void> {
+  await supabaseRpc('set_my_customer_address_default', {
+    p_restaurant_id: restaurantId,
+    p_address_id: addressId,
+  });
+}
+
+export async function deleteMyCustomerAddress(
+  restaurantId: string,
+  addressId: string,
+): Promise<void> {
+  await supabaseRpc('delete_my_customer_address', {
+    p_restaurant_id: restaurantId,
+    p_address_id: addressId,
+  });
+}
