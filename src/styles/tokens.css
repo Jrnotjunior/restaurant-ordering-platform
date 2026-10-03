@@ -8,11 +8,11 @@
   --color-primary: #64748b;
   --color-primary-hover: #475569;
   --color-primary-text: #ffffff;
-  --color-button-background: #ffffff;
-  --color-button-text: #475569;
-  --color-button-border: #cbd5e1;
-  --color-button-hover-background: #f8fafc;
-  --color-button-hover-border: #94a3b8;
+  --color-button-background: #101b2f;
+  --color-button-text: #ffffff;
+  --color-button-border: #101b2f;
+  --color-button-hover-background: #0c1423;
+  --color-button-hover-border: #0c1423;
   --color-secondary: #f3f4f6;
   --color-secondary-text: #111827;
   --color-background: #ffffff;
