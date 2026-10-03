@@ -122,6 +122,24 @@ revoke all on function public.retry_waiting_delivery_order_for_rider(uuid, uuid)
 from public, anon, authenticated;
 
 -- Retry when an assignment becomes inactive.
+create or replace function public.retry_waiting_delivery_order_after_assignment_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $
+begin
+  perform public.retry_waiting_delivery_order_for_rider(
+    new.restaurant_id,
+    new.rider_id
+  );
+  return new;
+end;
+$;
+
+revoke all on function public.retry_waiting_delivery_order_after_assignment_change()
+from public, anon, authenticated;
+
 drop trigger if exists delivery_assignments_retry_waiting_order
 on public.delivery_assignments;
 
@@ -133,7 +151,7 @@ when (
   old.status in ('assigned', 'delivering')
   and new.status not in ('assigned', 'delivering')
 )
-execute function public.retry_waiting_delivery_order_for_rider();
+execute function public.retry_waiting_delivery_order_after_assignment_change();
 
 -- Retry when an owner gives a rider a new delivery zone.
 create or replace function public.retry_waiting_delivery_order_after_scope_change()
