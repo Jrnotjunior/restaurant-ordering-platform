@@ -12,13 +12,13 @@ type RestaurantRow = {
   location_text: string | null;
   contact_number: string | null;
   email: string | null;
-  ordering_enabled: boolean;
+  operating_hours: Record<string, { isOpen?: boolean; open?: string; close?: string }> | null;
 };
 
 export class SupabaseRestaurantRepository implements RestaurantRepository {
   async getRestaurant(lookup: RestaurantLookup): Promise<RestaurantConfig | null> {
     const baseQuery = {
-      select: 'id,slug,name,tagline,logo_url,location_text,contact_number,email,ordering_enabled',
+      select: 'id,slug,name,tagline,logo_url,location_text,contact_number,email,operating_hours',
       is_active: 'eq.true',
       limit: '1'
     };
@@ -45,7 +45,7 @@ export class SupabaseRestaurantRepository implements RestaurantRepository {
       locationText: restaurant.location_text ?? undefined,
       contactNumber: restaurant.contact_number ?? undefined,
       email: restaurant.email ?? undefined,
-      orderingEnabled: restaurant.ordering_enabled !== false
+      operatingHours: restaurant.operating_hours ?? undefined
     };
   }
 }
