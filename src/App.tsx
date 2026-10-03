@@ -295,14 +295,6 @@ function PublicCustomerRouteGuard({ children }: { children: ReactNode }) {
 
       const metadataRole = user.app_metadata?.role ?? user.user_metadata?.role;
 
-      if (metadataRole === 'customer') {
-        if (mounted) {
-          setStaffRole(null);
-          setChecking(false);
-        }
-        return;
-      }
-
       if (metadataRole === 'rider') {
         if (mounted) setStaffRole('rider');
         return;
