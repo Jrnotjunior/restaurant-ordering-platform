@@ -78,11 +78,12 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const restaurantId = items[0]?.product.restaurantId ?? '';
 
   useEffect(() => {
-    if (!supabase || !restaurantId) return;
+    const client = supabase;
+    if (!client || !restaurantId) return;
 
     let mounted = true;
     async function loadCashOnDeliverySetting() {
-      const { data, error } = await supabase
+      const { data, error } = await client
         .from('restaurants')
         .select('cash_on_delivery_enabled')
         .eq('id', restaurantId)
