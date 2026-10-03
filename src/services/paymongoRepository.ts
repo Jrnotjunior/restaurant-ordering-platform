@@ -14,6 +14,21 @@ export async function createPayMongoCheckout(orderId: string): Promise<string> {
     if (context instanceof Response) {
       const responseBody = await context.clone().json().catch(() => null);
       if (responseBody && typeof responseBody.error === 'string') {
+        const debug = responseBody.debug;
+        if (
+          debug &&
+          typeof debug.lineItemTotal === 'number' &&
+          typeof debug.expectedTotal === 'number'
+        ) {
+          throw new Error(
+            responseBody.error +
+            ' (lineItemTotal: ' +
+            debug.lineItemTotal +
+            ', expectedTotal: ' +
+            debug.expectedTotal +
+            ')',
+          );
+        }
         throw new Error(responseBody.error);
       }
     }
