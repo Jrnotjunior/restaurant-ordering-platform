@@ -4,7 +4,7 @@ import { createOrder } from '../services/orderRepository';
 import { createPendingOnlinePayment, getOnlinePaymentStatus } from '../services/onlinePaymentRepository';
 import { createPayMongoCheckout } from '../services/paymongoRepository';
 import { getRestaurantDeliveryZones, type RestaurantDeliveryZone } from '../services/restaurantSettingsRepository';
-import { getLoyaltyRedemptionSettings, getMyLoyaltyPoints, redeemLoyaltyRewardForPendingPayment } from '../services/loyaltyRepository';
+import { attachCustomerToOrder, getLoyaltyRedemptionSettings, getMyCustomerProfileId, getMyLoyaltyPoints, redeemLoyaltyReward, redeemLoyaltyRewardForPendingPayment } from '../services/loyaltyRepository';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
 import { useRestaurant } from '../components/RestaurantProvider';
 import { OrderConfirmationPage } from './OrderConfirmationPage';
@@ -317,10 +317,20 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
     try {
       const createdOrder = await createPendingOrder('cash');
+      let confirmedTotal = createdOrder.total;
+      if (redeemPoints) {
+        const customerId = await getMyCustomerProfileId(items[0].product.restaurantId);
+        if (!customerId) throw new Error('Your customer account could not be found. Please sign in again.');
+        await attachCustomerToOrder(createdOrder.orderId, customerId);
+        const redemption = await redeemLoyaltyReward(createdOrder.orderId, customerId);
+        confirmedTotal = Math.max(Number((createdOrder.total - redemption.discountAmount).toFixed(2)), 0);
+        setLoyaltyPoints(redemption.remainingPoints);
+        setRedeemPoints(false);
+      }
       window.localStorage.setItem(ACTIVE_ORDER_KEY, createdOrder.orderNumber);
       window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
       window.dispatchEvent(new Event(CART_CLEAR_EVENT));
-      setConfirmedOrder({ orderNumber: createdOrder.orderNumber, paymentMethod: 'cash', orderType, total: createdOrder.total });
+      setConfirmedOrder({ orderNumber: createdOrder.orderNumber, paymentMethod: 'cash', orderType, total: confirmedTotal });
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'We could not create your order. Please try again.');
     } finally {
