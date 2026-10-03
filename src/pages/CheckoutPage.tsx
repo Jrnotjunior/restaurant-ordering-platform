@@ -4,6 +4,8 @@ import { createOrder } from '../services/orderRepository';
 import { createPendingOnlinePayment, getOnlinePaymentStatus } from '../services/onlinePaymentRepository';
 import { createPayMongoCheckout } from '../services/paymongoRepository';
 import { getRestaurantDeliveryZones, type RestaurantDeliveryZone } from '../services/restaurantSettingsRepository';
+import { getLoyaltyRedemptionSettings, getMyLoyaltyPoints, redeemLoyaltyRewardForPendingPayment } from '../services/loyaltyRepository';
+import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
 import { useRestaurant } from '../components/RestaurantProvider';
 import { OrderConfirmationPage } from './OrderConfirmationPage';
 import '../styles/checkout-mobile.css';
@@ -39,6 +41,7 @@ function isValenzuela(value: string) { const city = normalize(value); return cit
 
 export function CheckoutPage({ items }: CheckoutPageProps) {
   const restaurant = useRestaurant();
+  const { user } = useRestaurantOwnerAuth();
   const [orderType, setOrderType] = useState<OrderType>('delivery');
   const [customerName, setCustomerName] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
@@ -63,6 +66,10 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const [confirmedOrder, setConfirmedOrder] = useState<ConfirmedOrder | null>(null);
   const [paymentNotCompleted, setPaymentNotCompleted] = useState(false);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
+  const [loyaltySettings, setLoyaltySettings] = useState<{ enabled: boolean; pointsRequired: number; discountAmount: number } | null>(null);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  const [redeemPoints, setRedeemPoints] = useState(false);
+  const [loyaltyLoading, setLoyaltyLoading] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -155,6 +162,38 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     return deliveryZones.filter((zone) => normalize(zone.barangay).startsWith(value)).slice(0, 6);
   }, [cityIsSupported, deliveryZones, deliveryBarangay, selectedDeliveryZone, thirdPartyCourierDelivery]);
   const deliveryFee = isDelivery && !thirdPartyCourierDelivery ? Number(selectedDeliveryZone?.shippingFee ?? 0) : 0;
+  const loyaltyEligible = Boolean(user && loyaltySettings?.enabled && loyaltyPoints >= (loyaltySettings?.pointsRequired ?? Number.MAX_SAFE_INTEGER));
+  const loyaltyDiscountPreview = loyaltyEligible && redeemPoints
+    ? Math.min(Number(loyaltySettings?.discountAmount ?? 0), subtotal + deliveryFee)
+    : 0;
+  const checkoutTotal = Math.max(Number((subtotal + deliveryFee - loyaltyDiscountPreview).toFixed(2)), 0);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!restaurantId || !user) {
+      setLoyaltySettings(null);
+      setLoyaltyPoints(0);
+      setRedeemPoints(false);
+      return;
+    }
+    setLoyaltyLoading(true);
+    void Promise.all([
+      getLoyaltyRedemptionSettings(restaurantId),
+      getMyLoyaltyPoints(restaurantId),
+    ]).then(([settings, points]) => {
+      if (cancelled) return;
+      setLoyaltySettings(settings);
+      setLoyaltyPoints(points);
+    }).catch((error) => {
+      if (cancelled) return;
+      console.error('Unable to load loyalty redemption settings.', error);
+      setLoyaltySettings(null);
+      setLoyaltyPoints(0);
+    }).finally(() => {
+      if (!cancelled) setLoyaltyLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [restaurantId, user?.id]);
 
   if (paymentProcessing) return <section className="checkout-page"><div className="checkout-payment-notice" role="status"><strong>Payment received.</strong><span>We're confirming your order with the restaurant. Please wait a moment.</span></div></section>;
 
@@ -252,6 +291,14 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         isThirdPartyCourier: isDelivery && thirdPartyCourierDelivery,
         items: items.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
       });
+      let payableTotal = pendingPayment.total;
+      if (redeemPoints) {
+        const redemption = await redeemLoyaltyRewardForPendingPayment(pendingPayment.paymentId);
+        payableTotal = redemption.total;
+      }
+      if (payableTotal <= 0) {
+        throw new Error('The loyalty reward covers the entire order. Please choose cash payment or contact the restaurant for a free-order arrangement.');
+      }
       window.localStorage.setItem(PENDING_PAYMENT_REFERENCE_KEY, pendingPayment.referenceNumber);
       const checkoutUrl = await createPayMongoCheckout(pendingPayment.paymentId);
       window.localStorage.setItem(PENDING_PAYMENT_CHECKOUT_URL_KEY, checkoutUrl);
@@ -330,7 +377,13 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
           <button className="button button-primary checkout-submit" type="button" disabled={!canContinue} onClick={() => { setSubmitError(''); setPaymentMethod(''); setShowPaymentModal(true); }}>Continue to Payment</button>
         </form>
 
-        <aside className="checkout-summary"><div className="checkout-section"><h2>Order summary</h2>{items.map((item) => <div className="checkout-summary-row" key={item.product.id}><span>{item.quantity} × {item.product.name}</span><strong>₱{(item.product.price * item.quantity).toFixed(2)}</strong></div>)}<div className="checkout-summary-row"><span>Subtotal</span><strong>₱{subtotal.toFixed(2)}</strong></div>{orderType !== 'dine_in' && <div className="checkout-summary-row"><span>Delivery fee</span><strong>₱{deliveryFee.toFixed(2)}</strong></div>}<div className="checkout-summary-total"><span>Total</span><strong>₱{(subtotal + deliveryFee).toFixed(2)}</strong></div></div></aside>
+        <aside className="checkout-summary"><div className="checkout-section"><h2>Order summary</h2>{items.map((item) => <div className="checkout-summary-row" key={item.product.id}><span>{item.quantity} × {item.product.name}</span><strong>₱{(item.product.price * item.quantity).toFixed(2)}</strong></div>)}<div className="checkout-summary-row"><span>Subtotal</span><strong>₱{subtotal.toFixed(2)}</strong></div>{orderType !== 'dine_in' && <div className="checkout-summary-row"><span>Delivery fee</span><strong>₱{deliveryFee.toFixed(2)}</strong></div>}
+          {user && loyaltySettings?.enabled && <div className="checkout-loyalty-card">
+            <div className="checkout-loyalty-heading"><div><strong>Loyalty reward</strong><span>{loyaltyLoading ? 'Checking your points…' : `${loyaltyPoints} points available`}</span></div></div>
+            {loyaltyEligible ? <label className="checkout-loyalty-option"><input type="checkbox" checked={redeemPoints} onChange={(event) => setRedeemPoints(event.target.checked)} /><span><strong>Redeem ${loyaltySettings.pointsRequired} points</strong><small>Apply ₱{loyaltySettings.discountAmount.toFixed(2)} off this order before online payment.</small></span></label> : <p className="checkout-loyalty-hint">{loyaltyLoading ? 'Loading…' : `You need ${loyaltySettings.pointsRequired} points to unlock this reward.`}</p>}
+          </div>}
+          {redeemPoints && loyaltyDiscountPreview > 0 && <div className="checkout-summary-row checkout-loyalty-discount"><span>Loyalty Discount</span><strong>-₱{loyaltyDiscountPreview.toFixed(2)}</strong></div>}
+          <div className="checkout-summary-total"><span>Total</span><strong>₱{checkoutTotal.toFixed(2)}</strong></div></div></aside>
       </div>
 
       {showPaymentModal && <div className="payment-modal-backdrop" role="presentation">
