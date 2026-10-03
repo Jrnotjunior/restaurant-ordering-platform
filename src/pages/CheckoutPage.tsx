@@ -4,7 +4,7 @@ import { createOrder } from '../services/orderRepository';
 import { createPendingOnlinePayment, getOnlinePaymentStatus } from '../services/onlinePaymentRepository';
 import { createPayMongoCheckout } from '../services/paymongoRepository';
 import { getRestaurantDeliveryZones, type RestaurantDeliveryZone } from '../services/restaurantSettingsRepository';
-import { attachCustomerToOrder, getLoyaltyRedemptionSettings, getMyCustomerProfileId, getMyLoyaltyPoints, redeemLoyaltyReward } from '../services/loyaltyRepository';
+import { attachCustomerToOrder, getLoyaltyRedemptionSettings, getMyCustomerProfile, getMyCustomerProfileId, getMyLoyaltyPoints, redeemLoyaltyReward } from '../services/loyaltyRepository';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
 import { useRestaurant } from '../components/RestaurantProvider';
 import { OrderConfirmationPage } from './OrderConfirmationPage';
@@ -45,6 +45,8 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const [orderType, setOrderType] = useState<OrderType>('delivery');
   const [customerName, setCustomerName] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
+  const [customerProfileLoading, setCustomerProfileLoading] = useState(false);
+  const [customerProfileError, setCustomerProfileError] = useState('');
   const [deliveryCity, setDeliveryCity] = useState('');
   const [address, setAddress] = useState('');
   const [deliveryBarangay, setDeliveryBarangay] = useState('');
@@ -129,6 +131,44 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     };
   }, [orderType]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!user || !restaurantId) {
+      setCustomerProfileLoading(false);
+      setCustomerProfileError('');
+      setCustomerName('');
+      setMobileNumber('');
+      return;
+    }
+
+    setCustomerProfileLoading(true);
+    setCustomerProfileError('');
+
+    void getMyCustomerProfile(restaurantId)
+      .then((profile) => {
+        if (cancelled) return;
+        if (!profile) {
+          setCustomerProfileError('Your customer profile could not be loaded. Please sign in again.');
+          return;
+        }
+        setCustomerName(profile.name ?? '');
+        setMobileNumber(profile.phone ?? '');
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.error('Unable to load customer checkout profile.', error);
+        setCustomerProfileError('We could not load your customer information. Please refresh and try again.');
+      })
+      .finally(() => {
+        if (!cancelled) setCustomerProfileLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [restaurantId, user?.id]);
+
   const restaurantId = items[0]?.product.restaurantId ?? '';
   const restaurantPickupPoint = restaurant.locationText?.trim() ?? '';
   const cityIsSupported = isValenzuela(deliveryCity);
@@ -199,7 +239,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
   if (confirmedOrder) return <OrderConfirmationPage orderNumber={confirmedOrder.orderNumber} paymentMethod={confirmedOrder.paymentMethod} orderType={confirmedOrder.orderType} total={confirmedOrder.total} onReturnHome={() => { window.location.hash = ''; }} />;
 
-  const canContinue = items.length > 0 && Boolean(customerName.trim()) && !/[0-9]/.test(customerName) && (orderType === 'dine_in' || /^09\d{9}$/.test(mobileNumber)) && (!isDelivery || (thirdPartyCourierDelivery ? Boolean(restaurantPickupPoint) : cityIsSupported && deliveryBarangay.trim() && address.trim() && Boolean(selectedDeliveryZone?.isSupported) && !loadingDeliveryZones));
+  const canContinue = items.length > 0 && !customerProfileLoading && !customerProfileError && Boolean(customerName.trim()) && !/[0-9]/.test(customerName) && (orderType === 'dine_in' || /^09\d{9}$/.test(mobileNumber)) && (!isDelivery || (thirdPartyCourierDelivery ? Boolean(restaurantPickupPoint) : cityIsSupported && deliveryBarangay.trim() && address.trim() && Boolean(selectedDeliveryZone?.isSupported) && !loadingDeliveryZones));
 
   function resetPayment() { setShowPayment(false); setShowPaymentModal(false); setPaymentMethod(''); setSubmitError(''); }
 
@@ -356,9 +396,9 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             {orderTypes.map((type) => <label className={`order-type-card ${orderType === type.value ? 'is-selected' : ''}`} key={type.value}><input type="radio" name="orderType" checked={orderType === type.value} onChange={() => { setOrderType(type.value); resetPayment(); }} /><span className="order-type-content"><strong>{type.label}</strong></span></label>)}
           </div></fieldset>
 
-          <fieldset className="checkout-section"><legend>Customer information</legend><div className="checkout-fields">
-            <label><span>Full name</span><input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} autoComplete="name" aria-invalid={/[0-9]/.test(customerName)} required />{/[0-9]/.test(customerName) && <span className="checkout-field-error" role="alert">Full name must not contain numbers.</span>}</label>
-            {orderType !== 'dine_in' && <label><span>Mobile number</span><input type="tel" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, '').slice(0, 11))} autoComplete="tel" inputMode="numeric" maxLength={11} pattern="09[0-9]{9}" title="Enter an 11-digit Philippine mobile number starting with 09." aria-invalid={mobileNumber.length >= 2 && !mobileNumber.startsWith('09')} required />{mobileNumber.length >= 2 && !mobileNumber.startsWith('09') && <span className="checkout-field-error" role="alert">Mobile number must start with 09.</span>}{mobileNumber.length > 0 && mobileNumber.startsWith('09') && mobileNumber.length < 11 && <span className="checkout-field-hint">Enter all 11 digits.</span>}</label>}
+          <fieldset className="checkout-section"><legend>Customer information</legend>{customerProfileError && <p className="checkout-error" role="alert">{customerProfileError}</p>}<div className="checkout-fields">
+            <label><span>Full name</span><input type="text" value={customerProfileLoading ? '' : customerName} autoComplete="name" readOnly disabled={customerProfileLoading || Boolean(customerProfileError)} aria-readonly="true" required />{/[0-9]/.test(customerName) && <span className="checkout-field-error" role="alert">Full name must not contain numbers.</span>}</label>
+            {orderType !== 'dine_in' && <label><span>Mobile number</span><input type="tel" value={customerProfileLoading ? '' : mobileNumber} autoComplete="tel" inputMode="numeric" maxLength={11} pattern="09[0-9]{9}" title="Enter an 11-digit Philippine mobile number starting with 09." readOnly disabled={customerProfileLoading || Boolean(customerProfileError)} aria-readonly="true" required />{mobileNumber.length >= 2 && !mobileNumber.startsWith('09') && <span className="checkout-field-error" role="alert">Mobile number must start with 09.</span>}{mobileNumber.length > 0 && mobileNumber.startsWith('09') && mobileNumber.length < 11 && <span className="checkout-field-hint">Enter all 11 digits.</span>}</label>}
           </div></fieldset>
 
           {isDelivery && <fieldset className="checkout-section"><legend>{thirdPartyCourierDelivery ? 'Third-party courier delivery' : 'Delivery address'}</legend>
