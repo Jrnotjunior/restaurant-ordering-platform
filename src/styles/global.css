@@ -647,8 +647,8 @@ textarea {
 
 /* Horizontal compact product card */
 .product-card-main { display:flex; align-items:center; gap:0.65rem; padding:0.7rem; }
-.product-card-media { flex:0 0 72px; }
-.product-card-image-button { width:72px; height:72px; margin:0; border-radius:9px; }
+.product-card-media { flex:0 0 140px; }
+.product-card-image-button { width:140px; height:140px; margin:0; border-radius:10px; }
 .product-card-content { min-width:0; flex:1; padding:0; }
 .product-card-heading { align-items:flex-start; gap:0.35rem; }
 .product-card-heading h3,
@@ -659,9 +659,9 @@ textarea {
 .product-card-image-placeholder { width:72px; height:72px; border-radius:9px; }
 @media (max-width:480px) {
   .product-card-main { gap:0.55rem; padding:0.6rem; }
-  .product-card-media { flex-basis:64px; }
+  .product-card-media { flex-basis:120px; }
   .product-card-image-button,
-  .product-card-image-placeholder { width:64px; height:64px; }
+  .product-card-image-placeholder { width:120px; height:120px; }
   .product-card-heading h3,
   .product-card-price { font-size:0.78rem; }
   .product-card-content > p { font-size:0.7rem; }
