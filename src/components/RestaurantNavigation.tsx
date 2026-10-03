@@ -191,8 +191,8 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
 
   return (
     <>
-      <div className={`restaurant-navigation-row${role === 'dispatcher' ? ' is-dispatcher' : ''}`}>
-        {role !== 'dispatcher' ? (
+      <div className={`restaurant-navigation-row${role === 'dispatcher' || role === 'kitchen' ? ' is-account-only' : ''}`}>
+        {role !== 'dispatcher' && role !== 'kitchen' ? (
           <nav className="restaurant-navigation" aria-label="Restaurant operations navigation">
             {roleNavigationItems[role].map((item) => {
               const active = currentRoute === item.href;
