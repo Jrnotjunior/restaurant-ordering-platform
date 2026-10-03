@@ -26,6 +26,14 @@
   color: var(--color-text);
 }
 
+.header-account {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
 .header-account-icon,
 .header-cart-icon,
 .header-track-order-icon {
