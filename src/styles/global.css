@@ -293,7 +293,7 @@ textarea {
   display: flex;
   width: fit-content !important;
   min-width: 0 !important;
-  margin: 1.25rem 0 0 auto;
+  margin: 1.25rem auto 0;
   padding: 0 1.5rem;
   background: #374151 !important;
   border-color: #374151 !important;
