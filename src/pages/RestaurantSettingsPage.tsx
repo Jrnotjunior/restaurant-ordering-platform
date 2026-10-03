@@ -212,9 +212,19 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           <h2>Tax &amp; receipt settings</h2>
           <p className="restaurant-settings-help">These settings control POS tax calculations. The selected settings are copied into each finalized POS order so historical receipts remain unchanged if you update the store later.</p>
           <div className="restaurant-settings-tax-grid">
-            <label className="restaurant-settings-toggle">
-              <input type="checkbox" checked={vatRegistered} disabled={loading || saving} onChange={(event) => { setVatRegistered(event.target.checked); setMessage(''); setError(''); }} />
-              VAT registered
+            <label className="restaurant-settings-switch-row">
+              <span>VAT registered</span>
+              <span className="restaurant-settings-switch">
+                <input
+                  type="checkbox"
+                  checked={vatRegistered}
+                  disabled={loading || saving}
+                  onChange={(event) => { setVatRegistered(event.target.checked); setMessage(''); setError(''); }}
+                />
+                <span className="restaurant-settings-switch-track" aria-hidden="true">
+                  <span className="restaurant-settings-switch-thumb" />
+                </span>
+              </span>
             </label>
             {vatRegistered && (
               <>
