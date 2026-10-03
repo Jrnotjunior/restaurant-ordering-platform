@@ -240,6 +240,24 @@ export async function setMyCustomerAddressDefault(
   });
 }
 
+export async function updateMyCustomerAddress(
+  restaurantId: string,
+  addressId: string,
+  label: string,
+  city: string,
+  barangay: string,
+  address: string,
+): Promise<void> {
+  await supabaseRpc('update_my_customer_address', {
+    p_restaurant_id: restaurantId,
+    p_address_id: addressId,
+    p_label: label,
+    p_city: city,
+    p_barangay: barangay,
+    p_address: address,
+  });
+}
+
 export async function deleteMyCustomerAddress(
   restaurantId: string,
   addressId: string,
