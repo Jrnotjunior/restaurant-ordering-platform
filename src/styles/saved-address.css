@@ -260,3 +260,42 @@
   padding: 6px 0;
   cursor: pointer;
 }
+
+.saved-address-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(15 23 42 / 0.48);
+  box-sizing: border-box;
+}
+.saved-address-modal {
+  width: min(520px, 100%);
+  max-height: min(720px, calc(100vh - 40px));
+  overflow-y: auto;
+  margin: 0;
+  padding: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-surface);
+  box-shadow: 0 24px 70px rgb(15 23 42 / 0.24);
+}
+.saved-address-modal .saved-address-form-heading {
+  margin-bottom: 20px;
+}
+.saved-address-modal .saved-address-form-heading h2 {
+  font-size: 1.15rem;
+}
+@media (max-width: 640px) {
+  .saved-address-modal-backdrop {
+    padding: 12px;
+  }
+
+  .saved-address-modal {
+    max-height: calc(100vh - 24px);
+    padding: 20px;
+    border-radius: 14px;
+  }
+}
