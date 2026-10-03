@@ -265,3 +265,9 @@
   margin: 0;
   width: 100%;
 }
+
+/* Keep the account control accessible above the customer closed-store overlay.
+   The rest of the customer interface remains blocked while the store is closed. */
+.restaurant-navigation-row .restaurant-account-menu {
+  z-index: 10001;
+}
