@@ -255,3 +255,13 @@
 .restaurant-owner-user{display:flex;align-items:center;gap:10px;padding:0;border:0;background:transparent;color:#12203a;cursor:pointer;text-align:left}.restaurant-owner-avatar{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:#16243b;color:#fff;font-size:12px;font-weight:800}.restaurant-owner-user-copy strong,.restaurant-owner-user-copy small{display:block}.restaurant-owner-user-copy strong{font-size:13px}.restaurant-owner-user-copy small{margin-top:3px;color:#6b7a90;font-size:12px}.restaurant-owner-chevron{margin-left:8px;font-size:18px;color:#41516a}.restaurant-owner-topbar .restaurant-account-menu{position:relative}.restaurant-owner-topbar .restaurant-account-dropdown{right:0;top:52px}
 @media(max-width:900px){.restaurant-operations-shell-owner{padding-left:72px}.restaurant-owner-sidebar{width:72px;padding:18px 8px}.restaurant-owner-brand{justify-content:center;padding:0 0 22px}.restaurant-owner-brand>span:last-child,.restaurant-owner-sidebar-nav a span{display:none}.restaurant-owner-sidebar-nav a{justify-content:center;padding:0}.restaurant-owner-topbar{left:72px;padding:0 16px}.restaurant-owner-user-copy,.restaurant-owner-chevron{display:none}}
 @media(max-width:560px){.restaurant-owner-topbar-status div{display:none}.restaurant-owner-topbar{gap:10px}.restaurant-owner-topbar-divider{display:none}}
+
+.restaurant-dispatch-tabs-slot {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.restaurant-dispatch-tabs-slot .restaurant-dispatch-tabs {
+  margin: 0;
+  width: 100%;
+}
