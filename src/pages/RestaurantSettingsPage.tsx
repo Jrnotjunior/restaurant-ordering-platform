@@ -279,7 +279,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
               type="text"
               value={address}
               onChange={(event) => { setAddress(event.target.value); setMessage(''); setError(''); }}
-              placeholder="e.g. 123 Main Street, Barangay Example, City"
               disabled={loading || saving}
               required
             />
