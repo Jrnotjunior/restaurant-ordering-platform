@@ -868,3 +868,26 @@
     padding-inline: 1.25rem;
   }
 }
+
+
+/* Reset the loyalty checkbox so global checkout input styles do not enlarge it. */
+.checkout-section .checkout-loyalty-option input[type="checkbox"] {
+  box-sizing: border-box;
+  width: 1rem;
+  min-width: 1rem;
+  height: 1rem;
+  min-height: 1rem;
+  margin: 0.15rem 0 0;
+  padding: 0;
+  border: 1px solid #94a3b8;
+  border-radius: 0.15rem;
+  background: #ffffff;
+  box-shadow: none;
+  outline: none;
+  accent-color: var(--color-primary);
+}
+
+.checkout-section .checkout-loyalty-option input[type="checkbox"]:focus {
+  box-shadow: none;
+  outline: none;
+}
