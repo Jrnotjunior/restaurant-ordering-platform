@@ -291,7 +291,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
   }
 
   return (
-    <section className="restaurant-dispatch-page">
+    <section className="restaurant-page restaurant-dispatch-page">
             {role !== 'owner' && <header className="restaurant-dispatch-header">
         <div>
           <h1>Restaurant Operations</h1>
