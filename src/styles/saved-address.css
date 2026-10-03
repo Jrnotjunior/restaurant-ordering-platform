@@ -126,3 +126,104 @@
     border-radius: 14px;
   }
 }
+
+.saved-address-item {
+  padding: 18px;
+  margin-bottom: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+}
+.saved-address-item.is-default {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+.saved-address-item-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.saved-address-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.saved-address-title strong {
+  color: var(--color-text);
+  font-size: 0.9rem;
+}
+.saved-address-default-badge {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--color-text);
+  color: var(--color-surface);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+.saved-address-item p {
+  margin: 12px 0 4px;
+  color: var(--color-text);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+.saved-address-item > span {
+  color: var(--color-muted);
+  font-size: 0.78rem;
+}
+.saved-address-delete,
+.saved-address-default-button,
+.saved-address-cancel {
+  border: 0;
+  background: transparent;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.saved-address-delete:hover,
+.saved-address-default-button:hover,
+.saved-address-cancel:hover {
+  color: var(--color-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.saved-address-default-button {
+  display: block;
+  margin-top: 12px;
+  padding: 0;
+  color: var(--color-text);
+}
+.saved-address-delete:disabled,
+.saved-address-default-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.saved-address-add-button {
+  width: 100%;
+  margin-top: 8px;
+}
+.saved-address-empty {
+  margin: 20px 0;
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+.saved-address-form {
+  margin-top: 18px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+.saved-address-form-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 17px;
+}
+.saved-address-form-heading h2 {
+  margin: 0;
+  font-size: 1rem;
+}
