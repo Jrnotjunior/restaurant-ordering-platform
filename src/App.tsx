@@ -20,6 +20,7 @@ import { RestaurantEmployeeInvitePage } from './pages/RestaurantEmployeeInvitePa
 import { RestaurantRoleDashboardPage } from './pages/RestaurantRoleDashboardPage';
 import { RestaurantKitchenPage } from './pages/RestaurantKitchenPage';
 import { CustomerSignUpPage } from './pages/CustomerSignUpPage';
+import { PrivacyNoticePage } from './pages/PrivacyNoticePage';
 import { RiderDeliveryPage } from './pages/RiderDeliveryPage';
 import { RiderDashboardPage } from './pages/RiderDashboardPage';
 import { RiderInvitePage } from './pages/RiderInvitePage';
@@ -48,6 +49,7 @@ function withBasePath(path: string) {
   if (path === '/checkout') return `${base}/#checkout`;
   if (path === '/account') return `${base}/#account`;
   if (path === '/signup') return `${base}/#signup`;
+  if (path === '/privacy') return `${base}/#privacy`;
   if (path === '/restaurant/orders') return `${base}/#restaurant/orders`;
   if (path === '/restaurant/menu') return `${base}/#restaurant/menu`;
   if (path === '/restaurant/shipping-fee') return `${base}/#restaurant/shipping-fee`;
@@ -391,6 +393,7 @@ function AppContent() {
   const isCartPage = route === '#cart';
   const isAccountPage = route === '#account';
   const isSignUpPage = route === '#signup';
+  const isPrivacyPage = route === '#privacy';
   const isCheckoutPage = route === '#checkout';
   const trackOrderNumber = searchParams.get('trackOrder');
   const isRestaurantOrdersPage = route === '#restaurant/orders';
@@ -419,6 +422,7 @@ function AppContent() {
   if (isEmployeeInvitePage) return <RestaurantEmployeeInvitePage />;
   if (isRiderInvitePage) return <RiderInvitePage />;
   if (isSignUpPage) return <CustomerSignUpPage />;
+  if (isPrivacyPage) return <PrivacyNoticePage />;
   if (isAccountPage) return <RestaurantOwnerLoginPage />;
   if (isRiderDashboardPage) return <RiderRouteGuard><RiderDashboardPage /></RiderRouteGuard>;
   if (riderDeliveryMatch) return <RiderRouteGuard><RiderDeliveryPage orderId={decodeURIComponent(riderDeliveryMatch[1])} /></RiderRouteGuard>;
