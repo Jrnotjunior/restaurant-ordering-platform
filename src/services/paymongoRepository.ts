@@ -1,3 +1,4 @@
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { supabase } from './supabaseClient';
 
 export async function createPayMongoCheckout(orderId: string): Promise<string> {
@@ -10,9 +11,8 @@ export async function createPayMongoCheckout(orderId: string): Promise<string> {
   });
 
   if (error) {
-    const context = (error as { context?: unknown }).context;
-    if (context instanceof Response) {
-      const responseBody = await context.clone().json().catch(() => null);
+    if (error instanceof FunctionsHttpError) {
+      const responseBody = await error.context.clone().json().catch(() => null);
       if (responseBody && typeof responseBody.error === 'string') {
         const debug = responseBody.debug;
         if (
