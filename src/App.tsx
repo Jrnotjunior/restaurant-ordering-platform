@@ -434,7 +434,9 @@ function AppContent() {
   useEffect(() => { if (!isSupabaseConfigured) return; let cancelled = false; restaurantRepository.getRestaurant(currentRestaurantLookup).then((loadedRestaurant) => { if (!cancelled && loadedRestaurant) setRestaurant(loadedRestaurant); }).catch((error: unknown) => console.error('Unable to load restaurant from Supabase.', error)); return () => { cancelled = true; }; }, []);
 
   const cartCount = useMemo(() => cartItems.reduce((total, item) => total + item.quantity, 0), [cartItems]);
-  function addToCart(product: RestaurantProduct) { setCartItems((current) => { const existing = current.find((item) => item.product.id === product.id); if (existing) return current.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item); return [...current, { product, quantity: 1 }]; }); setCartNotification(`${product.name} added to cart`); }
+  function addToCart(product: RestaurantProduct) {
+    if (restaurant.orderingEnabled === false) return;
+    setCartItems((current) => { const existing = current.find((item) => item.product.id === product.id); if (existing) return current.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item); return [...current, { product, quantity: 1 }]; }); setCartNotification(`${product.name} added to cart`); }
   function changeQuantity(productId: string, delta: number) { setCartItems((current) => current.map((item) => item.product.id === productId ? { ...item, quantity: item.quantity + delta } : item).filter((item) => item.quantity > 0)); }
   function removeFromCart(productId: string) { setCartItems((current) => current.filter((item) => item.product.id !== productId)); }
 
@@ -596,7 +598,7 @@ function AppContent() {
     )}</OwnerRestaurantGuard>;
   }
 
-  const publicPage = <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}>{publicContent}{cartNotification ? <div className="cart-notification" role="status" aria-live="polite"><div className="cart-notification-icon" aria-hidden="true">✓</div><div className="cart-notification-content"><strong>Added to cart</strong><span>{cartNotification}</span></div><a className="cart-notification-link" href={withBasePath('/cart')}>View cart</a><button className="cart-notification-close" type="button" aria-label="Dismiss notification" onClick={() => setCartNotification('')}>×</button></div> : null}</RestaurantLayout></ThemeProvider></RestaurantProvider>;
+  const publicPage = <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}>{restaurant.orderingEnabled === false ? <div className="restaurant-closed-overlay" role="dialog" aria-modal="true" aria-label="Store closed"><div className="restaurant-closed-message"><h1>Store Closed</h1><p>We're currently closed and not accepting new orders.</p><span>Please check back when we're open.</span></div></div> : null}{publicContent}{cartNotification ? <div className="cart-notification" role="status" aria-live="polite"><div className="cart-notification-icon" aria-hidden="true">✓</div><div className="cart-notification-content"><strong>Added to cart</strong><span>{cartNotification}</span></div><a className="cart-notification-link" href={withBasePath('/cart')}>View cart</a><button className="cart-notification-close" type="button" aria-label="Dismiss notification" onClick={() => setCartNotification('')}>×</button></div> : null}</RestaurantLayout></ThemeProvider></RestaurantProvider>;
   // Order tracking is a public customer page. It must not wait for employee
   // access checks, so navigating from the header never shows an account guard.
   if (trackOrderNumber || trackingMatch) return publicPage;
