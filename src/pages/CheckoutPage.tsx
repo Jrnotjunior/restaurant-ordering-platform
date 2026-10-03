@@ -296,12 +296,6 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     const barangay = deliveryBarangay.trim();
     const completeAddress = address.trim();
     if (!city || !barangay || !completeAddress || !selectedDeliveryZone?.isSupported) return;
-    if (
-      hasDefaultAddress &&
-      city === deliveryCity.trim() &&
-      barangay === deliveryBarangay.trim() &&
-      completeAddress === address.trim()
-    ) return;
     await saveMyDefaultDeliveryAddress(items[0].product.restaurantId, city, barangay, completeAddress);
     setHasDefaultAddress(true);
   }
