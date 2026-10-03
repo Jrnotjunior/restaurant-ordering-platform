@@ -186,3 +186,9 @@
     width: min(292px, calc(100vw - 1rem));
   }
 }
+
+/* Keep the customer account control accessible above the closed-store overlay.
+   Ordering controls remain covered by the overlay. */
+.header-account-menu {
+  z-index: 10001;
+}
