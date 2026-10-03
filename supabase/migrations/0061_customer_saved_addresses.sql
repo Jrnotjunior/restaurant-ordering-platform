@@ -432,3 +432,109 @@ $$;
 
 revoke all on function public.get_my_customer_profile(uuid) from public;
 grant execute on function public.get_my_customer_profile(uuid) to authenticated;
+
+
+-- Keep the existing checkout address-save RPC synchronized with the saved-address table.
+create or replace function public.save_my_default_delivery_address(
+  p_restaurant_id uuid,
+  p_city text,
+  p_barangay text,
+  p_address text
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_customer_id uuid;
+  v_address_id uuid;
+begin
+  if auth.uid() is null then
+    raise exception 'You must be signed in';
+  end if;
+
+  select cp.id
+  into v_customer_id
+  from public.customer_profiles cp
+  where cp.restaurant_id = p_restaurant_id
+    and cp.auth_user_id = auth.uid()
+  limit 1;
+
+  if v_customer_id is null then
+    raise exception 'Customer profile not found';
+  end if;
+
+  if length(trim(coalesce(p_city, ''))) = 0
+     or length(trim(coalesce(p_barangay, ''))) = 0
+     or length(trim(coalesce(p_address, ''))) = 0 then
+    raise exception 'City, barangay, and complete delivery address are required';
+  end if;
+
+  update public.customer_addresses
+  set is_default = false,
+      updated_at = now()
+  where customer_id = v_customer_id
+    and restaurant_id = p_restaurant_id;
+
+  select ca.id
+  into v_address_id
+  from public.customer_addresses ca
+  where ca.id = (
+    select ca2.id
+    from public.customer_addresses ca2
+    where ca2.customer_id = v_customer_id
+      and ca2.restaurant_id = p_restaurant_id
+      and lower(trim(ca2.city)) = lower(trim(p_city))
+      and lower(trim(ca2.barangay)) = lower(trim(p_barangay))
+      and lower(trim(ca2.address)) = lower(trim(p_address))
+    order by ca2.created_at desc
+    limit 1
+  );
+
+  if v_address_id is null then
+    insert into public.customer_addresses (
+      customer_id,
+      restaurant_id,
+      label,
+      city,
+      barangay,
+      address,
+      is_default
+    )
+    values (
+      v_customer_id,
+      p_restaurant_id,
+      'Default address',
+      trim(p_city),
+      trim(p_barangay),
+      trim(p_address),
+      true
+    )
+    returning id into v_address_id;
+  else
+    update public.customer_addresses
+    set
+      city = trim(p_city),
+      barangay = trim(p_barangay),
+      address = trim(p_address),
+      is_default = true,
+      updated_at = now()
+    where id = v_address_id;
+  end if;
+
+  update public.customer_profiles
+  set
+    default_delivery_city = trim(p_city),
+    default_delivery_barangay = trim(p_barangay),
+    default_delivery_address = trim(p_address),
+    updated_at = now()
+  where id = v_customer_id;
+end;
+$$;
+
+revoke all on function public.save_my_default_delivery_address(uuid, text, text, text)
+from public;
+
+grant execute on function public.save_my_default_delivery_address(uuid, text, text, text)
+to authenticated;
