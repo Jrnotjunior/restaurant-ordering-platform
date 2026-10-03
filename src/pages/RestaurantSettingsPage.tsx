@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { supabase } from '../services/supabaseClient';
 
 type Props = {
@@ -97,7 +97,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     void loadSettings();
   }, [restaurantId]);
 
-  async function handleLogoChange(event: React.ChangeEvent<HTMLInputElement>) {
+  async function handleLogoChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file || !supabase) return;
