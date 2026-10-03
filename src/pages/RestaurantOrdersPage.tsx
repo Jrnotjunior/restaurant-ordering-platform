@@ -224,7 +224,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
   }
 
   return (
-    <section className="restaurant-orders-page">
+    <section className="restaurant-page restaurant-orders-page">
       <style>{`
         .restaurant-order-list-modal-backdrop{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.55);backdrop-filter:blur(3px)}
         .restaurant-order-list-modal{position:relative;width:min(520px,100%);max-height:min(78vh,680px);overflow:auto;background:#fff;border-radius:18px;box-shadow:0 24px 70px rgba(15,23,42,.28);padding:24px;color:#0f172a}
