@@ -245,6 +245,9 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
         .restaurant-order-modal-title{padding-right:48px;margin:0 0 5px;font-size:22px}
         .restaurant-order-modal-subtitle{margin:0 0 18px;color:#64748b;font-size:14px}
         .restaurant-order-modal-total{font-size:22px;font-weight:800}
+        .restaurant-order-customer{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:12px;padding:10px 12px;border-radius:10px;background:#f8fafc;color:#334155}
+        .restaurant-order-customer strong{flex:0 0 auto}
+        .restaurant-order-customer span{min-width:0;text-align:right;overflow-wrap:anywhere}
         .restaurant-order-modal-actions{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin-top:20px}
         .restaurant-order-cancel-modal-backdrop{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.62);backdrop-filter:blur(4px)}
         .restaurant-order-cancel-modal{position:relative;width:min(430px,100%);background:#fff;border-radius:18px;box-shadow:0 24px 70px rgba(15,23,42,.32);padding:24px;color:#0f172a}
@@ -601,8 +604,9 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
               <span>{selectedOrder.orderType === 'dine_in' ? 'Dine-in' : selectedOrder.orderType === 'pickup' ? (selectedOrder.pickupMethod === 'third_party_courier' ? 'Customer Courier Pickup' : 'Pickup / Take-out') : 'Delivery'}</span>
               <span>{paymentLabel(selectedOrder)}</span>
             </div>
-            <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 10, background: '#f8fafc', color: '#334155' }}>
-              <strong>Customer</strong><div>{selectedOrder.customerName}</div>
+            <div className="restaurant-order-customer">
+              <strong>Customer</strong>
+              <span>{selectedOrder.customerName}</span>
             </div>
             {selectedOrder.notes.trim() && (
               <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 10, background: '#fffbeb', color: '#334155' }}>
