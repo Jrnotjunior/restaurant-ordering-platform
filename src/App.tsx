@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { RestaurantProvider } from './components/RestaurantProvider';
 import { RestaurantOwnerAuthProvider, useRestaurantOwnerAuth } from './components/RestaurantOwnerAuthProvider';
 import { ThemeProvider } from './components/ThemeProvider';
@@ -36,6 +36,7 @@ import './styles/cart-notification.css';
 
 const restaurantRepository = new SupabaseRestaurantRepository();
 const CART_STORAGE_KEY = 'restaurant-ordering-cart';
+const LEGACY_CART_STORAGE_KEY = CART_STORAGE_KEY;
 const PENDING_PAYMENT_ORDER_KEY = 'restaurant-ordering-pending-payment-order';
 const PENDING_PAYMENT_REFERENCE_KEY = 'restaurant-ordering-pending-payment-reference';
 const PENDING_PAYMENT_CHECKOUT_URL_KEY = 'restaurant-ordering-pending-payment-checkout-url';
@@ -358,23 +359,73 @@ function PublicCustomerRouteGuard({ children }: { children: ReactNode }) {
 function AppContent() {
   const [restaurant, setRestaurant] = useState<RestaurantConfig>(defaultRestaurant);
   const [route, setRoute] = useState(() => normalizeHashRoute(window.location.hash || ''));
-  const [cartItems, setCartItems] = useState<CartItem[]>(() => { try { const stored = window.localStorage.getItem(CART_STORAGE_KEY); return stored ? JSON.parse(stored) as CartItem[] : []; } catch { return []; } });
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [cartNotification, setCartNotification] = useState('');
-  const { loading: authLoading, error: authError } = useRestaurantOwnerAuth();
+  const { user, loading: authLoading, error: authError } = useRestaurantOwnerAuth();
+  const hydratedCartUserIdRef = useRef<string | null>(null);
+  const cartItemsRef = useRef<CartItem[]>([]);
+
+  useEffect(() => {
+    cartItemsRef.current = cartItems;
+  }, [cartItems]);
+
+  // Guest carts exist only in memory. Once a customer is authenticated,
+  // their cart is persisted to a user-scoped browser key so it survives
+  // navigation and refreshes without being shared with another account.
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!user) {
+      hydratedCartUserIdRef.current = null;
+      setCartItems([]);
+      window.localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
+      return;
+    }
+
+    const storageKey = CART_STORAGE_KEY + ':' + user.id;
+    let storedItems: CartItem[] = [];
+
+    try {
+      const stored = window.localStorage.getItem(storageKey);
+      if (stored) storedItems = JSON.parse(stored) as CartItem[];
+    } catch {
+      storedItems = [];
+    }
+
+    hydratedCartUserIdRef.current = user.id;
+
+    if (storedItems.length > 0) {
+      setCartItems(storedItems);
+    } else if (cartItemsRef.current.length > 0) {
+      window.localStorage.setItem(storageKey, JSON.stringify(cartItemsRef.current));
+    } else {
+      setCartItems([]);
+    }
+
+    window.localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
+  }, [authLoading, user?.id]);
+
+  useEffect(() => {
+    if (authLoading || !user || hydratedCartUserIdRef.current !== user.id) return;
+    const storageKey = CART_STORAGE_KEY + ':' + user.id;
+    window.localStorage.setItem(storageKey, JSON.stringify(cartItems));
+  }, [authLoading, user?.id, cartItems]);
 
   useEffect(() => { const handleHashChange = () => { setRoute(normalizeHashRoute(window.location.hash || '')); }; window.addEventListener('hashchange', handleHashChange); return () => window.removeEventListener('hashchange', handleHashChange); }, []);
-  useEffect(() => { window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems)); }, [cartItems]);
   useEffect(() => {
     function handleSuccessfulOrder() {
       setCartItems([]);
-      window.localStorage.removeItem(CART_STORAGE_KEY);
+      if (user) {
+        window.localStorage.removeItem(CART_STORAGE_KEY + ':' + user.id);
+      }
+      window.localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
       window.localStorage.removeItem(PENDING_PAYMENT_ORDER_KEY);
       window.localStorage.removeItem(PENDING_PAYMENT_REFERENCE_KEY);
       window.localStorage.removeItem(PENDING_PAYMENT_CHECKOUT_URL_KEY);
     }
     window.addEventListener(CART_CLEAR_EVENT, handleSuccessfulOrder);
     return () => window.removeEventListener(CART_CLEAR_EVENT, handleSuccessfulOrder);
-  }, []);
+  }, [user?.id]);
   useEffect(() => { if (!cartNotification) return; const timer = window.setTimeout(() => setCartNotification(''), 3000); return () => window.clearTimeout(timer); }, [cartNotification]);
   useEffect(() => { if (!isSupabaseConfigured) return; let cancelled = false; restaurantRepository.getRestaurant(currentRestaurantLookup).then((loadedRestaurant) => { if (!cancelled && loadedRestaurant) setRestaurant(loadedRestaurant); }).catch((error: unknown) => console.error('Unable to load restaurant from Supabase.', error)); return () => { cancelled = true; }; }, []);
 
