@@ -10,6 +10,7 @@ export type PendingOnlinePaymentInput = {
   notes: string;
   isThirdPartyCourier?: boolean;
   items: Array<{ productId: string; quantity: number }>;
+  redeemLoyalty?: boolean;
 };
 
 export type PendingOnlinePayment = {
@@ -39,6 +40,7 @@ export async function createPendingOnlinePayment(input: PendingOnlinePaymentInpu
     p_notes: input.notes,
     p_is_third_party_courier: input.isThirdPartyCourier ?? false,
     p_items: input.items.map((item) => ({ product_id: item.productId, quantity: item.quantity })),
+    p_redeem_loyalty: input.redeemLoyalty ?? false,
   });
 
   if (error) throw new Error(error.message || 'Unable to prepare online payment.');
