@@ -9,16 +9,6 @@
   --dashboard-control-radius: 10px;
 }
 
-.restaurant-orders-page,
-.restaurant-menu-page,
-.restaurant-riders-page,
-.restaurant-dispatch-page,
-.restaurant-shipping-page {
-  width: min(var(--dashboard-width), calc(100% - 2rem));
-  margin: 0 auto;
-  padding: 32px 0 56px;
-}
-
 .restaurant-orders-header,
 .restaurant-menu-header,
 .restaurant-riders-header,
@@ -165,16 +155,6 @@
 .restaurant-shipping-page textarea { font: inherit; }
 
 @media (max-width: 760px) {
-  .restaurant-orders-page,
-  .restaurant-menu-page,
-  .restaurant-riders-page,
-  .restaurant-dispatch-page,
-  .restaurant-shipping-page {
-    width: min(100% - 1rem, var(--dashboard-width));
-    padding-top: 24px;
-    padding-bottom: 40px;
-  }
-
   .restaurant-orders-header,
   .restaurant-menu-header,
   .restaurant-riders-header,
