@@ -446,7 +446,6 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
           <fieldset className="checkout-section"><legend>Order notes <span className="optional-label">Optional</span></legend><label><span>Special instructions</span><textarea className="order-notes-textarea" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Add a note for the restaurant" rows={3} /></label></fieldset>
 
-          <button className="button button-primary checkout-submit" type="button" disabled={!canContinue} onClick={() => { setSubmitError(''); setPaymentMethod(''); setShowPaymentModal(true); }}>Continue to Payment</button>
         </form>
 
         <aside className="checkout-summary"><div className="checkout-section"><h2>Order summary</h2>{items.map((item) => <div className="checkout-summary-row" key={item.product.id}><span>{item.quantity} × {item.product.name}</span><strong>₱{(item.product.price * item.quantity).toFixed(2)}</strong></div>)}<div className="checkout-summary-row"><span>Subtotal</span><strong>₱{subtotal.toFixed(2)}</strong></div>{orderType !== 'dine_in' && <div className="checkout-summary-row"><span>Delivery fee</span><strong>₱{deliveryFee.toFixed(2)}</strong></div>}
@@ -455,7 +454,9 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             {loyaltyEligible ? <label className="checkout-loyalty-option"><input type="checkbox" checked={redeemPoints} onChange={(event) => setRedeemPoints(event.target.checked)} /><span><strong>Redeem {loyaltySettings.pointsRequired} points</strong><small>Apply ₱{loyaltySettings.discountAmount.toFixed(2)} off this order before online payment.</small></span></label> : <p className="checkout-loyalty-hint">{loyaltyLoading ? 'Loading…' : `You need ${loyaltySettings.pointsRequired} points to unlock this reward.`}</p>}
           </div>}
           {redeemPoints && loyaltyDiscountPreview > 0 && <div className="checkout-summary-row checkout-loyalty-discount"><span>Loyalty Discount</span><strong>-₱{loyaltyDiscountPreview.toFixed(2)}</strong></div>}
-          <div className="checkout-summary-total"><span>Total</span><strong>₱{checkoutTotal.toFixed(2)}</strong></div></div></aside>
+          <div className="checkout-summary-total"><span>Total</span><strong>₱{checkoutTotal.toFixed(2)}</strong></div></div>
+          <button className="button button-primary checkout-submit" type="button" disabled={!canContinue} onClick={() => { setSubmitError(''); setPaymentMethod(''); setShowPaymentModal(true); }}>Continue to Payment</button>
+        </aside>
       </div>
 
       {showPaymentModal && <div className="payment-modal-backdrop" role="presentation">
