@@ -44,6 +44,13 @@ begin
   where s.restaurant_id = new.restaurant_id
     and s.role = 'rider'
     and s.is_active = true
+    and not exists (
+      select 1
+      from public.delivery_assignments active_da
+      where active_da.restaurant_id = new.restaurant_id
+        and active_da.rider_id = s.id
+        and active_da.status in ('assigned', 'delivering')
+    )
   order by
     (
       select count(*)
