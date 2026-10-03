@@ -154,6 +154,15 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     <section className="restaurant-page restaurant-shipping-page">
       <style>{`
         .restaurant-settings-grid{display:grid;gap:20px}
+        .restaurant-settings-switch-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:14px;font-weight:700;color:#0f172a}
+        .restaurant-settings-switch{position:relative;display:inline-flex;flex:0 0 auto}
+        .restaurant-settings-switch input{position:absolute;opacity:0;pointer-events:none}
+        .restaurant-settings-switch-track{position:relative;width:48px;height:28px;border-radius:999px;background:#cbd5e1;transition:background .2s ease;display:block}
+        .restaurant-settings-switch-thumb{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.25);transition:transform .2s ease}
+        .restaurant-settings-switch input:checked + .restaurant-settings-switch-track{background:#101b2f}
+        .restaurant-settings-switch input:checked + .restaurant-settings-switch-track .restaurant-settings-switch-thumb{transform:translateX(20px)}
+        .restaurant-settings-switch input:focus-visible + .restaurant-settings-switch-track{outline:2px solid #101b2f;outline-offset:2px}
+        .restaurant-settings-switch input:disabled + .restaurant-settings-switch-track{opacity:.55}
         .restaurant-settings-card{padding:24px;border:1px solid #e1e5eb;border-radius:14px;background:#fff}
         .restaurant-settings-card h2{margin:0 0 8px}
         .restaurant-settings-help{margin:0;color:#64748b;line-height:1.6}
@@ -226,14 +235,19 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         <div className="restaurant-settings-card">
           <h2>Cash on Delivery</h2>
           <p className="restaurant-settings-help">Allow customers to place delivery orders and pay in cash when the order is received. Turning this off requires delivery customers to use Online Payment.</p>
-          <label className="restaurant-settings-toggle" style={{ justifyContent: 'flex-start', marginTop: 14 }}>
-            <input
-              type="checkbox"
-              checked={cashOnDeliveryEnabled}
-              disabled={loading || saving}
-              onChange={(event) => { setCashOnDeliveryEnabled(event.target.checked); setMessage(''); setError(''); }}
-            />
-            Accept Cash on Delivery
+          <label className="restaurant-settings-switch-row">
+            <span>Accept Cash on Delivery</span>
+            <span className="restaurant-settings-switch">
+              <input
+                type="checkbox"
+                checked={cashOnDeliveryEnabled}
+                disabled={loading || saving}
+                onChange={(event) => { setCashOnDeliveryEnabled(event.target.checked); setMessage(''); setError(''); }}
+              />
+              <span className="restaurant-settings-switch-track" aria-hidden="true">
+                <span className="restaurant-settings-switch-thumb" />
+              </span>
+            </span>
           </label>
         </div>
 
