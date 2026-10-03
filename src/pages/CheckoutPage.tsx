@@ -4,7 +4,7 @@ import { createOrder } from '../services/orderRepository';
 import { createPendingOnlinePayment, getOnlinePaymentStatus } from '../services/onlinePaymentRepository';
 import { createPayMongoCheckout } from '../services/paymongoRepository';
 import { getRestaurantDeliveryZones, type RestaurantDeliveryZone } from '../services/restaurantSettingsRepository';
-import { attachCustomerToOrder, getLoyaltyRedemptionSettings, getMyCustomerProfile, getMyCustomerProfileId, getMyLoyaltyPoints, redeemLoyaltyReward } from '../services/loyaltyRepository';
+import { attachCustomerToOrder, getLoyaltyRedemptionSettings, getMyCustomerProfile, getMyCustomerProfileId, getMyLoyaltyPoints, redeemLoyaltyReward, saveMyDefaultDeliveryAddress } from '../services/loyaltyRepository';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
 import { useRestaurant } from '../components/RestaurantProvider';
 import { OrderConfirmationPage } from './OrderConfirmationPage';
@@ -47,6 +47,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const [mobileNumber, setMobileNumber] = useState('');
   const [customerProfileLoading, setCustomerProfileLoading] = useState(false);
   const [customerProfileError, setCustomerProfileError] = useState('');
+  const [hasDefaultAddress, setHasDefaultAddress] = useState(false);
   const [deliveryCity, setDeliveryCity] = useState('');
   const [address, setAddress] = useState('');
   const [deliveryBarangay, setDeliveryBarangay] = useState('');
@@ -140,6 +141,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       setCustomerProfileError('');
       setCustomerName('');
       setMobileNumber('');
+      setHasDefaultAddress(false);
       return;
     }
 
@@ -155,6 +157,13 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         }
         setCustomerName(profile.name ?? '');
         setMobileNumber(profile.phone ?? '');
+        const hasAddress = Boolean(profile.defaultDeliveryCity?.trim() && profile.defaultDeliveryBarangay?.trim() && profile.defaultDeliveryAddress?.trim());
+        setHasDefaultAddress(hasAddress);
+        if (hasAddress) {
+          setDeliveryCity(profile.defaultDeliveryCity ?? '');
+          setDeliveryBarangay(profile.defaultDeliveryBarangay ?? '');
+          setAddress(profile.defaultDeliveryAddress ?? '');
+        }
       })
       .catch((error) => {
         if (cancelled) return;
@@ -281,6 +290,22 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     window.requestAnimationFrame(() => document.getElementById('payment-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
+  async function saveDefaultAddressIfNeeded() {
+    if (!user || !isDelivery || thirdPartyCourierDelivery) return;
+    const city = deliveryCity.trim();
+    const barangay = deliveryBarangay.trim();
+    const completeAddress = address.trim();
+    if (!city || !barangay || !completeAddress || !selectedDeliveryZone?.isSupported) return;
+    if (
+      hasDefaultAddress &&
+      city === deliveryCity.trim() &&
+      barangay === deliveryBarangay.trim() &&
+      completeAddress === address.trim()
+    ) return;
+    await saveMyDefaultDeliveryAddress(items[0].product.restaurantId, city, barangay, completeAddress);
+    setHasDefaultAddress(true);
+  }
+
   async function createPendingOrder(method: PaymentMethod) {
     if (new Set(items.map((item) => item.product.restaurantId)).size !== 1) throw new Error('Your cart contains items from different restaurants. Please clear your cart and try again.');
     if (isDelivery && thirdPartyCourierDelivery && !restaurantPickupPoint) throw new Error('The restaurant pickup address is not configured yet. Please contact the restaurant.');
@@ -313,6 +338,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     setPaymentMethod('online');
 
     try {
+      await saveDefaultAddressIfNeeded();
       const savedCheckoutUrl = paymentNotCompleted ? window.localStorage.getItem(PENDING_PAYMENT_CHECKOUT_URL_KEY) : null;
       if (savedCheckoutUrl) {
         setPaymentNotCompleted(false);
@@ -356,6 +382,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     setSubmitError('');
 
     try {
+      await saveDefaultAddressIfNeeded();
       const createdOrder = await createPendingOrder('cash');
       let confirmedTotal = createdOrder.total;
       if (redeemPoints) {
@@ -403,6 +430,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
           {isDelivery && <fieldset className="checkout-section"><legend>{thirdPartyCourierDelivery ? 'Third-party courier delivery' : 'Delivery address'}</legend>
             {deliveryZonesError && <p className="checkout-error" role="alert">{deliveryZonesError}</p>}
+            {!thirdPartyCourierDelivery && !hasDefaultAddress && <p className="checkout-address-note">Please enter your delivery address. We’ll save it as your default address for future orders.</p>}
             {thirdPartyCourierDelivery ? <div className="third-party-courier-card">
               <strong>Restaurant pickup point</strong><p className="pickup-label">Give this to your courier.</p><p className="pickup-address">{restaurantPickupPoint || 'Restaurant pickup address is not configured.'}</p>
               <div className="pickup-callout">Your destination address is not entered here. Provide your destination directly to Lalamove, Grab Express, or your chosen courier.</div><p>You are responsible for booking and paying the third-party courier.</p>
