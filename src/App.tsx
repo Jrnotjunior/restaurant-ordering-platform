@@ -433,7 +433,7 @@ function AppContent() {
     return () => window.removeEventListener(CART_CLEAR_EVENT, handleSuccessfulOrder);
   }, [user?.id]);
   useEffect(() => { if (!cartNotification) return; const timer = window.setTimeout(() => setCartNotification(''), 3000); return () => window.clearTimeout(timer); }, [cartNotification]);
-  useEffect(() => { if (!isSupabaseConfigured) return; let cancelled = false; restaurantRepository.getRestaurant(currentRestaurantLookup).then((loadedRestaurant) => { if (!cancelled && loadedRestaurant) setRestaurant(loadedRestaurant); }).catch((error: unknown) => console.error('Unable to load restaurant from Supabase.', error)); return () => { cancelled = true; }; }, []);
+  useEffect(() => { if (!isSupabaseConfigured) return; let cancelled = false; const hostname = window.location.hostname.trim().toLowerCase(); const configuredSlug = currentRestaurantLookup.slug; const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1'; const lookup = !isLocalHost && hostname ? { domain: hostname } : { slug: configuredSlug }; restaurantRepository.getRestaurant(lookup).then((loadedRestaurant) => { if (!cancelled && loadedRestaurant) setRestaurant(loadedRestaurant); }).catch((error: unknown) => console.error('Unable to load restaurant from Supabase.', error)); return () => { cancelled = true; }; }, []);
 
   const [restaurantOpen, setRestaurantOpen] = useState(() => restaurant.orderingEnabled !== false && isRestaurantCurrentlyOpen(restaurant.operatingHours));
   useEffect(() => {
