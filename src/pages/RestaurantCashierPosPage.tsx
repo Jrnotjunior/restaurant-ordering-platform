@@ -19,6 +19,7 @@ type PosPrintOrder = {
   beneficiaries: DraftBeneficiary[];
   financials: {
     discountAmount: number;
+    loyaltyDiscountAmount: number;
     grossSales: number;
     vatableSales: number;
     vatAmount: number;
@@ -173,7 +174,11 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const vatAmount = taxSettings?.vatRegistered ? Number((vatableSales * taxSettings.vatRate / 100).toFixed(2)) : 0;
   const vatExemptSales = beneficiaries.length ? Math.max(Number((eligibleShare * beneficiaries.length - discountAmount).toFixed(2)), 0) : 0;
   const netSales = Number((vatableSales + vatExemptSales).toFixed(2));
-  const total = Math.max(Number((netSales + vatAmount).toFixed(2)), 0);
+  const preLoyaltyTotal = Math.max(Number((netSales + vatAmount).toFixed(2)), 0);
+  const loyaltyDiscountPreview = redeemPoints && selectedCustomerId && loyaltyRedemption?.enabled
+    ? Math.min(Number(loyaltyRedemption.discountAmount.toFixed(2)), preLoyaltyTotal)
+    : 0;
+  const total = Math.max(Number((preLoyaltyTotal - loyaltyDiscountPreview).toFixed(2)), 0);
   const cashReceivedAmount = Number(cashReceived) || 0;
   const change = Math.max(Number((cashReceivedAmount - total).toFixed(2)), 0);
   const cashPaymentReady = cart.length > 0 && cashReceivedAmount >= total;
@@ -252,8 +257,10 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
 
       const financials = await applyPosGroupDiscounts(created.orderId, effectiveGroupSize, beneficiaries);
 
+      let loyaltyDiscountAmount = 0;
       if (redeemPoints && selectedCustomerId) {
-        await redeemLoyaltyReward(created.orderId, selectedCustomerId);
+        const redemption = await redeemLoyaltyReward(created.orderId, selectedCustomerId);
+        loyaltyDiscountAmount = redemption.discountAmount;
       }
 
       await confirmDineInPayment(created.orderId);
@@ -267,7 +274,11 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
         createdAt: new Date().toISOString(),
         items: cart.map((item) => ({ ...item })),
         beneficiaries: beneficiaries.map((beneficiary) => ({ ...beneficiary })),
-        financials,
+        financials: {
+          ...financials,
+          loyaltyDiscountAmount,
+          total: Math.max(Number((financials.total - loyaltyDiscountAmount).toFixed(2)), 0),
+        },
         cashReceived: cashReceivedAmount,
         change,
       });
@@ -445,6 +456,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
               {taxSettings?.vatRegistered && <div className="restaurant-pos-total"><span>VAT-exempt sales</span><strong>₱{vatExemptSales.toFixed(2)}</strong></div>}
               <div className="restaurant-pos-total restaurant-pos-discount-total"><span>Senior / PWD Discount</span><strong>-₱{discountAmount.toFixed(2)}</strong></div>
             </>}
+            {redeemPoints && loyaltyDiscountPreview > 0 && <div className="restaurant-pos-total restaurant-pos-discount-total"><span>Loyalty Discount</span><strong>-₱{loyaltyDiscountPreview.toFixed(2)}</strong></div>}
             <div className="restaurant-pos-total restaurant-pos-grand-total"><span>Total</span><strong>₱{total.toFixed(2)}</strong></div>
           </div>
 
@@ -542,6 +554,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
                 {printOrder.financials.vatAmount > 0 && <div className="pos-receipt-row"><span>VAT {taxSettings?.vatRate.toFixed(2)}%</span><span>₱{printOrder.financials.vatAmount.toFixed(2)}</span></div>}
                 {printOrder.financials.vatExemptSales > 0 && <div className="pos-receipt-row"><span>VAT-exempt sales</span><span>₱{printOrder.financials.vatExemptSales.toFixed(2)}</span></div>}
                 {printOrder.financials.discountAmount > 0 && <div className="pos-receipt-row"><span>SC/PWD discount</span><span>-₱{printOrder.financials.discountAmount.toFixed(2)}</span></div>}
+                {printOrder.financials.loyaltyDiscountAmount > 0 && <div className="pos-receipt-row"><span>Loyalty Discount</span><span>-₱{printOrder.financials.loyaltyDiscountAmount.toFixed(2)}</span></div>}
               </>
             ) : (
               <div className="pos-receipt-row"><span>Subtotal</span><span>₱{printOrder.financials.grossSales.toFixed(2)}</span></div>
