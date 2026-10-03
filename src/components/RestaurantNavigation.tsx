@@ -170,7 +170,9 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
         <header className="restaurant-owner-topbar">
           <div className="restaurant-owner-topbar-status"><span /> <div><strong>Live</strong><small>System Online</small></div></div>
           <div className="restaurant-owner-topbar-divider" />
-          <div className="restaurant-account-menu">
+          {role === 'dispatcher' ? <div id="restaurant-dispatch-tabs-slot" className="restaurant-dispatch-tabs-slot" /> : null}
+
+        <div className="restaurant-account-menu">
             <button className="restaurant-owner-user" type="button" aria-label="Open account menu" aria-expanded={accountOpen} onClick={() => setAccountOpen((open) => !open)}>
               <span className="restaurant-owner-avatar">{displayName.slice(0, 2).toUpperCase()}</span>
               <span className="restaurant-owner-user-copy"><strong>{displayName}</strong><small>Store Owner</small></span>
