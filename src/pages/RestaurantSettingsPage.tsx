@@ -56,6 +56,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [vatRate, setVatRate] = useState('12');
   const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
   const [automaticRiderAssignmentEnabled, setAutomaticRiderAssignmentEnabled] = useState(false);
+  const [orderingEnabled, setOrderingEnabled] = useState(true);
   const [logoUrl, setLogoUrl] = useState('');
   const [logoUploading, setLogoUploading] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -75,7 +76,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     try {
       const { data, error: loadError } = await supabase
         .from('restaurants')
-        .select('store_address,location_text,logo_url,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate,cash_on_delivery_enabled,automatic_rider_assignment_enabled')
+        .select('store_address,location_text,logo_url,ordering_enabled,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate,cash_on_delivery_enabled,automatic_rider_assignment_enabled')
          .eq('id', restaurantId)
         .single();
 
@@ -83,6 +84,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       setAddress(data?.store_address ?? data?.location_text ?? '');
       setLogoUrl(data?.logo_url ?? '');
       setHours(normalizeHours(data?.operating_hours));
+      setOrderingEnabled(data?.ordering_enabled !== false);
       setVatRegistered(Boolean(data?.tax_vat_registered));
       setPricesVatInclusive(Boolean(data?.tax_prices_vat_inclusive));
       setVatRate(String(data?.tax_vat_rate ?? 12));
@@ -183,6 +185,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .update({
           store_address: address.trim(),
           operating_hours: hours,
+          ordering_enabled: orderingEnabled,
           tax_vat_registered: vatRegistered,
           tax_prices_vat_inclusive: vatRegistered ? pricesVatInclusive : false,
           tax_vat_rate: vatRegistered ? parsedVatRate : 0,
@@ -283,6 +286,27 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
               required
             />
           </label>
+        </div>
+
+        <div className="restaurant-settings-card">
+          <h2>Store status</h2>
+          <p className="restaurant-settings-help">Operating hours automatically control the normal opening and closing schedule. Use this switch when you need to manually close the store outside that schedule.</p>
+          <label className="restaurant-settings-switch-row">
+            <span>{orderingEnabled ? 'Store is open' : 'Store is manually closed'}</span>
+            <span className="restaurant-settings-switch">
+              <input
+                type="checkbox"
+                checked={orderingEnabled}
+                disabled={loading || saving}
+                onChange={(event) => { setOrderingEnabled(event.target.checked); setMessage(''); setError(''); }}
+                aria-label="Manual store closure"
+              />
+              <span className="restaurant-settings-switch-track" aria-hidden="true">
+                <span className="restaurant-settings-switch-thumb" />
+              </span>
+            </span>
+          </label>
+          <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Turn it off to close ordering immediately. Turn it back on to return control to the automatic operating hours.</p>
         </div>
 
         <div className="restaurant-settings-card">
