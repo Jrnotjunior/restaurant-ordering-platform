@@ -14,6 +14,7 @@ import { RestaurantCashierPosPage } from './pages/RestaurantCashierPosPage';
 import { RestaurantDeliveryDispatchPage } from './pages/RestaurantDeliveryDispatchPage';
 import { RestaurantSettingsPage } from './pages/RestaurantSettingsPage';
 import { RestaurantLoyaltyPage } from './pages/RestaurantLoyaltyPage';
+import { RestaurantOwnerLoginPage } from './pages/RestaurantOwnerLoginPage';
 import { RestaurantEmployeesPage } from './pages/RestaurantEmployeesPage';
 import { RestaurantEmployeeInvitePage } from './pages/RestaurantEmployeeInvitePage';
 import { RestaurantRoleDashboardPage } from './pages/RestaurantRoleDashboardPage';
