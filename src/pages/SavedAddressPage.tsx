@@ -105,7 +105,7 @@ export function SavedAddressPage() {
 
     try {
       await saveMyDefaultDeliveryAddress(
-        restaurant.id,
+        restaurant.id!,
         trimmedCity,
         trimmedBarangay,
         trimmedAddress,
