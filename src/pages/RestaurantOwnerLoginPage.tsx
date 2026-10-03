@@ -3,7 +3,7 @@ import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvide
 import { supabase } from '../services/supabaseClient';
 
 export function RestaurantOwnerLoginPage() {
-  const { signIn, error: authError } = useRestaurantOwnerAuth();
+  const { user, loading: authLoading, signIn, signOut, error: authError } = useRestaurantOwnerAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -94,6 +94,38 @@ export function RestaurantOwnerLoginPage() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (authLoading) {
+    return <main className="restaurant-owner-auth-page"><section className="restaurant-owner-auth-card"><p>Loading account…</p></section></main>;
+  }
+
+  const signedInCustomer = (user?.app_metadata?.role ?? user?.user_metadata?.role) === 'customer';
+
+  if (signedInCustomer && user) {
+    const customerName = typeof user.user_metadata?.name === 'string' && user.user_metadata.name.trim()
+      ? user.user_metadata.name.trim()
+      : 'Customer';
+
+    return (
+      <main className="restaurant-owner-auth-page">
+        <section className="restaurant-owner-auth-card" aria-labelledby="customer-account-title">
+          <p className="eyebrow">Customer account</p>
+          <h1 id="customer-account-title">Welcome, {customerName}.</h1>
+          <p>You are signed in to your customer account.</p>
+          <div className="restaurant-account-details">
+            <strong>{customerName}</strong>
+            <span>{user.email}</span>
+          </div>
+          <div className="restaurant-owner-auth-actions">
+            <a className="button button-primary" href="#menu">Back to menu</a>
+            <button className="button button-secondary" type="button" onClick={() => void signOut().then(() => { window.location.hash = '#menu'; })}>
+              Sign out
+            </button>
+          </div>
+        </section>
+      </main>
+    );
   }
 
   return (
