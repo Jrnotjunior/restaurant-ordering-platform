@@ -227,3 +227,36 @@
   margin: 0;
   font-size: 1rem;
 }
+
+.saved-address-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.saved-address-edit,
+.saved-address-delete {
+  min-height: 30px;
+  padding: 4px 0;
+}
+.saved-address-edit {
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.saved-address-edit:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.saved-address-edit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.saved-address-default-button {
+  min-height: 32px;
+  padding: 6px 0;
+  cursor: pointer;
+}
