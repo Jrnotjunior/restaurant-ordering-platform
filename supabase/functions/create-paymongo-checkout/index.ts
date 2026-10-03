@@ -147,7 +147,13 @@ Deno.serve(async (request) => {
     const payload = await response.json().catch(() => null);
     if (!response.ok) {
       console.error("PayMongo checkout creation failed", payload);
-      return jsonResponse({ error: "Unable to start online payment. Please try again." }, 502);
+      const paymongoError = payload?.errors?.[0];
+      const detail = typeof paymongoError?.detail === "string" ? paymongoError.detail : "";
+      const code = typeof paymongoError?.code === "string" ? paymongoError.code : "";
+      return jsonResponse({
+        error: detail || "Unable to start online payment. Please try again.",
+        ...(code ? { code } : {}),
+      }, 502);
     }
 
     const checkoutUrl = payload?.data?.attributes?.checkout_url;
