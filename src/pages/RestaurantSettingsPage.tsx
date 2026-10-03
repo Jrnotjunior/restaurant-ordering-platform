@@ -325,8 +325,8 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
                 <input
                   type="checkbox"
                   checked={vatRegistered}
-                  disabled={loading || saving}
-                  onChange={(event) => { setVatRegistered(event.target.checked); setMessage(''); setError(''); }}
+                  disabled
+                  onChange={() => undefined}
                 />
                 <span className="restaurant-settings-switch-track" aria-hidden="true">
                   <span className="restaurant-settings-switch-thumb" />
@@ -337,15 +337,16 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
               <>
                 <label className="restaurant-settings-field">
                   <span>VAT rate (%)</span>
-                  <input type="number" min="0" max="100" step="0.01" value={vatRate} onChange={(event) => { setVatRate(event.target.value); setMessage(''); setError(''); }} disabled={loading || saving} />
+                  <input type="number" min="0" max="100" step="0.01" value={vatRate} disabled onChange={() => undefined} />
                 </label>
                 <label className="restaurant-settings-toggle">
-                  <input type="checkbox" checked={pricesVatInclusive} disabled={loading || saving} onChange={(event) => { setPricesVatInclusive(event.target.checked); setMessage(''); setError(''); }} />
+                  <input type="checkbox" checked={pricesVatInclusive} disabled onChange={() => undefined} />
                   Menu prices are VAT-inclusive
                 </label>
               </>
             )}
           </div>
+          <p className="restaurant-settings-help" style={{ marginTop: 12 }}>Controlled by the System Administrator. Contact the System Administrator to request a tax configuration change.</p>
           <p className="restaurant-settings-help" style={{ marginTop: 12 }}>For Senior Citizen/PWD transactions, the POS applies the 20% discount to the eligible VAT-exclusive share and removes the corresponding VAT when the restaurant is VAT-registered. Verify the restaurant’s actual BIR registration and pricing treatment before enabling VAT settings.</p>
         </div>
 
