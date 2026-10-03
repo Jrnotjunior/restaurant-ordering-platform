@@ -181,7 +181,9 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .restaurant-settings-day input[type=time]:disabled{background:#f8fafc;color:#94a3b8}
         .restaurant-settings-toggle{display:flex;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:600;white-space:nowrap}
         .restaurant-settings-toggle input{margin:0}
-        .restaurant-settings-tax-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:end}
+        .restaurant-settings-tax-grid{display:grid;grid-template-columns:1fr;gap:16px}
+        .restaurant-settings-tax-grid .restaurant-settings-switch-row{width:100%}
+        .restaurant-settings-tax-grid .restaurant-settings-field{width:100%}
         .restaurant-settings-tax-grid .restaurant-settings-toggle{min-height:44px;justify-content:flex-start}
         @media(max-width:700px){.restaurant-settings-tax-grid{grid-template-columns:1fr}}
         .restaurant-settings-actions{display:flex;justify-content:flex-end}
