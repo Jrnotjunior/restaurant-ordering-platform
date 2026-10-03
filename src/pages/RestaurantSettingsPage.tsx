@@ -169,7 +169,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .restaurant-settings-form{display:grid;gap:22px}
         .restaurant-settings-field{display:grid;gap:7px;font-weight:600;font-size:14px}
         .restaurant-settings-field input[type=text]{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:10px;padding:12px;font:inherit;color:#0f172a;background:#fff}
-        .restaurant-settings-field input[type=number]{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:10px;padding:12px;font:inherit;color:#0f172a;background:#fff;-moz-appearance:textfield}
+        .restaurant-settings-field input[type=number]{width:64px;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:10px;padding:12px;font:inherit;color:#0f172a;background:#fff;-moz-appearance:textfield}
         .restaurant-settings-field input[type=number]::-webkit-inner-spin-button,.restaurant-settings-field input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
         .restaurant-settings-field input:focus{outline:none;border-color:#94a3b8;box-shadow:0 0 0 3px rgba(148,163,184,.18)}
         .restaurant-settings-days{display:grid;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden}
