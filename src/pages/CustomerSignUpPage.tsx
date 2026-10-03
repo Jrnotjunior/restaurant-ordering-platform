@@ -11,6 +11,7 @@ export function CustomerSignUpPage() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [personalInfoConsent, setPersonalInfoConsent] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -23,6 +24,11 @@ export function CustomerSignUpPage() {
 
     if (!trimmedName || !trimmedEmail || !password || !confirmPassword) {
       setError('Complete all required fields.');
+      return;
+    }
+
+    if (!personalInfoConsent) {
+      setError('Please agree to provide your personal information before creating an account.');
       return;
     }
 
@@ -124,7 +130,17 @@ export function CustomerSignUpPage() {
             Confirm password
             <input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Re-enter your password" disabled={submitting} />
           </label>
-          <button className="button button-primary" type="submit" disabled={submitting}>
+          <label className="customer-personal-info-consent">
+            <input
+              type="checkbox"
+              checked={personalInfoConsent}
+              onChange={(event) => setPersonalInfoConsent(event.target.checked)}
+              disabled={submitting}
+              required
+            />
+            <span>I agree to provide the personal information I enter in this form for account creation and order processing.</span>
+          </label>
+          <button className="button button-primary" type="submit" disabled={submitting || !personalInfoConsent}>
             {submitting ? 'Creating account…' : 'Create account'}
           </button>
         </form>
