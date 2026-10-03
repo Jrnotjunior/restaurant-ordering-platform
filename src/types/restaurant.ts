@@ -46,6 +46,7 @@ export type RestaurantConfig = {
   email?: string;
   locationText?: string;
   operatingHours?: RestaurantOperatingHours;
+  orderingEnabled?: boolean;
   navigation: RestaurantNavigationItem[];
   footerLinks: RestaurantFooterLink[];
   socialLinks?: {
