@@ -482,7 +482,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             <button className="button" type="button" onClick={() => setShowPaymentModal(false)} disabled={isSubmitting}>Cancel</button>
             <button className="button button-primary" type="button" disabled={!paymentMethod || isSubmitting} onClick={() => {
               if (paymentMethod === 'online') { void handleOnlinePayment(); }
-              else { setShowPaymentModal(false); void handlePlaceOrder(); }
+              else { void handlePlaceOrder(); }
             }}>{paymentMethod === 'online' ? 'Continue to Online Payment' : orderType === 'dine_in' ? 'Place Order & Pay at Counter' : 'Place Order'}</button>
           </div>
         </div>
