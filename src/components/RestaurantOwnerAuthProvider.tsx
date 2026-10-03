@@ -49,7 +49,9 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
   }
 
   useEffect(() => {
-    if (!supabase) {
+    const client = supabase;
+
+    if (!client) {
       setError('Supabase is not configured.');
       setLoading(false);
       return;
@@ -65,7 +67,7 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
     // the app stuck on the authentication loading screen.
     const initializeAuth = async () => {
       try {
-        const { data, error: userError } = await supabase.auth.getUser();
+        const { data, error: userError } = await client.auth.getUser();
 
         if (!mounted) return;
 
@@ -93,7 +95,7 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
 
       if (!mounted) return;
 
-      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      const { data } = client.auth.onAuthStateChange((_event, session) => {
         const currentUser = session?.user ?? null;
         setUser(currentUser);
 
