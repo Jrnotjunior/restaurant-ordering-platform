@@ -56,17 +56,3 @@
   .restaurant-menu-card-actions > .button { min-width: 0; }
 }
 
-
-/* Keep the menu management page aligned with the shared restaurant content width. */
-.restaurant-menu-page {
-  width: min(var(--restaurant-content-width), calc(100% - 2rem));
-  margin-left: auto;
-  margin-right: auto;
-  box-sizing: border-box;
-}
-
-@media (max-width: 760px) {
-  .restaurant-menu-page {
-    width: min(100% - 1rem, var(--restaurant-content-width));
-  }
-}
