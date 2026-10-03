@@ -7,6 +7,9 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
   const [enabled, setEnabled] = useState(false);
   const [threshold, setThreshold] = useState('500');
   const [points, setPoints] = useState('5');
+  const [redemptionEnabled, setRedemptionEnabled] = useState(true);
+  const [redemptionPoints, setRedemptionPoints] = useState('50');
+  const [redemptionAmount, setRedemptionAmount] = useState('50');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -23,13 +26,16 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
     try {
       const { data, error: loadError } = await supabase
         .from('restaurants')
-        .select('loyalty_enabled,loyalty_amount_threshold,loyalty_points_awarded')
+        .select('loyalty_enabled,loyalty_amount_threshold,loyalty_points_awarded,loyalty_redemption_enabled,loyalty_redemption_points,loyalty_redemption_amount')
         .eq('id', restaurantId)
         .single();
       if (loadError) throw loadError;
       setEnabled(Boolean(data?.loyalty_enabled));
       setThreshold(String(data?.loyalty_amount_threshold ?? 500));
       setPoints(String(data?.loyalty_points_awarded ?? 5));
+      setRedemptionEnabled(data?.loyalty_redemption_enabled ?? true);
+      setRedemptionPoints(String(data?.loyalty_redemption_points ?? 50));
+      setRedemptionAmount(String(data?.loyalty_redemption_amount ?? 50));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load loyalty settings.');
     } finally {
@@ -46,12 +52,22 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
     }
     const parsedThreshold = Number(threshold);
     const parsedPoints = Number(points);
+    const parsedRedemptionPoints = Number(redemptionPoints);
+    const parsedRedemptionAmount = Number(redemptionAmount);
     if (!Number.isFinite(parsedThreshold) || parsedThreshold <= 0) {
       setError('Enter an amount greater than 0.');
       return;
     }
     if (!Number.isInteger(parsedPoints) || parsedPoints <= 0) {
       setError('Enter a whole number of points greater than 0.');
+      return;
+    }
+    if (!Number.isInteger(parsedRedemptionPoints) || parsedRedemptionPoints <= 0) {
+      setError('Enter a whole number of redemption points greater than 0.');
+      return;
+    }
+    if (!Number.isFinite(parsedRedemptionAmount) || parsedRedemptionAmount <= 0) {
+      setError('Enter a redemption amount greater than 0.');
       return;
     }
 
@@ -65,6 +81,9 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
           loyalty_enabled: enabled,
           loyalty_amount_threshold: parsedThreshold,
           loyalty_points_awarded: parsedPoints,
+          loyalty_redemption_enabled: redemptionEnabled,
+          loyalty_redemption_points: parsedRedemptionPoints,
+          loyalty_redemption_amount: parsedRedemptionAmount,
         })
         .eq('id', restaurantId);
       if (saveError) throw saveError;
@@ -148,9 +167,29 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
           <div className="restaurant-loyalty-rule-preview">
             <span>Current earning rule</span>
             <strong>{points || '0'} points for every ₱{threshold || '0'} in eligible sales</strong>
-            <small>
-              Example: if the rule is ₱500 = 5 points, a ₱1,000 eligible order earns 10 points.
-            </small>
+            <small>Example: if the rule is ₱500 = 5 points, a ₱1,000 eligible order earns 10 points.</small>
+          </div>
+
+          <div className="restaurant-loyalty-redemption">
+            <label className="restaurant-loyalty-toggle">
+              <input type="checkbox" checked={redemptionEnabled} disabled={loading || saving} onChange={(event) => { setRedemptionEnabled(event.target.checked); setMessage(''); setError(''); }} />
+              <span><strong>Enable Loyalty Redemption</strong><small>Allow registered customers to exchange one reward per order.</small></span>
+            </label>
+            <div className="restaurant-loyalty-rule">
+              <label>
+                <span>Points required for one reward</span>
+                <input type="number" min="1" step="1" value={redemptionPoints} disabled={loading || saving || !redemptionEnabled} onChange={(event) => { setRedemptionPoints(event.target.value); setMessage(''); setError(''); }} />
+              </label>
+              <label>
+                <span>Reward discount (₱)</span>
+                <input type="number" min="0.01" step="0.01" value={redemptionAmount} disabled={loading || saving || !redemptionEnabled} onChange={(event) => { setRedemptionAmount(event.target.value); setMessage(''); setError(''); }} />
+              </label>
+            </div>
+            <div className="restaurant-loyalty-rule-preview">
+              <span>Current redemption rule</span>
+              <strong>{redemptionPoints || '0'} points = ₱{redemptionAmount || '0'} off</strong>
+              <small>The cashier can redeem this reward for a registered customer when the customer has enough points.</small>
+            </div>
           </div>
 
           <div className="restaurant-loyalty-actions">
@@ -182,6 +221,7 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
         .restaurant-loyalty-rule-preview span{color:var(--color-muted);font-size:.8rem;font-weight:800}
         .restaurant-loyalty-rule-preview strong{color:var(--color-text);font-size:.95rem}
         .restaurant-loyalty-rule-preview small{color:var(--color-muted);font-size:.75rem;line-height:1.4}
+        .restaurant-loyalty-redemption{display:grid;gap:18px;padding-top:6px;border-top:1px solid var(--color-border)}
         .restaurant-loyalty-actions{display:flex;justify-content:flex-end}
         @media(max-width:760px){.restaurant-loyalty-rule{grid-template-columns:1fr}.restaurant-loyalty-actions{justify-content:stretch}.restaurant-loyalty-actions .button{width:100%}}
       `}</style>
