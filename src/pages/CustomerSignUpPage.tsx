@@ -112,23 +112,23 @@ export function CustomerSignUpPage() {
         <form className="restaurant-owner-auth-form" onSubmit={(event) => void handleSubmit(event)}>
           <label>
             Full name
-            <input type="text" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Your name" disabled={submitting} />
+            <input type="text" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} disabled={submitting} />
           </label>
           <label>
             Phone <span aria-hidden="true">(optional)</span>
-            <input type="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="09xxxxxxxxx" disabled={submitting} />
+            <input type="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} disabled={submitting} />
           </label>
           <label>
             Email
-            <input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" disabled={submitting} />
+            <input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={submitting} />
           </label>
           <label>
             Password
-            <input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 6 characters" disabled={submitting} />
+            <input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} disabled={submitting} />
           </label>
           <label>
             Confirm password
-            <input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Re-enter your password" disabled={submitting} />
+            <input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} disabled={submitting} />
           </label>
           <label className="customer-personal-info-consent">
             <input
