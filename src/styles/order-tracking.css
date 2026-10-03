@@ -1,4 +1,4 @@
-.order-tracking-page { width: min(760px, calc(100% - 2rem)); margin: 0 auto; padding: clamp(2rem, 7vw, 5rem) 0; }
+.order-tracking-page { width: min(760px, calc(100% - 2rem)); min-height: calc(100vh - 240px); margin: 0 auto; padding: 2rem 0; box-sizing: border-box; display: grid; align-items: center; }
 .order-tracking-card { padding: clamp(1.25rem, 5vw, 2.5rem); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-background); }
 .order-tracking-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 1.5rem; }
 .order-tracking-header > div { min-width: 0; }
@@ -35,7 +35,7 @@
 .order-tracking-cancelled { display: grid; gap: .4rem; margin-top: 1.5rem; padding: 1rem; border: 1px solid var(--color-error); border-radius: var(--radius-md); color: var(--color-error); }
 .order-tracking-cancelled span { line-height: 1.5; }
 @media (max-width: 560px) {
-  .order-tracking-page { width: min(100% - 1rem, 760px); padding-top: 1.5rem; }
+  .order-tracking-page { width: min(100% - 1rem, 760px); min-height: calc(100vh - 210px); padding: 1.5rem 0; }
   .order-tracking-card { padding: 1rem; }
   .order-tracking-header { align-items: flex-end; gap: .75rem; }
   .order-tracking-live-status { margin-bottom: .1rem; }
