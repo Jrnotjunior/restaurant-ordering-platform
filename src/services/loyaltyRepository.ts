@@ -46,3 +46,52 @@ export async function attachCustomerToOrder(
     p_customer_id: customerId,
   });
 }
+
+
+export type LoyaltyRedemptionSettings = {
+  enabled: boolean;
+  pointsRequired: number;
+  discountAmount: number;
+};
+
+export async function getLoyaltyRedemptionSettings(restaurantId: string): Promise<LoyaltyRedemptionSettings> {
+  const { supabase } = await import('./supabaseClient');
+  if (!supabase) throw new Error('Supabase is not configured.');
+
+  const { data, error } = await supabase
+    .from('restaurants')
+    .select('loyalty_redemption_enabled,loyalty_redemption_points,loyalty_redemption_amount')
+    .eq('id', restaurantId)
+    .single();
+
+  if (error) throw error;
+
+  return {
+    enabled: Boolean(data?.loyalty_redemption_enabled),
+    pointsRequired: Number(data?.loyalty_redemption_points ?? 50),
+    discountAmount: Number(data?.loyalty_redemption_amount ?? 50),
+  };
+}
+
+export async function redeemLoyaltyReward(
+  orderId: string,
+  customerId: string,
+): Promise<{ pointsRedeemed: number; discountAmount: number; remainingPoints: number }> {
+  const rows = await supabaseRpc<{
+    points_redeemed: number | string;
+    discount_amount: number | string;
+    remaining_points: number | string;
+  }>('redeem_loyalty_reward', {
+    p_order_id: orderId,
+    p_customer_id: customerId,
+  });
+
+  const row = rows[0];
+  if (!row) throw new Error('Unable to redeem the loyalty reward.');
+
+  return {
+    pointsRedeemed: Number(row.points_redeemed),
+    discountAmount: Number(row.discount_amount),
+    remainingPoints: Number(row.remaining_points),
+  };
+}
