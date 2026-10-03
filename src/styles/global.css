@@ -33,12 +33,14 @@ main { flex: 1; }
 .hero h1 { max-width: 780px; margin: 0; font-family: var(--font-heading); font-size: clamp(2.5rem, 7vw, 5rem); line-height: 0.98; letter-spacing: -0.04em; }
 .hero-copy { max-width: 620px; margin: var(--space-6) 0 0; color: var(--color-muted); font-size: 1.125rem; line-height: 1.7; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-8); }
-.button { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 var(--space-6); border: 0; border-radius: var(--radius-md); font-weight: 700; cursor: pointer; transition: background-color 160ms ease, color 160ms ease, transform 160ms ease; }
+.button { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 var(--space-6); border: 0; border-radius: var(--radius-md); font-weight: 700; cursor: pointer; color: var(--color-primary-text); background: var(--color-primary); transition: background-color 160ms ease, color 160ms ease, transform 160ms ease; }
+.button:hover:not(:disabled) { background: var(--color-primary-hover); }
 .button:active { transform: translateY(1px); }
 .button:disabled { cursor: not-allowed; opacity: 0.55; }
-.button-primary { color: var(--color-primary-text); background: var(--color-primary); }
-.button-primary:hover:not(:disabled) { background: var(--color-primary-hover); }
-.button-secondary { color: var(--color-secondary-text); background: var(--color-secondary); }
+.button-primary,
+.button-secondary { color: var(--color-primary-text); background: var(--color-primary); }
+.button-primary:hover:not(:disabled),
+.button-secondary:hover:not(:disabled) { background: var(--color-primary-hover); }
 .site-footer {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(180px, auto);
