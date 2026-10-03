@@ -233,12 +233,15 @@ function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen' | 'dis
         return;
       }
 
-      const { data, error } = await supabase
+      const { data: staffRows, error } = await supabase
         .from('restaurant_staff')
         .select('restaurant_id,role')
         .eq('auth_user_id', user.id)
         .eq('is_active', true)
-        .maybeSingle();
+        .order('created_at', { ascending: true })
+        .limit(1);
+
+      const data = staffRows?.[0] ?? null;
 
       if (!mounted) return;
 
@@ -269,6 +272,96 @@ function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen' | 'dis
   }
 
   return children({ ...defaultRestaurant, id: restaurantId });
+}
+
+function PublicCustomerRouteGuard({ children }: { children: ReactNode }) {
+  const { user, loading: authLoading } = useRestaurantOwnerAuth();
+  const [checking, setChecking] = useState(true);
+  const [staffRole, setStaffRole] = useState<'cashier' | 'kitchen' | 'dispatcher' | 'rider' | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function checkPublicAccess() {
+      if (authLoading) return;
+
+      if (!user || !supabase) {
+        if (mounted) {
+          setStaffRole(null);
+          setChecking(false);
+        }
+        return;
+      }
+
+      const metadataRole = user.app_metadata?.role ?? user.user_metadata?.role;
+
+      if (metadataRole === 'customer') {
+        if (mounted) {
+          setStaffRole(null);
+          setChecking(false);
+        }
+        return;
+      }
+
+      if (metadataRole === 'rider') {
+        if (mounted) setStaffRole('rider');
+        return;
+      }
+
+      const { data: staffRows, error } = await supabase
+        .from('restaurant_staff')
+        .select('role')
+        .eq('auth_user_id', user.id)
+        .eq('is_active', true)
+        .order('created_at', { ascending: true })
+        .limit(1);
+
+      if (!mounted) return;
+
+      if (error) {
+        console.error('Unable to verify employee access on public route.', error);
+        setStaffRole(null);
+        setChecking(false);
+        return;
+      }
+
+      const role = staffRows?.[0]?.role;
+      if (role === 'cashier' || role === 'kitchen' || role === 'dispatcher' || role === 'rider') {
+        setStaffRole(role);
+      } else {
+        setStaffRole(null);
+      }
+
+      setChecking(false);
+    }
+
+    void checkPublicAccess();
+    return () => { mounted = false; };
+  }, [authLoading, user]);
+
+  useEffect(() => {
+    if (checking || !staffRole) return;
+
+    const destination =
+      staffRole === 'cashier' ? '#restaurant/cashier'
+        : staffRole === 'kitchen' ? '#restaurant/kitchen'
+          : staffRole === 'dispatcher' ? '#restaurant/dispatcher'
+            : '#rider/dashboard';
+
+    if (window.location.hash !== destination) {
+      window.location.hash = destination;
+    }
+  }, [checking, staffRole]);
+
+  if (authLoading || checking) {
+    return <section className="restaurant-owner-auth-loading">Checking account access…</section>;
+  }
+
+  if (staffRole) {
+    return <section className="restaurant-owner-auth-loading">Redirecting to your workspace…</section>;
+  }
+
+  return <>{children}</>;
 }
 
 function AppContent() {
@@ -454,7 +547,7 @@ function AppContent() {
     )}</OwnerRestaurantGuard>;
   }
 
-  return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}>{publicContent}{cartNotification ? <div className="cart-notification" role="status" aria-live="polite"><div className="cart-notification-icon" aria-hidden="true">✓</div><div className="cart-notification-content"><strong>Added to cart</strong><span>{cartNotification}</span></div><a className="cart-notification-link" href={withBasePath('/cart')}>View cart</a><button className="cart-notification-close" type="button" aria-label="Dismiss notification" onClick={() => setCartNotification('')}>×</button></div> : null}</RestaurantLayout></ThemeProvider></RestaurantProvider>;
+  return <PublicCustomerRouteGuard><RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}>{publicContent}{cartNotification ? <div className="cart-notification" role="status" aria-live="polite"><div className="cart-notification-icon" aria-hidden="true">✓</div><div className="cart-notification-content"><strong>Added to cart</strong><span>{cartNotification}</span></div><a className="cart-notification-link" href={withBasePath('/cart')}>View cart</a><button className="cart-notification-close" type="button" aria-label="Dismiss notification" onClick={() => setCartNotification('')}>×</button></div> : null}</RestaurantLayout></ThemeProvider></RestaurantProvider></PublicCustomerRouteGuard>;
 }
 
 export function App() { return <AppContent />; }
