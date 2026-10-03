@@ -112,8 +112,23 @@ Deno.serve(async (request) => {
     }
 
     const lineItemTotal = lineItems.reduce((sum, item) => sum + item.amount * item.quantity, 0);
-    if (lineItemTotal !== Math.round(Number(pendingPayment.total) * 100)) {
-      return jsonResponse({ error: "The payment amount could not be verified. Please try again." }, 409);
+    const expectedTotal = Math.round(Number(pendingPayment.total) * 100);
+    if (lineItemTotal !== expectedTotal) {
+      console.error("PayMongo amount verification failed", {
+        paymentId: pendingPayment.id,
+        lineItemTotal,
+        expectedTotal,
+        subtotal: pendingPayment.subtotal,
+        deliveryFee: pendingPayment.delivery_fee,
+        loyaltyDiscount: pendingPayment.loyalty_discount_amount,
+      });
+      return jsonResponse({
+        error: "The payment amount could not be verified. Please try again.",
+        debug: {
+          lineItemTotal,
+          expectedTotal,
+        },
+      }, 409);
     }
 
     const response = await fetch("https://api.paymongo.com/v2/checkout_sessions", {
