@@ -22,8 +22,13 @@ export function CustomerSignUpPage() {
     const trimmedPhone = phone.trim();
     const trimmedEmail = email.trim().toLowerCase();
 
-    if (!trimmedName || !trimmedEmail || !password || !confirmPassword) {
+    if (!trimmedName || !trimmedPhone || !trimmedEmail || !password || !confirmPassword) {
       setError('Complete all required fields.');
+      return;
+    }
+
+    if (!/^09\\d{9}$/.test(trimmedPhone)) {
+      setError('Phone number must start with 09 and contain exactly 11 digits.');
       return;
     }
 
@@ -115,8 +120,17 @@ export function CustomerSignUpPage() {
             <input type="text" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} disabled={submitting} />
           </label>
           <label>
-            Phone <span aria-hidden="true">(optional)</span>
-            <input type="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} disabled={submitting} />
+            Phone number
+            <input
+              type="tel"
+              inputMode="numeric"
+              autoComplete="tel"
+              value={phone}
+              onChange={(event) => setPhone(event.target.value.replace(/\\D/g, '').slice(0, 11))}
+              maxLength={11}
+              required
+              disabled={submitting}
+            />
           </label>
           <label>
             Email
