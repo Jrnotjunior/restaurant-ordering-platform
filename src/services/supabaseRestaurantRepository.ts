@@ -16,12 +16,18 @@ type RestaurantRow = {
 
 export class SupabaseRestaurantRepository implements RestaurantRepository {
   async getRestaurant(lookup: RestaurantLookup): Promise<RestaurantConfig | null> {
-    const rows = await supabaseGet<RestaurantRow>('restaurants', {
+    const baseQuery = {
       select: 'id,slug,name,tagline,logo_url,location_text,contact_number,email',
-      slug: `eq.${lookup.slug}`,
       is_active: 'eq.true',
       limit: '1'
-    });
+    };
+
+    const rows = lookup.slug
+      ? await supabaseGet<RestaurantRow>('restaurants', {
+          ...baseQuery,
+          slug: `eq.${lookup.slug}`
+        })
+      : await supabaseGet<RestaurantRow>('restaurants', baseQuery);
 
     const restaurant = rows[0];
 
