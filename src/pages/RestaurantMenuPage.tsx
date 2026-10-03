@@ -184,7 +184,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
         .restaurant-menu-section-header h2{margin:0 0 4px}
         .restaurant-menu-section-header p{margin:0;color:#64748b}
         .restaurant-menu-add-button{min-height:42px;white-space:nowrap;flex-shrink:0}
-        .restaurant-menu-management-card{border:1px solid #e1e5eb;border-radius:14px;padding:18px;margin-top:22px;background:#fff}
+        .restaurant-menu-management-card{border:1px solid #e1e5eb;border-radius:14px;padding:20px;margin-top:0;background:#fff}
         .restaurant-menu-management-card .restaurant-menu-search{margin-top:18px}
         .restaurant-menu-card-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px}
         .restaurant-menu-card-actions .button{min-height:38px}
