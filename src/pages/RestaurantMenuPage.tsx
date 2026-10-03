@@ -169,7 +169,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
   }
 
   return (
-    <section className="restaurant-menu-page">
+    <section className="restaurant-page restaurant-menu-page">
       <style>{`
         .restaurant-menu-search{display:flex;align-items:center;gap:10px;margin:18px 0 14px}
         .restaurant-menu-search-input-wrap{position:relative;flex:1;max-width:360px}
