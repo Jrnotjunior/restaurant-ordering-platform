@@ -18,6 +18,9 @@ type RestaurantRow = {
 
 export class SupabaseRestaurantRepository implements RestaurantRepository {
   async getRestaurant(lookup: RestaurantLookup): Promise<RestaurantConfig | null> {
+    if (lookup.domain) {
+      return this.getRestaurantByDomain(lookup.domain);
+    }
     const baseQuery = {
       select: 'id,slug,name,tagline,logo_url,location_text,contact_number,email,ordering_enabled,operating_hours',
       is_active: 'eq.true',
@@ -48,6 +51,32 @@ export class SupabaseRestaurantRepository implements RestaurantRepository {
       email: restaurant.email ?? undefined,
       operatingHours: restaurant.operating_hours ?? undefined,
       orderingEnabled: restaurant.ordering_enabled !== false
+    };
+  }
+
+  private async getRestaurantByDomain(domain: string): Promise<RestaurantConfig | null> {
+    const hostname = domain.trim().toLowerCase();
+    if (!hostname) return null;
+
+    const { data, error } = await supabase!.rpc('resolve_restaurant_by_domain', {
+      p_hostname: hostname
+    });
+
+    if (error) throw error;
+
+    const restaurant = data?.[0];
+    if (!restaurant) return null;
+
+    return {
+      ...defaultRestaurant,
+      id: restaurant.id,
+      name: restaurant.name,
+      tagline: restaurant.tagline,
+      logoUrl: restaurant.logo_url ?? undefined,
+      locationText: restaurant.location_text ?? undefined,
+      contactNumber: restaurant.contact_number ?? undefined,
+      email: restaurant.email ?? undefined,
+      orderingEnabled: true
     };
   }
 }
