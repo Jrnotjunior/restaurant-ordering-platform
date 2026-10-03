@@ -13,7 +13,7 @@
 .restaurant-menu-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .restaurant-menu-card { display: grid; grid-template-columns: 140px minmax(0, 1fr); overflow: hidden; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-background); }
 .restaurant-menu-card.is-unavailable { opacity: .72; }
-.restaurant-menu-image, .restaurant-menu-image-placeholder { width: 140px; height: 100%; min-height: 160px; object-fit: cover; background: var(--color-secondary); }
+.restaurant-menu-image, .restaurant-menu-image-placeholder { width: 140px; height: 180px; min-height: 0; align-self: start; object-fit: contain; background: #f8fafc; }
 .restaurant-menu-image-placeholder { display: grid; place-items: center; color: var(--color-muted); font-family: var(--font-heading); font-size: 2.5rem; font-weight: 800; }
 .restaurant-menu-card-content { min-width: 0; padding: 16px; display: grid; gap: 1rem; }
 .restaurant-menu-card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; }
@@ -46,7 +46,7 @@
 @media (max-width: 520px) {
   .restaurant-menu-count { align-self: flex-start; }
   .restaurant-menu-card { grid-template-columns: 96px minmax(0, 1fr); }
-  .restaurant-menu-image, .restaurant-menu-image-placeholder { width: 96px; min-height: 150px; }
+  .restaurant-menu-image, .restaurant-menu-image-placeholder { width: 96px; height: 150px; min-height: 0; object-fit: contain; background: #f8fafc; }
   .restaurant-menu-card-content { padding: .85rem; grid-template-columns: minmax(0, 1fr) auto auto; }
   .restaurant-menu-card-content > .restaurant-menu-status { grid-column: 1; }
   .restaurant-menu-card-content > .restaurant-menu-card-footer > .button { grid-column: 2; }
