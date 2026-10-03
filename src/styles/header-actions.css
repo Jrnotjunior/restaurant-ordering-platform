@@ -192,3 +192,9 @@
 .header-account-menu {
   z-index: 10001;
 }
+
+/* An active customer's order must remain trackable even while the store is closed.
+   Keep only the tracking control accessible above the closed-store overlay. */
+.header-track-order {
+  z-index: 10001;
+}
