@@ -145,6 +145,9 @@ export async function getMyCustomerProfile(restaurantId: string): Promise<Custom
     customer_id: string;
     name: string;
     phone: string | null;
+    default_delivery_city: string | null;
+    default_delivery_barangay: string | null;
+    default_delivery_address: string | null;
   }>('get_my_customer_profile', {
     p_restaurant_id: restaurantId,
   });
