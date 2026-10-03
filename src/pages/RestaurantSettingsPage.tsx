@@ -63,6 +63,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
 
   async function loadSettings() {
     if (!supabase) {
@@ -157,8 +158,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     setError('');
   }
 
-  async function handleSave(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function saveSettings() {
     if (!supabase) {
       setError('Supabase is not configured.');
       return;
@@ -246,6 +246,12 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .restaurant-settings-tax-grid .restaurant-settings-field{width:100%}
         .restaurant-settings-tax-grid .restaurant-settings-toggle{min-height:44px;justify-content:flex-start}
         @media(max-width:700px){.restaurant-settings-tax-grid{grid-template-columns:1fr}}
+        .restaurant-settings-confirm-overlay{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.45)}
+        .restaurant-settings-confirm-modal{width:min(420px,100%);box-sizing:border-box;padding:24px;border:1px solid #dbe2ea;border-radius:14px;background:#fff;box-shadow:0 20px 60px rgba(15,23,42,.2)}
+        .restaurant-settings-confirm-modal h2{margin:0 0 8px;color:#0f172a;font-size:20px}
+        .restaurant-settings-confirm-modal p{margin:0;color:#64748b;line-height:1.5}
+        .restaurant-settings-confirm-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
+        @media(max-width:480px){.restaurant-settings-confirm-actions{flex-direction:column-reverse}.restaurant-settings-confirm-actions .button{width:100%}}
         .restaurant-settings-actions{display:flex;justify-content:flex-end}
         @media(max-width:700px){.restaurant-settings-hours-head{display:none}.restaurant-settings-day{grid-template-columns:1fr 1fr;padding:12px}.restaurant-settings-day-name{grid-column:1/-1}.restaurant-settings-toggle{justify-content:flex-start}.restaurant-settings-actions .button{width:100%}}
       `}</style>
@@ -253,7 +259,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       {error && <div className="restaurant-shipping-message is-error" role="alert">{error}</div>}
       {message && <div className="restaurant-shipping-message is-success" role="status">{message}</div>}
 
-      <form className="restaurant-settings-form" onSubmit={handleSave}>
+      <form className="restaurant-settings-form" onSubmit={(event) => { event.preventDefault(); setShowSaveConfirmation(true); }}>
         <div className="restaurant-settings-card">
           <h2>Restaurant logo</h2>
           <p className="restaurant-settings-help">Upload the logo customers will see in the restaurant header. PNG, JPG, or WebP up to 2 MB.</p>
@@ -434,6 +440,41 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           </button>
         </div>
       </form>
+
+      {showSaveConfirmation && (
+        <div
+          className="restaurant-settings-confirm-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="restaurant-settings-confirm-title"
+        >
+          <div className="restaurant-settings-confirm-modal">
+            <h2 id="restaurant-settings-confirm-title">Save Store Settings?</h2>
+            <p>Are you sure you want to save these store settings?</p>
+            <div className="restaurant-settings-confirm-actions">
+              <button
+                type="button"
+                className="button button-secondary"
+                disabled={saving}
+                onClick={() => setShowSaveConfirmation(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="button button-primary"
+                disabled={saving}
+                onClick={() => {
+                  setShowSaveConfirmation(false);
+                  void saveSettings();
+                }}
+              >
+                {saving ? 'Saving…' : 'Confirm Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
