@@ -1,5 +1,5 @@
 import { defaultRestaurant } from '../config/defaultRestaurant';
-import type { RestaurantConfig } from '../types/restaurant';
+import type { RestaurantConfig, RestaurantOperatingHours } from '../types/restaurant';
 import type { RestaurantLookup, RestaurantRepository } from './restaurantService';
 import { supabaseGet } from './supabaseClient';
 
@@ -13,7 +13,7 @@ type RestaurantRow = {
   contact_number: string | null;
   email: string | null;
   ordering_enabled: boolean;
-  operating_hours: Record<string, { isOpen?: boolean; open?: string; close?: string }> | null;
+  operating_hours: RestaurantOperatingHours | null;
 };
 
 export class SupabaseRestaurantRepository implements RestaurantRepository {
