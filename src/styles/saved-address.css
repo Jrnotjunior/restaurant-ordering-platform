@@ -299,3 +299,91 @@
     border-radius: 14px;
   }
 }
+
+.saved-address-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(15 23 42 / 0.48);
+  box-sizing: border-box;
+}
+.saved-address-confirm-modal {
+  width: min(390px, 100%);
+  padding: 28px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-surface);
+  box-shadow: 0 24px 70px rgb(15 23 42 / 0.24);
+  text-align: center;
+}
+.saved-address-confirm-icon {
+  width: 42px;
+  height: 42px;
+  margin: 0 auto 14px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+  color: var(--color-text);
+  font-size: 18px;
+  font-weight: 800;
+}
+.saved-address-confirm-modal h2 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 1.1rem;
+}
+.saved-address-confirm-modal p {
+  margin: 9px 0 22px;
+  color: var(--color-muted);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+.saved-address-confirm-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.saved-address-confirm-cancel,
+.saved-address-confirm-delete {
+  min-height: 42px;
+  padding: 10px 14px;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.saved-address-confirm-cancel {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+.saved-address-confirm-delete {
+  border: 1px solid #b91c1c;
+  background: #b91c1c;
+  color: white;
+}
+.saved-address-confirm-cancel:hover {
+  background: #f8fafc;
+}
+.saved-address-confirm-delete:hover {
+  background: #991b1b;
+}
+.saved-address-confirm-cancel:disabled,
+.saved-address-confirm-delete:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+@media (max-width: 640px) {
+  .saved-address-confirm-backdrop {
+    padding: 12px;
+  }
+  .saved-address-confirm-modal {
+    padding: 24px 20px;
+    border-radius: 14px;
+  }
+}
