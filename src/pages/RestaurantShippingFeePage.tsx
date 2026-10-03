@@ -144,7 +144,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
   const editingZone = editingIndex === null ? null : zones[editingIndex];
 
   return (
-    <section className="restaurant-shipping-page">
+    <section className="restaurant-page restaurant-shipping-page">
       <style>{`
         .restaurant-shipping-search{display:flex;align-items:center;gap:10px;margin:18px 0 14px}
         .restaurant-shipping-search-input-wrap{position:relative;flex:1;max-width:360px}
