@@ -842,3 +842,29 @@
     max-height: 6.5rem;
   }
 }
+
+
+/* Compact payment action under the order summary. */
+.checkout-summary-submit {
+  width: auto !important;
+  min-width: 0;
+  margin-top: 0.75rem;
+  margin-left: auto;
+  padding-inline: 1.5rem;
+  background: #374151;
+  border-color: #374151;
+  color: #ffffff;
+}
+
+.checkout-summary-submit:hover:not(:disabled) {
+  background: #1f2937;
+  border-color: #1f2937;
+  color: #ffffff;
+}
+
+@media (max-width: 560px) {
+  .checkout-summary-submit {
+    width: auto !important;
+    padding-inline: 1.25rem;
+  }
+}
