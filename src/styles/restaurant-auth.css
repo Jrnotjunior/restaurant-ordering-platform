@@ -6,7 +6,7 @@
 .restaurant-owner-auth-form label{display:grid;gap:7px;font-size:14px;font-weight:700;color:#111827}
 .restaurant-owner-auth-form input{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:10px;padding:12px 13px;font:inherit;color:#111827;background:#fff;outline:none}
 .restaurant-owner-auth-form input:focus{border-color:#111827;box-shadow:0 0 0 3px rgba(17,24,39,.08)}
-.restaurant-owner-auth-form .button{width:100%;min-height:46px}
+.restaurant-owner-auth-form .button{width:100%}
 .restaurant-owner-auth-card .restaurant-dashboard-error{margin:0 0 18px}
 .restaurant-auth-switch{margin:20px 0 0!important;text-align:center;font-size:14px}
 .restaurant-auth-switch a{color:#111827;font-weight:700;text-decoration:underline;text-underline-offset:3px}
