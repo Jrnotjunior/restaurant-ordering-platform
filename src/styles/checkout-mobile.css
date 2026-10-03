@@ -851,15 +851,15 @@
   margin-top: 0.75rem;
   margin-left: auto;
   padding-inline: 1.5rem;
-  background: #374151;
-  border-color: #374151;
-  color: #ffffff;
+  background: #374151 !important;
+  border-color: #374151 !important;
+  color: #ffffff !important;
 }
 
 .checkout-summary-submit:hover:not(:disabled) {
-  background: #1f2937;
-  border-color: #1f2937;
-  color: #ffffff;
+  background: #1f2937 !important;
+  border-color: #1f2937 !important;
+  color: #ffffff !important;
 }
 
 @media (max-width: 560px) {
