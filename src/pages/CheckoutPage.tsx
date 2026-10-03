@@ -299,10 +299,13 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       window.localStorage.setItem(PENDING_PAYMENT_REFERENCE_KEY, pendingPayment.referenceNumber);
       const checkoutUrl = await createPayMongoCheckout(pendingPayment.paymentId);
       window.localStorage.setItem(PENDING_PAYMENT_CHECKOUT_URL_KEY, checkoutUrl);
+      setShowPaymentModal(false);
       window.location.assign(checkoutUrl);
     } catch (error) {
-      setPaymentMethod('');
+      console.error('Unable to start online payment.', error);
+      setPaymentMethod('online');
       setSubmitError(error instanceof Error ? error.message : 'We could not start online payment. Please try again.');
+      setShowPaymentModal(true);
       setIsSubmitting(false);
     }
   }
@@ -415,7 +418,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
           <div className="payment-modal-actions">
             <button className="button" type="button" onClick={() => setShowPaymentModal(false)} disabled={isSubmitting}>Cancel</button>
             <button className="button button-primary" type="button" disabled={!paymentMethod || isSubmitting} onClick={() => {
-              if (paymentMethod === 'online') { setShowPaymentModal(false); void handleOnlinePayment(); }
+              if (paymentMethod === 'online') { void handleOnlinePayment(); }
               else { setShowPaymentModal(false); void handlePlaceOrder(); }
             }}>{paymentMethod === 'online' ? 'Continue to Online Payment' : orderType === 'dine_in' ? 'Place Order & Pay at Counter' : 'Place Order'}</button>
           </div>
