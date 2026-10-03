@@ -27,6 +27,13 @@ begin
   end if;
 end $$;
 
+alter table public.loyalty_transactions
+  drop constraint if exists loyalty_transactions_type_check;
+
+alter table public.loyalty_transactions
+  add constraint loyalty_transactions_type_check
+  check (transaction_type in ('earn', 'reversal', 'redeem'));
+
 create or replace function public.redeem_loyalty_reward(
   p_order_id uuid,
   p_customer_id uuid
