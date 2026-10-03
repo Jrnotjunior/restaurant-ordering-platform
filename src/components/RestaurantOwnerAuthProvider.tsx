@@ -57,37 +57,71 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
 
     let mounted = true;
 
-    void supabase.auth.getSession().then(async ({ data, error: sessionError }) => {
-      if (!mounted) return;
-      if (sessionError) setError(sessionError.message);
-      const currentUser = data.session?.user ?? null;
-      setUser(currentUser);
+    let authListener: { subscription: { unsubscribe: () => void } } | null = null;
+
+    // Wait for Supabase Auth to finish its initial session recovery before
+    // registering the auth listener. Registering the listener during auth
+    // initialization can race with token refresh on page reload and leave
+    // the app stuck on the authentication loading screen.
+    const initializeAuth = async () => {
       try {
-        await loadRestaurant(currentUser);
-      } catch (restaurantError) {
-        if (mounted) setError(restaurantError instanceof Error ? restaurantError.message : 'Unable to load your restaurant.');
+        const { data, error: userError } = await supabase.auth.getUser();
+
+        if (!mounted) return;
+
+        if (userError) {
+          // A missing/expired session is a normal signed-out state.
+          setUser(null);
+          setRestaurant(null);
+          if (userError.name !== 'AuthSessionMissingError') {
+            setError(userError.message);
+          }
+        } else {
+          const currentUser = data.user ?? null;
+          setUser(currentUser);
+          await loadRestaurant(currentUser);
+        }
+      } catch (authError) {
+        if (mounted) {
+          setUser(null);
+          setRestaurant(null);
+          setError(authError instanceof Error ? authError.message : 'Unable to restore your session.');
+        }
       } finally {
         if (mounted) setLoading(false);
       }
-    });
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-      if (!currentUser) {
-        setRestaurant(null);
-        setError('');
-        return;
-      }
+      if (!mounted) return;
 
-      void loadRestaurant(currentUser).catch((restaurantError) => {
-        setError(restaurantError instanceof Error ? restaurantError.message : 'Unable to load your restaurant.');
+      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+
+        if (!currentUser) {
+          setRestaurant(null);
+          setError('');
+          return;
+        }
+
+        void loadRestaurant(currentUser).catch((restaurantError) => {
+          if (mounted) {
+            setError(
+              restaurantError instanceof Error
+                ? restaurantError.message
+                : 'Unable to load your restaurant.',
+            );
+          }
+        });
       });
-    });
+
+      authListener = data;
+    };
+
+    void initializeAuth();
 
     return () => {
       mounted = false;
-      authListener.subscription.unsubscribe();
+      authListener?.subscription.unsubscribe();
     };
   }, []);
 
