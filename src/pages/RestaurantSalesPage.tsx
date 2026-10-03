@@ -156,7 +156,7 @@ export function RestaurantSalesPage({ restaurantId, role = 'owner' }: Props) {
   }, [selectedDay]);
 
   return (
-    <section className="restaurant-sales-page">
+    <section className="restaurant-page restaurant-sales-page">
       <div className="restaurant-sales-card">
         <div className="restaurant-sales-card-header">
           <div>
