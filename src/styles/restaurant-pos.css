@@ -121,3 +121,35 @@
   color: var(--color-text);
   font-weight: 800;
 }
+
+
+.restaurant-pos-redeem-loyalty {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-secondary);
+  cursor: pointer;
+}
+.restaurant-pos-redeem-loyalty input {
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  flex: 0 0 auto;
+  accent-color: var(--color-primary);
+}
+.restaurant-pos-redeem-loyalty span {
+  display: grid;
+  gap: 0.2rem;
+}
+.restaurant-pos-redeem-loyalty strong {
+  color: var(--color-text);
+  font-size: 0.82rem;
+}
+.restaurant-pos-redeem-loyalty small {
+  color: var(--color-muted);
+  font-size: 0.74rem;
+}
