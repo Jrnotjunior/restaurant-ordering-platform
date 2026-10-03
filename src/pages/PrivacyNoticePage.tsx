@@ -1,5 +1,3 @@
-import { currentRestaurantLookup } from '../config/restaurant';
-
 export function PrivacyNoticePage() {
   return (
     <main className="restaurant-owner-auth-page">
@@ -29,7 +27,7 @@ export function PrivacyNoticePage() {
             <li><strong>Email address</strong> — for account authentication and account-related communication.</li>
             <li><strong>Account information</strong> — information required to create and maintain your customer account.</li>
             <li><strong>Order information</strong> — information associated with orders you place, such as items, amounts, delivery details, and order status.</li>
-            <li><strong>Payment-related information</strong> — information needed to record and reconcile online payments. Payment card or other payment credentials are handled by the applicable payment processor rather than stored as your account password by this application.</li>
+            <li><strong>Payment-related information</strong> — information needed to record and reconcile online payments. Sensitive payment credentials are handled by the applicable payment processor rather than stored as part of your customer account in this application.</li>
           </ul>
         </section>
 
@@ -97,11 +95,7 @@ export function PrivacyNoticePage() {
             This notice is provided in accordance with the transparency principles of Republic Act
             No. 10173, the Data Privacy Act of 2012, and does not replace legal advice.
           </p>
-        </section>
-
-        <p className="privacy-notice-footer">
-          Restaurant: <strong>{currentRestaurantLookup.slug}</strong>
-        </p>
+        </section> 
       </article>
     </main>
   );
