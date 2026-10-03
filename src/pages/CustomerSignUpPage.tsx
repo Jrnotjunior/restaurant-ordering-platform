@@ -71,6 +71,14 @@ export function CustomerSignUpPage() {
       if (signUpError) throw signUpError;
 
       if (data.session) {
+        const { error: profileError } = await supabase.rpc('upsert_customer_profile', {
+          p_restaurant_id: restaurant.id,
+          p_name: trimmedName,
+          p_phone: trimmedPhone || null,
+        });
+
+        if (profileError) throw profileError;
+
         window.location.hash = '#menu';
         return;
       }
