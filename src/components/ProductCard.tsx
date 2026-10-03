@@ -20,7 +20,9 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
 
   return (
     <article className={`product-card${product.isAvailable ? '' : ' product-card-sold-out'}`} aria-label={product.isAvailable ? product.name : `${product.name}, sold out`}>
-      {product.imageUrl ? (
+      <div className="product-card-main">
+        <div className="product-card-media">
+          {product.imageUrl ? (
         <>
           <button
             className="product-card-image-button"
@@ -55,27 +57,29 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
             </div>
           ) : null}
         </>
-      ) : (
-        <div className="product-card-image product-card-image-placeholder" aria-hidden="true">
-          <span>{product.name.charAt(0)}</span>
+          ) : (
+            <div className="product-card-image product-card-image-placeholder" aria-hidden="true">
+              <span>{product.name.charAt(0)}</span>
+            </div>
+          )}
         </div>
-      )}
-      <div className="product-card-content">
-        <div className="product-card-heading">
-          <h3>{product.name}</h3>
-          <span className="product-card-price">₱{product.price.toFixed(2)}</span>
+        <div className="product-card-content">
+          <div className="product-card-heading">
+            <h3>{product.name}</h3>
+            <span className="product-card-price">₱{product.price.toFixed(2)}</span>
+          </div>
+          {product.description ? <p>{product.description}</p> : null}
         </div>
-        {product.description ? <p>{product.description}</p> : null}
-        <button
-          className={`button product-card-action${product.isAvailable ? ' button-primary' : ' product-card-sold-out-action'}`}
-          type="button"
-          onClick={() => onAddToCart(product)}
-          disabled={!product.isAvailable}
-          aria-disabled={!product.isAvailable}
-        >
-          {product.isAvailable ? 'Add to Cart' : 'Sold Out'}
-        </button>
       </div>
+      <button
+        className={`button product-card-action${product.isAvailable ? ' button-primary' : ' product-card-sold-out-action'}`}
+        type="button"
+        onClick={() => onAddToCart(product)}
+        disabled={!product.isAvailable}
+        aria-disabled={!product.isAvailable}
+      >
+        {product.isAvailable ? 'Add to Cart' : 'Sold Out'}
+      </button>
     </article>
   );
 }
