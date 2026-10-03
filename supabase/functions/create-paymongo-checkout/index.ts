@@ -50,7 +50,7 @@ Deno.serve(async (request) => {
 
     const { data: pendingPayment, error: paymentError } = await adminClient
       .from("pending_online_payments")
-      .select("id,reference_number,customer_name,mobile_number,items,subtotal,delivery_fee,total,status,checkout_session_id,checkout_url")
+      .select("id,reference_number,customer_name,mobile_number,items,subtotal,delivery_fee,total,status,checkout_session_id,checkout_url,loyalty_discount_amount")
       .eq("id", orderId)
       .maybeSingle();
 
