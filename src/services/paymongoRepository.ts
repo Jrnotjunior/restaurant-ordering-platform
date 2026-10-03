@@ -10,6 +10,14 @@ export async function createPayMongoCheckout(orderId: string): Promise<string> {
   });
 
   if (error) {
+    const context = (error as { context?: unknown }).context;
+    if (context instanceof Response) {
+      const responseBody = await context.clone().json().catch(() => null);
+      if (responseBody && typeof responseBody.error === 'string') {
+        throw new Error(responseBody.error);
+      }
+    }
+
     throw new Error(error.message || 'Unable to start online payment.');
   }
 
