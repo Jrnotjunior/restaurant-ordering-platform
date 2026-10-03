@@ -137,44 +137,37 @@ export function RestaurantKitchenPage({ restaurantId, view = 'orders' }: Props) 
         <div className="restaurant-kitchen-menu-grid">
           {visibleProducts.map((product) => (
             <article
-              className={`restaurant-kitchen-menu-card${product.isAvailable ? '' : ' is-unavailable'}`}
+              className={`product-card restaurant-management-product-card${product.isAvailable ? '' : ' product-card-sold-out'}`}
               key={product.id}
             >
-              {product.imageUrl ? (
-                <img src={product.imageUrl} alt="" className="restaurant-kitchen-menu-image" />
-              ) : (
-                <div className="restaurant-kitchen-menu-image-placeholder" aria-hidden="true">
-                  {product.name.charAt(0).toUpperCase()}
+              <div className="product-card-main">
+                <div className="product-card-media">
+                  {product.imageUrl ? (
+                    <img className="product-card-image" src={product.imageUrl} alt="" loading="lazy" />
+                  ) : (
+                    <div className="product-card-image product-card-image-placeholder" aria-hidden="true">
+                      <span>{product.name.charAt(0).toUpperCase()}</span>
+                    </div>
+                  )}
                 </div>
-              )}
-
-              <div className="restaurant-kitchen-menu-card-body">
-                <div className="restaurant-kitchen-menu-card-top">
-                  <div>
-                    <h2>{product.name}</h2>
-                    <p>{product.description || 'No description.'}</p>
-                  </div>
-                  <strong>₱{product.price.toFixed(2)}</strong>
-                </div>
-
-                <div className="restaurant-kitchen-menu-card-footer">
-                  <span className={`restaurant-menu-status ${product.isAvailable ? 'is-available' : 'is-unavailable'}`}>
-                    {product.isAvailable ? 'Available' : 'Sold Out'}
-                  </span>
-                  <button
-                    className="button button-secondary"
-                    type="button"
-                    disabled={savingId === product.id}
-                    onClick={() => void toggleAvailability(product)}
-                  >
-                    {savingId === product.id
-                      ? 'Saving…'
-                      : product.isAvailable
-                        ? 'Mark Sold Out'
-                        : 'Mark Available'}
-                  </button>
+                <div className="product-card-content">
+                  <h3>{product.name}</h3>
+                  <span className="product-card-price">₱{product.price.toFixed(2)}</span>
+                  <p>{product.description || 'No description.'}</p>
                 </div>
               </div>
+              <div className="restaurant-management-product-status">
+                {product.isAvailable ? 'Available' : 'Sold Out'}
+              </div>
+              <button
+                className="button restaurant-management-product-action"
+                type="button"
+                disabled={savingId === product.id}
+                onClick={() => void toggleAvailability(product)}
+                aria-label={product.isAvailable ? `Mark ${product.name} sold out` : `Mark ${product.name} available`}
+              >
+                {savingId === product.id ? '…' : product.isAvailable ? '−' : '+'}
+              </button>
             </article>
           ))}
         </div>
