@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRestaurant } from './RestaurantProvider';
+import { useRestaurantOwnerAuth } from './RestaurantOwnerAuthProvider';
+import { supabase } from '../services/supabaseClient';
 import '../styles/cart-badge.css';
 import '../styles/header-actions.css';
 
@@ -20,7 +22,27 @@ type HeaderProps = {
 
 export function Header({ cartCount = 0 }: HeaderProps) {
   const restaurant = useRestaurant();
+  const { user, signOut } = useRestaurantOwnerAuth();
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordMessage, setPasswordMessage] = useState('');
   const [activeOrderNumber, setActiveOrderNumber] = useState(() => window.localStorage.getItem(ACTIVE_ORDER_KEY));
+
+  useEffect(() => {
+    const closeAccount = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.header-account-menu') && !target.closest('.header-account')) setAccountOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setAccountOpen(false); };
+    document.addEventListener('mousedown', closeAccount);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('mousedown', closeAccount);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, []);
 
   useEffect(() => {
     const refreshActiveOrder = () => setActiveOrderNumber(window.localStorage.getItem(ACTIVE_ORDER_KEY));
@@ -66,12 +88,56 @@ export function Header({ cartCount = 0 }: HeaderProps) {
           </a>
         ) : null}
 
-        <button className="header-account" type="button" aria-label="Open account" title="Account" onClick={() => window.dispatchEvent(new CustomEvent('restaurant-account-open'))}>
-          <svg className="header-account-icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
-            <circle cx="12" cy="8" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.8" />
-            <path d="M5 20c.8-3.5 3.1-5.5 7-5.5s6.2 2 7 5.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-          </svg>
-        </button>
+        <div className="header-account-menu">
+          <button className="header-account" type="button" aria-label="Open account menu" aria-expanded={accountOpen} title="Account" onClick={() => { setAccountOpen((open) => !open); setChangePasswordOpen(false); setPasswordMessage(''); }}>
+            <svg className="header-account-icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
+              <circle cx="12" cy="8" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.8" />
+              <path d="M5 20c.8-3.5 3.1-5.5 7 5.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          </button>
+          {accountOpen ? (
+            <div className="header-account-dropdown" role="menu">
+              {user ? (
+                <>
+                  <div className="header-account-identity">
+                    <strong>{typeof user.user_metadata?.name === 'string' && user.user_metadata.name.trim() ? user.user_metadata.name.trim() : 'Customer'}</strong>
+                    <span>{user.email}</span>
+                  </div>
+                  <button className="header-account-menu-item" type="button" onClick={() => { setChangePasswordOpen((open) => !open); setPasswordMessage(''); }}>
+                    Change password
+                  </button>
+                  {changePasswordOpen ? (
+                    <form className="header-account-password-form" onSubmit={async (event) => {
+                      event.preventDefault();
+                      setPasswordMessage('');
+                      if (newPassword.length < 6) { setPasswordMessage('Password must be at least 6 characters.'); return; }
+                      if (newPassword !== confirmPassword) { setPasswordMessage('Passwords do not match.'); return; }
+                      if (!supabase) { setPasswordMessage('Account service is unavailable.'); return; }
+                      const { error } = await supabase.auth.updateUser({ password: newPassword });
+                      if (error) { setPasswordMessage(error.message); return; }
+                      setNewPassword('');
+                      setConfirmPassword('');
+                      setPasswordMessage('Password changed.');
+                    }}>
+                      <input type="password" aria-label="New password" placeholder="New password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} />
+                      <input type="password" aria-label="Confirm new password" placeholder="Confirm password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} />
+                      <button className="header-account-password-save" type="submit">Save password</button>
+                      {passwordMessage ? <span className="header-account-password-message" role="status">{passwordMessage}</span> : null}
+                    </form>
+                  ) : null}
+                  <button className="header-account-menu-item" type="button" onClick={() => void signOut().then(() => { setAccountOpen(false); window.location.hash = '#menu'; })}>
+                    Log out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <a className="header-account-menu-item" href={withBasePath('/account')} onClick={() => setAccountOpen(false)}>Sign in</a>
+                  <a className="header-account-menu-item" href={withBasePath('/signup')} onClick={() => setAccountOpen(false)}>Create account</a>
+                </>
+              )}
+            </div>
+          ) : null}
+        </div>
       </div>
     </header>
   );
