@@ -186,8 +186,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           tax_vat_registered: vatRegistered,
           tax_prices_vat_inclusive: vatRegistered ? pricesVatInclusive : false,
           tax_vat_rate: vatRegistered ? parsedVatRate : 0,
-          cash_on_delivery_enabled: cashOnDeliveryEnabled,
-          automatic_rider_assignment_enabled: automaticRiderAssignmentEnabled,
         })
         .eq('id', restaurantId);
 
@@ -331,33 +329,35 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
               <input
                 type="checkbox"
                 checked={cashOnDeliveryEnabled}
-                disabled={loading || saving}
-                onChange={(event) => { setCashOnDeliveryEnabled(event.target.checked); setMessage(''); setError(''); }}
+                disabled
+                aria-label="Cash on Delivery status"
               />
               <span className="restaurant-settings-switch-track" aria-hidden="true">
                 <span className="restaurant-settings-switch-thumb" />
               </span>
             </span>
           </label>
+          <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Controlled by the System Administrator. Contact the System Administrator to request a workflow change.</p>
         </div>
 
         <div className="restaurant-settings-card">
           <h2>Automatic Rider Assignment</h2>
-          <p className="restaurant-settings-help">Automatically assign a ready delivery order to an available rider. The system chooses the rider with the fewest active deliveries, then the fewest deliveries today.</p>
+          <p className="restaurant-settings-help">Automatically assign a ready delivery order to an available rider. The system chooses an eligible rider according to the restaurant's configured delivery-zone workflow.</p>
           <label className="restaurant-settings-switch-row">
             <span>Auto-assign delivery orders</span>
             <span className="restaurant-settings-switch">
               <input
                 type="checkbox"
                 checked={automaticRiderAssignmentEnabled}
-                disabled={loading || saving}
-                onChange={(event) => { setAutomaticRiderAssignmentEnabled(event.target.checked); setMessage(''); setError(''); }}
+                disabled
+                aria-label="Automatic Rider Assignment status"
               />
               <span className="restaurant-settings-switch-track" aria-hidden="true">
                 <span className="restaurant-settings-switch-thumb" />
               </span>
             </span>
           </label>
+          <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Controlled by the System Administrator. Contact the System Administrator to request a workflow change.</p>
         </div>
 
         <div className="restaurant-settings-card">
