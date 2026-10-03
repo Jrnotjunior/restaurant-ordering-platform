@@ -37,6 +37,7 @@ export type RestaurantConfig = {
   contactNumber?: string;
   email?: string;
   locationText?: string;
+  orderingEnabled?: boolean;
   navigation: RestaurantNavigationItem[];
   footerLinks: RestaurantFooterLink[];
   socialLinks?: {
