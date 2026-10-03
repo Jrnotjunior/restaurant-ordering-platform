@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { deleteMyCustomerAddress, getMyCustomerAddresses, saveMyCustomerAddress, setMyCustomerAddressDefault, type CustomerSavedAddress } from '../services/loyaltyRepository';
+import { deleteMyCustomerAddress, getMyCustomerAddresses, saveMyCustomerAddress, setMyCustomerAddressDefault, updateMyCustomerAddress, type CustomerSavedAddress } from '../services/loyaltyRepository';
 import { getRestaurantDeliveryZones, type RestaurantDeliveryZone } from '../services/restaurantSettingsRepository';
 import { useRestaurant } from '../components/RestaurantProvider';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
@@ -20,6 +20,7 @@ export function SavedAddressPage() {
   const [addresses, setAddresses] = useState<CustomerSavedAddress[]>([]);
   const [zones, setZones] = useState<RestaurantDeliveryZone[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
   const [label, setLabel] = useState('');
   const [city, setCity] = useState('');
   const [barangay, setBarangay] = useState('');
@@ -63,7 +64,19 @@ export function SavedAddressPage() {
   });
   const selectedZone = zones.find((zone) => normalize(zone.barangay) === normalize(barangay));
 
+  function openEditForm(item: CustomerSavedAddress) {
+    setEditingAddressId(item.id);
+    setLabel(item.label);
+    setCity(item.city);
+    setBarangay(item.barangay);
+    setAddress(item.address);
+    setMessage('');
+    setError('');
+    setShowForm(true);
+  }
+
   function openAddForm() {
+    setEditingAddressId(null);
     setLabel('');
     setCity('');
     setBarangay('');
@@ -93,9 +106,14 @@ export function SavedAddressPage() {
 
     setSaving(true);
     try {
-      await saveMyCustomerAddress(restaurant.id!, trimmedLabel, trimmedCity, trimmedBarangay, trimmedAddress, addresses.length === 0);
+      if (editingAddressId) {
+        await updateMyCustomerAddress(restaurant.id!, editingAddressId, trimmedLabel, trimmedCity, trimmedBarangay, trimmedAddress);
+      } else {
+        await saveMyCustomerAddress(restaurant.id!, trimmedLabel, trimmedCity, trimmedBarangay, trimmedAddress, addresses.length === 0);
+      }
       setShowForm(false);
-      setMessage(addresses.length === 0 ? 'Address saved and set as your default.' : 'Address saved.');
+      setEditingAddressId(null);
+      setMessage(editingAddressId ? 'Address updated.' : (addresses.length === 0 ? 'Address saved and set as your default.' : 'Address saved.'));
       await loadAddresses();
     } catch (saveError) {
       console.error('Unable to save address.', saveError);
@@ -151,7 +169,7 @@ export function SavedAddressPage() {
             <article className={`saved-address-item${item.isDefault ? ' is-default' : ''}`} key={item.id}>
               <div className="saved-address-item-header">
                 <div className="saved-address-title"><strong>{item.label}</strong>{item.isDefault ? <span className="saved-address-default-badge">Default</span> : null}</div>
-                <button className="saved-address-delete" type="button" onClick={() => void handleDelete(item.id)} disabled={busyAddressId === item.id}>Delete</button>
+                <div className="saved-address-item-actions"><button className="saved-address-edit" type="button" onClick={() => openEditForm(item)} disabled={busyAddressId === item.id}>Edit</button><button className="saved-address-delete" type="button" onClick={() => void handleDelete(item.id)} disabled={busyAddressId === item.id}>Delete</button></div>
               </div>
               <p>{item.address}</p>
               <span>{item.barangay}, {item.city}</span>
@@ -166,13 +184,13 @@ export function SavedAddressPage() {
 
           {!showForm ? <button className="button button-primary saved-address-add-button" type="button" onClick={openAddForm} disabled={addresses.length >= 2}>+ Add address</button> : (
             <form className="saved-address-form" onSubmit={handleSave}>
-              <div className="saved-address-form-heading"><h2>Add address</h2><button type="button" className="saved-address-cancel" onClick={() => setShowForm(false)}>Cancel</button></div>
+              <div className="saved-address-form-heading"><h2>{editingAddressId ? 'Edit address' : 'Add address'}</h2><button type="button" className="saved-address-cancel" onClick={() => { setShowForm(false); setEditingAddressId(null); }}>Cancel</button></div>
               <label><span>Address name</span><input type="text" value={label} onChange={(event) => setLabel(event.target.value)} placeholder="e.g. Home, Work, School" /></label>
               <label><span>City</span><input type="text" value={city} onChange={(event) => { setCity(event.target.value); setBarangay(''); setMessage(''); setError(''); }} autoComplete="address-level2" required /></label>
               <label><span>Barangay</span><input type="text" value={barangay} onChange={(event) => { setBarangay(event.target.value); setMessage(''); setError(''); }} autoComplete="address-level3" required /></label>
               <label><span>Unit/Bldg./Street Address</span><textarea value={address} onChange={(event) => { setAddress(event.target.value); setMessage(''); setError(''); }} placeholder="Enter your unit, building, house number, and street" rows={4} required /></label>
               {cityIsSupported && selectedZone && !selectedZone.isSupported ? <p className="saved-address-error" role="alert">This barangay is outside the restaurant's delivery area.</p> : null}
-              <button className="button button-primary" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save Address'}</button>
+              <button className="button button-primary" type="submit" disabled={saving}>{saving ? 'Saving…' : editingAddressId ? 'Save Changes' : 'Save Address'}</button>
             </form>
           )}
         </>}
