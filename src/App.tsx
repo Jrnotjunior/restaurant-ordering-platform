@@ -434,9 +434,9 @@ function AppContent() {
   useEffect(() => { if (!cartNotification) return; const timer = window.setTimeout(() => setCartNotification(''), 3000); return () => window.clearTimeout(timer); }, [cartNotification]);
   useEffect(() => { if (!isSupabaseConfigured) return; let cancelled = false; restaurantRepository.getRestaurant(currentRestaurantLookup).then((loadedRestaurant) => { if (!cancelled && loadedRestaurant) setRestaurant(loadedRestaurant); }).catch((error: unknown) => console.error('Unable to load restaurant from Supabase.', error)); return () => { cancelled = true; }; }, []);
 
-  const [restaurantOpen, setRestaurantOpen] = useState(() => isRestaurantCurrentlyOpen(restaurant.operatingHours));
+  const [restaurantOpen, setRestaurantOpen] = useState(() => restaurant.orderingEnabled !== false && isRestaurantCurrentlyOpen(restaurant.operatingHours));
   useEffect(() => {
-    const updateRestaurantOpen = () => setRestaurantOpen(isRestaurantCurrentlyOpen(restaurant.operatingHours));
+    const updateRestaurantOpen = () => setRestaurantOpen(restaurant.orderingEnabled !== false && isRestaurantCurrentlyOpen(restaurant.operatingHours));
     updateRestaurantOpen();
     const timer = window.setInterval(updateRestaurantOpen, 30_000);
     return () => window.clearInterval(timer);
