@@ -28,6 +28,8 @@ export function Header({ cartCount = 0 }: HeaderProps) {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordMessage, setPasswordMessage] = useState('');
+  const [loyaltyPoints, setLoyaltyPoints] = useState<number | null>(null);
+  const [loyaltyLoading, setLoyaltyLoading] = useState(false);
   const [activeOrderNumber, setActiveOrderNumber] = useState(() => window.localStorage.getItem(ACTIVE_ORDER_KEY));
 
   useEffect(() => {
@@ -43,6 +45,53 @@ export function Header({ cartCount = 0 }: HeaderProps) {
       document.removeEventListener('keydown', closeOnEscape);
     };
   }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadLoyaltyPoints() {
+      if (!supabase || !user) {
+        setLoyaltyPoints(null);
+        return;
+      }
+
+      setLoyaltyLoading(true);
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from('customer_profiles')
+          .select('id')
+          .eq('auth_user_id', user.id)
+          .limit(1)
+          .maybeSingle();
+
+        if (profileError) throw profileError;
+
+        if (!profile) {
+          if (mounted) setLoyaltyPoints(0);
+          return;
+        }
+
+        const { data: account, error: accountError } = await supabase
+          .from('customer_loyalty_accounts')
+          .select('points_balance')
+          .eq('customer_id', profile.id)
+          .maybeSingle();
+
+        if (accountError) throw accountError;
+        if (mounted) setLoyaltyPoints(Number(account?.points_balance ?? 0));
+      } catch {
+        if (mounted) setLoyaltyPoints(null);
+      } finally {
+        if (mounted) setLoyaltyLoading(false);
+      }
+    }
+
+    void loadLoyaltyPoints();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     const refreshActiveOrder = () => setActiveOrderNumber(window.localStorage.getItem(ACTIVE_ORDER_KEY));
@@ -110,6 +159,7 @@ export function Header({ cartCount = 0 }: HeaderProps) {
                   <div className="header-account-identity">
                     <strong>{typeof user.user_metadata?.name === 'string' && user.user_metadata.name.trim() ? user.user_metadata.name.trim() : 'Customer'}</strong>
                     <span>{user.email}</span>
+                    <span className="header-account-points">Loyalty points: {loyaltyLoading ? '…' : loyaltyPoints ?? '—'}</span>
                   </div>
                   <button className="header-account-menu-item" type="button" onClick={() => { setChangePasswordOpen((open) => !open); setPasswordMessage(''); }}>
                     Change password
