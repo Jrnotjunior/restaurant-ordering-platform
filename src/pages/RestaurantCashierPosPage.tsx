@@ -281,7 +281,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const discountReady = beneficiaries.every((beneficiary) => beneficiary.idNumber.trim().length > 0) && beneficiaries.length <= effectiveGroupSize;
 
   return (
-    <section className="restaurant-pos-page">
+    <section className="restaurant-page restaurant-pos-page">
       <div className="restaurant-pos-header">
         <div><p className="eyebrow">Cashier</p><h1>POS</h1><p>Create orders for walk-in customers who order at the counter.</p></div>
         <span className="restaurant-dashboard-live-status is-live"><span className="restaurant-dashboard-live-dot" />Live</span>
