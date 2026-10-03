@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getMyCustomerProfile, saveMyDefaultDeliveryAddress } from '../services/loyaltyRepository';
+import { deleteMyCustomerAddress, getMyCustomerAddresses, saveMyCustomerAddress, setMyCustomerAddressDefault, type CustomerSavedAddress } from '../services/loyaltyRepository';
 import { getRestaurantDeliveryZones, type RestaurantDeliveryZone } from '../services/restaurantSettingsRepository';
 import { useRestaurant } from '../components/RestaurantProvider';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
@@ -17,62 +17,43 @@ function isValenzuela(value: string) {
 export function SavedAddressPage() {
   const restaurant = useRestaurant();
   const { user } = useRestaurantOwnerAuth();
+  const [addresses, setAddresses] = useState<CustomerSavedAddress[]>([]);
+  const [zones, setZones] = useState<RestaurantDeliveryZone[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [label, setLabel] = useState('');
   const [city, setCity] = useState('');
   const [barangay, setBarangay] = useState('');
   const [address, setAddress] = useState('');
-  const [zones, setZones] = useState<RestaurantDeliveryZone[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [busyAddressId, setBusyAddressId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      if (!user || !restaurant.id) {
-        if (!cancelled) {
-          setLoading(false);
-          setError('Please sign in to manage your saved address.');
-        }
-        return;
-      }
-
-      setLoading(true);
-      setError('');
-
-      try {
-        const [profile, deliveryZones] = await Promise.all([
-          getMyCustomerProfile(restaurant.id),
-          getRestaurantDeliveryZones(restaurant.id),
-        ]);
-
-        if (cancelled) return;
-
-        if (!profile) {
-          setError('Your customer profile could not be found. Please sign in again.');
-          return;
-        }
-
-        setCity(profile.defaultDeliveryCity ?? '');
-        setBarangay(profile.defaultDeliveryBarangay ?? '');
-        setAddress(profile.defaultDeliveryAddress ?? '');
-        setZones(deliveryZones);
-      } catch (loadError) {
-        if (cancelled) return;
-        console.error('Unable to load saved address.', loadError);
-        setError(loadError instanceof Error ? loadError.message : 'Unable to load your saved address.');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+  async function loadAddresses() {
+    if (!user || !restaurant.id) {
+      setError('Please sign in to manage your saved addresses.');
+      setLoading(false);
+      return;
     }
+    setLoading(true);
+    setError('');
+    try {
+      const [savedAddresses, deliveryZones] = await Promise.all([
+        getMyCustomerAddresses(restaurant.id),
+        getRestaurantDeliveryZones(restaurant.id),
+      ]);
+      setAddresses(savedAddresses);
+      setZones(deliveryZones);
+    } catch (loadError) {
+      console.error('Unable to load saved addresses.', loadError);
+      setError(loadError instanceof Error ? loadError.message : 'Unable to load your saved addresses.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
-    void load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [restaurant.id, user?.id]);
+  useEffect(() => { void loadAddresses(); }, [restaurant.id, user?.id]);
 
   const cityIsSupported = isValenzuela(city);
   const suggestions = zones.filter((zone) => {
@@ -82,11 +63,21 @@ export function SavedAddressPage() {
   });
   const selectedZone = zones.find((zone) => normalize(zone.barangay) === normalize(barangay));
 
+  function openAddForm() {
+    setLabel('');
+    setCity('');
+    setBarangay('');
+    setAddress('');
+    setMessage('');
+    setError('');
+    setShowForm(true);
+  }
+
   async function handleSave(event: React.FormEvent) {
     event.preventDefault();
     setMessage('');
     setError('');
-
+    const trimmedLabel = label.trim() || 'Address';
     const trimmedCity = city.trim();
     const trimmedBarangay = barangay.trim();
     const trimmedAddress = address.trim();
@@ -95,30 +86,55 @@ export function SavedAddressPage() {
       setError('Please complete your city, barangay, and unit/building/street address.');
       return;
     }
-
     if (cityIsSupported && (!selectedZone || !selectedZone.isSupported)) {
       setError('Please select a supported delivery barangay.');
       return;
     }
 
     setSaving(true);
-
     try {
-      await saveMyDefaultDeliveryAddress(
-        restaurant.id!,
-        trimmedCity,
-        trimmedBarangay,
-        trimmedAddress,
-      );
-      setCity(trimmedCity);
-      setBarangay(trimmedBarangay);
-      setAddress(trimmedAddress);
-      setMessage('Your default delivery address has been saved.');
+      await saveMyCustomerAddress(restaurant.id!, trimmedLabel, trimmedCity, trimmedBarangay, trimmedAddress, addresses.length === 0);
+      setShowForm(false);
+      setMessage(addresses.length === 0 ? 'Address saved and set as your default.' : 'Address saved.');
+      await loadAddresses();
     } catch (saveError) {
-      console.error('Unable to save default address.', saveError);
+      console.error('Unable to save address.', saveError);
       setError(saveError instanceof Error ? saveError.message : 'Unable to save your address.');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleSetDefault(addressId: string) {
+    setBusyAddressId(addressId);
+    setMessage('');
+    setError('');
+    try {
+      await setMyCustomerAddressDefault(restaurant.id!, addressId);
+      setMessage('Default address updated.');
+      await loadAddresses();
+    } catch (defaultError) {
+      console.error('Unable to set default address.', defaultError);
+      setError(defaultError instanceof Error ? defaultError.message : 'Unable to set the default address.');
+    } finally {
+      setBusyAddressId(null);
+    }
+  }
+
+  async function handleDelete(addressId: string) {
+    if (!window.confirm('Delete this saved address?')) return;
+    setBusyAddressId(addressId);
+    setMessage('');
+    setError('');
+    try {
+      await deleteMyCustomerAddress(restaurant.id!, addressId);
+      setMessage('Address deleted.');
+      await loadAddresses();
+    } catch (deleteError) {
+      console.error('Unable to delete address.', deleteError);
+      setError(deleteError instanceof Error ? deleteError.message : 'Unable to delete the address.');
+    } finally {
+      setBusyAddressId(null);
     }
   }
 
@@ -127,77 +143,38 @@ export function SavedAddressPage() {
       <div className="saved-address-card">
         <a className="saved-address-back" href="#menu">← Back to menu</a>
         <p className="eyebrow">Customer account</p>
-        <h1>Saved address</h1>
-        <p className="saved-address-intro">Save your default delivery address so checkout can fill it in automatically.</p>
+        <h1>Saved addresses</h1>
+        <p className="saved-address-intro">Save multiple delivery addresses and choose which one checkout should use by default.</p>
 
-        {loading ? (
-          <div className="saved-address-loading">Loading your saved address…</div>
-        ) : (
-          <form className="saved-address-form" onSubmit={handleSave}>
-            <label>
-              <span>City</span>
-              <input
-                type="text"
-                value={city}
-                onChange={(event) => {
-                  setCity(event.target.value);
-                  setBarangay('');
-                  setMessage('');
-                  setError('');
-                }}
-                autoComplete="address-level2"
-                required
-              />
-            </label>
+        {loading ? <div className="saved-address-loading">Loading your saved addresses…</div> : <>
+          {addresses.map((item) => (
+            <article className={`saved-address-item${item.isDefault ? ' is-default' : ''}`} key={item.id}>
+              <div className="saved-address-item-header">
+                <div className="saved-address-title"><strong>{item.label}</strong>{item.isDefault ? <span className="saved-address-default-badge">Default</span> : null}</div>
+                <button className="saved-address-delete" type="button" onClick={() => void handleDelete(item.id)} disabled={busyAddressId === item.id}>Delete</button>
+              </div>
+              <p>{item.address}</p>
+              <span>{item.barangay}, {item.city}</span>
+              {!item.isDefault ? <button className="saved-address-default-button" type="button" onClick={() => void handleSetDefault(item.id)} disabled={busyAddressId === item.id}>{busyAddressId === item.id ? 'Updating…' : 'Set as default'}</button> : null}
+            </article>
+          ))}
 
-            <label>
-              <span>Barangay</span>
-              <input
-                type="text"
-                value={barangay}
-                onChange={(event) => {
-                  setBarangay(event.target.value);
-                  setMessage('');
-                  setError('');
-                }}
-                autoComplete="address-level3"
-                list="saved-address-barangays"
-                required
-              />
-              {cityIsSupported ? (
-                <datalist id="saved-address-barangays">
-                  {suggestions.map((zone) => <option key={zone.id} value={zone.barangay} />)}
-                </datalist>
-              ) : null}
-            </label>
+          {addresses.length === 0 ? <p className="saved-address-empty">You don't have any saved addresses yet.</p> : null}
+          {error ? <p className="saved-address-error" role="alert">{error}</p> : null}
+          {message ? <p className="saved-address-success" role="status">{message}</p> : null}
 
-            <label>
-              <span>Unit/Bldg./Street Address</span>
-              <textarea
-                value={address}
-                onChange={(event) => {
-                  setAddress(event.target.value);
-                  setMessage('');
-                  setError('');
-                }}
-                placeholder="Enter your unit, building, house number, and street"
-                rows={4}
-                required
-              />
-            </label>
-
-            {cityIsSupported && selectedZone && !selectedZone.isSupported ? (
-              <p className="saved-address-error" role="alert">This barangay is outside the restaurant's delivery area.</p>
-            ) : null}
-
-            {error ? <p className="saved-address-error" role="alert">{error}</p> : null}
-            {message ? <p className="saved-address-success" role="status">{message}</p> : null}
-
-            <button className="button button-primary" type="submit" disabled={saving}>
-              {saving ? 'Saving…' : 'Save Address'}
-            </button>
-          </form>
-        )}
+          {!showForm ? <button className="button button-primary saved-address-add-button" type="button" onClick={openAddForm}>+ Add address</button> : (
+            <form className="saved-address-form" onSubmit={handleSave}>
+              <div className="saved-address-form-heading"><h2>Add address</h2><button type="button" className="saved-address-cancel" onClick={() => setShowForm(false)}>Cancel</button></div>
+              <label><span>Address name</span><input type="text" value={label} onChange={(event) => setLabel(event.target.value)} placeholder="e.g. Home, Work, School" /></label>
+              <label><span>City</span><input type="text" value={city} onChange={(event) => { setCity(event.target.value); setBarangay(''); setMessage(''); setError(''); }} autoComplete="address-level2" required /></label>
+              <label><span>Barangay</span><input type="text" value={barangay} onChange={(event) => { setBarangay(event.target.value); setMessage(''); setError(''); }} autoComplete="address-level3" list="saved-address-barangays" required />{cityIsSupported ? <datalist id="saved-address-barangays">{suggestions.map((zone) => <option key={zone.id} value={zone.barangay} />)}</datalist> : null}</label>
+              <label><span>Unit/Bldg./Street Address</span><textarea value={address} onChange={(event) => { setAddress(event.target.value); setMessage(''); setError(''); }} placeholder="Enter your unit, building, house number, and street" rows={4} required /></label>
+              {cityIsSupported && selectedZone && !selectedZone.isSupported ? <p className="saved-address-error" role="alert">This barangay is outside the restaurant's delivery area.</p> : null}
+              <button className="button button-primary" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save Address'}</button>
+            </form>
+          )}
+        </>}
       </div>
     </section>
   );
