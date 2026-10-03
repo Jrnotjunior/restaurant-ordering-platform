@@ -14,6 +14,7 @@ function withBasePath(path: string) {
   if (path === '/cart') return `${base}/#cart`;
   if (path === '/account') return `${base}/#account`;
   if (path === '/saved-address') return `${base}/#saved-address`;
+  if (path === '/order-history') return `${base}/#order-history`;
   return `${base}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
@@ -136,6 +137,7 @@ export function Header({ cartCount = 0 }: HeaderProps) {
                 <span className="header-account-points">Loyalty points: {loyaltyLoading ? '…' : loyaltyPoints ?? '—'}</span>
               </div>
               {user ? <>
+                <a className="header-account-menu-item" href={withBasePath('/order-history')} onClick={() => setAccountOpen(false)}>Order history</a>
                 <a className="header-account-menu-item" href={withBasePath('/saved-address')} onClick={() => setAccountOpen(false)}>Saved address</a>
                                 <button className="header-account-menu-item" type="button" onClick={() => { setChangePasswordOpen((open) => !open); setPasswordMessage(''); }}>Change password</button>
                 {changePasswordOpen ? (
