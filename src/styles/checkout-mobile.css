@@ -824,3 +824,21 @@
 .checkout-summary .checkout-loyalty-discount strong {
   color: #0f766e;
 }
+
+
+/* Keep order notes at a fixed size. */
+.order-notes-textarea {
+  height: 7.5rem;
+  min-height: 7.5rem;
+  max-height: 7.5rem;
+  resize: none;
+  box-sizing: border-box;
+}
+
+@media (max-width: 560px) {
+  .order-notes-textarea {
+    height: 6.5rem;
+    min-height: 6.5rem;
+    max-height: 6.5rem;
+  }
+}
