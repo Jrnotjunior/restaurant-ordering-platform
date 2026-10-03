@@ -72,6 +72,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [redeemPoints, setRedeemPoints] = useState(false);
   const [loyaltyLoading, setLoyaltyLoading] = useState(false);
+  const restaurantId = items[0]?.product.restaurantId ?? '';
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -169,7 +170,6 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     };
   }, [restaurantId, user?.id]);
 
-  const restaurantId = items[0]?.product.restaurantId ?? '';
   const restaurantPickupPoint = restaurant.locationText?.trim() ?? '';
   const cityIsSupported = isValenzuela(deliveryCity);
   const isDelivery = orderType === 'delivery';
