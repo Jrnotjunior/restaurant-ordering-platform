@@ -730,3 +730,14 @@ textarea {
   .product-card-content .product-card-price { font-size: 16px; }
   .product-card-content > p { font-size: 14px; }
 }
+
+
+/* Pin product details to the top edge beside the image. */
+.product-card-main {
+  align-items: flex-start;
+}
+.product-card-content {
+  justify-content: flex-start;
+  align-self: flex-start;
+  padding-top: 6px;
+}
