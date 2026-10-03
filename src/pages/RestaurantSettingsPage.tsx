@@ -55,6 +55,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [pricesVatInclusive, setPricesVatInclusive] = useState(false);
   const [vatRate, setVatRate] = useState('12');
   const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
+  const [automaticRiderAssignmentEnabled, setAutomaticRiderAssignmentEnabled] = useState(false);
   const [logoUrl, setLogoUrl] = useState('');
   const [logoUploading, setLogoUploading] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -74,7 +75,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     try {
       const { data, error: loadError } = await supabase
         .from('restaurants')
-        .select('store_address,location_text,logo_url,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate,cash_on_delivery_enabled')
+        .select('store_address,location_text,logo_url,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate,cash_on_delivery_enabled,automatic_rider_assignment_enabled')
         .eq('id', restaurantId)
         .single();
 
@@ -86,6 +87,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       setPricesVatInclusive(Boolean(data?.tax_prices_vat_inclusive));
       setVatRate(String(data?.tax_vat_rate ?? 12));
       setCashOnDeliveryEnabled(data?.cash_on_delivery_enabled !== false);
+      setAutomaticRiderAssignmentEnabled(data?.automatic_rider_assignment_enabled === true);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load store settings.');
     } finally {
@@ -185,6 +187,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           tax_prices_vat_inclusive: vatRegistered ? pricesVatInclusive : false,
           tax_vat_rate: vatRegistered ? parsedVatRate : 0,
           cash_on_delivery_enabled: cashOnDeliveryEnabled,
+          automatic_rider_assignment_enabled: automaticRiderAssignmentEnabled,
         })
         .eq('id', restaurantId);
 
@@ -330,6 +333,25 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
                 checked={cashOnDeliveryEnabled}
                 disabled={loading || saving}
                 onChange={(event) => { setCashOnDeliveryEnabled(event.target.checked); setMessage(''); setError(''); }}
+              />
+              <span className="restaurant-settings-switch-track" aria-hidden="true">
+                <span className="restaurant-settings-switch-thumb" />
+              </span>
+            </span>
+          </label>
+        </div>
+
+        <div className="restaurant-settings-card">
+          <h2>Automatic Rider Assignment</h2>
+          <p className="restaurant-settings-help">Automatically assign a ready delivery order to an available rider. The system chooses the rider with the fewest active deliveries, then the fewest deliveries today.</p>
+          <label className="restaurant-settings-switch-row">
+            <span>Auto-assign delivery orders</span>
+            <span className="restaurant-settings-switch">
+              <input
+                type="checkbox"
+                checked={automaticRiderAssignmentEnabled}
+                disabled={loading || saving}
+                onChange={(event) => { setAutomaticRiderAssignmentEnabled(event.target.checked); setMessage(''); setError(''); }}
               />
               <span className="restaurant-settings-switch-track" aria-hidden="true">
                 <span className="restaurant-settings-switch-thumb" />
