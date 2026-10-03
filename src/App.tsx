@@ -347,10 +347,6 @@ function PublicCustomerRouteGuard({ children }: { children: ReactNode }) {
     }
   }, [checking, staffRole]);
 
-  if (authLoading || checking) {
-    return <section className="restaurant-owner-auth-loading">Checking account access…</section>;
-  }
-
   if (staffRole) {
     return <section className="restaurant-owner-auth-loading">Redirecting to your workspace…</section>;
   }
