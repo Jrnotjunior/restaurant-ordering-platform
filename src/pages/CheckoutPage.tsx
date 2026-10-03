@@ -73,7 +73,27 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [redeemPoints, setRedeemPoints] = useState(false);
   const [loyaltyLoading, setLoyaltyLoading] = useState(false);
+  const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
   const restaurantId = items[0]?.product.restaurantId ?? '';
+
+  useEffect(() => {
+    if (!supabase || !restaurantId) return;
+
+    let mounted = true;
+    async function loadCashOnDeliverySetting() {
+      const { data, error } = await supabase
+        .from('restaurants')
+        .select('cash_on_delivery_enabled')
+        .eq('id', restaurantId)
+        .single();
+
+      if (!mounted) return;
+      if (!error) setCashOnDeliveryEnabled(data?.cash_on_delivery_enabled !== false);
+    }
+
+    void loadCashOnDeliverySetting();
+    return () => { mounted = false; };
+  }, [restaurantId]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -467,7 +487,10 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
           </div>
           {thirdPartyCourierDelivery && <p className="courier-payment-note"><strong>Online payment is required.</strong> Please complete your payment before the order is sent to the restaurant. You are responsible for booking and paying the courier separately.</p>}
           <div className="payment-method-options">
-            {paymentMethods.filter((method) => !thirdPartyCourierDelivery || method.value === 'online').map((method) => {
+            {paymentMethods
+              .filter((method) => !thirdPartyCourierDelivery || method.value === 'online')
+              .filter((method) => !(orderType === 'delivery' && method.value === 'cash' && !cashOnDeliveryEnabled))
+              .map((method) => {
               const label = orderType === 'dine_in' && method.value === 'cash' ? 'Pay at Counter' : method.label;
               const description = orderType === 'dine_in' && method.value === 'cash' ? 'Place your order now and pay the cashier at the restaurant counter.' : method.description;
               return <button className={`payment-method-card ${paymentMethod === method.value ? 'is-selected' : ''}`} key={method.value} type="button" onClick={() => setPaymentMethod(method.value)} disabled={isSubmitting}>
