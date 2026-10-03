@@ -4,7 +4,7 @@ import { createOrder } from '../services/orderRepository';
 import { applyPosGroupDiscounts, confirmDineInPayment, getRestaurantTaxSettings, type PosDiscountIdType, type PosDiscountType, type RestaurantTaxSettings } from '../services/restaurantOrderRepository';
 import type { RestaurantProduct } from '../types/menu';
 import { supabase } from '../services/supabaseClient';
-import { attachCustomerToOrder, findCustomersByName, type LoyaltyCustomerSuggestion } from '../services/loyaltyRepository';
+import { attachCustomerToOrder, findCustomersByName, getLoyaltyRedemptionSettings, redeemLoyaltyReward, type LoyaltyCustomerSuggestion, type LoyaltyRedemptionSettings } from '../services/loyaltyRepository';
 
 type Props = { restaurantId: string };
 type CartItem = { product: RestaurantProduct; quantity: number };
@@ -55,6 +55,8 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const [customerName, setCustomerName] = useState('Walk-in Customer');
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [selectedCustomerPoints, setSelectedCustomerPoints] = useState<number | null>(null);
+  const [loyaltyRedemption, setLoyaltyRedemption] = useState<LoyaltyRedemptionSettings | null>(null);
+  const [redeemPoints, setRedeemPoints] = useState(false);
   const [customerSuggestions, setCustomerSuggestions] = useState<LoyaltyCustomerSuggestion[]>([]);
   const [customerSuggestionsLoading, setCustomerSuggestionsLoading] = useState(false);
   const [showCustomerSuggestions, setShowCustomerSuggestions] = useState(false);
@@ -73,8 +75,9 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
     try {
       setLoading(true);
       setError('');
-      const [menu, tax] = await Promise.all([getMenu(restaurantId, true), getRestaurantTaxSettings(restaurantId)]);
+      const [menu, tax, redemption] = await Promise.all([getMenu(restaurantId, true), getRestaurantTaxSettings(restaurantId), getLoyaltyRedemptionSettings(restaurantId)]);
       setTaxSettings(tax);
+      setLoyaltyRedemption(redemption);
       setProducts(menu.products);
       setCategories(menu.categories);
     } catch (err) {
@@ -248,6 +251,11 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
       }
 
       const financials = await applyPosGroupDiscounts(created.orderId, effectiveGroupSize, beneficiaries);
+
+      if (redeemPoints && selectedCustomerId) {
+        await redeemLoyaltyReward(created.orderId, selectedCustomerId);
+      }
+
       await confirmDineInPayment(created.orderId);
       window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
 
@@ -269,6 +277,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
       setCustomerName('Walk-in Customer');
       setSelectedCustomerId(null);
       setSelectedCustomerPoints(null);
+      setRedeemPoints(false);
       setCustomerSuggestions([]);
       setShowCustomerSuggestions(false);
       setCashReceived('');
@@ -339,6 +348,20 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
                 <strong>{selectedCustomerPoints} points</strong>
               </div>
             )}
+            {selectedCustomerId && selectedCustomerPoints !== null && loyaltyRedemption?.enabled && selectedCustomerPoints >= loyaltyRedemption.pointsRequired && (
+              <label className="restaurant-pos-redeem-loyalty">
+                <input
+                  type="checkbox"
+                  checked={redeemPoints}
+                  disabled={saving}
+                  onChange={(event) => setRedeemPoints(event.target.checked)}
+                />
+                <span>
+                  <strong>Redeem {loyaltyRedemption.pointsRequired} points</strong>
+                  <small>Apply ₱{loyaltyRedemption.discountAmount.toFixed(2)} off this order.</small>
+                </span>
+              </label>
+            )}
             {showCustomerSuggestions && customerName.trim().length >= 2 && (
               <div className="restaurant-pos-customer-suggestions" role="listbox" aria-label="Customer suggestions">
                 {customerSuggestionsLoading && <div className="restaurant-pos-customer-suggestion-status">Searching customers…</div>}
@@ -352,6 +375,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
                       setCustomerName(customer.name);
                       setSelectedCustomerId(customer.customerId);
                       setSelectedCustomerPoints(customer.pointsBalance);
+                      setRedeemPoints(false);
                       setShowCustomerSuggestions(false);
                     }}
                   >
