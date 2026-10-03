@@ -1,7 +1,8 @@
 import type { RestaurantConfig } from '../types/restaurant';
 
 export type RestaurantLookup = {
-  slug: string;
+  slug?: string;
+  domain?: string;
 };
 
 export interface RestaurantRepository {
