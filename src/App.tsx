@@ -22,6 +22,7 @@ import { RestaurantKitchenPage } from './pages/RestaurantKitchenPage';
 import { CustomerSignUpPage } from './pages/CustomerSignUpPage';
 import { PrivacyNoticePage } from './pages/PrivacyNoticePage';
 import { SavedAddressPage } from './pages/SavedAddressPage';
+import { CustomerOrderHistoryPage } from './pages/CustomerOrderHistoryPage';
 import { RiderDeliveryPage } from './pages/RiderDeliveryPage';
 import { RiderDashboardPage } from './pages/RiderDashboardPage';
 import { RiderInvitePage } from './pages/RiderInvitePage';
@@ -487,6 +488,7 @@ function AppContent() {
   if (isSignUpPage) return <CustomerSignUpPage />;
   if (isPrivacyPage) return <PrivacyNoticePage />;
   if (route === '#saved-address') return <PublicCustomerRouteGuard><RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}><SavedAddressPage /></RestaurantLayout></ThemeProvider></RestaurantProvider></PublicCustomerRouteGuard>;
+  if (route === '#order-history') return <PublicCustomerRouteGuard><RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}><CustomerOrderHistoryPage /></RestaurantLayout></ThemeProvider></RestaurantProvider></PublicCustomerRouteGuard>;
   if (isAccountPage) return <RestaurantOwnerLoginPage />;
   if (isRiderDashboardPage) return <RiderRouteGuard><RiderDashboardPage /></RiderRouteGuard>;
   if (riderDeliveryMatch) return <RiderRouteGuard><RiderDeliveryPage orderId={decodeURIComponent(riderDeliveryMatch[1])} /></RiderRouteGuard>;
