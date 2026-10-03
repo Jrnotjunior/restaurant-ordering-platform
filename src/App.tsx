@@ -363,6 +363,7 @@ function AppContent() {
   const [cartNotification, setCartNotification] = useState('');
   const { user, loading: authLoading, error: authError } = useRestaurantOwnerAuth();
   const hydratedCartUserIdRef = useRef<string | null>(null);
+  const cartPersistenceReadyRef = useRef(false);
   const cartItemsRef = useRef<CartItem[]>([]);
 
   useEffect(() => {
@@ -374,6 +375,8 @@ function AppContent() {
   // navigation and refreshes without being shared with another account.
   useEffect(() => {
     if (authLoading) return;
+
+    cartPersistenceReadyRef.current = false;
 
     if (!user) {
       hydratedCartUserIdRef.current = null;
@@ -402,11 +405,12 @@ function AppContent() {
       setCartItems([]);
     }
 
+    cartPersistenceReadyRef.current = true;
     window.localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
   }, [authLoading, user?.id]);
 
   useEffect(() => {
-    if (authLoading || !user || hydratedCartUserIdRef.current !== user.id) return;
+    if (authLoading || !user || hydratedCartUserIdRef.current !== user.id || !cartPersistenceReadyRef.current) return;
     const storageKey = CART_STORAGE_KEY + ':' + user.id;
     window.localStorage.setItem(storageKey, JSON.stringify(cartItems));
   }, [authLoading, user?.id, cartItems]);
