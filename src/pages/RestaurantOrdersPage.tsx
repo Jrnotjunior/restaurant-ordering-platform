@@ -616,6 +616,12 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
                 </div>
               ))}
             </div>
+            {!isKitchen && selectedOrder.loyaltyDiscountAmount > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, paddingTop: 12, borderTop: '1px solid #e2e8f0', color: '#0f766e' }}>
+                <span>Loyalty Discount</span>
+                <span>-₱{selectedOrder.loyaltyDiscountAmount.toFixed(2)}</span>
+              </div>
+            )}
             {!isKitchen && selectedOrder.orderType === 'delivery' && selectedOrder.shippingFee > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, paddingTop: 12, borderTop: '1px solid #e2e8f0', color: '#64748b' }}>
                 <span>Shipping fee</span>
@@ -750,6 +756,9 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
               </>
             ) : (
               <div className="receipt-row"><span>Subtotal</span><span>₱{selectedOrder.items.reduce((sum, item) => sum + item.lineTotal, 0).toFixed(2)}</span></div>
+            )}
+            {selectedOrder.loyaltyDiscountAmount > 0 && (
+              <div className="receipt-row"><span>Loyalty Discount</span><span>-₱{selectedOrder.loyaltyDiscountAmount.toFixed(2)}</span></div>
             )}
             {selectedOrder.orderType === 'delivery' && selectedOrder.shippingFee > 0 && (
               <div className="receipt-row"><span>Delivery fee</span><span>₱{selectedOrder.shippingFee.toFixed(2)}</span></div>
