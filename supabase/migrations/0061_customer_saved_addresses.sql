@@ -191,6 +191,15 @@ begin
     raise exception 'City, barangay, and address are required';
   end if;
 
+  if (
+    select count(*)
+    from public.customer_addresses
+    where customer_id = v_customer_id
+      and restaurant_id = p_restaurant_id
+  ) >= 2 then
+    raise exception 'You can save a maximum of 2 addresses.';
+  end if;
+
   if p_set_default then
     update public.customer_addresses
     set is_default = false,
