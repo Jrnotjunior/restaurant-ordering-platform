@@ -242,6 +242,24 @@
 
 .restaurant-navigation-row.is-dispatcher{justify-content:flex-end}
 
+/* Consistent, softer owner-dashboard action buttons */
+.restaurant-operations-shell-owner .button {
+  color: #fff !important;
+  background: #64748b !important;
+  border-color: #64748b !important;
+}
+
+.restaurant-operations-shell-owner .button:hover:not(:disabled) {
+  background: #475569 !important;
+  border-color: #475569 !important;
+}
+
+.restaurant-operations-shell-owner .restaurant-menu-categories button.is-active {
+  border-color: #64748b !important;
+  background: #64748b !important;
+  color: #fff !important;
+}
+
 /* Approved owner management shell */
 .restaurant-operations-shell-owner{min-height:100vh;background:#f7f9fc;padding-left:220px;padding-top:70px;box-sizing:border-box}
 .restaurant-owner-sidebar{position:fixed;z-index:60;inset:0 auto 0 0;width:220px;box-sizing:border-box;padding:18px 12px;background:#101b2f;color:#dbe5f2}
