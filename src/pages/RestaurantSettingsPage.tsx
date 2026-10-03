@@ -148,7 +148,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const openDays = useMemo(() => DAYS.filter((day) => hours[day.key].isOpen).length, [hours]);
 
   return (
-    <section className="restaurant-shipping-page">
+    <section className="restaurant-page restaurant-shipping-page">
       <style>{`
         .restaurant-settings-grid{display:grid;gap:20px}
         .restaurant-settings-card{padding:24px;border:1px solid #e1e5eb;border-radius:14px;background:#fff}
