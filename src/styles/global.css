@@ -277,3 +277,12 @@ main { flex: 1; }
     padding-bottom: 40px;
   }
 }
+
+
+/* Keep every textarea at a consistent fixed size across the application. */
+textarea {
+  height: 7.5rem !important;
+  min-height: 7.5rem !important;
+  max-height: 7.5rem !important;
+  resize: none !important;
+}
