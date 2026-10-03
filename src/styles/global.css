@@ -286,3 +286,37 @@ textarea {
   max-height: 7.5rem !important;
   resize: none !important;
 }
+
+
+/* Compact payment action below the order summary. */
+.checkout-summary-submit {
+  display: flex;
+  width: fit-content !important;
+  min-width: 0 !important;
+  margin: 1.25rem 0 0 auto;
+  padding: 0 1.5rem;
+  background: #374151 !important;
+  border-color: #374151 !important;
+  color: #ffffff !important;
+}
+
+.checkout-summary-submit:hover:not(:disabled) {
+  background: #1f2937 !important;
+  border-color: #1f2937 !important;
+  color: #ffffff !important;
+}
+
+.checkout-summary-submit:disabled {
+  background: #374151 !important;
+  border-color: #374151 !important;
+  color: #ffffff !important;
+  opacity: 0.55;
+}
+
+@media (max-width: 560px) {
+  .checkout-summary-submit {
+    width: fit-content !important;
+    margin-top: 1.25rem;
+    padding-inline: 1.25rem;
+  }
+}
