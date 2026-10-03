@@ -122,3 +122,11 @@ export async function redeemLoyaltyRewardForPendingPayment(
     total: Number(row.total),
   };
 }
+
+
+export async function getMyCustomerProfileId(restaurantId: string): Promise<string | null> {
+  const rows = await supabaseRpc<string | null>('get_my_customer_profile_id', {
+    p_restaurant_id: restaurantId,
+  });
+  return rows[0] ?? null;
+}
