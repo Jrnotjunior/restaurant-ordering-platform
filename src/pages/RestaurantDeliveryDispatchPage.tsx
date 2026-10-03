@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '../services/supabaseClient';
 
 type ReadyOrder = {
@@ -307,7 +308,10 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
       {error ? <div className="restaurant-dispatch-message" role="alert">{error}</div> : null}
 
       <main className="restaurant-dispatch-workflow">
-        <nav className="restaurant-dispatch-tabs" aria-label="Dispatch order type">
+        {(() => {
+          const slot = typeof document !== 'undefined' ? document.getElementById('restaurant-dispatch-tabs-slot') : null;
+          return slot ? createPortal(
+            <nav className="restaurant-dispatch-tabs" aria-label="Dispatch order type">
           <button
             type="button"
             className={'restaurant-dispatch-tab' + (activeTab === 'delivery' ? ' is-active' : '')}
@@ -332,7 +336,10 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
             <span>Dine In</span>
             <span className="restaurant-dispatch-tab-count">{dineInOrders.length}</span>
           </button>
-        </nav>
+        </nav>,
+            slot,
+          ) : null;
+        })()}
 
         <section className="restaurant-dispatch-card restaurant-dispatch-ready-card">
           <div className="restaurant-dispatch-card-heading">
