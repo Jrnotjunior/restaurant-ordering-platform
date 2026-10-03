@@ -279,7 +279,6 @@ function AppContent() {
   const { loading: authLoading, error: authError } = useRestaurantOwnerAuth();
 
   useEffect(() => { const handleHashChange = () => { setRoute(normalizeHashRoute(window.location.hash || '')); }; window.addEventListener('hashchange', handleHashChange); return () => window.removeEventListener('hashchange', handleHashChange); }, []);
-  useEffect(() => { const openAccount = () => setAccountModalOpen(true); window.addEventListener('restaurant-account-open', openAccount); return () => window.removeEventListener('restaurant-account-open', openAccount); }, []);
   useEffect(() => { window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems)); }, [cartItems]);
   useEffect(() => {
     function handleSuccessfulOrder() {
