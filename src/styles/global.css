@@ -261,3 +261,19 @@ main { flex: 1; }
   border-color: #d1d5db;
   cursor: not-allowed;
 }
+
+
+/* Shared restaurant management page layout. Keep page-specific CSS focused on content, not shell spacing. */
+.restaurant-page {
+  width: min(var(--restaurant-content-width), calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 32px 0 56px;
+}
+
+@media (max-width: 760px) {
+  .restaurant-page {
+    width: min(100% - 1rem, var(--restaurant-content-width));
+    padding-top: 24px;
+    padding-bottom: 40px;
+  }
+}
