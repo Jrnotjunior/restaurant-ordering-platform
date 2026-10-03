@@ -64,10 +64,8 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           )}
         </div>
         <div className="product-card-content">
-          <div className="product-card-heading">
-            <h3>{product.name}</h3>
-            <span className="product-card-price">₱{product.price.toFixed(2)}</span>
-          </div>
+          <h3>{product.name}</h3>
+          <span className="product-card-price">₱{product.price.toFixed(2)}</span>
           {product.description ? <p>{product.description}</p> : null}
         </div>
       </div>
