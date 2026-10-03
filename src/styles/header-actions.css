@@ -151,3 +151,10 @@
     width: min(260px, calc(100vw - 1rem));
   }
 }
+
+
+.header-account-points {
+  color: var(--color-text);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
