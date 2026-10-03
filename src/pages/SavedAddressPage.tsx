@@ -160,10 +160,11 @@ export function SavedAddressPage() {
           ))}
 
           {addresses.length === 0 ? <p className="saved-address-empty">You don't have any saved addresses yet.</p> : null}
+          {addresses.length >= 2 && !showForm ? <p className="saved-address-limit">You can save up to 2 addresses.</p> : null}
           {error ? <p className="saved-address-error" role="alert">{error}</p> : null}
           {message ? <p className="saved-address-success" role="status">{message}</p> : null}
 
-          {!showForm ? <button className="button button-primary saved-address-add-button" type="button" onClick={openAddForm}>+ Add address</button> : (
+          {!showForm ? <button className="button button-primary saved-address-add-button" type="button" onClick={openAddForm} disabled={addresses.length >= 2}>+ Add address</button> : (
             <form className="saved-address-form" onSubmit={handleSave}>
               <div className="saved-address-form-heading"><h2>Add address</h2><button type="button" className="saved-address-cancel" onClick={() => setShowForm(false)}>Cancel</button></div>
               <label><span>Address name</span><input type="text" value={label} onChange={(event) => setLabel(event.target.value)} placeholder="e.g. Home, Work, School" /></label>
