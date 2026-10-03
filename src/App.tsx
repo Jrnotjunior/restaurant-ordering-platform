@@ -14,7 +14,6 @@ import { RestaurantCashierPosPage } from './pages/RestaurantCashierPosPage';
 import { RestaurantDeliveryDispatchPage } from './pages/RestaurantDeliveryDispatchPage';
 import { RestaurantSettingsPage } from './pages/RestaurantSettingsPage';
 import { RestaurantLoyaltyPage } from './pages/RestaurantLoyaltyPage';
-import { RestaurantOwnerLoginPage } from './pages/RestaurantOwnerLoginPage';
 import { RestaurantEmployeesPage } from './pages/RestaurantEmployeesPage';
 import { RestaurantEmployeeInvitePage } from './pages/RestaurantEmployeeInvitePage';
 import { RestaurantRoleDashboardPage } from './pages/RestaurantRoleDashboardPage';
@@ -276,7 +275,7 @@ function AppContent() {
   const [route, setRoute] = useState(() => normalizeHashRoute(window.location.hash || ''));
   const [cartItems, setCartItems] = useState<CartItem[]>(() => { try { const stored = window.localStorage.getItem(CART_STORAGE_KEY); return stored ? JSON.parse(stored) as CartItem[] : []; } catch { return []; } });
   const [cartNotification, setCartNotification] = useState('');
-  const { user, loading: authLoading, error: authError } = useRestaurantOwnerAuth();
+  const { loading: authLoading, error: authError } = useRestaurantOwnerAuth();
 
   useEffect(() => { const handleHashChange = () => { setRoute(normalizeHashRoute(window.location.hash || '')); }; window.addEventListener('hashchange', handleHashChange); return () => window.removeEventListener('hashchange', handleHashChange); }, []);
   useEffect(() => { window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems)); }, [cartItems]);
@@ -304,7 +303,6 @@ function AppContent() {
   const isInviteCallback = hashParams.get('type') === 'invite' || searchParams.get('type') === 'invite' || Boolean(hashParams.get('token_hash') || searchParams.get('token_hash')) || Boolean(hashParams.get('error_code') || searchParams.get('error_code') || hashParams.get('error') || searchParams.get('error'));
   const isMenuPage = route === '#menu' || window.location.pathname.endsWith('/menu') || window.location.pathname.endsWith('/menu/');
   const isCartPage = route === '#cart';
-  const isAccountPage = route === '#account';
   const isSignUpPage = route === '#signup';
   const isCheckoutPage = route === '#checkout';
   const trackOrderNumber = searchParams.get('trackOrder');
@@ -334,13 +332,6 @@ function AppContent() {
   if (isEmployeeInvitePage) return <RestaurantEmployeeInvitePage />;
   if (isRiderInvitePage) return <RiderInvitePage />;
   if (isSignUpPage) return <CustomerSignUpPage />;
-  if (isAccountPage) {
-    if (user) {
-      window.location.hash = '#menu';
-      return <MenuPage onAddToCart={addToCart} cartCount={cartCount} />;
-    }
-    return <RestaurantOwnerLoginPage />;
-  }
   if (isRiderDashboardPage) return <RiderRouteGuard><RiderDashboardPage /></RiderRouteGuard>;
   if (riderDeliveryMatch) return <RiderRouteGuard><RiderDeliveryPage orderId={decodeURIComponent(riderDeliveryMatch[1])} /></RiderRouteGuard>;
 
