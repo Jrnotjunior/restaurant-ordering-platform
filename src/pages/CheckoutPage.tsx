@@ -78,8 +78,8 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const restaurantId = items[0]?.product.restaurantId ?? '';
 
   useEffect(() => {
-    const client = supabase;
-    if (!client || !restaurantId) return;
+    if (!supabase || !restaurantId) return;
+    const client = supabase as NonNullable<typeof supabase>;
 
     let mounted = true;
     async function loadCashOnDeliverySetting() {
