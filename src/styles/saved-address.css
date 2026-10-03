@@ -1,0 +1,128 @@
+.saved-address-page {
+  width: min(620px, calc(100% - 2rem));
+  min-height: calc(100vh - 220px);
+  margin: 0 auto;
+  padding: 2rem 0;
+  display: grid;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.saved-address-card {
+  padding: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  background: var(--color-surface);
+  box-shadow: 0 18px 45px rgb(15 23 42 / 0.08);
+}
+
+.saved-address-back {
+  display: inline-block;
+  margin-bottom: 24px;
+  color: var(--color-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.saved-address-back:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.saved-address-card h1 {
+  margin: 0;
+}
+
+.saved-address-intro {
+  margin: 10px 0 26px;
+  color: var(--color-muted);
+  line-height: 1.6;
+}
+
+.saved-address-form {
+  display: grid;
+  gap: 17px;
+}
+
+.saved-address-form label {
+  display: grid;
+  gap: 7px;
+}
+
+.saved-address-form label > span {
+  color: var(--color-text);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.saved-address-form input,
+.saved-address-form textarea {
+  width: 100%;
+  padding: 12px 13px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.saved-address-form input {
+  min-height: 46px;
+}
+
+.saved-address-form textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.saved-address-form input:focus,
+.saved-address-form textarea:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.saved-address-error,
+.saved-address-success {
+  margin: -2px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.saved-address-error {
+  color: #b91c1c;
+}
+
+.saved-address-success {
+  color: #166534;
+}
+
+.saved-address-form .button {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.saved-address-form .button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.saved-address-loading {
+  padding: 28px 0;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .saved-address-page {
+    width: min(100% - 1rem, 620px);
+    min-height: calc(100vh - 190px);
+    padding: 1rem 0;
+  }
+
+  .saved-address-card {
+    padding: 24px 20px;
+    border-radius: 14px;
+  }
+}
