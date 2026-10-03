@@ -30,6 +30,7 @@ export function SavedAddressPage() {
   const [busyAddressId, setBusyAddressId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [deleteAddressId, setDeleteAddressId] = useState<string | null>(null);
 
   function closeForm() {
     setShowForm(false);
@@ -145,8 +146,14 @@ export function SavedAddressPage() {
     }
   }
 
-  async function handleDelete(addressId: string) {
-    if (!window.confirm('Delete this saved address?')) return;
+  function openDeleteConfirmation(addressId: string) {
+    setDeleteAddressId(addressId);
+  }
+
+  async function handleDelete() {
+    if (!deleteAddressId) return;
+    const addressId = deleteAddressId;
+    setDeleteAddressId(null);
     setBusyAddressId(addressId);
     setMessage('');
     setError('');
@@ -175,7 +182,7 @@ export function SavedAddressPage() {
             <article className={`saved-address-item${item.isDefault ? ' is-default' : ''}`} key={item.id}>
               <div className="saved-address-item-header">
                 <div className="saved-address-title"><strong>{item.label}</strong>{item.isDefault ? <span className="saved-address-default-badge">Default</span> : null}</div>
-                <div className="saved-address-item-actions"><button className="saved-address-edit" type="button" onClick={() => openEditForm(item)} disabled={busyAddressId === item.id}>Edit</button><button className="saved-address-delete" type="button" onClick={() => void handleDelete(item.id)} disabled={busyAddressId === item.id}>Delete</button></div>
+                <div className="saved-address-item-actions"><button className="saved-address-edit" type="button" onClick={() => openEditForm(item)} disabled={busyAddressId === item.id}>Edit</button><button className="saved-address-delete" type="button" onClick={() => openDeleteConfirmation(item.id)} disabled={busyAddressId === item.id}>Delete</button></div>
               </div>
               <p>{item.address}</p>
               <span>{item.barangay}, {item.city}</span>
@@ -200,6 +207,44 @@ export function SavedAddressPage() {
             </form></div>
           )}
         </>}
+
+        {deleteAddressId ? (
+          <div
+            className="saved-address-confirm-backdrop"
+            role="presentation"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) setDeleteAddressId(null);
+            }}
+          >
+            <div
+              className="saved-address-confirm-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="delete-address-title"
+            >
+              <div className="saved-address-confirm-icon" aria-hidden="true">!</div>
+              <h2 id="delete-address-title">Delete saved address?</h2>
+              <p>This address will be permanently removed from your saved addresses.</p>
+              <div className="saved-address-confirm-actions">
+                <button
+                  type="button"
+                  className="saved-address-confirm-cancel"
+                  onClick={() => setDeleteAddressId(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="saved-address-confirm-delete"
+                  onClick={() => void handleDelete()}
+                  disabled={busyAddressId === deleteAddressId}
+                >
+                  {busyAddressId === deleteAddressId ? 'Deleting…' : 'Delete address'}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </section>
   );
