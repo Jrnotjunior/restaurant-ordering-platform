@@ -54,6 +54,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const [orderType, setOrderType] = useState<'dine_in' | 'pickup'>('dine_in');
   const [customerName, setCustomerName] = useState('Walk-in Customer');
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [selectedCustomerPoints, setSelectedCustomerPoints] = useState<number | null>(null);
   const [customerSuggestions, setCustomerSuggestions] = useState<LoyaltyCustomerSuggestion[]>([]);
   const [customerSuggestionsLoading, setCustomerSuggestionsLoading] = useState(false);
   const [showCustomerSuggestions, setShowCustomerSuggestions] = useState(false);
@@ -267,6 +268,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
       clearDiscounts();
       setCustomerName('Walk-in Customer');
       setSelectedCustomerId(null);
+      setSelectedCustomerPoints(null);
       setCustomerSuggestions([]);
       setShowCustomerSuggestions(false);
       setCashReceived('');
@@ -322,6 +324,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
                 onChange={(event) => {
                   setCustomerName(event.target.value);
                   setSelectedCustomerId(null);
+                  setSelectedCustomerPoints(null);
                   setShowCustomerSuggestions(true);
                 }}
                 onBlur={() => window.setTimeout(() => setShowCustomerSuggestions(false), 150)}
@@ -330,6 +333,12 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
                 disabled={saving}
               />
             </label>
+            {selectedCustomerId && selectedCustomerPoints !== null && (
+              <div className="restaurant-pos-selected-customer-points">
+                <span>Registered customer</span>
+                <strong>{selectedCustomerPoints} points</strong>
+              </div>
+            )}
             {showCustomerSuggestions && customerName.trim().length >= 2 && (
               <div className="restaurant-pos-customer-suggestions" role="listbox" aria-label="Customer suggestions">
                 {customerSuggestionsLoading && <div className="restaurant-pos-customer-suggestion-status">Searching customers…</div>}
@@ -342,6 +351,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
                     onClick={() => {
                       setCustomerName(customer.name);
                       setSelectedCustomerId(customer.customerId);
+                      setSelectedCustomerPoints(customer.pointsBalance);
                       setShowCustomerSuggestions(false);
                     }}
                   >
