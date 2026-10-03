@@ -743,3 +743,84 @@
     margin-top: 0.35rem;
   }
 }
+
+
+.checkout-loyalty-card {
+  display: grid;
+  gap: 0.8rem;
+  margin: 0.9rem 0;
+  padding: 0.9rem;
+  border: 1px solid #d9dee7;
+  border-radius: 0.8rem;
+  background: #f8fafc;
+}
+
+.checkout-loyalty-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.checkout-loyalty-heading > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.checkout-loyalty-heading strong {
+  color: #0f172a;
+  font-size: 0.9rem;
+}
+
+.checkout-loyalty-heading span,
+.checkout-loyalty-hint {
+  color: #64748b;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.checkout-loyalty-option {
+  display: grid;
+  grid-template-columns: 1.1rem minmax(0, 1fr);
+  align-items: start;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border: 1px solid #d9dee7;
+  border-radius: 0.7rem;
+  background: #fff;
+  cursor: pointer;
+}
+
+.checkout-loyalty-option input {
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.15rem;
+  accent-color: var(--color-primary);
+}
+
+.checkout-loyalty-option span {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.checkout-loyalty-option strong {
+  color: #0f172a;
+  font-size: 0.85rem;
+}
+
+.checkout-loyalty-option small {
+  color: #64748b;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.checkout-loyalty-hint {
+  margin: 0;
+}
+
+.checkout-summary .checkout-loyalty-discount {
+  color: #0f766e;
+}
+
+.checkout-summary .checkout-loyalty-discount strong {
+  color: #0f766e;
+}
