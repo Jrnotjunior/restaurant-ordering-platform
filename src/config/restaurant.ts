@@ -4,5 +4,5 @@ import { ConfigRestaurantRepository } from '../services/restaurantService';
 export const restaurantRepository = new ConfigRestaurantRepository(defaultRestaurant);
 
 export const currentRestaurantLookup = {
-  slug: 'your-restaurant'
+  slug: import.meta.env.VITE_RESTAURANT_SLUG?.trim() ?? ''
 };
