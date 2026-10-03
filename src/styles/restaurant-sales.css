@@ -1,5 +1,5 @@
 .restaurant-sales-page {
-  width: min(var(--restaurant-content-width), calc(100% - 2rem));
+
   margin: 0 auto;
   padding: 32px 0 56px;
 }
@@ -288,7 +288,7 @@
 
 @media (max-width: 760px) {
   .restaurant-sales-page {
-    width: min(100% - 1rem, var(--restaurant-content-width));
+
     padding: 24px 0 40px;
   }
 
