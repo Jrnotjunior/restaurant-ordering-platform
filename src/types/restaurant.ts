@@ -29,6 +29,14 @@ export type RestaurantTheme = {
   };
 };
 
+export type RestaurantDayHours = {
+  isOpen: boolean;
+  open: string;
+  close: string;
+};
+
+export type RestaurantOperatingHours = Record<string, RestaurantDayHours>;
+
 export type RestaurantConfig = {
   id?: string;
   name: string;
@@ -37,7 +45,7 @@ export type RestaurantConfig = {
   contactNumber?: string;
   email?: string;
   locationText?: string;
-  orderingEnabled?: boolean;
+  operatingHours?: RestaurantOperatingHours;
   navigation: RestaurantNavigationItem[];
   footerLinks: RestaurantFooterLink[];
   socialLinks?: {
