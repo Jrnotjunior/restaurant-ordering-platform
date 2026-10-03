@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react';
+import { currentRestaurantLookup } from '../config/restaurant';
 import { supabase } from '../services/supabaseClient';
 
 export function CustomerSignUpPage() {
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -16,10 +18,11 @@ export function CustomerSignUpPage() {
     setMessage('');
 
     const trimmedName = name.trim();
+    const trimmedPhone = phone.trim();
     const trimmedEmail = email.trim().toLowerCase();
 
     if (!trimmedName || !trimmedEmail || !password || !confirmPassword) {
-      setError('Complete all fields.');
+      setError('Complete all required fields.');
       return;
     }
 
@@ -40,6 +43,16 @@ export function CustomerSignUpPage() {
 
     setSubmitting(true);
     try {
+      const { data: restaurant, error: restaurantError } = await supabase
+        .from('restaurants')
+        .select('id')
+        .eq('slug', currentRestaurantLookup.slug)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (restaurantError) throw restaurantError;
+      if (!restaurant?.id) throw new Error('Restaurant could not be found.');
+
       const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}#menu`;
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: trimmedEmail,
@@ -48,6 +61,8 @@ export function CustomerSignUpPage() {
           data: {
             role: 'customer',
             name: trimmedName,
+            phone: trimmedPhone || null,
+            restaurant_id: restaurant.id,
           },
           emailRedirectTo: redirectTo,
         },
@@ -84,6 +99,10 @@ export function CustomerSignUpPage() {
           <label>
             Full name
             <input type="text" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Your name" disabled={submitting} />
+          </label>
+          <label>
+            Phone <span aria-hidden="true">(optional)</span>
+            <input type="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="09xxxxxxxxx" disabled={submitting} />
           </label>
           <label>
             Email
