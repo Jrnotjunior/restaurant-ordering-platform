@@ -79,8 +79,6 @@ export async function createOrder(input: CreateOrderInput): Promise<CreatedOrder
     p_customer_name: input.customerName,
     p_mobile_number: input.mobileNumber,
     p_order_type: input.orderType,
-    // Kept as a null compatibility parameter while dine-in no longer asks customers for a table number.
-    p_table_number: null,
     p_delivery_barangay: input.deliveryBarangay || null,
     p_delivery_address: input.deliveryAddress || null,
     p_notes: input.notes,
