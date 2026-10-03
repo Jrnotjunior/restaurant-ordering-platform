@@ -31,6 +31,12 @@ export function SavedAddressPage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
+  function closeForm() {
+    setShowForm(false);
+    setEditingAddressId(null);
+    setError('');
+  }
+
   async function loadAddresses() {
     if (!user || !restaurant.id) {
       setError('Please sign in to manage your saved addresses.');
@@ -183,15 +189,15 @@ export function SavedAddressPage() {
           {message ? <p className="saved-address-success" role="status">{message}</p> : null}
 
           {!showForm ? <button className="button button-primary saved-address-add-button" type="button" onClick={openAddForm} disabled={addresses.length >= 2}>+ Add address</button> : (
-            <form className="saved-address-form" onSubmit={handleSave}>
-              <div className="saved-address-form-heading"><h2>{editingAddressId ? 'Edit address' : 'Add address'}</h2><button type="button" className="saved-address-cancel" onClick={() => { setShowForm(false); setEditingAddressId(null); }}>Cancel</button></div>
+            <div className="saved-address-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeForm(); }}><form className="saved-address-form saved-address-modal" onSubmit={handleSave}>
+              <div className="saved-address-form-heading"><h2>{editingAddressId ? 'Edit address' : 'Add address'}</h2><button type="button" className="saved-address-cancel" onClick={closeForm}>Cancel</button></div>
               <label><span>Address name</span><input type="text" value={label} onChange={(event) => setLabel(event.target.value)} placeholder="e.g. Home, Work, School" /></label>
               <label><span>City</span><input type="text" value={city} onChange={(event) => { setCity(event.target.value); setBarangay(''); setMessage(''); setError(''); }} autoComplete="address-level2" required /></label>
               <label><span>Barangay</span><input type="text" value={barangay} onChange={(event) => { setBarangay(event.target.value); setMessage(''); setError(''); }} autoComplete="address-level3" required /></label>
               <label><span>Unit/Bldg./Street Address</span><textarea value={address} onChange={(event) => { setAddress(event.target.value); setMessage(''); setError(''); }} placeholder="Enter your unit, building, house number, and street" rows={4} required /></label>
               {cityIsSupported && selectedZone && !selectedZone.isSupported ? <p className="saved-address-error" role="alert">This barangay is outside the restaurant's delivery area.</p> : null}
               <button className="button button-primary" type="submit" disabled={saving}>{saving ? 'Saving…' : editingAddressId ? 'Save Changes' : 'Save Address'}</button>
-            </form>
+            </form></div>
           )}
         </>}
       </div>
