@@ -78,7 +78,7 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
   }
 
   return (
-    <section className="restaurant-shipping-page">
+    <section className="restaurant-page restaurant-shipping-page">
       {error && <div className="restaurant-shipping-message is-error" role="alert">{error}</div>}
       {message && <div className="restaurant-shipping-message is-success" role="status">{message}</div>}
 
