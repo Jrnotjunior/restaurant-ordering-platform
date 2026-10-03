@@ -54,6 +54,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [vatRegistered, setVatRegistered] = useState(false);
   const [pricesVatInclusive, setPricesVatInclusive] = useState(false);
   const [vatRate, setVatRate] = useState('12');
+  const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -71,7 +72,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     try {
       const { data, error: loadError } = await supabase
         .from('restaurants')
-        .select('store_address,location_text,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate')
+        .select('store_address,location_text,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate,cash_on_delivery_enabled')
         .eq('id', restaurantId)
         .single();
 
@@ -81,6 +82,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       setVatRegistered(Boolean(data?.tax_vat_registered));
       setPricesVatInclusive(Boolean(data?.tax_prices_vat_inclusive));
       setVatRate(String(data?.tax_vat_rate ?? 12));
+      setCashOnDeliveryEnabled(data?.cash_on_delivery_enabled !== false);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load store settings.');
     } finally {
@@ -132,6 +134,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           tax_vat_registered: vatRegistered,
           tax_prices_vat_inclusive: vatRegistered ? pricesVatInclusive : false,
           tax_vat_rate: vatRegistered ? parsedVatRate : 0,
+          cash_on_delivery_enabled: cashOnDeliveryEnabled,
         })
         .eq('id', restaurantId);
 
@@ -218,6 +221,20 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
             )}
           </div>
           <p className="restaurant-settings-help" style={{ marginTop: 12 }}>For Senior Citizen/PWD transactions, the POS applies the 20% discount to the eligible VAT-exclusive share and removes the corresponding VAT when the restaurant is VAT-registered. Verify the restaurant’s actual BIR registration and pricing treatment before enabling VAT settings.</p>
+        </div>
+
+        <div className="restaurant-settings-card">
+          <h2>Cash on Delivery</h2>
+          <p className="restaurant-settings-help">Allow customers to place delivery orders and pay in cash when the order is received. Turning this off requires delivery customers to use Online Payment.</p>
+          <label className="restaurant-settings-toggle" style={{ justifyContent: 'flex-start', marginTop: 14 }}>
+            <input
+              type="checkbox"
+              checked={cashOnDeliveryEnabled}
+              disabled={loading || saving}
+              onChange={(event) => { setCashOnDeliveryEnabled(event.target.checked); setMessage(''); setError(''); }}
+            />
+            Accept Cash on Delivery
+          </label>
         </div>
 
         <div className="restaurant-settings-card">
