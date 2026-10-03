@@ -95,3 +95,30 @@ export async function redeemLoyaltyReward(
     remainingPoints: Number(row.remaining_points),
   };
 }
+
+
+export async function getMyLoyaltyPoints(restaurantId: string): Promise<number> {
+  const rows = await supabaseRpc<number | string>('get_my_loyalty_points', {
+    p_restaurant_id: restaurantId,
+  });
+  return Number(rows[0] ?? 0);
+}
+
+export async function redeemLoyaltyRewardForPendingPayment(
+  paymentId: string,
+): Promise<{ pointsRedeemed: number; discountAmount: number; total: number }> {
+  const rows = await supabaseRpc<{
+    points_redeemed: number | string;
+    discount_amount: number | string;
+    total: number | string;
+  }>('redeem_loyalty_reward_for_pending_payment', {
+    p_payment_id: paymentId,
+  });
+  const row = rows[0];
+  if (!row) throw new Error('Unable to apply the loyalty reward.');
+  return {
+    pointsRedeemed: Number(row.points_redeemed),
+    discountAmount: Number(row.discount_amount),
+    total: Number(row.total),
+  };
+}
