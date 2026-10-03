@@ -29,6 +29,7 @@ export type RestaurantOrder = {
   taxVatExemptSales: number;
   taxNetSales: number;
   discountAmount: number;
+  loyaltyDiscountAmount: number;
   discountBeneficiaryCount: number;
   discountGroupSize: number;
   discountBeneficiaries: { discountType: PosDiscountType; idType: string; idNumber: string; eligibleAmount: number; discountAmount: number }[];
@@ -69,6 +70,7 @@ type Row = {
   tax_vat_exempt_sales?: number | string | null;
   tax_net_sales?: number | string | null;
   discount_amount?: number | string | null;
+  loyalty_discount_amount?: number | string | null;
   discount_beneficiary_count?: number | null;
   discount_group_size?: number | null;
   discount_beneficiaries?: { discountType?: string; discount_type?: string; idType?: string; discount_id_type?: string; idNumber?: string; discount_id_number?: string; eligibleAmount?: number | string; eligible_amount?: number | string; discountAmount?: number | string; discount_amount?: number | string }[] | null;
@@ -97,6 +99,7 @@ export async function getRestaurantOrders(restaurantId: string): Promise<Restaur
     taxVatExemptSales: Number(row.tax_vat_exempt_sales ?? 0),
     taxNetSales: Number(row.tax_net_sales ?? 0),
     discountAmount: Number(row.discount_amount ?? 0),
+    loyaltyDiscountAmount: Number(row.loyalty_discount_amount ?? 0),
     discountBeneficiaryCount: Number(row.discount_beneficiary_count ?? 0),
     discountGroupSize: Number(row.discount_group_size ?? 1),
     discountBeneficiaries: (row.discount_beneficiaries ?? []).map((item) => ({
