@@ -610,3 +610,11 @@ textarea {
     padding-inline: 1.25rem;
   }
 }
+
+
+/* Keep the checkout payment action separated from and centered under the summary. */
+.checkout-summary > .button.button-primary {
+  display: flex;
+  width: fit-content;
+  margin: 1.5rem auto 0;
+}
