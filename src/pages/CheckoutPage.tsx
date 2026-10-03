@@ -4,7 +4,7 @@ import { createOrder } from '../services/orderRepository';
 import { createPendingOnlinePayment, getOnlinePaymentStatus } from '../services/onlinePaymentRepository';
 import { createPayMongoCheckout } from '../services/paymongoRepository';
 import { getRestaurantDeliveryZones, type RestaurantDeliveryZone } from '../services/restaurantSettingsRepository';
-import { attachCustomerToOrder, getLoyaltyRedemptionSettings, getMyCustomerProfileId, getMyLoyaltyPoints, redeemLoyaltyReward, redeemLoyaltyRewardForPendingPayment } from '../services/loyaltyRepository';
+import { attachCustomerToOrder, getLoyaltyRedemptionSettings, getMyCustomerProfileId, getMyLoyaltyPoints, redeemLoyaltyReward } from '../services/loyaltyRepository';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
 import { useRestaurant } from '../components/RestaurantProvider';
 import { OrderConfirmationPage } from './OrderConfirmationPage';
@@ -290,12 +290,9 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         notes: [notes.trim(), isDelivery && thirdPartyCourierDelivery ? `${thirdPartyCourierNote}\\nCourier: ${thirdPartyCourier === 'Other' ? (thirdPartyCourierName || 'Other courier') : thirdPartyCourier}\\nDestination: ${thirdPartyDestination || [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')}` : ''].filter(Boolean).join('\\n\\n'),
         isThirdPartyCourier: isDelivery && thirdPartyCourierDelivery,
         items: items.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
+        redeemLoyalty: redeemPoints,
       });
-      let payableTotal = pendingPayment.total;
-      if (redeemPoints) {
-        const redemption = await redeemLoyaltyRewardForPendingPayment(pendingPayment.paymentId);
-        payableTotal = redemption.total;
-      }
+      const payableTotal = pendingPayment.total;
       if (payableTotal <= 0) {
         throw new Error('The loyalty reward covers the entire order. Please choose cash payment or contact the restaurant for a free-order arrangement.');
       }
