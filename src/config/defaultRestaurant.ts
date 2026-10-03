@@ -1,8 +1,8 @@
 import type { RestaurantConfig } from '../types/restaurant';
 
 export const defaultRestaurant: RestaurantConfig = {
-  name: 'Your Restaurant',
-  tagline: 'Order directly from us.',
+  name: '',
+  tagline: '',
   navigation: [
     { label: 'Home', href: '/' },
     { label: 'Menu', href: '/menu' },
