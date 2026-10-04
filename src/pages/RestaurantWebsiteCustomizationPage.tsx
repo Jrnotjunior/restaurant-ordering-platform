@@ -271,7 +271,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-phone-screen{width:100%;height:calc(100% - 34px);box-sizing:border-box;overflow:auto;border-radius:25px;scrollbar-width:none}
         .website-customization-phone-screen::-webkit-scrollbar{display:none}
         @media(max-width:700px){.website-customization-simple-grid{grid-template-columns:1fr}.website-customization-grid,.website-customization-toggle-grid,.website-customization-live-section-grid{grid-template-columns:1fr}.website-customization-preview-launch-card{align-items:flex-start;flex-direction:column}.website-customization-phone{width:320px;height:650px}.website-customization-live-hero h3{font-size:24px}.website-customization-actions-bar .button{width:100%}}
-      `}        .website-customization-simple-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+        .website-customization-simple-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
         .website-customization-color-control{display:flex;align-items:center;gap:10px}
         .website-customization-color-control input[type="color"]{width:46px;height:38px;padding:3px;border:1px solid var(--color-border);border-radius:8px;cursor:pointer}
         .website-customization-color-control span{font-size:13px;font-weight:700;color:var(--color-text)}
@@ -281,7 +281,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-advanced summary::-webkit-details-marker{display:none}
         .website-customization-advanced summary:after{content:'+';float:right;font-size:16px;color:var(--color-muted)}
         .website-customization-advanced[open] summary:after{content:'−'}
-</style>
+      `}</style>
 
       {error ? <div className="restaurant-shipping-message is-error" role="alert">{error}</div> : null}
       {message ? <div className="restaurant-shipping-message is-success" role="status">{message}</div> : null}
