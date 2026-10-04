@@ -19,7 +19,7 @@ const ownerNavigationItems: NavigationItem[] = [
   { label: 'Sales', href: '#restaurant/sales', icon: 'sales' },
   { label: 'Loyalty', href: '#restaurant/loyalty', icon: 'loyalty' },
   { label: 'Store Settings', href: '#restaurant/settings', icon: 'settings' },
-  { label: 'Website Customization', href: '#restaurant/website-customization', icon: 'customization' },
+  { label: 'Customize', href: '#restaurant/website-customization', icon: 'customization' },
 ];
 
 function NavigationIcon({ type }: { type: NavigationItem['icon'] }) {
