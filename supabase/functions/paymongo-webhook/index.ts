@@ -79,11 +79,15 @@ Deno.serve(async (request) => {
     }
 
     const eventType = payload?.data?.attributes?.type ?? payload?.data?.type ?? "";
-    if (eventType !== "checkout_session.payment.paid") {
+    const session = payload?.data?.attributes?.data;
+
+    if (
+      eventType !== "checkout_session.payment.paid" &&
+      eventType !== "checkout_session.payment.failed" &&
+      eventType !== "checkout_session.expired"
+    ) {
       return jsonResponse({ received: true }, 200);
     }
-
-    const session = payload?.data?.attributes?.data;
     const sessionAttributes = session?.attributes ?? {};
     const orderNumber = String(sessionAttributes.reference_number ?? "").trim();
     if (!orderNumber) return jsonResponse({ received: true }, 200);
@@ -112,6 +116,18 @@ Deno.serve(async (request) => {
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+
+    if (eventType === "checkout_session.payment.failed" || eventType === "checkout_session.expired") {
+      const failedStatus = eventType === "checkout_session.expired" ? "expired" : "failed";
+      const { data: updated, error } = await adminClient.rpc("mark_pending_online_payment_status", {
+        p_reference_number: orderNumber,
+        p_status: failedStatus,
+      });
+
+      if (error) throw error;
+
+      return jsonResponse({ received: true, status: updated?.[0] ?? null }, 200);
+    }
 
     const { data: finalized, error } = await adminClient.rpc("finalize_online_payment", {
       p_reference_number: orderNumber,
