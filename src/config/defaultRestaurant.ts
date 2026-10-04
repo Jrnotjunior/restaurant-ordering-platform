@@ -19,6 +19,8 @@ export const defaultRestaurant: RestaurantConfig = {
     fontHeading: 'Manrope',
     fontBody: 'Inter',
     fontUi: 'Inter',
+    borderRadius: 'medium',
+    buttonStyle: 'filled',
     colors: {
       primary: '#111827',
       primaryHover: '#1f2937',
