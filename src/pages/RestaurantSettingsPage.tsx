@@ -131,17 +131,6 @@ function TimePicker({ value, disabled, label, onChange }: TimePickerProps) {
               <option value="PM">PM</option>
             </select>
           </div>
-          <div className="restaurant-time-picker-quick">
-            {[0, 15, 30, 45].map((minute) => (
-              <button
-                key={minute}
-                type="button"
-                onClick={() => commit(displayHour, minute, draftPeriod)}
-              >
-                :{String(minute).padStart(2, '0')}
-              </button>
-            ))}
-          </div>
           <button
             type="button"
             className="restaurant-time-picker-done"
@@ -425,9 +414,8 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .restaurant-time-picker-heading{font-size:12px;font-weight:700;color:#64748b;margin-bottom:10px}
         .restaurant-time-picker-selects{display:grid;grid-template-columns:1fr auto 1fr 1.1fr;align-items:center;gap:5px}
         .restaurant-time-picker-selects select{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:7px;padding:8px 6px;font:inherit;background:#fff;color:#0f172a}
-        .restaurant-time-picker-quick{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:9px}
-        .restaurant-time-picker-quick button,.restaurant-time-picker-done{border:1px solid #dbe2ea;border-radius:7px;background:#f8fafc;color:#0f172a;padding:7px 5px;font:inherit;cursor:pointer}
-        .restaurant-time-picker-quick button:hover,.restaurant-time-picker-done:hover{background:#eef2f7}
+        .restaurant-time-picker-done{border:1px solid #dbe2ea;border-radius:7px;background:#f8fafc;color:#0f172a;padding:7px 5px;font:inherit;cursor:pointer}
+        .restaurant-time-picker-done:hover{background:#eef2f7}
         .restaurant-time-picker-done{width:100%;margin-top:9px;font-weight:700}
         .restaurant-settings-day input[type=time]:disabled{background:#f8fafc;color:#94a3b8}
         .restaurant-settings-toggle{display:flex;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:600;white-space:nowrap}
