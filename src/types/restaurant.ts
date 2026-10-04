@@ -12,6 +12,8 @@ export type RestaurantTheme = {
   fontHeading: string;
   fontBody: string;
   fontUi: string;
+  borderRadius?: 'small' | 'medium' | 'large';
+  buttonStyle?: 'filled' | 'outline' | 'soft';
   colors: {
     primary: string;
     primaryHover: string;
