@@ -169,7 +169,7 @@ function RiderRouteGuard({ children }: { children: ReactNode }) {
         if (user) {
           const { data: riderProfile } = await supabase
             .from('restaurant_staff')
-            .select('id')
+            .select('id,restaurant_id')
             .eq('auth_user_id', user.id)
             .eq('role', 'rider')
             .eq('is_active', true)
@@ -178,6 +178,18 @@ function RiderRouteGuard({ children }: { children: ReactNode }) {
           if (!mounted) return;
 
           if (riderProfile || role === 'rider') {
+            if (riderProfile?.restaurant_id) {
+              const { data: deliveryEnabled, error: moduleError } = await supabase.rpc('restaurant_has_module', {
+                p_restaurant_id: riderProfile.restaurant_id,
+                p_module_key: 'dispatch_delivery',
+              });
+
+              if (moduleError || deliveryEnabled !== true) {
+                window.location.hash = '#restaurant/owner';
+                return;
+              }
+            }
+
             setChecking(false);
             return;
           }
