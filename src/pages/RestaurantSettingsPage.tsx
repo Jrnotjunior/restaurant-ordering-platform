@@ -96,7 +96,6 @@ function TimePicker({ value, disabled, label, onChange }: TimePickerProps) {
         onClick={() => setOpen((current) => !current)}
       >
         <span>{formatTimeLabel(value)}</span>
-        <span className="restaurant-time-picker-icon" aria-hidden="true">◷</span>
       </button>
 
       {open && (
@@ -409,7 +408,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .restaurant-time-picker{position:relative;width:100%}
         .restaurant-time-picker-trigger{width:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #dbe2ea;border-radius:8px;padding:8px 10px;font:inherit;background:#fff;color:#0f172a;text-align:left;cursor:pointer}
         .restaurant-time-picker-trigger:disabled{background:#f8fafc;color:#94a3b8;cursor:not-allowed}
-        .restaurant-time-picker-icon{font-size:18px;line-height:1}
         .restaurant-time-picker-popover{position:absolute;z-index:30;top:calc(100% + 6px);left:0;width:260px;box-sizing:border-box;padding:12px;border:1px solid #dbe2ea;border-radius:10px;background:#fff;box-shadow:0 12px 30px rgba(15,23,42,.16)}
         .restaurant-time-picker-heading{font-size:12px;font-weight:700;color:#64748b;margin-bottom:10px}
         .restaurant-time-picker-selects{display:grid;grid-template-columns:1fr auto 1fr 1.1fr;align-items:center;gap:5px}
