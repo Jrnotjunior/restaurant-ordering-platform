@@ -167,7 +167,7 @@ export function RestaurantSalesPage({ restaurantId, role = 'owner' }: Props) {
       ['Completed Orders', day.orders.length],
       [],
     ]);
-    XLSX.utils.sheet_add_json(worksheet, rows, { origin: 'A6' });
+    XLSX.utils.sheet_add_json(worksheet, rows, { origin: 'A9' });
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Daily Sales');
     XLSX.writeFile(workbook, `sales-${day.dateKey}.xlsx`);
   }
