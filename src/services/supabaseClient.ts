@@ -27,9 +27,11 @@ function getRestaurantContextHeaders(): Record<string, string> {
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl!, supabaseAnonKey!, {
       auth: {
-        // Keep the restaurant platform session isolated from the separate
-        // Web2Table System Admin application when both are open in one browser.
+        // Keep each restaurant-platform browser tab on its own Auth session.
+        // This allows Owner, Cashier, Kitchen, and Dispatcher to be signed in
+        // simultaneously in different tabs without replacing one another.
         storageKey: 'restaurant-ordering-platform-auth',
+        storage: window.sessionStorage,
       },
       global: {
         headers: getRestaurantContextHeaders(),
