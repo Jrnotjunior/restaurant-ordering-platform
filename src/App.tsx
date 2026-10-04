@@ -383,10 +383,11 @@ function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen' | 'dis
   return children({ ...defaultRestaurant, id: restaurantId });
 }
 
-function PublicCustomerRouteGuard({ children }: { children: ReactNode }) {
+function PublicCustomerRouteGuard({ children, restaurantId }: { children: ReactNode; restaurantId: string }) {
   const { user, loading: authLoading } = useRestaurantOwnerAuth();
   const [checking, setChecking] = useState(true);
   const [staffRole, setStaffRole] = useState<'cashier' | 'kitchen' | 'dispatcher' | 'rider' | null>(null);
+  const [orderingEnabled, setOrderingEnabled] = useState(true);
 
   useEffect(() => {
     let mounted = true;
@@ -394,11 +395,33 @@ function PublicCustomerRouteGuard({ children }: { children: ReactNode }) {
     async function checkPublicAccess() {
       if (authLoading) return;
 
-      if (!user || !supabase) {
+      if (!supabase) {
         if (mounted) {
+          setOrderingEnabled(false);
           setStaffRole(null);
           setChecking(false);
         }
+        return;
+      }
+
+      const { data: publicOrderingEnabled, error: orderingError } = await supabase.rpc('restaurant_public_self_ordering_enabled', {
+        p_restaurant_id: restaurantId,
+      });
+
+      if (!mounted) return;
+
+      if (orderingError) {
+        console.error('Unable to verify restaurant package access for public ordering.', orderingError);
+        setOrderingEnabled(false);
+        setChecking(false);
+        return;
+      }
+
+      setOrderingEnabled(publicOrderingEnabled === true);
+
+      if (!user) {
+        setStaffRole(null);
+        setChecking(false);
         return;
       }
 
@@ -438,7 +461,7 @@ function PublicCustomerRouteGuard({ children }: { children: ReactNode }) {
 
     void checkPublicAccess();
     return () => { mounted = false; };
-  }, [authLoading, user]);
+  }, [authLoading, user, restaurantId]);
 
   useEffect(() => {
     if (checking || !staffRole) return;
@@ -456,6 +479,18 @@ function PublicCustomerRouteGuard({ children }: { children: ReactNode }) {
 
   if (staffRole) {
     return <section className="restaurant-owner-auth-loading">Redirecting to your workspace…</section>;
+  }
+
+  if (!orderingEnabled) {
+    return (
+      <section className="restaurant-owner-auth-no-restaurant">
+        <div className="restaurant-owner-auth-no-restaurant-card">
+          <p className="eyebrow">Online Ordering</p>
+          <h1>Online ordering is not available</h1>
+          <p>This restaurant's current package does not include Self Ordering, or online ordering has been disabled by the restaurant.</p>
+        </div>
+      </section>
+    );
   }
 
   return <>{children}</>;
@@ -793,7 +828,7 @@ function AppContent() {
   // Order tracking is a public customer page. It must not wait for employee
   // access checks, so navigating from the header never shows an account guard.
   if (trackOrderNumber || trackingMatch) return publicPage;
-  return <PublicCustomerRouteGuard>{publicPage}</PublicCustomerRouteGuard>;
+  return <PublicCustomerRouteGuard restaurantId={restaurant.id!}>{publicPage}</PublicCustomerRouteGuard>;
 }
 
 export function App() { return <AppContent />; }
