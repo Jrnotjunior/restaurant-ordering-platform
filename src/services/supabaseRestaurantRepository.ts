@@ -58,7 +58,11 @@ export class SupabaseRestaurantRepository implements RestaurantRepository {
     const hostname = domain.trim().toLowerCase();
     if (!hostname) return null;
 
-    const { data, error } = await supabase!.rpc('resolve_restaurant_by_domain', {
+    if (!supabase) {
+      throw new Error('Supabase is not configured.');
+    }
+
+    const { data, error } = await supabase.rpc('resolve_restaurant_by_domain', {
       p_hostname: hostname
     });
 
