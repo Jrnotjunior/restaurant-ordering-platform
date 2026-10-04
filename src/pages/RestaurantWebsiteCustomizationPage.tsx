@@ -401,17 +401,6 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
             <label className="website-customization-field"><span>Corner style</span><select value={websiteTheme.borderRadius ?? 'medium'} disabled={loading || saving} onChange={(event) => setWebsiteTheme((current) => ({ ...current, borderRadius: event.target.value as RestaurantTheme['borderRadius'] }))}><option value="small">Small / sharp</option><option value="medium">Medium</option><option value="large">Large / soft</option></select></label>
             <label className="website-customization-field"><span>Button style</span><select value={websiteTheme.buttonStyle ?? 'filled'} disabled={loading || saving} onChange={(event) => setWebsiteTheme((current) => ({ ...current, buttonStyle: event.target.value as RestaurantTheme['buttonStyle'] }))}><option value="filled">Filled</option><option value="outline">Outline</option><option value="soft">Soft</option></select></label>
           </div>
-          <div className="website-customization-preview">
-            <div className="website-customization-preview-bar"><div className="website-customization-brand"><span className="website-customization-dot" /><span>Customer website preview</span></div><span style={{ color: websiteTheme.colors.muted, fontSize: 13 }}>Preview</span></div>
-            <div style={{ marginTop: 18 }}>
-              <h3 style={{ margin: 0, fontFamily: websiteTheme.fontHeading, color: websiteTheme.colors.text }}>Make your restaurant feel like your brand.</h3>
-              <p style={{ color: websiteTheme.colors.muted, lineHeight: 1.5 }}>Colors, typography and controls are applied to the customer-facing storefront.</p>
-              <div className="website-customization-actions">
-                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 42, padding: '0 18px', borderRadius: websiteTheme.borderRadius === 'large' ? 16 : websiteTheme.borderRadius === 'small' ? 8 : 12, background: websiteTheme.buttonStyle === 'outline' ? 'transparent' : websiteTheme.buttonStyle === 'soft' ? websiteTheme.colors.secondary : websiteTheme.colors.primary, color: websiteTheme.buttonStyle === 'outline' ? websiteTheme.colors.primary : websiteTheme.buttonStyle === 'soft' ? websiteTheme.colors.secondaryText : websiteTheme.colors.primaryText, border: '1px solid ' + (websiteTheme.buttonStyle === 'outline' ? websiteTheme.colors.primary : websiteTheme.buttonStyle === 'soft' ? websiteTheme.colors.secondary : websiteTheme.colors.primary), fontWeight: 700 }}>Order now</span>
-                <span className="website-customization-swatch" style={{ flex: 1, background: websiteTheme.colors.surface }} />
-              </div>
-            </div>
-          </div>
         </div>
 
         <div className="website-customization-card">
