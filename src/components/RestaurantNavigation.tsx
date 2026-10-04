@@ -83,7 +83,7 @@ const roleNavigationItems: Record<RestaurantNavigationRole, NavigationItem[]> = 
   cashier: [
     { label: 'POS', href: '#restaurant/cashier-pos', icon: 'orders' },
     { label: 'Orders', href: '#restaurant/cashier', icon: 'orders' },
-    { label: 'Sales', href: '#restaurant/sales', icon: 'sales' },
+    { label: 'Sales', href: '#restaurant/cashier-sales', icon: 'sales' },
   ],
   kitchen: [
     { label: 'Orders', href: '#restaurant/kitchen', icon: 'orders' },
