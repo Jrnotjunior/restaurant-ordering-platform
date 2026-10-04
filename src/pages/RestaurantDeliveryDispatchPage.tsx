@@ -300,8 +300,8 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
     <section className="restaurant-page restaurant-dispatch-page">
             {role !== 'owner' && <header className="restaurant-dispatch-header">
         <div>
-          <h1>Restaurant Operations</h1>
-          <h2>Dispatch</h2>
+          <p className="eyebrow">Restaurant Operations</p>
+          <h1>Dispatch</h1>
           <p>Handle in-house deliveries and customer pickup handoffs.</p>
         </div>
         <span className={`restaurant-dashboard-live-status is-${realtimeStatus}`}>
