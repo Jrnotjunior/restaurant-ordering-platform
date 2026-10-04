@@ -5,11 +5,26 @@ import type { RestaurantStorefront, RestaurantTheme } from '../types/restaurant'
 
 type Props = { restaurantId: string };
 
+type WebsiteStyle = 'classic' | 'modern' | 'elegant' | 'warm';
+
+const WEBSITE_STYLE_PRESETS: Record<WebsiteStyle, RestaurantTheme> = {
+  classic: defaultRestaurant.theme,
+  modern: { ...defaultRestaurant.theme, fontHeading: 'Manrope', fontBody: 'Inter', fontUi: 'Inter', borderRadius: 'small', buttonStyle: 'filled', colors: { ...defaultRestaurant.theme.colors, primary: '#111827', primaryHover: '#1f2937', secondary: '#f3f4f6', background: '#ffffff', surface: '#ffffff', text: '#111827', muted: '#64748b', border: '#e2e8f0' } },
+  elegant: { ...defaultRestaurant.theme, fontHeading: 'Manrope', fontBody: 'Manrope', fontUi: 'Manrope', borderRadius: 'large', buttonStyle: 'outline', colors: { ...defaultRestaurant.theme.colors, primary: '#4b2e2e', primaryHover: '#633d3d', secondary: '#f5f1ed', secondaryText: '#4b2e2e', background: '#fffdf9', surface: '#ffffff', text: '#2f2925', muted: '#756b64', border: '#e7ded6' } },
+  warm: { ...defaultRestaurant.theme, fontHeading: 'Manrope', fontBody: 'Inter', fontUi: 'Inter', borderRadius: 'large', buttonStyle: 'soft', colors: { ...defaultRestaurant.theme.colors, primary: '#b45309', primaryHover: '#92400e', secondary: '#fff7ed', secondaryText: '#9a3412', background: '#fffbf5', surface: '#ffffff', text: '#431407', muted: '#78716c', border: '#fed7aa' } }
+};
+
+function themeMatchesStyle(theme: RestaurantTheme, style: WebsiteStyle) {
+  const preset = WEBSITE_STYLE_PRESETS[style];
+  return theme.fontHeading === preset.fontHeading && theme.fontBody === preset.fontBody && theme.borderRadius === preset.borderRadius && theme.buttonStyle === preset.buttonStyle && theme.colors.primary === preset.colors.primary && theme.colors.background === preset.colors.background;
+}
+
 export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
   const [logoUrl, setLogoUrl] = useState('');
   const [restaurantName, setRestaurantName] = useState(defaultRestaurant.name);
   const [restaurantTagline, setRestaurantTagline] = useState(defaultRestaurant.tagline);
   const [websiteTheme, setWebsiteTheme] = useState<RestaurantTheme>(defaultRestaurant.theme);
+  const [websiteStyle, setWebsiteStyle] = useState<WebsiteStyle>('classic');
   const [storefront, setStorefront] = useState<RestaurantStorefront>(defaultRestaurant.storefront);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -58,6 +73,13 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         ...(customTheme ?? {}),
         colors: { ...defaultRestaurant.theme.colors, ...(customTheme?.colors ?? {}) }
       });
+      const loadedTheme = {
+        ...defaultRestaurant.theme,
+        ...(customTheme ?? {}),
+        colors: { ...defaultRestaurant.theme.colors, ...(customTheme?.colors ?? {}) }
+      };
+      const matchingStyle = (Object.keys(WEBSITE_STYLE_PRESETS) as WebsiteStyle[]).find((style) => themeMatchesStyle(loadedTheme, style));
+      setWebsiteStyle(matchingStyle ?? 'classic');
 
       const customStorefront = customization?.storefront as Partial<RestaurantStorefront> | null;
       setStorefront({
@@ -270,17 +292,25 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-phone.is-dragging{cursor:grabbing;box-shadow:0 30px 70px rgba(15,23,42,.34)}
         .website-customization-phone-screen{width:100%;height:calc(100% - 34px);box-sizing:border-box;overflow:auto;border-radius:25px;scrollbar-width:none}
         .website-customization-phone-screen::-webkit-scrollbar{display:none}
-        @media(max-width:700px){.website-customization-simple-grid{grid-template-columns:1fr}.website-customization-grid,.website-customization-toggle-grid,.website-customization-live-section-grid{grid-template-columns:1fr}.website-customization-preview-launch-card{align-items:flex-start;flex-direction:column}.website-customization-phone{width:320px;height:650px}.website-customization-live-hero h3{font-size:24px}.website-customization-actions-bar .button{width:100%}}
-        .website-customization-simple-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+        @media(max-width:700px){.website-customization-branding-grid,.website-customization-style-grid{grid-template-columns:1fr}.website-customization-grid,.website-customization-toggle-grid,.website-customization-live-section-grid{grid-template-columns:1fr}.website-customization-preview-launch-card{align-items:flex-start;flex-direction:column}.website-customization-phone{width:320px;height:650px}.website-customization-live-hero h3{font-size:24px}.website-customization-actions-bar .button{width:100%}}
+        .website-customization-branding-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(220px,.6fr);gap:24px;margin-top:18px;align-items:start}
+        .website-customization-subheading{display:block;font-size:13px;font-weight:700;color:#475569;margin-bottom:8px}
         .website-customization-color-control{display:flex;align-items:center;gap:10px}
-        .website-customization-color-control input[type="color"]{width:46px;height:38px;padding:3px;border:1px solid var(--color-border);border-radius:8px;cursor:pointer}
-        .website-customization-color-control span{font-size:13px;font-weight:700;color:var(--color-text)}
-        .website-customization-field-hint{display:block;margin-top:5px;color:var(--color-muted);font-size:12px}
-        .website-customization-advanced{margin-top:22px;border-top:1px solid var(--color-border);padding-top:16px}
-        .website-customization-advanced summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--color-text);list-style:none}
-        .website-customization-advanced summary::-webkit-details-marker{display:none}
-        .website-customization-advanced summary:after{content:'+';float:right;font-size:16px;color:var(--color-muted)}
-        .website-customization-advanced[open] summary:after{content:'−'}
+        .website-customization-color-control input[type="color"]{width:48px;height:40px;padding:3px;border:1px solid #dbe2ea;border-radius:8px;cursor:pointer}
+        .website-customization-color-control span{font-size:13px;font-weight:700;color:#0f172a}
+        .website-customization-field-hint{display:block;margin-top:5px;color:#64748b;font-size:12px}
+        .website-customization-style-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:18px}
+        .website-customization-style-card{display:grid;gap:7px;text-align:left;padding:14px;border:1px solid #dbe2ea;border-radius:12px;background:#fff;color:#0f172a;cursor:pointer;font:inherit}
+        .website-customization-style-card:hover{border-color:#94a3b8}
+        .website-customization-style-card.is-selected{border:2px solid #101b2f;padding:13px;box-shadow:0 0 0 2px rgba(16,27,47,.08)}
+        .website-customization-style-card small{color:#64748b;font-size:12px}
+        .website-customization-style-sample{display:block;width:100%;height:52px;border-radius:8px;background:#111827}
+        .website-customization-style-sample-modern{background:linear-gradient(135deg,#111827,#64748b)}
+        .website-customization-style-sample-elegant{background:linear-gradient(135deg,#4b2e2e,#d6bfae)}
+        .website-customization-style-sample-warm{background:linear-gradient(135deg,#b45309,#fdba74)}
+        .website-customization-homepage-group{margin-top:22px;padding-top:20px;border-top:1px solid #e2e8f0}
+        .website-customization-homepage-group:first-of-type{border-top:0;padding-top:0}
+        .website-customization-homepage-group h3{margin:0 0 6px;font-size:14px;color:#0f172a}
       `}</style>
 
       {error ? <div className="restaurant-shipping-message is-error" role="alert">{error}</div> : null}
@@ -378,118 +408,96 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
 
         <div className="website-customization-card">
           <h2>Branding</h2>
-          <p className="website-customization-help">Upload the logo customers will see on the restaurant website. PNG, JPG, or WebP up to 2 MB.</p>
-          <div className="website-customization-logo-row">
-            <div className="website-customization-logo-preview">{logoUrl ? <img src={logoUrl} alt="Restaurant logo" /> : <span>No logo</span>}</div>
-            <label className="button button-secondary website-customization-logo-button">
-              {logoUploading ? 'Uploading…' : 'Choose logo'}
-              <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => void handleLogoChange(event)} disabled={loading || saving || logoUploading} />
-            </label>
-          </div>
-        </div>
-
-        <div className="website-customization-card">
-          <h2>Look &amp; feel</h2>
-          <p className="website-customization-help">Choose the main look of your customer website. You only need to change these settings if you want to personalize the design.</p>
-
-          <div className="website-customization-simple-grid">
+          <p className="website-customization-help">Set the logo and main color customers will see across your website.</p>
+          <div className="website-customization-branding-grid">
+            <div>
+              <span className="website-customization-subheading">Logo</span>
+              <div className="website-customization-logo-row">
+                <div className="website-customization-logo-preview">{logoUrl ? <img src={logoUrl} alt="Restaurant logo" /> : <span>No logo</span>}</div>
+                <label className="button button-secondary website-customization-logo-button">
+                  {logoUploading ? 'Uploading…' : 'Choose logo'}
+                  <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => void handleLogoChange(event)} disabled={loading || saving || logoUploading} />
+                </label>
+              </div>
+            </div>
             <label className="website-customization-field">
               <span>Brand color</span>
               <div className="website-customization-color-control">
                 <input type="color" value={websiteTheme.colors.primary} disabled={loading || saving} onChange={(event) => {
                   const value = event.target.value;
                   setWebsiteTheme((current) => ({ ...current, colors: { ...current.colors, primary: value, primaryHover: value } }));
-                  setMessage(''); setError('');
+                  setMessage('');
+                  setError('');
                 }} />
                 <span>{websiteTheme.colors.primary.toUpperCase()}</span>
               </div>
-              <small className="website-customization-field-hint">Used for buttons and key accents.</small>
-            </label>
-
-            <label className="website-customization-field">
-              <span>Button style</span>
-              <select value={websiteTheme.buttonStyle ?? 'filled'} disabled={loading || saving} onChange={(event) => setWebsiteTheme((current) => ({ ...current, buttonStyle: event.target.value as RestaurantTheme['buttonStyle'] }))}>
-                <option value="filled">Filled</option>
-                <option value="outline">Outline</option>
-                <option value="soft">Soft</option>
-              </select>
-            </label>
-
-            <label className="website-customization-field">
-              <span>Heading font</span>
-              <select value={websiteTheme.fontHeading} disabled={loading || saving} onChange={(event) => setWebsiteTheme((current) => ({ ...current, fontHeading: event.target.value }))}>
-                <option value="Manrope">Manrope</option>
-                <option value="Inter">Inter</option>
-              </select>
-            </label>
-
-            <label className="website-customization-field">
-              <span>Body font</span>
-              <select value={websiteTheme.fontBody} disabled={loading || saving} onChange={(event) => setWebsiteTheme((current) => ({ ...current, fontBody: event.target.value, fontUi: event.target.value }))}>
-                <option value="Inter">Inter</option>
-                <option value="Manrope">Manrope</option>
-              </select>
+              <small className="website-customization-field-hint">Used for buttons and important accents.</small>
             </label>
           </div>
-
-          <details className="website-customization-advanced">
-            <summary>Advanced color settings</summary>
-            <p className="website-customization-help">For owners who want full control over individual website colors.</p>
-            <div className="website-customization-grid">
-              {([
-                ['primaryHover', 'Primary hover'], ['primaryText', 'Button text'],
-                ['secondary', 'Secondary color'], ['secondaryText', 'Secondary text'],
-                ['background', 'Website background'], ['surface', 'Card surface'],
-                ['text', 'Main text'], ['muted', 'Muted text'], ['border', 'Border color'],
-              ] as const).map(([key, label]) => (
-                <label className="website-customization-field" key={key}>
-                  <span>{label}</span>
-                  <input type="color" value={websiteTheme.colors[key]} disabled={loading || saving} onChange={(event) => {
-                    const value = event.target.value;
-                    setWebsiteTheme((current) => ({ ...current, colors: { ...current.colors, [key]: value } }));
-                    setMessage(''); setError('');
-                  }} />
-                </label>
-              ))}
-              <label className="website-customization-field"><span>Corner style</span><select value={websiteTheme.borderRadius ?? 'medium'} disabled={loading || saving} onChange={(event) => setWebsiteTheme((current) => ({ ...current, borderRadius: event.target.value as RestaurantTheme['borderRadius'] }))}><option value="small">Small / sharp</option><option value="medium">Medium</option><option value="large">Large / soft</option></select></label>
-            </div>
-          </details>
         </div>
 
         <div className="website-customization-card">
-          <h2>Homepage hero</h2>
-          <p className="website-customization-help">Control the main message customers see when they open the restaurant website.</p>
-          <div className="website-customization-grid">
-            <label className="website-customization-field"><span>Hero eyebrow</span><input type="text" value={storefront.hero.eyebrow} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, eyebrow: event.target.value } }))} /></label>
-            <label className="website-customization-field"><span>Hero title</span><input type="text" value={storefront.hero.title} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, title: event.target.value } }))} /></label>
-            <label className="website-customization-field" style={{ gridColumn: '1 / -1' }}><span>Hero description</span><input type="text" value={storefront.hero.description} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, description: event.target.value } }))} /></label>
-            <label className="website-customization-field"><span>Hero image URL</span><input type="text" placeholder="https://..." value={storefront.hero.imageUrl ?? ''} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, imageUrl: event.target.value } }))} /></label>
-            <label className="website-customization-field"><span>Primary button label</span><input type="text" value={storefront.hero.primaryButtonLabel} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, primaryButtonLabel: event.target.value } }))} /></label>
-            <label className="website-customization-field"><span>Primary button link</span><input type="text" value={storefront.hero.primaryButtonHref} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, primaryButtonHref: event.target.value } }))} /></label>
-            <label className="website-customization-field"><span>Secondary button label</span><input type="text" value={storefront.hero.secondaryButtonLabel ?? ''} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, secondaryButtonLabel: event.target.value } }))} /></label>
-            <label className="website-customization-field"><span>Secondary button link</span><input type="text" value={storefront.hero.secondaryButtonHref ?? ''} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, secondaryButtonHref: event.target.value } }))} /></label>
-          </div>
-          <label className="website-customization-switch-row"><span>Show homepage hero</span><span className="website-customization-switch"><input type="checkbox" checked={storefront.hero.enabled} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, enabled: event.target.checked } }))} /><span className="website-customization-switch-track"><span className="website-customization-switch-thumb" /></span></span></label>
-        </div>
-
-        <div className="website-customization-card">
-          <h2>Homepage sections</h2>
-          <p className="website-customization-help">Choose which supporting sections appear on the customer website.</p>
-          <div className="website-customization-toggle-grid">
+          <h2>Website style</h2>
+          <p className="website-customization-help">Choose a ready-made style for your website.</p>
+          <div className="website-customization-style-grid">
             {([
-              ['categories', 'Show menu categories'], ['about', 'Show about section'], ['location', 'Show location'],
-              ['hours', 'Show operating hours'], ['contact', 'Show contact information'], ['social', 'Show social links'],
-            ] as const).map(([key, label]) => (
-              <label className="website-customization-toggle" key={key}><input type="checkbox" checked={storefront.sections[key]} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, sections: { ...current.sections, [key]: event.target.checked } }))} />{label}</label>
+              ['classic', 'Classic', 'Clean and familiar'],
+              ['modern', 'Modern', 'Simple and contemporary'],
+              ['elegant', 'Elegant', 'Refined and premium'],
+              ['warm', 'Warm', 'Friendly and welcoming']
+            ] as const).map(([key, label, description]) => (
+              <button
+                type="button"
+                key={key}
+                className={"website-customization-style-card" + (websiteStyle === key ? ' is-selected' : '')}
+                onClick={() => {
+                  setWebsiteStyle(key);
+                  setWebsiteTheme(WEBSITE_STYLE_PRESETS[key]);
+                  setMessage('');
+                  setError('');
+                }}
+                disabled={loading || saving}
+              >
+                <span className={"website-customization-style-sample website-customization-style-sample-" + key} />
+                <strong>{label}</strong>
+                <small>{description}</small>
+              </button>
             ))}
           </div>
         </div>
 
         <div className="website-customization-card">
-          <h2>Footer</h2>
-          <p className="website-customization-help">Control the customer-facing footer.</p>
-          <label className="website-customization-field" style={{ marginTop: 18 }}><span>Footer text</span><input type="text" placeholder="Optional custom footer message" value={storefront.footer.text ?? ''} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, footer: { ...current.footer, text: event.target.value } }))} /></label>
-          <label className="website-customization-switch-row"><span>Show footer</span><span className="website-customization-switch"><input type="checkbox" checked={storefront.footer.enabled} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, footer: { ...current.footer, enabled: event.target.checked } }))} /><span className="website-customization-switch-track"><span className="website-customization-switch-thumb" /></span></span></label>
+          <h2>Homepage</h2>
+          <p className="website-customization-help">Choose what customers see when they open your restaurant website.</p>
+
+          <div className="website-customization-homepage-group">
+            <h3>Welcome message</h3>
+            <div className="website-customization-grid">
+              <label className="website-customization-field"><span>Title</span><input type="text" value={storefront.hero.title} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, title: event.target.value } }))} /></label>
+              <label className="website-customization-field"><span>Description</span><input type="text" value={storefront.hero.description} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, description: event.target.value } }))} /></label>
+              <label className="website-customization-field"><span>Hero image URL</span><input type="text" placeholder="https://..." value={storefront.hero.imageUrl ?? ''} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, imageUrl: event.target.value } }))} /></label>
+              <label className="website-customization-field"><span>Order button text</span><input type="text" value={storefront.hero.primaryButtonLabel} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, primaryButtonLabel: event.target.value } }))} /></label>
+            </div>
+            <label className="website-customization-switch-row"><span>Show welcome section</span><span className="website-customization-switch"><input type="checkbox" checked={storefront.hero.enabled} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, enabled: event.target.checked } }))} /><span className="website-customization-switch-track"><span className="website-customization-switch-thumb" /></span></span></label>
+          </div>
+
+          <div className="website-customization-homepage-group">
+            <h3>Sections</h3>
+            <div className="website-customization-toggle-grid">
+              {([
+                ['categories', 'Menu categories'], ['about', 'About'], ['location', 'Location'],
+                ['hours', 'Operating hours'], ['contact', 'Contact information'], ['social', 'Social links'],
+              ] as const).map(([key, label]) => (
+                <label className="website-customization-toggle" key={key}><input type="checkbox" checked={storefront.sections[key]} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, sections: { ...current.sections, [key]: event.target.checked } }))} />{label}</label>
+              ))}
+            </div>
+          </div>
+
+          <div className="website-customization-homepage-group">
+            <h3>Footer</h3>
+            <label className="website-customization-field"><span>Footer text</span><input type="text" placeholder="Optional custom footer message" value={storefront.footer.text ?? ''} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, footer: { ...current.footer, text: event.target.value } }))} /></label>
+            <label className="website-customization-switch-row"><span>Show footer</span><span className="website-customization-switch"><input type="checkbox" checked={storefront.footer.enabled} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, footer: { ...current.footer, enabled: event.target.checked } }))} /><span className="website-customization-switch-track"><span className="website-customization-switch-thumb" /></span></span></label>
+          </div>
         </div>
 
         <div className="website-customization-actions-bar">
