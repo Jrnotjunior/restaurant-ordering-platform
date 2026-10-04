@@ -1,7 +1,7 @@
 import { defaultRestaurant } from '../config/defaultRestaurant';
 import type { RestaurantConfig, RestaurantOperatingHours } from '../types/restaurant';
 import type { RestaurantLookup, RestaurantRepository } from './restaurantService';
-import { supabaseGet } from './supabaseClient';
+import { supabaseGet, supabaseRpc } from './supabaseClient';
 
 type RestaurantRow = {
   id: string;
@@ -14,6 +14,19 @@ type RestaurantRow = {
   email: string | null;
   ordering_enabled: boolean;
   operating_hours: RestaurantOperatingHours | null;
+};
+
+type RestaurantDomainRow = {
+  id: string;
+  slug: string;
+  name: string;
+  tagline: string;
+  logo_url: string | null;
+  location_text: string | null;
+  contact_number: string | null;
+  email: string | null;
+  operating_hours: RestaurantOperatingHours | null;
+  ordering_enabled: boolean;
 };
 
 export class SupabaseRestaurantRepository implements RestaurantRepository {
@@ -58,17 +71,11 @@ export class SupabaseRestaurantRepository implements RestaurantRepository {
     const hostname = domain.trim().toLowerCase();
     if (!hostname) return null;
 
-    if (!supabase) {
-      throw new Error('Supabase is not configured.');
-    }
-
-    const { data, error } = await supabase.rpc('resolve_restaurant_by_domain', {
+    const rows = await supabaseRpc<RestaurantDomainRow>('resolve_restaurant_by_domain', {
       p_hostname: hostname
     });
 
-    if (error) throw error;
-
-    const restaurant = data?.[0];
+    const restaurant = rows[0];
     if (!restaurant) return null;
 
     return {
@@ -80,7 +87,8 @@ export class SupabaseRestaurantRepository implements RestaurantRepository {
       locationText: restaurant.location_text ?? undefined,
       contactNumber: restaurant.contact_number ?? undefined,
       email: restaurant.email ?? undefined,
-      orderingEnabled: true
+      operatingHours: restaurant.operating_hours ?? undefined,
+      orderingEnabled: restaurant.ordering_enabled !== false
     };
   }
 }
