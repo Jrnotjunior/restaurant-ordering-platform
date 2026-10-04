@@ -81,9 +81,12 @@ Deno.serve(async(request)=>{
     const supabaseUrl=Deno.env.get("SUPABASE_URL")??"",publishableKey=getPublishableKey(),secretKey=getSecretKey();
     if(!supabaseUrl||!publishableKey||!secretKey)return jsonResponse({error:"Supabase server configuration is incomplete."},500);
     const accessToken=authorization.replace(/^Bearer\\s+/i,"");
+    // The Edge Function gateway has already validated the JWT. Use the server-side
+    // Supabase key for the Auth lookup so verification is independent of the browser key.
+    const authClient=createClient(supabaseUrl,secretKey,{auth:{autoRefreshToken:false,persistSession:false}});
+    const {data:userData,error:userError}=await authClient.auth.getUser(accessToken);
+    if(userError||!userData.user)return jsonResponse({error:"Your session could not be verified. Please sign in again."},401);
     const userClient=createClient(supabaseUrl,publishableKey,{global:{headers:{Authorization:authorization}},auth:{autoRefreshToken:false,persistSession:false}});
-    const {data:userData,error:userError}=await userClient.auth.getUser(accessToken);
-    if(userError||!userData.user)return jsonResponse({error:"Your session is no longer valid. Please sign in again."},401);
     const {data:access,error:accessError}=await userClient.rpc("system_admin_get_my_access_level");
     if(accessError)return jsonResponse({error:"Unable to verify System Administrator access."},500);
     const row=Array.isArray(access)?access[0]:access;
