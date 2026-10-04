@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { supabase } from '../services/supabaseClient';
+import type { RestaurantTheme } from '../types/restaurant';
+import { defaultRestaurant } from '../config/defaultRestaurant';
 
 type Props = {
   restaurantId: string;
@@ -196,6 +198,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [automaticRiderAssignmentEnabled, setAutomaticRiderAssignmentEnabled] = useState(false);
   const [orderingEnabled, setOrderingEnabled] = useState(true);
   const [logoUrl, setLogoUrl] = useState('');
+  const [websiteTheme, setWebsiteTheme] = useState<RestaurantTheme>(defaultRestaurant.theme);
   const [logoUploading, setLogoUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -229,6 +232,24 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       setVatRate(String(data?.tax_vat_rate ?? 12));
       setCashOnDeliveryEnabled(data?.cash_on_delivery_enabled !== false);
       setAutomaticRiderAssignmentEnabled(data?.automatic_rider_assignment_enabled === true);
+
+      const { data: customization, error: customizationError } = await supabase
+        .from('restaurant_website_customizations')
+        .select('theme')
+        .eq('restaurant_id', restaurantId)
+        .maybeSingle();
+
+      if (customizationError) throw customizationError;
+
+      const customTheme = customization?.theme as Partial<RestaurantTheme> | null;
+      setWebsiteTheme({
+        ...defaultRestaurant.theme,
+        ...(customTheme ?? {}),
+        colors: {
+          ...defaultRestaurant.theme.colors,
+          ...(customTheme?.colors ?? {})
+        }
+      });
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load store settings.');
     } finally {
@@ -341,6 +362,15 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
       if (saveError) throw saveError;
 
+      const { error: themeSaveError } = await supabase
+        .from('restaurant_website_customizations')
+        .upsert({
+          restaurant_id: restaurantId,
+          theme: websiteTheme
+        }, { onConflict: 'restaurant_id' });
+
+      if (themeSaveError) throw themeSaveError;
+
       const { data: savedRow, error: verifyError } = await supabase
         .from('restaurants')
         .select('operating_hours')
@@ -361,7 +391,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       }
 
       setHours(savedHours);
-      setMessage('Store and tax settings saved successfully.');
+      setMessage('Store and website settings saved successfully.');
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Unable to save store settings.');
     } finally {
@@ -375,6 +405,17 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     <section className="restaurant-page restaurant-shipping-page">
       <style>{`
         .restaurant-settings-grid{display:grid;gap:20px}
+        .restaurant-settings-theme-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}
+        .restaurant-settings-theme-field{display:grid;gap:7px;font-weight:600;font-size:14px}
+        .restaurant-settings-theme-field input[type=color]{width:100%;height:44px;padding:4px;border:1px solid #dbe2ea;border-radius:10px;background:#fff;cursor:pointer}
+        .restaurant-settings-theme-field select{width:100%;height:44px;padding:0 10px;border:1px solid #dbe2ea;border-radius:10px;background:#fff;color:#0f172a;font:inherit}
+        .restaurant-settings-theme-preview{margin-top:20px;padding:20px;border:1px solid #e1e5eb;border-radius:14px;background:var(--color-background);color:var(--color-text)}
+        .restaurant-settings-theme-preview-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:14px;border-bottom:1px solid var(--color-border)}
+        .restaurant-settings-theme-brand{display:flex;align-items:center;gap:10px;font-weight:800}
+        .restaurant-settings-theme-dot{width:30px;height:30px;border-radius:var(--radius-sm);background:var(--color-primary)}
+        .restaurant-settings-theme-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+        .restaurant-settings-theme-swatch{height:46px;border-radius:var(--radius-md);border:1px solid var(--color-border)}
+        @media(max-width:700px){.restaurant-settings-theme-grid{grid-template-columns:1fr}}
         .restaurant-settings-switch-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:14px;font-weight:700;color:#0f172a}
         .restaurant-settings-switch{position:relative;display:inline-flex;flex:0 0 auto}
         .restaurant-settings-switch input{position:absolute;opacity:0;pointer-events:none}
@@ -454,6 +495,112 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
                 disabled={loading || saving || logoUploading}
               />
             </label>
+          </div>
+        </div>
+
+        <div className="restaurant-settings-card">
+          <h2>Website customization</h2>
+          <p className="restaurant-settings-help">Customize the customer-facing website without changing the restaurant's ordering or POS logic. These settings are stored per restaurant, so each tenant can have its own brand.</p>
+
+          <div className="restaurant-settings-theme-grid">
+            {([
+              ['primary', 'Primary color'],
+              ['primaryHover', 'Primary hover'],
+              ['primaryText', 'Primary button text'],
+              ['secondary', 'Secondary color'],
+              ['secondaryText', 'Secondary text'],
+              ['background', 'Website background'],
+              ['surface', 'Card surface'],
+              ['text', 'Main text'],
+              ['muted', 'Muted text'],
+              ['border', 'Border color'],
+            ] as const).map(([key, label]) => (
+              <label className="restaurant-settings-theme-field" key={key}>
+                <span>{label}</span>
+                <input
+                  type="color"
+                  value={websiteTheme.colors[key]}
+                  disabled={loading || saving}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setWebsiteTheme((current) => ({
+                      ...current,
+                      colors: { ...current.colors, [key]: value }
+                    }));
+                    setMessage('');
+                    setError('');
+                  }}
+                />
+              </label>
+            ))}
+
+            <label className="restaurant-settings-theme-field">
+              <span>Heading font</span>
+              <select
+                value={websiteTheme.fontHeading}
+                disabled={loading || saving}
+                onChange={(event) => setWebsiteTheme((current) => ({ ...current, fontHeading: event.target.value }))}
+              >
+                <option value="Manrope">Manrope</option>
+                <option value="Inter">Inter</option>
+              </select>
+            </label>
+
+            <label className="restaurant-settings-theme-field">
+              <span>Body &amp; UI font</span>
+              <select
+                value={websiteTheme.fontBody}
+                disabled={loading || saving}
+                onChange={(event) => setWebsiteTheme((current) => ({ ...current, fontBody: event.target.value, fontUi: event.target.value }))}
+              >
+                <option value="Inter">Inter</option>
+                <option value="Manrope">Manrope</option>
+              </select>
+            </label>
+
+            <label className="restaurant-settings-theme-field">
+              <span>Corner style</span>
+              <select
+                value={websiteTheme.borderRadius ?? 'medium'}
+                disabled={loading || saving}
+                onChange={(event) => setWebsiteTheme((current) => ({ ...current, borderRadius: event.target.value as RestaurantTheme['borderRadius'] }))}
+              >
+                <option value="small">Small / sharp</option>
+                <option value="medium">Medium</option>
+                <option value="large">Large / soft</option>
+              </select>
+            </label>
+
+            <label className="restaurant-settings-theme-field">
+              <span>Button style</span>
+              <select
+                value={websiteTheme.buttonStyle ?? 'filled'}
+                disabled={loading || saving}
+                onChange={(event) => setWebsiteTheme((current) => ({ ...current, buttonStyle: event.target.value as RestaurantTheme['buttonStyle'] }))}
+              >
+                <option value="filled">Filled</option>
+                <option value="outline">Outline</option>
+                <option value="soft">Soft</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="restaurant-settings-theme-preview">
+            <div className="restaurant-settings-theme-preview-bar">
+              <div className="restaurant-settings-theme-brand">
+                <span className="restaurant-settings-theme-dot" />
+                <span>Customer website preview</span>
+              </div>
+              <span style={{ color: websiteTheme.colors.muted, fontSize: 13 }}>Live preview</span>
+            </div>
+            <div style={{ marginTop: 18 }}>
+              <h3 style={{ margin: 0, fontFamily: websiteTheme.fontHeading, color: websiteTheme.colors.text }}>Make your restaurant feel like your brand.</h3>
+              <p style={{ color: websiteTheme.colors.muted, lineHeight: 1.5 }}>Colors, typography and controls are applied to the customer-facing storefront.</p>
+              <div className="restaurant-settings-theme-actions">
+                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 42, padding: '0 18px', borderRadius: websiteTheme.borderRadius === 'large' ? 16 : websiteTheme.borderRadius === 'small' ? 8 : 12, background: websiteTheme.buttonStyle === 'outline' ? 'transparent' : websiteTheme.buttonStyle === 'soft' ? websiteTheme.colors.secondary : websiteTheme.colors.primary, color: websiteTheme.buttonStyle === 'outline' ? websiteTheme.colors.primary : websiteTheme.buttonStyle === 'soft' ? websiteTheme.colors.secondaryText : websiteTheme.colors.primaryText, border: '1px solid ' + (websiteTheme.buttonStyle === 'outline' ? websiteTheme.colors.primary : websiteTheme.buttonStyle === 'soft' ? websiteTheme.colors.secondary : websiteTheme.colors.primary), fontWeight: 700 }}>Order now</span>
+                <span className="restaurant-settings-theme-swatch" style={{ flex: 1, background: websiteTheme.colors.surface }} />
+              </div>
+            </div>
           </div>
         </div>
 
