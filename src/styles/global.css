@@ -269,6 +269,80 @@ main { flex: 1; }
 }
 
 
+/* Shared restaurant content primitives. */
+.restaurant-panel {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-background);
+  overflow: hidden;
+}
+.restaurant-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+.restaurant-panel-header > div { min-width: 0; }
+.restaurant-panel-label {
+  margin: 0 0 4px;
+  color: var(--color-primary);
+  font-size: .75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.restaurant-panel-header h2 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  line-height: 1.3;
+}
+.restaurant-panel-count {
+  display: grid;
+  min-width: 32px;
+  height: 32px;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--color-secondary);
+  font-size: .75rem;
+  font-weight: 800;
+}
+.restaurant-list {
+  display: grid;
+  gap: .75rem;
+  padding: 12px;
+}
+.restaurant-list-empty {
+  display: grid;
+  min-height: 88px;
+  place-items: center;
+  padding: 20px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-muted);
+  text-align: center;
+  font-size: .9rem;
+}
+.restaurant-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+}
+.restaurant-list-item-main { min-width: 0; display: grid; gap: 4px; }
+.restaurant-list-item-main strong { font-family: var(--font-heading); }
+.restaurant-list-item-main span,
+.restaurant-list-item-main small { color: var(--color-muted); }
+.restaurant-list-item-main span { font-size: .9rem; }
+.restaurant-list-item-main small { font-size: .78rem; }
+
 /* Shared restaurant management page shell. */
 .restaurant-page-header {
   display: flex;
