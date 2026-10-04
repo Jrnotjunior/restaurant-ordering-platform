@@ -209,6 +209,8 @@ using (
 );
 
 
+drop function if exists public.upsert_customer_profile(uuid, text, text);
+
 -- Customer profile creation must also be tenant-bound. This RPC is used by
 -- signup and remains the trusted path for creating a profile.
 create or replace function public.upsert_customer_profile(
@@ -284,6 +286,8 @@ $$;
 revoke all on function public.upsert_customer_profile(uuid, text, text) from public;
 grant execute on function public.upsert_customer_profile(uuid, text, text) to authenticated;
 
+
+drop function if exists public.get_my_customer_profile(uuid);
 
 -- Customer self-service RPCs must use the current tenant too.
 create or replace function public.get_my_customer_profile(
@@ -1171,6 +1175,8 @@ $$;
 revoke all on function public.save_my_customer_address(uuid, text, text, text, text, boolean) from public;
 grant execute on function public.save_my_customer_address(uuid, text, text, text, text, boolean) to authenticated;
 
+
+drop function if exists public.set_my_customer_address_default(uuid, uuid);
 
 create or replace function public.set_my_customer_address_default(
   p_restaurant_id uuid,
