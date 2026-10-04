@@ -13,6 +13,9 @@ export function TenantOnboardingPage() {
   const [invitation, setInvitation] = useState<Invitation | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordSet, setPasswordSet] = useState(false);
   const [error, setError] = useState('');
 
   const [name, setName] = useState('');
@@ -61,6 +64,39 @@ export function TenantOnboardingPage() {
       cancelled = true;
     };
   }, [authLoading, user?.id]);
+
+  async function setOwnerPassword(event: FormEvent) {
+    event.preventDefault();
+    if (!supabase) return;
+
+    setSaving(true);
+    setError('');
+
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      setSaving(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      setSaving(false);
+      return;
+    }
+
+    const { error: passwordError } = await supabase.auth.updateUser({ password });
+
+    if (passwordError) {
+      setError(passwordError.message);
+      setSaving(false);
+      return;
+    }
+
+    setPassword('');
+    setConfirmPassword('');
+    setPasswordSet(true);
+    setSaving(false);
+  }
 
   async function createRestaurant(event: FormEvent) {
     event.preventDefault();
@@ -140,6 +176,44 @@ export function TenantOnboardingPage() {
           restaurant identity that belongs to your business.
         </p>
 
+        {!passwordSet ? (
+          <form className="restaurant-form" onSubmit={setOwnerPassword}>
+            <h2>Set your password</h2>
+            <p>Secure your tenant owner account before creating your restaurant identity.</p>
+
+            <label>
+              New password
+              <input
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                minLength={8}
+                autoComplete="new-password"
+                required
+              />
+            </label>
+
+            <label>
+              Confirm password
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                minLength={8}
+                autoComplete="new-password"
+                required
+              />
+            </label>
+
+            {error && <div className="error-banner">{error}</div>}
+
+            <div className="modal-actions">
+              <button type="submit" disabled={saving}>
+                {saving ? 'Saving password…' : 'Set password and continue'}
+              </button>
+            </div>
+          </form>
+        ) : (
         <form className="restaurant-form" onSubmit={createRestaurant}>
           <div className="form-grid">
             <label>
@@ -195,6 +269,7 @@ export function TenantOnboardingPage() {
             </button>
           </div>
         </form>
+        )}
       </div>
     </section>
   );
