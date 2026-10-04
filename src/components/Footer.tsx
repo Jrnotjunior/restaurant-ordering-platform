@@ -3,6 +3,10 @@ import { useRestaurant } from './RestaurantProvider';
 export function Footer() {
   const restaurant = useRestaurant();
 
+  const storefront = restaurant.storefront;
+
+  if (!storefront.footer.enabled) return null;
+
   return (
     <footer className="site-footer">
       <div>
@@ -26,7 +30,7 @@ export function Footer() {
         </nav>
       ) : null}
 
-      <small>© {new Date().getFullYear()} {restaurant.name}. All rights reserved.</small>
+      <small>{storefront.footer.text || `© ${new Date().getFullYear()} ${restaurant.name}. All rights reserved.`}</small>
     </footer>
   );
 }
