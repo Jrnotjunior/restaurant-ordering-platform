@@ -110,7 +110,7 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
   const [modulesLoading, setModulesLoading] = useState(role === 'owner');
 
   useEffect(() => {
-    if (!supabase || role !== 'owner') {
+    if (!supabase || role !== 'owner' || !restaurant.id) {
       setModulesLoading(false);
       return;
     }
