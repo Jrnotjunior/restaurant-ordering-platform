@@ -328,6 +328,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
               </div>
             </div>
           </div>
+        </div>
 
         <div className="website-customization-card">
           <h2>Branding</h2>
