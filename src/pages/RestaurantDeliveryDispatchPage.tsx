@@ -345,10 +345,10 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
             )
           : null}
 
-        <section className="restaurant-dispatch-card restaurant-dispatch-ready-card">
-          <div className="restaurant-dispatch-card-heading">
+        <section className="restaurant-panel">
+          <div className="restaurant-panel-header">
             <div>
-              <p className="restaurant-dispatch-label">
+              <p className="restaurant-panel-label">
                 {activeTab === 'delivery' ? 'In-house delivery' : activeTab === 'pickup' ? 'Handoff' : 'Table service'}
               </p>
               <h2>
@@ -359,12 +359,12 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
                     : 'Orders ready to be served'}
               </h2>
             </div>
-            <span className="restaurant-dispatch-count">{activeOrders.length}</span>
+            <span className="restaurant-panel-count">{activeOrders.length}</span>
           </div>
 
-          <div className="restaurant-dispatch-order-list">
+          <div className="restaurant-list">
             {loading ? (
-              <div className="restaurant-dispatch-empty">Loading ready orders…</div>
+              <div className="restaurant-list-empty">Loading ready orders…</div>
             ) : activeOrders.length === 0 ? (
               <div className="restaurant-dispatch-empty">
                 {activeTab === 'delivery'
@@ -374,14 +374,14 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
                     : 'There are no ready dine-in orders waiting to be served.'}
               </div>
             ) : activeOrders.map((order) => (
-              <article className="restaurant-dispatch-order" key={order.id}>
-                <div className="restaurant-dispatch-order-main">
-                  <div className="restaurant-dispatch-order-top">
+              <article className="restaurant-list-item" key={order.id}>
+                <div className="restaurant-list-item-main">
+                  <div>
                     <strong>{order.orderNumber}</strong>
                     <strong>₱{order.total.toFixed(2)}</strong>
                   </div>
                   <span>{order.customerName}</span>
-                  <span className="restaurant-dispatch-address">
+                  <span>
                     {activeTab === 'delivery'
                       ? order.address
                       : activeTab === 'pickup'
@@ -393,11 +393,11 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
                   <small>Ready at {order.readyAt}</small>
                 </div>
                 {role === 'dispatcher' && (activeTab === 'delivery' ? (
-                  <button className="restaurant-dispatch-assign-button" type="button" onClick={() => { setSelectedOrder(order); setError(''); }}>
+                  <button className="button" type="button" onClick={() => { setSelectedOrder(order); setError(''); }}>
                     Assign to Rider
                   </button>
                 ) : (
-                  <button className="restaurant-dispatch-assign-button" type="button" disabled={assigning} onClick={() => void completePickup(order)}>
+                  <button className="button" type="button" disabled={assigning} onClick={() => void completePickup(order)}>
                     {activeTab === 'dine_in'
                       ? 'Confirm Served'
                       : order.pickupMethod === 'third_party_courier'
@@ -447,7 +447,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
               })}
 
               {!riders.length ? (
-                <div className="restaurant-dispatch-empty">No riders are currently available to view.</div>
+                <div className="restaurant-list-empty">No riders are currently available to view.</div>
               ) : null}
             </div>
           </section>
