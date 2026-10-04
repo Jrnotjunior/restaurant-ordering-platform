@@ -175,7 +175,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
       <form className="website-customization-form" onSubmit={(event: FormEvent) => { event.preventDefault(); setShowSaveConfirmation(true); }}>
         <div className="website-customization-header">
           <p className="eyebrow">Customer-facing website</p>
-          <h1 style={{ margin: 0 }}>Website Customization</h1>
+          <h1 style={{ margin: 0 }}>Customize</h1>
           <p className="website-customization-help" style={{ marginTop: 8 }}>Customize your restaurant's branding, homepage content, and visible customer-facing sections. These settings affect this restaurant only.</p>
         </div>
 
@@ -264,14 +264,14 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         </div>
 
         <div className="website-customization-actions-bar">
-          <button className="button button-primary" type="submit" disabled={loading || saving}>{saving ? 'Saving…' : 'Save Website Customization'}</button>
+          <button className="button button-primary" type="submit" disabled={loading || saving}>{saving ? 'Saving…' : 'Save Customizations'}</button>
         </div>
       </form>
 
       {showSaveConfirmation ? (
         <div className="website-customization-confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="website-customization-confirm-title">
           <div className="website-customization-confirm-modal">
-            <h2 id="website-customization-confirm-title">Save Website Customization?</h2>
+            <h2 id="website-customization-confirm-title">Save Customizations?</h2>
             <p>Are you sure you want to save these customer-facing website changes?</p>
             <div className="website-customization-confirm-actions">
               <button type="button" className="button button-secondary" disabled={saving} onClick={() => setShowSaveConfirmation(false)}>Cancel</button>
