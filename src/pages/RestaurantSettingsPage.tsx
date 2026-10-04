@@ -35,14 +35,44 @@ const DEFAULT_HOURS: OperatingHours = {
   sunday: { isOpen: true, open: '09:00', close: '21:00' },
 };
 
+function normalizeTimeForStorage(value: unknown, fallback: string): string {
+  if (typeof value !== 'string') return fallback;
+  const trimmed = value.trim();
+  const match24 = trimmed.match(/^(\\d{1,2}):(\\d{2})$/);
+  if (match24) {
+    const hour = Number(match24[1]);
+    const minute = Number(match24[2]);
+    if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
+      return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+    }
+  }
+
+  const match12 = trimmed.match(/^(\\d{1,2}):(\\d{2})\\s*(AM|PM)$/i);
+  if (match12) {
+    let hour = Number(match12[1]);
+    const minute = Number(match12[2]);
+    const meridiem = match12[3].toUpperCase();
+    if (hour >= 1 && hour <= 12 && minute >= 0 && minute <= 59) {
+      if (meridiem === 'AM') {
+        if (hour === 12) hour = 0;
+      } else if (hour !== 12) {
+        hour += 12;
+      }
+      return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+    }
+  }
+
+  return fallback;
+}
+
 function normalizeHours(value: unknown): OperatingHours {
   const source = value && typeof value === 'object' ? value as Record<string, Partial<DayHours>> : {};
   return DAYS.reduce((result, day) => {
     const current = source[day.key] ?? {};
     result[day.key] = {
       isOpen: current.isOpen !== false,
-      open: typeof current.open === 'string' && current.open ? current.open : DEFAULT_HOURS[day.key].open,
-      close: typeof current.close === 'string' && current.close ? current.close : DEFAULT_HOURS[day.key].close,
+      open: normalizeTimeForStorage(current.open, DEFAULT_HOURS[day.key].open),
+      close: normalizeTimeForStorage(current.close, DEFAULT_HOURS[day.key].close),
     };
     return result;
   }, {} as OperatingHours);
@@ -180,11 +210,20 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     setMessage('');
 
     try {
+      const normalizedHours = DAYS.reduce((result, day) => {
+        result[day.key] = {
+          isOpen: Boolean(hours[day.key].isOpen),
+          open: normalizeTimeForStorage(hours[day.key].open, DEFAULT_HOURS[day.key].open),
+          close: normalizeTimeForStorage(hours[day.key].close, DEFAULT_HOURS[day.key].close),
+        };
+        return result;
+      }, {} as OperatingHours);
+
       const { error: saveError } = await supabase
         .from('restaurants')
         .update({
           store_address: address.trim(),
-          operating_hours: hours,
+          operating_hours: normalizedHours,
           ordering_enabled: orderingEnabled,
           tax_vat_registered: vatRegistered,
           tax_prices_vat_inclusive: vatRegistered ? pricesVatInclusive : false,
@@ -193,8 +232,28 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .eq('id', restaurantId);
 
       if (saveError) throw saveError;
+
+      const { data: savedRow, error: verifyError } = await supabase
+        .from('restaurants')
+        .select('operating_hours')
+        .eq('id', restaurantId)
+        .single();
+
+      if (verifyError) throw verifyError;
+
+      const savedHours = normalizeHours(savedRow?.operating_hours);
+      const mismatchedDay = DAYS.find((day) =>
+        savedHours[day.key].open !== normalizedHours[day.key].open ||
+        savedHours[day.key].close !== normalizedHours[day.key].close ||
+        savedHours[day.key].isOpen !== normalizedHours[day.key].isOpen
+      );
+
+      if (mismatchedDay) {
+        throw new Error(`The ${mismatchedDay.label} operating hours were not stored correctly. Please try again.`);
+      }
+
+      setHours(savedHours);
       setMessage('Store and tax settings saved successfully.');
-      await loadSettings();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Unable to save store settings.');
     } finally {
