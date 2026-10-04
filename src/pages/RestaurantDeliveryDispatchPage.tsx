@@ -298,7 +298,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
 
   return (
     <section className="restaurant-page restaurant-dispatch-page">
-            {role !== 'owner' && <header className="restaurant-dispatch-header">
+            {role !== 'owner' && <header className="restaurant-page-header">
         <div>
           <p className="eyebrow">Restaurant Operations</p>
           <h1>Dispatch</h1>
@@ -315,10 +315,10 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
       <main className="restaurant-dispatch-workflow">
         {dispatchTabsSlot
           ? createPortal(
-              <nav className="restaurant-dispatch-tabs" aria-label="Dispatch order type">
+              <nav className="restaurant-navigation restaurant-dispatch-tabs" aria-label="Dispatch order type">
                 <button
                   type="button"
-                  className={'restaurant-dispatch-tab' + (activeTab === 'delivery' ? ' is-active' : '')}
+                  className={'restaurant-navigation-item' + (activeTab === 'delivery' ? ' is-active' : '')}
                   onClick={() => setActiveTab('delivery')}
                 >
                   <span>Delivery</span>
@@ -326,7 +326,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
                 </button>
                 <button
                   type="button"
-                  className={'restaurant-dispatch-tab' + (activeTab === 'pickup' ? ' is-active' : '')}
+                  className={'restaurant-navigation-item' + (activeTab === 'pickup' ? ' is-active' : '')}
                   onClick={() => setActiveTab('pickup')}
                 >
                   <span>Pick Up</span>
@@ -334,7 +334,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
                 </button>
                 <button
                   type="button"
-                  className={'restaurant-dispatch-tab' + (activeTab === 'dine_in' ? ' is-active' : '')}
+                  className={'restaurant-navigation-item' + (activeTab === 'dine_in' ? ' is-active' : '')}
                   onClick={() => setActiveTab('dine_in')}
                 >
                   <span>Dine In</span>
