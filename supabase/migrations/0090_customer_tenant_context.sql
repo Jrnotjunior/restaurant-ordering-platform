@@ -58,7 +58,7 @@ exception
   when others then
     return null;
 end;
-$$;
+$$$;
 
 revoke all on function public.get_request_restaurant_id() from public, anon;
 grant execute on function public.get_request_restaurant_id() to authenticated;
@@ -279,7 +279,7 @@ begin
   from public.customer_profiles cp
   where cp.id = v_customer_id;
 end;
-$$;
+$$$;
 
 revoke all on function public.upsert_customer_profile(uuid, text, text) from public;
 grant execute on function public.upsert_customer_profile(uuid, text, text) to authenticated;
@@ -331,7 +331,7 @@ begin
     and cp.auth_user_id = auth.uid()
   limit 1;
 end;
-$;
+$$;
 
 
 create or replace function public.get_my_loyalty_points(
@@ -364,7 +364,7 @@ begin
 
   return coalesce(v_points, 0);
 end;
-$$;
+$$$;
 
 
 create or replace function public.get_my_order_history(
@@ -430,7 +430,7 @@ as $$
     o.total,
     o.created_at
   order by o.created_at desc;
-$$;
+$$$;
 
 
 -- Address RPCs must reject a restaurant other than the current tenant.
@@ -466,7 +466,7 @@ begin
     and ca.restaurant_id = p_restaurant_id
   order by ca.is_default desc, ca.created_at desc;
 end;
-$$;
+$$$;
 
 revoke all on function public.get_my_customer_profile(uuid) from public;
 grant execute on function public.get_my_customer_profile(uuid) to authenticated;
@@ -525,7 +525,7 @@ exception
   when others then
     return null;
 end;
-$$;
+$$$;
 
 revoke all on function public.get_request_restaurant_id() from public, anon;
 grant execute on function public.get_request_restaurant_id() to authenticated;
@@ -746,7 +746,7 @@ begin
   from public.customer_profiles cp
   where cp.id = v_customer_id;
 end;
-$$;
+$$$;
 
 revoke all on function public.upsert_customer_profile(uuid, text, text) from public;
 grant execute on function public.upsert_customer_profile(uuid, text, text) to authenticated;
@@ -798,7 +798,7 @@ begin
     and cp.auth_user_id = auth.uid()
   limit 1;
 end;
-$;
+$$;
 
 
 create or replace function public.get_my_loyalty_points(
@@ -831,7 +831,7 @@ begin
 
   return coalesce(v_points, 0);
 end;
-$$;
+$$$;
 
 
 create or replace function public.get_my_order_history(
@@ -897,7 +897,7 @@ as $$
     o.total,
     o.created_at
   order by o.created_at desc;
-$$;
+$$$;
 
 
 -- Address RPCs must reject a restaurant other than the current tenant.
@@ -933,7 +933,7 @@ begin
     and ca.restaurant_id = p_restaurant_id
   order by ca.is_default desc, ca.created_at desc;
 end;
-$$;
+$$$;
 
 revoke all on function public.get_my_customer_profile(uuid) from public;
 grant execute on function public.get_my_customer_profile(uuid) to authenticated;
@@ -1023,7 +1023,7 @@ begin
       updated_at = now()
   where id = p_order_id;
 end;
-$$;
+$$$;
 
 revoke all on function public.attach_customer_to_order(uuid, uuid) from public;
 grant execute on function public.attach_customer_to_order(uuid, uuid) to authenticated;
@@ -1078,7 +1078,7 @@ begin
       updated_at = now()
   where id = p_payment_id;
 end;
-$$;
+$$$;
 
 revoke all on function public.attach_customer_to_pending_online_payment(uuid, uuid) from public;
 grant execute on function public.attach_customer_to_pending_online_payment(uuid, uuid) to authenticated;
@@ -1166,7 +1166,7 @@ begin
 
   return v_address_id;
 end;
-$$;
+$$$;
 
 revoke all on function public.save_my_customer_address(uuid, text, text, text, text, boolean) from public;
 grant execute on function public.save_my_customer_address(uuid, text, text, text, text, boolean) to authenticated;
@@ -1229,7 +1229,7 @@ begin
   where cp.id = v_customer_id
     and ca.id = p_address_id;
 end;
-$$;
+$$$;
 
 revoke all on function public.set_my_customer_address_default(uuid, uuid) from public;
 grant execute on function public.set_my_customer_address_default(uuid, uuid) to authenticated;
@@ -1306,7 +1306,7 @@ begin
 
   return true;
 end;
-$$;
+$$$;
 
 revoke all on function public.update_my_customer_address(uuid, uuid, text, text, text, text) from public;
 grant execute on function public.update_my_customer_address(uuid, uuid, text, text, text, text) to authenticated;
@@ -1395,7 +1395,7 @@ begin
     end if;
   end if;
 end;
-$$;
+$$$;
 
 revoke all on function public.delete_my_customer_address(uuid, uuid) from public;
 grant execute on function public.delete_my_customer_address(uuid, uuid) to authenticated;
@@ -1485,7 +1485,7 @@ begin
       updated_at = now()
   where id = v_customer_id;
 end;
-$$;
+$$$;
 
 revoke all on function public.save_my_default_delivery_address(uuid, text, text, text) from public;
 grant execute on function public.save_my_default_delivery_address(uuid, text, text, text) to authenticated;
