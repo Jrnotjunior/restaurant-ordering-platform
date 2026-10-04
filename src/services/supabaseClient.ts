@@ -24,13 +24,34 @@ function getRestaurantContextHeaders(): Record<string, string> {
   return headers;
 }
 
+function getRestaurantAuthStorageKey(): string {
+  if (typeof window === 'undefined') return 'restaurant-ordering-platform-auth';
+
+  // sessionStorage is scoped to a browser tab. Persisting a random tab id
+  // there keeps the same Auth session after refresh while giving every tab
+  // its own storage key and therefore its own Supabase Auth BroadcastChannel.
+  const tabKeyStorage = window.sessionStorage;
+  const existingTabId = tabKeyStorage.getItem('restaurant-ordering-tab-id');
+  const tabId = existingTabId || (
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2) + Date.now().toString(36)
+  );
+
+  if (!existingTabId) {
+    tabKeyStorage.setItem('restaurant-ordering-tab-id', tabId);
+  }
+
+  return `restaurant-ordering-platform-auth:${tabId}`;
+}
+
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl!, supabaseAnonKey!, {
       auth: {
-        // Keep each restaurant-platform browser tab on its own Auth session.
-        // This allows Owner, Cashier, Kitchen, and Dispatcher to be signed in
-        // simultaneously in different tabs without replacing one another.
-        storageKey: 'restaurant-ordering-platform-auth',
+        // Each restaurant browser tab gets an independent Auth session.
+        // This prevents Store Owner, Cashier, Kitchen, and Dispatcher tabs
+        // from broadcasting their sign-in state to one another.
+        storageKey: getRestaurantAuthStorageKey(),
         storage: window.sessionStorage,
       },
       global: {
