@@ -62,7 +62,7 @@ main { flex: 1; }
 }
 .button-primary:hover:not(:disabled),
 .button-secondary:hover:not(:disabled) {
-  color: var(--color-button-text);
+  color: var(--color-button-hover-text, var(--color-button-text));
   background: var(--color-button-hover-background);
   border-color: var(--color-button-hover-border);
 }
@@ -344,7 +344,7 @@ main { flex: 1; }
   transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
 }
 .button:hover:not(:disabled) {
-  color: var(--color-button-text);
+  color: var(--color-button-hover-text, var(--color-button-text));
   background: var(--color-button-hover-background);
   border-color: var(--color-button-hover-border);
 }
@@ -358,7 +358,7 @@ main { flex: 1; }
 }
 .button-primary:hover:not(:disabled),
 .button-secondary:hover:not(:disabled) {
-  color: var(--color-button-text);
+  color: var(--color-button-hover-text, var(--color-button-text));
   background: var(--color-button-hover-background);
   border-color: var(--color-button-hover-border);
 }
