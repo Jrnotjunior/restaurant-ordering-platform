@@ -379,7 +379,9 @@ function AppContent() {
   useEffect(() => {
     if (authLoading || !user || !supabase) return;
 
-    const role = user.app_metadata?.role ?? user.user_metadata?.role;
+    const client = supabase;
+    const currentUser = user;
+    const role = currentUser.app_metadata?.role ?? currentUser.user_metadata?.role;
     if (role !== 'customer') return;
 
     let cancelled = false;
@@ -387,7 +389,7 @@ function AppContent() {
     const touchPresence = async () => {
       if (cancelled || document.visibilityState !== 'visible') return;
 
-      const { error } = await supabase.rpc('customer_touch_presence');
+      const { error } = await client.rpc('customer_touch_presence');
       if (error) {
         console.error('Unable to update customer presence.', error);
       }
