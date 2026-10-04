@@ -647,10 +647,11 @@ function AppContent() {
               : isRestaurantShippingFeePage ? <RestaurantShippingFeePage restaurantId={ownerRestaurant.id!} />
               : isRestaurantEmployeesPage ? <RestaurantEmployeesPage restaurantId={ownerRestaurant.id!} />
               : isRestaurantDeliveryDispatchPage ? <RestaurantDeliveryDispatchPage restaurantId={ownerRestaurant.id!} />
+              : isRestaurantSalesPage ? <RestaurantSalesPage restaurantId={ownerRestaurant.id!} role="owner" />
               : isRestaurantSettingsPage ? <RestaurantSettingsPage restaurantId={ownerRestaurant.id!} />
               : isRestaurantWebsiteCustomizationPage ? <RestaurantWebsiteCustomizationPage restaurantId={ownerRestaurant.id!} />
               : isRestaurantLoyaltyPage ? <RestaurantLoyaltyPage restaurantId={ownerRestaurant.id!} />
-              : <RestaurantSalesPage restaurantId={ownerRestaurant.id!} />}
+              : <RestaurantSalesPage restaurantId={ownerRestaurant.id!} role="owner" />}
           </RestaurantLayout>
         </ThemeProvider>
       </RestaurantProvider>
