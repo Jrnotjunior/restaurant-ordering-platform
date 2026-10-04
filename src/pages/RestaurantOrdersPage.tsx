@@ -298,7 +298,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
         }
       `}</style>
 
-            {role !== 'owner' && <div className="restaurant-orders-header">
+            {role !== 'owner' && <div className="restaurant-page-header">
         <div>
           <p className="eyebrow">Restaurant operations</p>
           <h1>Orders</h1>
