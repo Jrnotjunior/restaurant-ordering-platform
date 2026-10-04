@@ -1,7 +1,5 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { supabase } from '../services/supabaseClient';
-import type { RestaurantStorefront, RestaurantTheme } from '../types/restaurant';
-import { defaultRestaurant } from '../config/defaultRestaurant';
 
 type Props = {
   restaurantId: string;
@@ -197,10 +195,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
   const [automaticRiderAssignmentEnabled, setAutomaticRiderAssignmentEnabled] = useState(false);
   const [orderingEnabled, setOrderingEnabled] = useState(true);
-  const [logoUrl, setLogoUrl] = useState('');
-  const [websiteTheme, setWebsiteTheme] = useState<RestaurantTheme>(defaultRestaurant.theme);
-  const [storefront, setStorefront] = useState<RestaurantStorefront>(defaultRestaurant.storefront);
-  const [logoUploading, setLogoUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -219,13 +213,12 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     try {
       const { data, error: loadError } = await supabase
         .from('restaurants')
-        .select('store_address,location_text,logo_url,ordering_enabled,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate,cash_on_delivery_enabled,automatic_rider_assignment_enabled')
+        .select('store_address,location_text,ordering_enabled,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate,cash_on_delivery_enabled,automatic_rider_assignment_enabled')
          .eq('id', restaurantId)
         .single();
 
       if (loadError) throw loadError;
       setAddress(data?.store_address ?? data?.location_text ?? '');
-      setLogoUrl(data?.logo_url ?? '');
       setHours(normalizeHours(data?.operating_hours));
       setOrderingEnabled(data?.ordering_enabled !== false);
       setVatRegistered(Boolean(data?.tax_vat_registered));
@@ -234,30 +227,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       setCashOnDeliveryEnabled(data?.cash_on_delivery_enabled !== false);
       setAutomaticRiderAssignmentEnabled(data?.automatic_rider_assignment_enabled === true);
 
-      const { data: customization, error: customizationError } = await supabase
-        .from('restaurant_website_customizations')
-        .select('theme,storefront')
-        .eq('restaurant_id', restaurantId)
-        .maybeSingle();
-
-      if (customizationError) throw customizationError;
-
-      const customTheme = customization?.theme as Partial<RestaurantTheme> | null;
-      setWebsiteTheme({
-        ...defaultRestaurant.theme,
-        ...(customTheme ?? {}),
-        colors: {
-          ...defaultRestaurant.theme.colors,
-          ...(customTheme?.colors ?? {})
-        }
-      });
-      const customStorefront = customization?.storefront as Partial<RestaurantStorefront> | null;
-      setStorefront({
-        ...defaultRestaurant.storefront,
-        ...(customStorefront ?? {}),
-        hero: { ...defaultRestaurant.storefront.hero, ...(customStorefront?.hero ?? {}) },
-        sections: { ...defaultRestaurant.storefront.sections, ...(customStorefront?.sections ?? {}) },
-        footer: { ...defaultRestaurant.storefront.footer, ...(customStorefront?.footer ?? {}) }
       });
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load store settings.');
@@ -269,53 +238,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   useEffect(() => {
     void loadSettings();
   }, [restaurantId]);
-
-  async function handleLogoChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file || !supabase) return;
-
-    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
-      setError('Logo must be a PNG, JPG, or WebP image.');
-      return;
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      setError('Logo must be 2 MB or smaller.');
-      return;
-    }
-
-    setLogoUploading(true);
-    setError('');
-    setMessage('');
-    try {
-      const extension = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
-      const path = `${restaurantId}/logo.${extension}`;
-      const { error: uploadError } = await supabase.storage
-        .from('restaurant-logos')
-        .upload(path, file, { upsert: true, contentType: file.type, cacheControl: '3600' });
-
-      if (uploadError) throw uploadError;
-
-      const { data: publicUrlData } = supabase.storage
-        .from('restaurant-logos')
-        .getPublicUrl(path);
-      const publicUrl = publicUrlData.publicUrl;
-
-      const { error: saveError } = await supabase
-        .from('restaurants')
-        .update({ logo_url: publicUrl })
-        .eq('id', restaurantId);
-
-      if (saveError) throw saveError;
-
-      setLogoUrl(publicUrl);
-      setMessage('Restaurant logo updated successfully.');
-    } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : 'Unable to upload restaurant logo.');
-    } finally {
-      setLogoUploading(false);
-    }
-  }
 
   function updateDay(day: DayKey, patch: Partial<DayHours>) {
     setHours((current) => ({
@@ -371,16 +293,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
       if (saveError) throw saveError;
 
-      const { error: themeSaveError } = await supabase
-        .from('restaurant_website_customizations')
-        .upsert({
-          restaurant_id: restaurantId,
-          theme: websiteTheme,
-          storefront
-        }, { onConflict: 'restaurant_id' });
-
-      if (themeSaveError) throw themeSaveError;
-
       const { data: savedRow, error: verifyError } = await supabase
         .from('restaurants')
         .select('operating_hours')
@@ -401,7 +313,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       }
 
       setHours(savedHours);
-      setMessage('Store and website settings saved successfully.');
+      setMessage('Store settings saved successfully.');
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Unable to save store settings.');
     } finally {
@@ -413,6 +325,11 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
   return (
     <section className="restaurant-page restaurant-shipping-page">
+      <div className="restaurant-settings-card">
+        <p className="eyebrow">Restaurant configuration</p>
+        <h1 style={{ margin: 0 }}>Store Settings</h1>
+        <p className="restaurant-settings-help" style={{ marginTop: 8 }}>Manage store operations, ordering status, tax configuration, and operating hours. Website branding and customer-facing content are managed separately.</p>
+      </div>
       <style>{`
         .restaurant-settings-grid{display:grid;gap:20px}
         .restaurant-settings-theme-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}
@@ -489,221 +406,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       {message && <div className="restaurant-shipping-message is-success" role="status">{message}</div>}
 
       <form className="restaurant-settings-form" onSubmit={(event) => { event.preventDefault(); setShowSaveConfirmation(true); }}>
-        <div className="restaurant-settings-card">
-          <h2>Restaurant logo</h2>
-          <p className="restaurant-settings-help">Upload the logo customers will see in the restaurant header. PNG, JPG, or WebP up to 2 MB.</p>
-          <div className="restaurant-settings-logo-row">
-            <div className="restaurant-settings-logo-preview">
-              {logoUrl ? <img src={logoUrl} alt="Restaurant logo" /> : <span>No logo</span>}
-            </div>
-            <label className="button button-secondary restaurant-settings-logo-button">
-              {logoUploading ? 'Uploading…' : 'Choose logo'}
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                onChange={(event) => void handleLogoChange(event)}
-                disabled={loading || saving || logoUploading}
-              />
-            </label>
-          </div>
-        </div>
-
-        <div className="restaurant-settings-card">
-          <h2>Website customization</h2>
-          <p className="restaurant-settings-help">Customize the customer-facing website without changing the restaurant's ordering or POS logic. These settings are stored per restaurant, so each tenant can have its own brand.</p>
-
-          <div className="restaurant-settings-theme-grid">
-            {([
-              ['primary', 'Primary color'],
-              ['primaryHover', 'Primary hover'],
-              ['primaryText', 'Primary button text'],
-              ['secondary', 'Secondary color'],
-              ['secondaryText', 'Secondary text'],
-              ['background', 'Website background'],
-              ['surface', 'Card surface'],
-              ['text', 'Main text'],
-              ['muted', 'Muted text'],
-              ['border', 'Border color'],
-            ] as const).map(([key, label]) => (
-              <label className="restaurant-settings-theme-field" key={key}>
-                <span>{label}</span>
-                <input
-                  type="color"
-                  value={websiteTheme.colors[key]}
-                  disabled={loading || saving}
-                  onChange={(event) => {
-                    const value = event.target.value;
-                    setWebsiteTheme((current) => ({
-                      ...current,
-                      colors: { ...current.colors, [key]: value }
-                    }));
-                    setMessage('');
-                    setError('');
-                  }}
-                />
-              </label>
-            ))}
-
-            <label className="restaurant-settings-theme-field">
-              <span>Heading font</span>
-              <select
-                value={websiteTheme.fontHeading}
-                disabled={loading || saving}
-                onChange={(event) => setWebsiteTheme((current) => ({ ...current, fontHeading: event.target.value }))}
-              >
-                <option value="Manrope">Manrope</option>
-                <option value="Inter">Inter</option>
-              </select>
-            </label>
-
-            <label className="restaurant-settings-theme-field">
-              <span>Body &amp; UI font</span>
-              <select
-                value={websiteTheme.fontBody}
-                disabled={loading || saving}
-                onChange={(event) => setWebsiteTheme((current) => ({ ...current, fontBody: event.target.value, fontUi: event.target.value }))}
-              >
-                <option value="Inter">Inter</option>
-                <option value="Manrope">Manrope</option>
-              </select>
-            </label>
-
-            <label className="restaurant-settings-theme-field">
-              <span>Corner style</span>
-              <select
-                value={websiteTheme.borderRadius ?? 'medium'}
-                disabled={loading || saving}
-                onChange={(event) => setWebsiteTheme((current) => ({ ...current, borderRadius: event.target.value as RestaurantTheme['borderRadius'] }))}
-              >
-                <option value="small">Small / sharp</option>
-                <option value="medium">Medium</option>
-                <option value="large">Large / soft</option>
-              </select>
-            </label>
-
-            <label className="restaurant-settings-theme-field">
-              <span>Button style</span>
-              <select
-                value={websiteTheme.buttonStyle ?? 'filled'}
-                disabled={loading || saving}
-                onChange={(event) => setWebsiteTheme((current) => ({ ...current, buttonStyle: event.target.value as RestaurantTheme['buttonStyle'] }))}
-              >
-                <option value="filled">Filled</option>
-                <option value="outline">Outline</option>
-                <option value="soft">Soft</option>
-              </select>
-            </label>
-          </div>
-
-          <div className="restaurant-settings-theme-preview">
-            <div className="restaurant-settings-theme-preview-bar">
-              <div className="restaurant-settings-theme-brand">
-                <span className="restaurant-settings-theme-dot" />
-                <span>Customer website preview</span>
-              </div>
-              <span style={{ color: websiteTheme.colors.muted, fontSize: 13 }}>Live preview</span>
-            </div>
-            <div style={{ marginTop: 18 }}>
-              <h3 style={{ margin: 0, fontFamily: websiteTheme.fontHeading, color: websiteTheme.colors.text }}>Make your restaurant feel like your brand.</h3>
-              <p style={{ color: websiteTheme.colors.muted, lineHeight: 1.5 }}>Colors, typography and controls are applied to the customer-facing storefront.</p>
-              <div className="restaurant-settings-theme-actions">
-                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 42, padding: '0 18px', borderRadius: websiteTheme.borderRadius === 'large' ? 16 : websiteTheme.borderRadius === 'small' ? 8 : 12, background: websiteTheme.buttonStyle === 'outline' ? 'transparent' : websiteTheme.buttonStyle === 'soft' ? websiteTheme.colors.secondary : websiteTheme.colors.primary, color: websiteTheme.buttonStyle === 'outline' ? websiteTheme.colors.primary : websiteTheme.buttonStyle === 'soft' ? websiteTheme.colors.secondaryText : websiteTheme.colors.primaryText, border: '1px solid ' + (websiteTheme.buttonStyle === 'outline' ? websiteTheme.colors.primary : websiteTheme.buttonStyle === 'soft' ? websiteTheme.colors.secondary : websiteTheme.colors.primary), fontWeight: 700 }}>Order now</span>
-                <span className="restaurant-settings-theme-swatch" style={{ flex: 1, background: websiteTheme.colors.surface }} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="restaurant-settings-card">
-          <h2>Storefront content</h2>
-          <p className="restaurant-settings-help">Control the homepage hero and the supporting customer-facing sections. Changes apply to this restaurant only.</p>
-
-          <div className="restaurant-settings-theme-grid">
-            <label className="restaurant-settings-field">
-              <span>Hero eyebrow</span>
-              <input type="text" value={storefront.hero.eyebrow} disabled={loading || saving}
-                onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, eyebrow: event.target.value } }))} />
-            </label>
-            <label className="restaurant-settings-field">
-              <span>Hero title</span>
-              <input type="text" value={storefront.hero.title} disabled={loading || saving}
-                onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, title: event.target.value } }))} />
-            </label>
-            <label className="restaurant-settings-field" style={{ gridColumn: '1 / -1' }}>
-              <span>Hero description</span>
-              <input type="text" value={storefront.hero.description} disabled={loading || saving}
-                onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, description: event.target.value } }))} />
-            </label>
-            <label className="restaurant-settings-field">
-              <span>Hero image URL</span>
-              <input type="text" placeholder="https://..." value={storefront.hero.imageUrl ?? ''} disabled={loading || saving}
-                onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, imageUrl: event.target.value } }))} />
-            </label>
-            <label className="restaurant-settings-field">
-              <span>Hero primary button</span>
-              <input type="text" value={storefront.hero.primaryButtonLabel} disabled={loading || saving}
-                onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, primaryButtonLabel: event.target.value } }))} />
-            </label>
-            <label className="restaurant-settings-field">
-              <span>Primary button link</span>
-              <input type="text" value={storefront.hero.primaryButtonHref} disabled={loading || saving}
-                onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, primaryButtonHref: event.target.value } }))} />
-            </label>
-            <label className="restaurant-settings-field">
-              <span>Hero secondary button</span>
-              <input type="text" value={storefront.hero.secondaryButtonLabel ?? ''} disabled={loading || saving}
-                onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, secondaryButtonLabel: event.target.value } }))} />
-            </label>
-            <label className="restaurant-settings-field">
-              <span>Secondary button link</span>
-              <input type="text" value={storefront.hero.secondaryButtonHref ?? ''} disabled={loading || saving}
-                onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, secondaryButtonHref: event.target.value } }))} />
-            </label>
-          </div>
-
-          <label className="restaurant-settings-switch-row">
-            <span>Show homepage hero</span>
-            <span className="restaurant-settings-switch">
-              <input type="checkbox" checked={storefront.hero.enabled} disabled={loading || saving}
-                onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, enabled: event.target.checked } }))} />
-              <span className="restaurant-settings-switch-track"><span className="restaurant-settings-switch-thumb" /></span>
-            </span>
-          </label>
-
-          <div className="restaurant-settings-theme-grid" style={{ marginTop: 22 }}>
-            {([
-              ['categories', 'Show menu categories'],
-              ['about', 'Show about section'],
-              ['location', 'Show location'],
-              ['hours', 'Show operating hours'],
-              ['contact', 'Show contact information'],
-              ['social', 'Show social links'],
-            ] as const).map(([key, label]) => (
-              <label className="restaurant-settings-toggle" key={key} style={{ justifyContent: 'flex-start', minHeight: 44 }}>
-                <input type="checkbox" checked={storefront.sections[key]} disabled={loading || saving}
-                  onChange={(event) => setStorefront((current) => ({ ...current, sections: { ...current.sections, [key]: event.target.checked } }))} />
-                {label}
-              </label>
-            ))}
-          </div>
-
-          <div style={{ marginTop: 20 }}>
-            <label className="restaurant-settings-field">
-              <span>Footer text</span>
-              <input type="text" placeholder="Optional custom footer message" value={storefront.footer.text ?? ''} disabled={loading || saving}
-                onChange={(event) => setStorefront((current) => ({ ...current, footer: { ...current.footer, text: event.target.value } }))} />
-            </label>
-            <label className="restaurant-settings-switch-row">
-              <span>Show footer</span>
-              <span className="restaurant-settings-switch">
-                <input type="checkbox" checked={storefront.footer.enabled} disabled={loading || saving}
-                  onChange={(event) => setStorefront((current) => ({ ...current, footer: { ...current.footer, enabled: event.target.checked } }))} />
-                <span className="restaurant-settings-switch-track"><span className="restaurant-settings-switch-thumb" /></span>
-              </span>
-            </label>
-          </div>
-        </div>
-
         <div className="restaurant-settings-card">
           <h2>Store address</h2>
           <p className="restaurant-settings-help">This address is shown to customers for pickup orders. It is stored per restaurant, so the platform can be reused by different restaurant owners.</p>
