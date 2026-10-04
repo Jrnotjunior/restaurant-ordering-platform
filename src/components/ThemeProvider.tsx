@@ -25,6 +25,40 @@ function applyTheme(theme: RestaurantTheme) {
   root.style.setProperty('--color-success', theme.colors.success);
   root.style.setProperty('--color-warning', theme.colors.warning);
   root.style.setProperty('--color-error', theme.colors.error);
+
+  const radius = theme.borderRadius === 'small'
+    ? { sm: '0.25rem', md: '0.5rem', lg: '0.75rem' }
+    : theme.borderRadius === 'large'
+      ? { sm: '0.75rem', md: '1rem', lg: '1.5rem' }
+      : { sm: '0.5rem', md: '0.75rem', lg: '1rem' };
+
+  root.style.setProperty('--radius-sm', radius.sm);
+  root.style.setProperty('--radius-md', radius.md);
+  root.style.setProperty('--radius-lg', radius.lg);
+
+  const buttonStyle = theme.buttonStyle ?? 'filled';
+  if (buttonStyle === 'outline') {
+    root.style.setProperty('--color-button-background', 'transparent');
+    root.style.setProperty('--color-button-text', theme.colors.primary);
+    root.style.setProperty('--color-button-border', theme.colors.primary);
+    root.style.setProperty('--color-button-hover-background', theme.colors.primary);
+    root.style.setProperty('--color-button-hover-border', theme.colors.primary);
+    root.style.setProperty('--color-button-hover-text', theme.colors.primaryText);
+  } else if (buttonStyle === 'soft') {
+    root.style.setProperty('--color-button-background', theme.colors.secondary);
+    root.style.setProperty('--color-button-text', theme.colors.secondaryText);
+    root.style.setProperty('--color-button-border', theme.colors.secondary);
+    root.style.setProperty('--color-button-hover-background', theme.colors.primary);
+    root.style.setProperty('--color-button-hover-border', theme.colors.primary);
+    root.style.setProperty('--color-button-hover-text', theme.colors.primaryText);
+  } else {
+    root.style.setProperty('--color-button-background', theme.colors.primary);
+    root.style.setProperty('--color-button-text', theme.colors.primaryText);
+    root.style.setProperty('--color-button-border', theme.colors.primary);
+    root.style.setProperty('--color-button-hover-background', theme.colors.primaryHover);
+    root.style.setProperty('--color-button-hover-border', theme.colors.primaryHover);
+    root.style.setProperty('--color-button-hover-text', theme.colors.primaryText);
+  }
 }
 
 type ThemeProviderProps = {
