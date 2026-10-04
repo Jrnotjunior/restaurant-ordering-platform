@@ -195,6 +195,55 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-form{display:grid;gap:22px}
         .website-customization-header{padding:24px;border:1px solid #e1e5eb;border-radius:14px;background:#fff}
         .website-customization-card{padding:24px;border:1px solid #e1e5eb;border-radius:14px;background:#fff}
+        .website-customization-live-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid}
+        .website-customization-live-brand{display:flex;align-items:center;gap:8px;min-width:0}
+        .website-customization-live-brand strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
+        .website-customization-live-brand img,.website-customization-live-logo-fallback{width:30px;height:30px;object-fit:contain;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+        .website-customization-live-hero{margin:12px;padding:20px 16px;min-height:230px;box-sizing:border-box;border:1px solid;background-size:cover;background-position:center;display:flex;flex-direction:column;justify-content:center}
+        .website-customization-live-eyebrow{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+        .website-customization-live-hero h3{font-size:25px;line-height:1.08;margin:7px 0 8px}
+        .website-customization-live-hero p{margin:0;font-size:13px;line-height:1.5}
+        .website-customization-live-buttons{display:flex;gap:7px;flex-wrap:wrap;margin-top:16px}
+        .website-customization-live-buttons span{display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:0 11px;border:1px solid;border-radius:var(--radius-sm);font-size:11px;font-weight:800}
+        .website-customization-live-disabled{margin:12px;padding:22px;text-align:center;border:1px dashed;font-size:12px}
+        .website-customization-live-section{margin:12px;padding:12px;border:1px solid;border-color:inherit;border-radius:9px;display:flex;justify-content:space-between;gap:8px;font-size:12px}
+        .website-customization-live-section-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px}
+        .website-customization-live-section-grid>div{display:grid;gap:3px;padding:11px;border:1px solid;border-color:inherit;border-radius:9px;font-size:11px}
+        .website-customization-live-footer{padding:14px;border-top:1px solid;text-align:center;font-size:10px}
+        .website-customization-card h2{margin:0 0 8px}
+        .website-customization-help{margin:0;color:#64748b;line-height:1.6}
+        .website-customization-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}
+        .website-customization-field{display:grid;gap:7px;font-weight:600;font-size:14px}
+        .website-customization-field input[type=text],.website-customization-field select{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:10px;padding:12px;font:inherit;color:#0f172a;background:#fff}
+        .website-customization-field input[type=color]{width:100%;height:44px;padding:4px;border:1px solid #dbe2ea;border-radius:10px;background:#fff;cursor:pointer}
+        .website-customization-field input:focus,.website-customization-field select:focus{outline:none;border-color:#94a3b8;box-shadow:0 0 0 3px rgba(148,163,184,.18)}
+        .website-customization-preview{margin-top:20px;padding:20px;border:1px solid #e1e5eb;border-radius:14px;background:var(--color-background);color:var(--color-text)}
+        .website-customization-preview-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:14px;border-bottom:1px solid var(--color-border)}
+        .website-customization-brand{display:flex;align-items:center;gap:10px;font-weight:800}
+        .website-customization-dot{width:30px;height:30px;border-radius:var(--radius-sm);background:var(--color-primary)}
+        .website-customization-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+        .website-customization-swatch{height:46px;border-radius:var(--radius-md);border:1px solid var(--color-border)}
+        .website-customization-logo-row{display:flex;align-items:center;gap:16px;margin-top:16px;flex-wrap:wrap}
+        .website-customization-logo-preview{width:96px;height:96px;border:1px solid #dbe2ea;border-radius:12px;background:#f8fafc;display:flex;align-items:center;justify-content:center;overflow:hidden;color:#94a3b8;font-size:12px}
+        .website-customization-logo-preview img{width:100%;height:100%;object-fit:contain}
+        .website-customization-logo-button{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center}
+        .website-customization-logo-button input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+        .website-customization-switch-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:14px;font-weight:700;color:#0f172a}
+        .website-customization-switch{position:relative;display:inline-flex;flex:0 0 auto}
+        .website-customization-switch input{position:absolute;opacity:0;pointer-events:none}
+        .website-customization-switch-track{position:relative;width:48px;height:28px;border-radius:999px;background:#cbd5e1;display:block}
+        .website-customization-switch-thumb{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.25);transition:transform .2s ease}
+        .website-customization-switch input:checked + .website-customization-switch-track{background:#101b2f}
+        .website-customization-switch input:checked + .website-customization-switch-track .website-customization-switch-thumb{transform:translateX(20px)}
+        .website-customization-toggle-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:22px}
+        .website-customization-toggle{display:flex;align-items:center;gap:8px;min-height:44px;font-size:14px;font-weight:600}
+        .website-customization-actions-bar{display:flex;justify-content:flex-end}
+        .website-customization-confirm-overlay{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.45)}
+        .website-customization-confirm-modal{width:min(420px,100%);box-sizing:border-box;padding:24px;border:1px solid #dbe2ea;border-radius:14px;background:#fff;box-shadow:0 20px 60px rgba(15,23,42,.2)}
+        .website-customization-confirm-modal h2{margin:0 0 8px;color:#0f172a;font-size:20px}
+        .website-customization-confirm-modal p{margin:0;color:#64748b;line-height:1.5}
+        .website-customization-confirm-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
+        @media(max-width:480px){.website-customization-confirm-actions{flex-direction:column-reverse}.website-customization-confirm-actions .button{width:100%}}
         .website-customization-preview-launch-card{display:flex;align-items:center;justify-content:space-between;gap:20px}
         .website-customization-preview-launch-card h2{margin:0 0 6px}
         .website-customization-preview-modal{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -212,23 +261,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-phone.is-dragging{cursor:grabbing;box-shadow:0 30px 70px rgba(15,23,42,.34)}
         .website-customization-phone-screen{width:100%;height:100%;box-sizing:border-box;overflow:auto;border-radius:25px;scrollbar-width:none}
         .website-customization-phone-screen::-webkit-scrollbar{display:none}
-        .website-customization-live-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid}
-        .website-customization-live-brand{display:flex;align-items:center;gap:8px;min-width:0}
-        .website-customization-live-brand strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
-        .website-customization-live-brand img,.website-customization-live-logo-fallback{width:30px;height:30px;object-fit:contain;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
-        .website-customization-live-hero{margin:12px;padding:20px 16px;min-height:230px;box-sizing:border-box;border:1px solid;background-size:cover;background-position:center;display:flex;flex-direction:column;justify-content:center}
-        .website-customization-live-eyebrow{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
-        .website-customization-live-hero h3{font-size:25px;line-height:1.08;margin:7px 0 8px}
-        .website-customization-live-hero p{margin:0;font-size:13px;line-height:1.5}
-        .website-customization-live-buttons{display:flex;gap:7px;flex-wrap:wrap;margin-top:16px}
-        .website-customization-live-buttons span{display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:0 11px;border:1px solid;border-radius:var(--radius-sm);font-size:11px;font-weight:800}
-        .website-customization-live-disabled{margin:12px;padding:22px;text-align:center;border:1px dashed;font-size:12px}
-        .website-customization-live-section{margin:12px;padding:12px;border:1px solid;border-color:inherit;border-radius:9px;display:flex;justify-content:space-between;gap:8px;font-size:12px}
-        .website-customization-live-section-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px}
-        .website-customization-live-section-grid>div{display:grid;gap:3px;padding:11px;border:1px solid;border-color:inherit;border-radius:9px;font-size:11px}
-        .website-customization-live-footer{padding:14px;border-top:1px solid;text-align:center;font-size:10px}
         @media(max-width:700px){.website-customization-grid,.website-customization-toggle-grid,.website-customization-live-section-grid{grid-template-columns:1fr}.website-customization-preview-launch-card{align-items:flex-start;flex-direction:column}.website-customization-preview-modal{padding:8px}.website-customization-preview-modal-panel{width:100%;height:calc(100vh - 16px);border-radius:14px}.website-customization-preview-modal-header{padding:12px}.website-customization-preview-modal-header p{display:none}.website-customization-phone{transform:scale(.82);transform-origin:center}.website-customization-live-hero h3{font-size:24px}.website-customization-actions-bar .button{width:100%}}
-        @media(max-width:480px){.website-customization-confirm-actions{flex-direction:column-reverse}.website-customization-confirm-actions .button{width:100%}}
       `}</style>
 
       {error ? <div className="restaurant-shipping-message is-error" role="alert">{error}</div> : null}
