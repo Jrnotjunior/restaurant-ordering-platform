@@ -376,6 +376,44 @@ function AppContent() {
   // their cart is persisted to a user-scoped browser key so it survives
   // navigation and refreshes without being shared with another account.
   useEffect(() => {
+    if (authLoading || !user || !supabase) return;
+
+    const role = user.app_metadata?.role ?? user.user_metadata?.role;
+    if (role !== 'customer') return;
+
+    let cancelled = false;
+
+    const touchPresence = async () => {
+      if (cancelled || document.visibilityState !== 'visible') return;
+
+      const { error } = await supabase.rpc('customer_touch_presence');
+      if (error) {
+        console.error('Unable to update customer presence.', error);
+      }
+    };
+
+    void touchPresence();
+
+    const interval = window.setInterval(() => {
+      void touchPresence();
+    }, 60_000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void touchPresence();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [authLoading, user?.id]);
+
+  useEffect(() => {
     if (authLoading) return;
 
     cartPersistenceReadyRef.current = false;
