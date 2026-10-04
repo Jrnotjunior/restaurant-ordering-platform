@@ -7,6 +7,8 @@ type Props = { restaurantId: string };
 
 export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
   const [logoUrl, setLogoUrl] = useState('');
+  const [restaurantName, setRestaurantName] = useState(defaultRestaurant.name);
+  const [restaurantTagline, setRestaurantTagline] = useState(defaultRestaurant.tagline);
   const [websiteTheme, setWebsiteTheme] = useState<RestaurantTheme>(defaultRestaurant.theme);
   const [storefront, setStorefront] = useState<RestaurantStorefront>(defaultRestaurant.storefront);
   const [loading, setLoading] = useState(true);
@@ -28,10 +30,12 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
     try {
       const { data: restaurant, error: restaurantError } = await supabase
         .from('restaurants')
-        .select('logo_url')
+        .select('name,tagline,logo_url')
         .eq('id', restaurantId)
         .single();
       if (restaurantError) throw restaurantError;
+      setRestaurantName(restaurant?.name ?? defaultRestaurant.name);
+      setRestaurantTagline(restaurant?.tagline ?? defaultRestaurant.tagline);
       setLogoUrl(restaurant?.logo_url ?? '');
 
       const { data: customization, error: customizationError } = await supabase
@@ -132,6 +136,24 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-form{display:grid;gap:22px}
         .website-customization-header{padding:24px;border:1px solid #e1e5eb;border-radius:14px;background:#fff}
         .website-customization-card{padding:24px;border:1px solid #e1e5eb;border-radius:14px;background:#fff}
+        .website-customization-preview-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+        .website-customization-preview-badge{display:inline-flex;align-items:center;min-height:28px;padding:0 10px;border-radius:999px;background:#ecfdf5;color:#166534;font-size:12px;font-weight:800}
+        .website-customization-live-preview{margin-top:18px;border:1px solid;overflow:hidden}
+        .website-customization-live-nav{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid}
+        .website-customization-live-brand{display:flex;align-items:center;gap:9px;min-width:0}
+        .website-customization-live-brand strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .website-customization-live-brand img,.website-customization-live-logo-fallback{width:34px;height:34px;object-fit:contain;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+        .website-customization-live-hero{margin:16px;padding:26px 22px;min-height:190px;box-sizing:border-box;border:1px solid;background-size:cover;background-position:center;display:flex;flex-direction:column;justify-content:center}
+        .website-customization-live-eyebrow{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+        .website-customization-live-hero h3{font-size:30px;line-height:1.08;margin:7px 0 8px;max-width:700px}
+        .website-customization-live-hero p{margin:0;max-width:680px;line-height:1.5}
+        .website-customization-live-buttons{display:flex;gap:9px;flex-wrap:wrap;margin-top:18px}
+        .website-customization-live-buttons span{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:0 14px;border:1px solid;border-radius:var(--radius-sm);font-size:13px;font-weight:800}
+        .website-customization-live-disabled{margin:16px;padding:28px;text-align:center;border:1px dashed}
+        .website-customization-live-section{margin:16px;padding:15px;border:1px solid;border-color:inherit;border-radius:10px;display:flex;justify-content:space-between;gap:12px}
+        .website-customization-live-section-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px}
+        .website-customization-live-section-grid>div{display:grid;gap:4px;padding:14px;border:1px solid;border-color:inherit;border-radius:10px}
+        .website-customization-live-footer{padding:16px;border-top:1px solid;text-align:center;font-size:12px}
         .website-customization-card h2{margin:0 0 8px}
         .website-customization-help{margin:0;color:#64748b;line-height:1.6}
         .website-customization-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}
@@ -165,7 +187,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-confirm-modal h2{margin:0 0 8px;color:#0f172a;font-size:20px}
         .website-customization-confirm-modal p{margin:0;color:#64748b;line-height:1.5}
         .website-customization-confirm-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
-        @media(max-width:700px){.website-customization-grid,.website-customization-toggle-grid{grid-template-columns:1fr}.website-customization-actions-bar .button{width:100%}}
+        @media(max-width:700px){.website-customization-grid,.website-customization-toggle-grid,.website-customization-live-section-grid{grid-template-columns:1fr}.website-customization-live-hero h3{font-size:24px}.website-customization-actions-bar .button{width:100%}}
         @media(max-width:480px){.website-customization-confirm-actions{flex-direction:column-reverse}.website-customization-confirm-actions .button{width:100%}}
       `}</style>
 
@@ -177,6 +199,69 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
           <p className="eyebrow">Customer-facing website</p>
           <h1 style={{ margin: 0 }}>Customize</h1>
           <p className="website-customization-help" style={{ marginTop: 8 }}>Customize your restaurant's branding, homepage content, and visible customer-facing sections. These settings affect this restaurant only.</p>
+        </div>
+
+        <div className="website-customization-card website-customization-live-preview-card">
+          <div className="website-customization-preview-heading">
+            <div>
+              <h2>Live Preview</h2>
+              <p className="website-customization-help">See how the customer website changes as you customize it. Preview updates are local until you save.</p>
+            </div>
+            <span className="website-customization-preview-badge">Live</span>
+          </div>
+          <div
+            className="website-customization-live-preview"
+            style={{
+              background: websiteTheme.colors.background,
+              color: websiteTheme.colors.text,
+              borderColor: websiteTheme.colors.border,
+              borderRadius: websiteTheme.borderRadius === 'large' ? 18 : websiteTheme.borderRadius === 'small' ? 8 : 12,
+              fontFamily: websiteTheme.fontBody
+            }}
+          >
+            <div className="website-customization-live-nav" style={{ borderBottomColor: websiteTheme.colors.border }}>
+              <div className="website-customization-live-brand">
+                {logoUrl ? <img src={logoUrl} alt="" /> : <span className="website-customization-live-logo-fallback" style={{ background: websiteTheme.colors.primary, color: websiteTheme.colors.primaryText }}>🍴</span>}
+                <strong style={{ fontFamily: websiteTheme.fontHeading }}>{restaurantName}</strong>
+              </div>
+              <span style={{ color: websiteTheme.colors.muted }}>Menu</span>
+            </div>
+            {storefront.hero.enabled ? (
+              <div
+                className="website-customization-live-hero"
+                style={{
+                  backgroundColor: websiteTheme.colors.surface,
+                  backgroundImage: storefront.hero.imageUrl ? `linear-gradient(rgba(0,0,0,.38),rgba(0,0,0,.38)), url("${storefront.hero.imageUrl}")` : undefined,
+                  color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.text,
+                  borderColor: websiteTheme.colors.border,
+                  borderRadius: websiteTheme.borderRadius === 'large' ? 16 : websiteTheme.borderRadius === 'small' ? 8 : 12
+                }}
+              >
+                {storefront.hero.eyebrow ? <span className="website-customization-live-eyebrow" style={{ color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.primary }}>{storefront.hero.eyebrow}</span> : null}
+                <h3 style={{ fontFamily: websiteTheme.fontHeading }}>{storefront.hero.title || restaurantName}</h3>
+                {storefront.hero.description ? <p>{storefront.hero.description}</p> : null}
+                <div className="website-customization-live-buttons">
+                  {storefront.hero.primaryButtonLabel ? <span style={{ background: websiteTheme.buttonStyle === 'soft' ? websiteTheme.colors.secondary : websiteTheme.buttonStyle === 'outline' ? 'transparent' : websiteTheme.colors.primary, color: websiteTheme.buttonStyle === 'soft' ? websiteTheme.colors.secondaryText : websiteTheme.buttonStyle === 'outline' ? websiteTheme.colors.primary : websiteTheme.colors.primaryText, borderColor: websiteTheme.colors.primary }}>{storefront.hero.primaryButtonLabel}</span> : null}
+                  {storefront.hero.secondaryButtonLabel ? <span style={{ background: 'transparent', color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.text, borderColor: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.border }}>{storefront.hero.secondaryButtonLabel}</span> : null}
+                </div>
+              </div>
+            ) : (
+              <div className="website-customization-live-disabled" style={{ background: websiteTheme.colors.surface, borderColor: websiteTheme.colors.border, color: websiteTheme.colors.muted }}>Homepage hero is hidden.</div>
+            )}
+            {storefront.sections.categories ? <div className="website-customization-live-section"><strong>Menu categories</strong><span style={{ color: websiteTheme.colors.muted }}>Featured menu categories</span></div> : null}
+            <div className="website-customization-live-section-grid">
+              {storefront.sections.about ? <div><strong>About</strong><span style={{ color: websiteTheme.colors.muted }}>About your restaurant</span></div> : null}
+              {storefront.sections.location ? <div><strong>Location</strong><span style={{ color: websiteTheme.colors.muted }}>Restaurant location</span></div> : null}
+              {storefront.sections.hours ? <div><strong>Hours</strong><span style={{ color: websiteTheme.colors.muted }}>Operating hours</span></div> : null}
+              {storefront.sections.contact ? <div><strong>Contact</strong><span style={{ color: websiteTheme.colors.muted }}>Contact information</span></div> : null}
+              {storefront.sections.social ? <div><strong>Social</strong><span style={{ color: websiteTheme.colors.muted }}>Social links</span></div> : null}
+            </div>
+            {storefront.footer.enabled ? (
+              <div className="website-customization-live-footer" style={{ borderTopColor: websiteTheme.colors.border, color: websiteTheme.colors.muted }}>
+                {storefront.footer.text || `© ${new Date().getFullYear()} ${restaurantName}. All rights reserved.`}
+              </div>
+            ) : null}
+          </div>
         </div>
 
         <div className="website-customization-card">
