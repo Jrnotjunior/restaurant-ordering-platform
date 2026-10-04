@@ -80,27 +80,29 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
     const handlePointerMove = (event: PointerEvent) => {
       const drag = previewDragRef.current;
       if (!drag.active) return;
-      const stage = previewStageRef.current;
-      if (!stage) return;
-      const rect = stage.getBoundingClientRect();
-      const phoneWidth = 375;
-      const phoneHeight = 760;
-      const maxX = Math.max(0, (rect.width - phoneWidth) / 2);
-      const maxY = Math.max(0, (rect.height - phoneHeight) / 2);
+
+      const phoneWidth = window.innerWidth <= 700 ? 320 : 375;
+      const phoneHeight = window.innerWidth <= 700 ? 650 : 760;
+      const maxX = Math.max(0, window.innerWidth - phoneWidth);
+      const maxY = Math.max(0, window.innerHeight - phoneHeight);
       const nextX = drag.originX + event.clientX - drag.startX;
       const nextY = drag.originY + event.clientY - drag.startY;
+
       setPreviewPosition({
-        x: Math.max(-maxX, Math.min(maxX, nextX)),
-        y: Math.max(-maxY, Math.min(maxY, nextY))
+        x: Math.max(0, Math.min(maxX, nextX)),
+        y: Math.max(0, Math.min(maxY, nextY))
       });
     };
+
     const handlePointerUp = () => {
       previewDragRef.current.active = false;
       setPreviewDragging(false);
     };
+
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerup', handlePointerUp);
     window.addEventListener('pointercancel', handlePointerUp);
+
     return () => {
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
@@ -108,10 +110,18 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
     };
   }, []);
 
+  function openLivePreview() {
+    const phoneWidth = window.innerWidth <= 700 ? 320 : 375;
+    const phoneHeight = window.innerWidth <= 700 ? 650 : 760;
+    setPreviewPosition({
+      x: Math.max(0, (window.innerWidth - phoneWidth) / 2),
+      y: Math.max(0, (window.innerHeight - phoneHeight) / 2)
+    });
+    setPreviewDragging(false);
+    setShowLivePreview(true);
+  }
+
   function startPreviewDrag(event: ReactPointerEvent<HTMLDivElement>) {
-    if ((event.target as HTMLElement).closest('button, input, select, a')) return;
-    const stage = previewStageRef.current;
-    if (!stage) return;
     previewDragRef.current = {
       active: true,
       startX: event.clientX,
@@ -121,10 +131,16 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
     };
     setPreviewDragging(true);
     event.currentTarget.setPointerCapture?.(event.pointerId);
+    event.preventDefault();
   }
 
   function resetPreviewPosition() {
-    setPreviewPosition({ x: 0, y: 0 });
+    const phoneWidth = window.innerWidth <= 700 ? 320 : 375;
+    const phoneHeight = window.innerWidth <= 700 ? 650 : 760;
+    setPreviewPosition({
+      x: Math.max(0, (window.innerWidth - phoneWidth) / 2),
+      y: Math.max(0, (window.innerHeight - phoneHeight) / 2)
+    });
     setPreviewDragging(false);
   }
 
@@ -210,6 +226,10 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-live-section-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px}
         .website-customization-live-section-grid>div{display:grid;gap:3px;padding:11px;border:1px solid;border-color:inherit;border-radius:9px;font-size:11px}
         .website-customization-live-footer{padding:14px;border-top:1px solid;text-align:center;font-size:10px}
+        .website-customization-phone-toolbar{height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 6px 0 9px;box-sizing:border-box;color:#fff;font-size:11px;font-weight:800}
+        .website-customization-phone-toolbar>div{display:flex;gap:4px}
+        .website-customization-phone-toolbar button{border:1px solid rgba(255,255,255,.2);background:#1f2937;color:#fff;border-radius:5px;padding:3px 7px;font:inherit;font-size:10px;cursor:pointer}
+        .website-customization-phone-toolbar button:last-child{font-size:15px;line-height:1;padding:1px 7px}
         .website-customization-card h2{margin:0 0 8px}
         .website-customization-help{margin:0;color:#64748b;line-height:1.6}
         .website-customization-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}
@@ -246,22 +266,11 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         @media(max-width:480px){.website-customization-confirm-actions{flex-direction:column-reverse}.website-customization-confirm-actions .button{width:100%}}
         .website-customization-preview-launch-card{display:flex;align-items:center;justify-content:space-between;gap:20px}
         .website-customization-preview-launch-card h2{margin:0 0 6px}
-        .website-customization-preview-modal{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
-        .website-customization-preview-modal-backdrop{position:absolute;inset:0;width:100%;height:100%;padding:0;border:0;background:rgba(15,23,42,.62);backdrop-filter:blur(3px);cursor:default}
-        .website-customization-preview-modal-panel{position:relative;z-index:1;width:min(1100px,calc(100vw - 40px));height:min(900px,calc(100vh - 40px));display:flex;flex-direction:column;overflow:hidden;border:1px solid #dbe2ea;border-radius:18px;background:#fff;box-shadow:0 28px 90px rgba(15,23,42,.35)}
-        .website-customization-preview-modal-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px;border-bottom:1px solid #e2e8f0;background:#fff}
-        .website-customization-preview-modal-header h2{margin:0 0 3px;color:#0f172a;font-size:18px}
-        .website-customization-preview-modal-header p{margin:0;color:#64748b;font-size:13px}
-        .website-customization-preview-modal-actions{display:flex;align-items:center;gap:8px}
-        .website-customization-preview-reset,.website-customization-preview-close{position:static;border:1px solid #dbe2ea;background:#fff;color:#334155;border-radius:8px;padding:8px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
-        .website-customization-preview-close{width:36px;height:36px;padding:0;font-size:24px;line-height:1}
-        .website-customization-preview-stage{position:relative;flex:1;min-height:0;overflow:hidden;background:radial-gradient(circle at center,#f8fafc 0,#eef2f7 58%,#e2e8f0 100%);touch-action:none;display:flex;align-items:center;justify-content:center}
-        .website-customization-preview-stage::before{content:'Drag the phone anywhere';position:absolute;top:14px;left:50%;transform:translateX(-50%);font-size:12px;font-weight:700;color:#94a3b8;white-space:nowrap;pointer-events:none}
-        .website-customization-phone{position:absolute;width:375px;height:760px;box-sizing:border-box;padding:9px;border:8px solid #111827;border-radius:38px;background:#111827;box-shadow:0 24px 55px rgba(15,23,42,.28);cursor:grab;user-select:none;touch-action:none}
+        .website-customization-phone{position:fixed;z-index:9998;width:375px;height:760px;box-sizing:border-box;padding:9px;border:8px solid #111827;border-radius:38px;background:#111827;box-shadow:0 24px 55px rgba(15,23,42,.28);cursor:grab;user-select:none;touch-action:none}
         .website-customization-phone.is-dragging{cursor:grabbing;box-shadow:0 30px 70px rgba(15,23,42,.34)}
         .website-customization-phone-screen{width:100%;height:100%;box-sizing:border-box;overflow:auto;border-radius:25px;scrollbar-width:none}
         .website-customization-phone-screen::-webkit-scrollbar{display:none}
-        @media(max-width:700px){.website-customization-grid,.website-customization-toggle-grid,.website-customization-live-section-grid{grid-template-columns:1fr}.website-customization-preview-launch-card{align-items:flex-start;flex-direction:column}.website-customization-preview-modal{padding:8px}.website-customization-preview-modal-panel{width:100%;height:calc(100vh - 16px);border-radius:14px}.website-customization-preview-modal-header{padding:12px}.website-customization-preview-modal-header p{display:none}.website-customization-phone{transform:scale(.82);transform-origin:center}.website-customization-live-hero h3{font-size:24px}.website-customization-actions-bar .button{width:100%}}
+        @media(max-width:700px){.website-customization-grid,.website-customization-toggle-grid,.website-customization-live-section-grid{grid-template-columns:1fr}.website-customization-preview-launch-card{align-items:flex-start;flex-direction:column}.website-customization-phone{width:320px;height:650px}.website-customization-live-hero h3{font-size:24px}.website-customization-actions-bar .button{width:100%}}.website-customization-preview-launch-card{align-items:flex-start;flex-direction:column}.website-customization-preview-modal{padding:8px}.website-customization-preview-modal-panel{width:100%;height:calc(100vh - 16px);border-radius:14px}.website-customization-preview-modal-header{padding:12px}.website-customization-preview-modal-header p{display:none}.website-customization-phone{transform:scale(.82);transform-origin:center}.website-customization-live-hero h3{font-size:24px}.website-customization-actions-bar .button{width:100%}}
       `}</style>
 
       {error ? <div className="restaurant-shipping-message is-error" role="alert">{error}</div> : null}
@@ -279,91 +288,80 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
             <h2>Website Preview</h2>
             <p className="website-customization-help">Open a draggable mobile preview to see the customer website while you customize it.</p>
           </div>
-          <button type="button" className="button button-primary" onClick={() => { resetPreviewPosition(); setShowLivePreview(true); }}>
+          <button type="button" className="button button-primary" onClick={openLivePreview}>
             See Live Preview
           </button>
         </div>
 
         {showLivePreview ? (
-          <div className="website-customization-preview-modal" role="dialog" aria-modal="true" aria-label="Live website preview">
-            <button type="button" className="website-customization-preview-modal-backdrop" onClick={() => setShowLivePreview(false)} aria-label="Close live preview" />
-            <div className="website-customization-preview-modal-panel">
-              <div className="website-customization-preview-modal-header">
-                <div>
-                  <h2>Live Preview</h2>
-                  <p>Drag the phone anywhere in this preview.</p>
+          <div
+            className={`website-customization-phone website-customization-phone-floating${previewDragging ? ' is-dragging' : ''}`}
+            onPointerDown={startPreviewDrag}
+            style={{ left: previewPosition.x, top: previewPosition.y }}
+          >
+            <div className="website-customization-phone-toolbar">
+              <span>Live Preview</span>
+              <div>
+                <button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={resetPreviewPosition}>Reset</button>
+                <button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => setShowLivePreview(false)} aria-label="Hide live preview">×</button>
+              </div>
+            </div>
+            <div
+              className="website-customization-phone-screen"
+              style={{
+                background: websiteTheme.colors.background,
+                color: websiteTheme.colors.text,
+                borderColor: websiteTheme.colors.border,
+                borderRadius: websiteTheme.borderRadius === 'large' ? 18 : websiteTheme.borderRadius === 'small' ? 8 : 12,
+                fontFamily: websiteTheme.fontBody
+              }}
+            >
+              <div className="website-customization-live-nav" style={{ borderBottomColor: websiteTheme.colors.border }}>
+                <div className="website-customization-live-brand">
+                  {logoUrl ? <img src={logoUrl} alt="" /> : <span className="website-customization-live-logo-fallback" style={{ background: websiteTheme.colors.primary, color: websiteTheme.colors.primaryText }}>🍴</span>}
+                  <strong style={{ fontFamily: websiteTheme.fontHeading }}>{restaurantName}</strong>
                 </div>
-                <div className="website-customization-preview-modal-actions">
-                  <button type="button" className="website-customization-preview-reset" onClick={resetPreviewPosition}>Reset</button>
-                  <button type="button" className="website-customization-preview-close" onClick={() => setShowLivePreview(false)} aria-label="Close preview">×</button>
-                </div>
+                <span style={{ color: websiteTheme.colors.muted }}>Menu</span>
               </div>
 
-              <div ref={previewStageRef} className="website-customization-preview-stage">
+              {storefront.hero.enabled ? (
                 <div
-                  className={`website-customization-phone${previewDragging ? ' is-dragging' : ''}`}
-                  onPointerDown={startPreviewDrag}
-                  style={{ transform: `translate(${previewPosition.x}px, ${previewPosition.y}px)` }}
+                  className="website-customization-live-hero"
+                  style={{
+                    backgroundColor: websiteTheme.colors.surface,
+                    backgroundImage: storefront.hero.imageUrl ? `linear-gradient(rgba(0,0,0,.38),rgba(0,0,0,.38)), url("${storefront.hero.imageUrl}")` : undefined,
+                    color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.text,
+                    borderColor: websiteTheme.colors.border,
+                    borderRadius: websiteTheme.borderRadius === 'large' ? 16 : websiteTheme.borderRadius === 'small' ? 8 : 12
+                  }}
                 >
-                  <div
-                    className="website-customization-phone-screen"
-                    style={{
-                      background: websiteTheme.colors.background,
-                      color: websiteTheme.colors.text,
-                      borderColor: websiteTheme.colors.border,
-                      borderRadius: websiteTheme.borderRadius === 'large' ? 18 : websiteTheme.borderRadius === 'small' ? 8 : 12,
-                      fontFamily: websiteTheme.fontBody
-                    }}
-                  >
-                    <div className="website-customization-live-nav" style={{ borderBottomColor: websiteTheme.colors.border }}>
-                      <div className="website-customization-live-brand">
-                        {logoUrl ? <img src={logoUrl} alt="" /> : <span className="website-customization-live-logo-fallback" style={{ background: websiteTheme.colors.primary, color: websiteTheme.colors.primaryText }}>🍴</span>}
-                        <strong style={{ fontFamily: websiteTheme.fontHeading }}>{restaurantName}</strong>
-                      </div>
-                      <span style={{ color: websiteTheme.colors.muted }}>Menu</span>
-                    </div>
-
-                    {storefront.hero.enabled ? (
-                      <div
-                        className="website-customization-live-hero"
-                        style={{
-                          backgroundColor: websiteTheme.colors.surface,
-                          backgroundImage: storefront.hero.imageUrl ? `linear-gradient(rgba(0,0,0,.38),rgba(0,0,0,.38)), url("${storefront.hero.imageUrl}")` : undefined,
-                          color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.text,
-                          borderColor: websiteTheme.colors.border,
-                          borderRadius: websiteTheme.borderRadius === 'large' ? 16 : websiteTheme.borderRadius === 'small' ? 8 : 12
-                        }}
-                      >
-                        {storefront.hero.eyebrow ? <span className="website-customization-live-eyebrow" style={{ color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.primary }}>{storefront.hero.eyebrow}</span> : null}
-                        <h3 style={{ fontFamily: websiteTheme.fontHeading }}>{storefront.hero.title || restaurantName}</h3>
-                        {storefront.hero.description ? <p>{storefront.hero.description}</p> : null}
-                        <div className="website-customization-live-buttons">
-                          {storefront.hero.primaryButtonLabel ? <span style={{ background: websiteTheme.buttonStyle === 'soft' ? websiteTheme.colors.secondary : websiteTheme.buttonStyle === 'outline' ? 'transparent' : websiteTheme.colors.primary, color: websiteTheme.buttonStyle === 'soft' ? websiteTheme.colors.secondaryText : websiteTheme.buttonStyle === 'outline' ? websiteTheme.colors.primary : websiteTheme.colors.primaryText, borderColor: websiteTheme.colors.primary }}>{storefront.hero.primaryButtonLabel}</span> : null}
-                          {storefront.hero.secondaryButtonLabel ? <span style={{ background: 'transparent', color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.text, borderColor: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.border }}>{storefront.hero.secondaryButtonLabel}</span> : null}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="website-customization-live-disabled" style={{ background: websiteTheme.colors.surface, borderColor: websiteTheme.colors.border, color: websiteTheme.colors.muted }}>Homepage hero is hidden.</div>
-                    )}
-
-                    {storefront.sections.categories ? <div className="website-customization-live-section"><strong>Menu categories</strong><span style={{ color: websiteTheme.colors.muted }}>Featured menu categories</span></div> : null}
-
-                    <div className="website-customization-live-section-grid">
-                      {storefront.sections.about ? <div><strong>About</strong><span style={{ color: websiteTheme.colors.muted }}>About your restaurant</span></div> : null}
-                      {storefront.sections.location ? <div><strong>Location</strong><span style={{ color: websiteTheme.colors.muted }}>Restaurant location</span></div> : null}
-                      {storefront.sections.hours ? <div><strong>Hours</strong><span style={{ color: websiteTheme.colors.muted }}>Operating hours</span></div> : null}
-                      {storefront.sections.contact ? <div><strong>Contact</strong><span style={{ color: websiteTheme.colors.muted }}>Contact information</span></div> : null}
-                      {storefront.sections.social ? <div><strong>Social</strong><span style={{ color: websiteTheme.colors.muted }}>Social links</span></div> : null}
-                    </div>
-
-                    {storefront.footer.enabled ? (
-                      <div className="website-customization-live-footer" style={{ borderTopColor: websiteTheme.colors.border, color: websiteTheme.colors.muted }}>
-                        {storefront.footer.text || `© ${new Date().getFullYear()} ${restaurantName}. All rights reserved.`}
-                      </div>
-                    ) : null}
+                  {storefront.hero.eyebrow ? <span className="website-customization-live-eyebrow" style={{ color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.primary }}>{storefront.hero.eyebrow}</span> : null}
+                  <h3 style={{ fontFamily: websiteTheme.fontHeading }}>{storefront.hero.title || restaurantName}</h3>
+                  {storefront.hero.description ? <p>{storefront.hero.description}</p> : null}
+                  <div className="website-customization-live-buttons">
+                    {storefront.hero.primaryButtonLabel ? <span style={{ background: websiteTheme.buttonStyle === 'soft' ? websiteTheme.colors.secondary : websiteTheme.buttonStyle === 'outline' ? 'transparent' : websiteTheme.colors.primary, color: websiteTheme.buttonStyle === 'soft' ? websiteTheme.colors.secondaryText : websiteTheme.buttonStyle === 'outline' ? websiteTheme.colors.primary : websiteTheme.colors.primaryText, borderColor: websiteTheme.colors.primary }}>{storefront.hero.primaryButtonLabel}</span> : null}
+                    {storefront.hero.secondaryButtonLabel ? <span style={{ background: 'transparent', color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.text, borderColor: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.border }}>{storefront.hero.secondaryButtonLabel}</span> : null}
                   </div>
                 </div>
+              ) : (
+                <div className="website-customization-live-disabled" style={{ background: websiteTheme.colors.surface, borderColor: websiteTheme.colors.border, color: websiteTheme.colors.muted }}>Homepage hero is hidden.</div>
+              )}
+
+              {storefront.sections.categories ? <div className="website-customization-live-section"><strong>Menu categories</strong><span style={{ color: websiteTheme.colors.muted }}>Featured menu categories</span></div> : null}
+
+              <div className="website-customization-live-section-grid">
+                {storefront.sections.about ? <div><strong>About</strong><span style={{ color: websiteTheme.colors.muted }}>About your restaurant</span></div> : null}
+                {storefront.sections.location ? <div><strong>Location</strong><span style={{ color: websiteTheme.colors.muted }}>Restaurant location</span></div> : null}
+                {storefront.sections.hours ? <div><strong>Hours</strong><span style={{ color: websiteTheme.colors.muted }}>Operating hours</span></div> : null}
+                {storefront.sections.contact ? <div><strong>Contact</strong><span style={{ color: websiteTheme.colors.muted }}>Contact information</span></div> : null}
+                {storefront.sections.social ? <div><strong>Social</strong><span style={{ color: websiteTheme.colors.muted }}>Social links</span></div> : null}
               </div>
+
+              {storefront.footer.enabled ? (
+                <div className="website-customization-live-footer" style={{ borderTopColor: websiteTheme.colors.border, color: websiteTheme.colors.muted }}>
+                  {storefront.footer.text || `© ${new Date().getFullYear()} ${restaurantName}. All rights reserved.`}
+                </div>
+              ) : null}
             </div>
           </div>
         ) : null}
