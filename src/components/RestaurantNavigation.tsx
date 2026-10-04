@@ -6,7 +6,7 @@ export type RestaurantNavigationRole = 'owner' | 'cashier' | 'kitchen' | 'dispat
 type NavigationItem = {
   label: string;
   href: string;
-  icon: 'dashboard' | 'orders' | 'products' | 'riders' | 'shipping' | 'sales' | 'dispatch' | 'settings' | 'loyalty';
+  icon: 'dashboard' | 'orders' | 'products' | 'riders' | 'shipping' | 'sales' | 'dispatch' | 'settings' | 'loyalty' | 'customization';
 };
 
 const ownerNavigationItems: NavigationItem[] = [
@@ -19,6 +19,7 @@ const ownerNavigationItems: NavigationItem[] = [
   { label: 'Sales', href: '#restaurant/sales', icon: 'sales' },
   { label: 'Loyalty', href: '#restaurant/loyalty', icon: 'loyalty' },
   { label: 'Store Settings', href: '#restaurant/settings', icon: 'settings' },
+  { label: 'Website Customization', href: '#restaurant/website-customization', icon: 'customization' },
 ];
 
 function NavigationIcon({ type }: { type: NavigationItem['icon'] }) {
@@ -65,6 +66,10 @@ function NavigationIcon({ type }: { type: NavigationItem['icon'] }) {
   if (type === 'settings') {
     return <svg {...common}><path d="M12 3v2M12 19v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M3 12h2M19 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42" /><circle cx="12" cy="12" r="3.5" /></svg>;
   }
+  if (type === 'customization') {
+    return <svg {...common}><path d="M4 5.5h16M4 12h16M4 18.5h16" /><circle cx="9" cy="5.5" r="2" fill="currentColor" stroke="none" /><circle cx="15" cy="12" r="2" fill="currentColor" stroke="none" /><circle cx="11" cy="18.5" r="2" fill="currentColor" stroke="none" /></svg>;
+  }
+
 
   return <svg {...common}><path d="M4 19.5V10M10 19.5V6M16 19.5v-9M22 19.5V3" /><path d="M2.5 19.5h20" /></svg>;
 }
