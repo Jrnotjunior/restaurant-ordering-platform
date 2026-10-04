@@ -15,12 +15,12 @@ export function Footer() {
       </div>
 
       <div>
-        {restaurant.locationText ? <p>{restaurant.locationText}</p> : null}
-        {restaurant.contactNumber ? <p>{restaurant.contactNumber}</p> : null}
-        {restaurant.email ? <p>{restaurant.email}</p> : null}
+        {storefront.sections.location && restaurant.locationText ? <p>{restaurant.locationText}</p> : null}
+        {storefront.sections.contact && restaurant.contactNumber ? <p>{restaurant.contactNumber}</p> : null}
+        {storefront.sections.contact && restaurant.email ? <p>{restaurant.email}</p> : null}
       </div>
 
-      {restaurant.socialLinks && restaurant.socialLinks.length > 0 ? (
+      {storefront.sections.social && restaurant.socialLinks && restaurant.socialLinks.length > 0 ? (
         <nav aria-label="Social links">
           {restaurant.socialLinks.map((link) => (
             <a key={`${link.href}-${link.label}`} href={link.href} target="_blank" rel="noreferrer">
