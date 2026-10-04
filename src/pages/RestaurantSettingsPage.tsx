@@ -417,6 +417,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .restaurant-time-picker-done{width:100%;margin-top:9px;font-weight:700}
         .restaurant-settings-day input[type=time]:disabled{background:#f8fafc;color:#94a3b8}
         .restaurant-settings-toggle{display:flex;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:600;white-space:nowrap}
+        .restaurant-settings-day .restaurant-settings-switch{justify-content:center}
         .restaurant-settings-toggle input{margin:0}
         .restaurant-settings-tax-grid{display:grid;grid-template-columns:1fr;gap:16px}
         .restaurant-settings-tax-grid .restaurant-settings-switch-row{width:100%}
@@ -594,15 +595,16 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
                     disabled={!value.isOpen || loading || saving}
                     onChange={(next) => updateDay(day.key, { close: next })}
                   />
-                  <label className="restaurant-settings-toggle">
+                  <label className="restaurant-settings-switch" aria-label={day.label + ' open'}>
                     <input
-                      aria-label={day.label + ' open'}
                       type="checkbox"
                       checked={value.isOpen}
                       disabled={loading || saving}
                       onChange={(event) => updateDay(day.key, { isOpen: event.target.checked })}
                     />
-                    Open
+                    <span className="restaurant-settings-switch-track" aria-hidden="true">
+                      <span className="restaurant-settings-switch-thumb" />
+                    </span>
                   </label>
                 </div>
               );
