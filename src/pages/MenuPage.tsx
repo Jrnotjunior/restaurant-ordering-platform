@@ -5,11 +5,26 @@ import { isSupabaseConfigured, supabase } from '../services/supabaseClient';
 import { getMenu } from '../services/menuRepository';
 import type { RestaurantCategory, RestaurantProduct } from '../types/menu';
 import '../styles/menu-category.css';
+import '../styles/storefront-customization.css';
 
 type MenuPageProps = {
   onAddToCart: (product: RestaurantProduct) => void;
   cartCount: number;
 };
+
+function storefrontHref(href: string): string {
+  if (!href) return '#menu';
+  if (href.startsWith('#')) return href;
+  return href;
+}
+
+function formatStorefrontTime(value: string): string {
+  const [hour, minute] = value.split(':').map(Number);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return value;
+  const period = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${String(minute).padStart(2, '0')} ${period}`;
+}
 
 export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
   const restaurant = useRestaurant();
@@ -90,15 +105,34 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
     [products, selectedCategory]
   );
 
+  const storefront = restaurant.storefront;
+  const hero = storefront.hero;
+  const visibleSections = storefront.sections;
+
   return (
     <section className="menu-page">
-      <div className="menu-intro">
-        <p className="eyebrow">Our menu</p>
-        <h1>Choose what you’re craving.</h1>
+      {hero.enabled ? (
+        <section className={`storefront-hero${hero.imageUrl ? ' has-image' : ''}`} style={hero.imageUrl ? { backgroundImage: `url("${hero.imageUrl}")` } : undefined}>
+          <div className="storefront-hero-overlay" />
+          <div className="storefront-hero-content">
+            {hero.eyebrow ? <p className="eyebrow">{hero.eyebrow}</p> : null}
+            <h1>{hero.title}</h1>
+            {hero.description ? <p>{hero.description}</p> : null}
+            <div className="storefront-hero-actions">
+              {hero.primaryButtonLabel ? <a className="button button-primary" href={storefrontHref(hero.primaryButtonHref)}>{hero.primaryButtonLabel}</a> : null}
+              {hero.secondaryButtonLabel ? <a className="button button-secondary" href={storefrontHref(hero.secondaryButtonHref ?? '#menu')}>{hero.secondaryButtonLabel}</a> : null}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      <div className="menu-intro" id="menu">
+        {!hero.enabled ? <p className="eyebrow">Our menu</p> : null}
+        <h2>{hero.enabled ? 'Order from our menu.' : 'Choose what you’re craving.'}</h2>
         <p>Browse available items and add your favorites to your order.</p>
       </div>
 
-      {categories.length > 0 ? (
+      {visibleSections.categories && categories.length > 0 ? (
         <>
         <div className="menu-category-select menu-category-desktop">
           <label htmlFor="menu-category-desktop">Category</label>
@@ -178,6 +212,51 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
             />
           ))}
         </div>
+      ) : null}
+
+      {(visibleSections.about || visibleSections.location || visibleSections.hours || visibleSections.contact) ? (
+        <section className="storefront-info-grid">
+          {visibleSections.about ? (
+            <article className="storefront-info-card">
+              <p className="eyebrow">About us</p>
+              <h2>{restaurant.name}</h2>
+              <p>{restaurant.tagline || 'Good food, made for your next order.'}</p>
+            </article>
+          ) : null}
+          {visibleSections.location && restaurant.locationText ? (
+            <article className="storefront-info-card">
+              <p className="eyebrow">Visit us</p>
+              <h2>Location</h2>
+              <p>{restaurant.locationText}</p>
+            </article>
+          ) : null}
+          {visibleSections.hours && restaurant.operatingHours ? (
+            <article className="storefront-info-card">
+              <p className="eyebrow">Opening hours</p>
+              <h2>When we’re open</h2>
+              <div className="storefront-hours">
+                {Object.entries(restaurant.operatingHours).map(([day, hours]) => (
+                  <div key={day}><span>{day.charAt(0).toUpperCase() + day.slice(1)}</span><strong>{hours.isOpen ? `${formatStorefrontTime(hours.open)} – ${formatStorefrontTime(hours.close)}` : 'Closed'}</strong></div>
+                ))}
+              </div>
+            </article>
+          ) : null}
+          {visibleSections.contact && (restaurant.contactNumber || restaurant.email) ? (
+            <article className="storefront-info-card">
+              <p className="eyebrow">Contact</p>
+              <h2>Get in touch</h2>
+              {restaurant.contactNumber ? <p><a href={`tel:${restaurant.contactNumber}`}>{restaurant.contactNumber}</a></p> : null}
+              {restaurant.email ? <p><a href={`mailto:${restaurant.email}`}>{restaurant.email}</a></p> : null}
+            </article>
+          ) : null}
+        </section>
+      ) : null}
+
+      {visibleSections.social && restaurant.socialLinks?.length ? (
+        <section className="storefront-social">
+          <p className="eyebrow">Follow us</p>
+          <div>{restaurant.socialLinks.map((link) => <a key={link.href + link.label} href={link.href} target="_blank" rel="noreferrer">{link.label}</a>)}</div>
+        </section>
       ) : null}
     </section>
   );
