@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { currentRestaurantLookup } from '../config/restaurant';
+import { SupabaseRestaurantRepository } from '../services/supabaseRestaurantRepository';
 import { supabase } from '../services/supabaseClient';
 
 export function CustomerSignUpPage() {
@@ -58,15 +59,18 @@ export function CustomerSignUpPage() {
 
     setSubmitting(true);
     try {
-      const { data: restaurant, error: restaurantError } = await supabase
-        .from('restaurants')
-        .select('id')
-        .eq('slug', currentRestaurantLookup.slug)
-        .eq('is_active', true)
-        .maybeSingle();
+      const hostname = window.location.hostname.trim().toLowerCase();
+      const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+      const repository = new SupabaseRestaurantRepository();
+      const restaurant = await repository.getRestaurant(
+        !isLocalHost && hostname
+          ? { domain: hostname }
+          : { slug: currentRestaurantLookup.slug },
+      );
 
-      if (restaurantError) throw restaurantError;
-      if (!restaurant?.id) throw new Error('Restaurant could not be found.');
+      if (!restaurant?.id) {
+        throw new Error('This restaurant could not be identified from the current website.');
+      }
 
       const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}#menu`;
       const { data, error: signUpError } = await supabase.auth.signUp({
