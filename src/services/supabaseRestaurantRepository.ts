@@ -76,7 +76,37 @@ export class SupabaseRestaurantRepository implements RestaurantRepository {
     });
 
     const restaurant = rows[0];
-    if (!restaurant) return null;
+
+    // GitHub Pages / shared-host deployments do not have a tenant custom
+    // domain. In that case, fall back to the configured restaurant slug so
+    // the public menu can still resolve the intended restaurant.
+    if (!restaurant) {
+      const configuredSlug = String(import.meta.env.VITE_RESTAURANT_SLUG ?? '').trim();
+      if (!configuredSlug) return null;
+
+      const fallbackRows = await supabaseGet<RestaurantRow>('restaurants', {
+        select: 'id,slug,name,tagline,logo_url,location_text,contact_number,email,ordering_enabled,operating_hours',
+        slug: `eq.${configuredSlug}`,
+        is_active: 'eq.true',
+        limit: '1'
+      });
+
+      const fallbackRestaurant = fallbackRows[0];
+      if (!fallbackRestaurant) return null;
+
+      return {
+        ...defaultRestaurant,
+        id: fallbackRestaurant.id,
+        name: fallbackRestaurant.name,
+        tagline: fallbackRestaurant.tagline,
+        logoUrl: fallbackRestaurant.logo_url ?? undefined,
+        locationText: fallbackRestaurant.location_text ?? undefined,
+        contactNumber: fallbackRestaurant.contact_number ?? undefined,
+        email: fallbackRestaurant.email ?? undefined,
+        operatingHours: fallbackRestaurant.operating_hours ?? undefined,
+        orderingEnabled: fallbackRestaurant.ordering_enabled !== false
+      };
+    }
 
     return {
       ...defaultRestaurant,
