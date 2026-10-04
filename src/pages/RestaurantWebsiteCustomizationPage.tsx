@@ -248,6 +248,9 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-live-section-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px}
         .website-customization-live-section-grid>div{display:grid;gap:3px;padding:11px;border:1px solid;border-color:inherit;border-radius:9px;font-size:11px}
         .website-customization-live-footer{padding:14px;border-top:1px solid;text-align:center;font-size:10px}
+        .website-customization-live-footer-powered-by{display:inline-flex;align-items:center;justify-content:center;gap:5px;margin-top:8px;color:inherit;text-decoration:none;font-size:9px;opacity:.8}
+        .website-customization-live-footer-powered-logo{display:inline-flex;align-items:center;gap:4px;font-weight:800}
+        .website-customization-live-footer-powered-mark{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:4px;font-size:8px;font-weight:900}
         .website-customization-phone-toolbar{height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 6px 0 9px;box-sizing:border-box;color:#fff;font-size:11px;font-weight:800}
         .website-customization-phone-toolbar>div{display:flex;gap:4px}
         .website-customization-phone-toolbar button{border:1px solid rgba(255,255,255,.2);background:#1f2937;color:#fff;border-radius:5px;padding:3px 7px;font:inherit;font-size:10px;cursor:pointer}
@@ -399,7 +402,11 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
 
               {storefront.footer.enabled ? (
                 <div className="website-customization-live-footer" style={{ borderTopColor: websiteTheme.colors.border, color: websiteTheme.colors.muted }}>
-                  {storefront.footer.text || `© ${new Date().getFullYear()} ${restaurantName}. All rights reserved.`}
+                  <div>{storefront.footer.text || `© ${new Date().getFullYear()} ${restaurantName}. All rights reserved.`}</div>
+                  <a className="website-customization-live-footer-powered-by" href="https://web2table.com" target="_blank" rel="noreferrer" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
+                    <span>Powered by</span>
+                    <span className="website-customization-live-footer-powered-logo"><span className="website-customization-live-footer-powered-mark" style={{ background: websiteTheme.colors.text, color: websiteTheme.colors.background }}>W</span><strong>Web2Table</strong></span>
+                  </a>
                 </div>
               ) : null}
             </div>
