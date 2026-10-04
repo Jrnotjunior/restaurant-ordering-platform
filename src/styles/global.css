@@ -269,6 +269,29 @@ main { flex: 1; }
 }
 
 
+/* Shared restaurant management page shell. */
+.restaurant-page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 22px;
+}
+.restaurant-page-header > div { min-width: 0; }
+.restaurant-page-header h1 {
+  margin: 0 0 6px;
+  font-family: var(--font-heading);
+  font-size: 30px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+.restaurant-page-header > div > p:last-child {
+  margin: 0;
+  color: #64748b;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
 /* Shared restaurant management page layout. Keep page-specific CSS focused on content, not shell spacing. */
 .restaurant-page {
   width: min(var(--restaurant-content-width), calc(100% - 2rem));
