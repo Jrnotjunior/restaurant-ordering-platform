@@ -84,8 +84,23 @@ Deno.serve(async (request) => {
     }
 
     const session = payload?.data?.attributes?.data;
-    const orderNumber = String(session?.attributes?.reference_number ?? "").trim();
+    const sessionAttributes = session?.attributes ?? {};
+    const orderNumber = String(sessionAttributes.reference_number ?? "").trim();
     if (!orderNumber) return jsonResponse({ received: true }, 200);
+
+    const paidPayment = Array.isArray(sessionAttributes.payments)
+      ? sessionAttributes.payments.find((payment: any) => payment?.attributes?.status === "paid") ?? sessionAttributes.payments[0]
+      : null;
+    const paymentAttributes = paidPayment?.attributes ?? {};
+    const paymongoPaymentId = String(paidPayment?.id ?? "").trim() || null;
+    const paymongoPaymentMethod = String(paymentAttributes?.source?.type ?? "").trim() || null;
+    const paymongoFee = Number.isFinite(Number(paymentAttributes.fee))
+      ? Number(paymentAttributes.fee) / 100
+      : null;
+    const paymongoNetAmount = Number.isFinite(Number(paymentAttributes.net_amount))
+      ? Number(paymentAttributes.net_amount) / 100
+      : null;
+    const paymongoCheckoutSessionId = String(session?.id ?? "").trim() || null;
 
     const serviceRoleKey = getSecretKey();
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
@@ -100,6 +115,11 @@ Deno.serve(async (request) => {
 
     const { data: finalized, error } = await adminClient.rpc("finalize_online_payment", {
       p_reference_number: orderNumber,
+      p_paymongo_payment_id: paymongoPaymentId,
+      p_paymongo_checkout_session_id: paymongoCheckoutSessionId,
+      p_paymongo_payment_method: paymongoPaymentMethod,
+      p_paymongo_fee: paymongoFee,
+      p_paymongo_net_amount: paymongoNetAmount,
     });
 
     if (error) throw error;
