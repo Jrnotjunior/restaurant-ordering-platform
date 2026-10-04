@@ -75,6 +75,73 @@ function normalizeHashRoute(hash: string) {
   return hash.replace(/^#\//, '#');
 }
 
+function RestaurantModuleGuard({
+  restaurantId,
+  anyOf,
+  children,
+}: {
+  restaurantId: string;
+  anyOf: string[];
+  children: ReactNode;
+}) {
+  const [checking, setChecking] = useState(true);
+  const [allowed, setAllowed] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function checkModuleAccess() {
+      if (!supabase) {
+        if (mounted) {
+          setAllowed(false);
+          setChecking(false);
+        }
+        return;
+      }
+
+      const checks = await Promise.all(
+        anyOf.map(async (moduleKey) => {
+          const { data, error } = await supabase.rpc('restaurant_has_module', {
+            p_restaurant_id: restaurantId,
+            p_module_key: moduleKey,
+          });
+          return !error && data === true;
+        }),
+      );
+
+      if (!mounted) return;
+
+      setAllowed(checks.some(Boolean));
+      setChecking(false);
+    }
+
+    void checkModuleAccess();
+
+    return () => {
+      mounted = false;
+    };
+  }, [restaurantId, anyOf.join('|')]);
+
+  if (checking) {
+    return <section className="restaurant-owner-auth-loading">Checking feature access…</section>;
+  }
+
+  if (!allowed) {
+    return (
+      <section className="restaurant-owner-auth-no-restaurant">
+        <div className="restaurant-owner-auth-no-restaurant-card">
+          <p className="eyebrow">Feature unavailable</p>
+          <h1>Not included in this package</h1>
+          <p>This restaurant does not currently have access to this feature.</p>
+          <a className="button button-primary" href="#restaurant/owner">Back to Dashboard</a>
+        </div>
+      </section>
+    );
+  }
+
+  return <>{children}</>;
+}
+
 function RiderRouteGuard({ children }: { children: ReactNode }) {
   const [checking, setChecking] = useState(true);
 
@@ -567,7 +634,9 @@ function AppContent() {
       <RestaurantProvider restaurant={staffRestaurant}>
         <ThemeProvider restaurant={staffRestaurant}>
           <RestaurantLayout hideChrome role="cashier">
-            <RestaurantCashierPosPage restaurantId={staffRestaurant.id!} />
+            <RestaurantModuleGuard restaurantId={staffRestaurant.id!} anyOf={['pos']}>
+              <RestaurantCashierPosPage restaurantId={staffRestaurant.id!} />
+            </RestaurantModuleGuard>
           </RestaurantLayout>
         </ThemeProvider>
       </RestaurantProvider>
@@ -579,7 +648,9 @@ function AppContent() {
       <RestaurantProvider restaurant={staffRestaurant}>
         <ThemeProvider restaurant={staffRestaurant}>
           <RestaurantLayout hideChrome role="cashier">
-            <RestaurantOrdersPage restaurantId={staffRestaurant.id!} role="cashier" />
+            <RestaurantModuleGuard restaurantId={staffRestaurant.id!} anyOf={['pos']}>
+              <RestaurantOrdersPage restaurantId={staffRestaurant.id!} role="cashier" />
+            </RestaurantModuleGuard>
           </RestaurantLayout>
         </ThemeProvider>
       </RestaurantProvider>
@@ -591,7 +662,9 @@ function AppContent() {
       <RestaurantProvider restaurant={staffRestaurant}>
         <ThemeProvider restaurant={staffRestaurant}>
           <RestaurantLayout hideChrome role="kitchen">
-            <RestaurantKitchenPage restaurantId={staffRestaurant.id!} view={isKitchenMenuPage ? 'menu' : 'orders'} />
+            <RestaurantModuleGuard restaurantId={staffRestaurant.id!} anyOf={['kitchen']}>
+              <RestaurantKitchenPage restaurantId={staffRestaurant.id!} view={isKitchenMenuPage ? 'menu' : 'orders'} />
+            </RestaurantModuleGuard>
           </RestaurantLayout>
         </ThemeProvider>
       </RestaurantProvider>
@@ -603,7 +676,9 @@ function AppContent() {
       <RestaurantProvider restaurant={staffRestaurant}>
         <ThemeProvider restaurant={staffRestaurant}>
           <RestaurantLayout hideChrome role="cashier">
-            <RestaurantSalesPage restaurantId={staffRestaurant.id!} role="cashier" />
+            <RestaurantModuleGuard restaurantId={staffRestaurant.id!} anyOf={['pos']}>
+              <RestaurantSalesPage restaurantId={staffRestaurant.id!} role="cashier" />
+            </RestaurantModuleGuard>
           </RestaurantLayout>
         </ThemeProvider>
       </RestaurantProvider>
@@ -615,7 +690,9 @@ function AppContent() {
       <RestaurantProvider restaurant={staffRestaurant}>
         <ThemeProvider restaurant={staffRestaurant}>
           <RestaurantLayout hideChrome role="dispatcher">
-            <RestaurantDeliveryDispatchPage restaurantId={staffRestaurant.id!} role="dispatcher" />
+            <RestaurantModuleGuard restaurantId={staffRestaurant.id!} anyOf={['dispatch_delivery']}>
+              <RestaurantDeliveryDispatchPage restaurantId={staffRestaurant.id!} role="dispatcher" />
+            </RestaurantModuleGuard>
           </RestaurantLayout>
         </ThemeProvider>
       </RestaurantProvider>
@@ -663,16 +740,37 @@ function AppContent() {
       <RestaurantProvider restaurant={ownerRestaurant}>
         <ThemeProvider restaurant={ownerRestaurant}>
           <RestaurantLayout hideChrome role="owner" ownerDashboard>
-            {isRestaurantOrdersPage ? <RestaurantOrdersPage restaurantId={ownerRestaurant.id!} />
-              : isRestaurantMenuPage ? <RestaurantMenuPage restaurantId={ownerRestaurant.id!} />
-              : isRestaurantShippingFeePage ? <RestaurantShippingFeePage restaurantId={ownerRestaurant.id!} />
-              : isRestaurantEmployeesPage ? <RestaurantEmployeesPage restaurantId={ownerRestaurant.id!} />
-              : isRestaurantDeliveryDispatchPage ? <RestaurantDeliveryDispatchPage restaurantId={ownerRestaurant.id!} />
-              : isRestaurantSalesPage ? <RestaurantSalesPage restaurantId={ownerRestaurant.id!} role="owner" />
-              : isRestaurantSettingsPage ? <RestaurantSettingsPage restaurantId={ownerRestaurant.id!} />
-              : isRestaurantWebsiteCustomizationPage ? <RestaurantWebsiteCustomizationPage restaurantId={ownerRestaurant.id!} />
-              : isRestaurantLoyaltyPage ? <RestaurantLoyaltyPage restaurantId={ownerRestaurant.id!} />
-              : <RestaurantSalesPage restaurantId={ownerRestaurant.id!} role="owner" />}
+            {isRestaurantOrdersPage ? (
+                <RestaurantModuleGuard restaurantId={ownerRestaurant.id!} anyOf={['self_ordering', 'dispatch_delivery']}>
+                  <RestaurantOrdersPage restaurantId={ownerRestaurant.id!} />
+                </RestaurantModuleGuard>
+              ) : isRestaurantMenuPage ? (
+                <RestaurantModuleGuard restaurantId={ownerRestaurant.id!} anyOf={['self_ordering', 'pos', 'kitchen']}>
+                  <RestaurantMenuPage restaurantId={ownerRestaurant.id!} />
+                </RestaurantModuleGuard>
+              ) : isRestaurantShippingFeePage ? (
+                <RestaurantModuleGuard restaurantId={ownerRestaurant.id!} anyOf={['dispatch_delivery']}>
+                  <RestaurantShippingFeePage restaurantId={ownerRestaurant.id!} />
+                </RestaurantModuleGuard>
+              ) : isRestaurantEmployeesPage ? <RestaurantEmployeesPage restaurantId={ownerRestaurant.id!} />
+              : isRestaurantDeliveryDispatchPage ? (
+                <RestaurantModuleGuard restaurantId={ownerRestaurant.id!} anyOf={['dispatch_delivery']}>
+                  <RestaurantDeliveryDispatchPage restaurantId={ownerRestaurant.id!} />
+                </RestaurantModuleGuard>
+              ) : isRestaurantSalesPage ? (
+                <RestaurantModuleGuard restaurantId={ownerRestaurant.id!} anyOf={['sales']}>
+                  <RestaurantSalesPage restaurantId={ownerRestaurant.id!} role="owner" />
+                </RestaurantModuleGuard>
+              ) : isRestaurantSettingsPage ? <RestaurantSettingsPage restaurantId={ownerRestaurant.id!} />
+              : isRestaurantWebsiteCustomizationPage ? (
+                <RestaurantModuleGuard restaurantId={ownerRestaurant.id!} anyOf={['website']}>
+                  <RestaurantWebsiteCustomizationPage restaurantId={ownerRestaurant.id!} />
+                </RestaurantModuleGuard>
+              ) : isRestaurantLoyaltyPage ? (
+                <RestaurantModuleGuard restaurantId={ownerRestaurant.id!} anyOf={['loyalty']}>
+                  <RestaurantLoyaltyPage restaurantId={ownerRestaurant.id!} />
+                </RestaurantModuleGuard>
+              ) : <RestaurantSalesPage restaurantId={ownerRestaurant.id!} role="owner" />}
           </RestaurantLayout>
         </ThemeProvider>
       </RestaurantProvider>
