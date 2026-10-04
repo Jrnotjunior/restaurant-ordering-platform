@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { supabase } from '../services/supabaseClient';
-import type { RestaurantTheme } from '../types/restaurant';
+import type { RestaurantStorefront, RestaurantTheme } from '../types/restaurant';
 import { defaultRestaurant } from '../config/defaultRestaurant';
 
 type Props = {
@@ -199,6 +199,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [orderingEnabled, setOrderingEnabled] = useState(true);
   const [logoUrl, setLogoUrl] = useState('');
   const [websiteTheme, setWebsiteTheme] = useState<RestaurantTheme>(defaultRestaurant.theme);
+  const [storefront, setStorefront] = useState<RestaurantStorefront>(defaultRestaurant.storefront);
   const [logoUploading, setLogoUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -235,7 +236,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
       const { data: customization, error: customizationError } = await supabase
         .from('restaurant_website_customizations')
-        .select('theme')
+        .select('theme,storefront')
         .eq('restaurant_id', restaurantId)
         .maybeSingle();
 
@@ -249,6 +250,14 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           ...defaultRestaurant.theme.colors,
           ...(customTheme?.colors ?? {})
         }
+      });
+      const customStorefront = customization?.storefront as Partial<RestaurantStorefront> | null;
+      setStorefront({
+        ...defaultRestaurant.storefront,
+        ...(customStorefront ?? {}),
+        hero: { ...defaultRestaurant.storefront.hero, ...(customStorefront?.hero ?? {}) },
+        sections: { ...defaultRestaurant.storefront.sections, ...(customStorefront?.sections ?? {}) },
+        footer: { ...defaultRestaurant.storefront.footer, ...(customStorefront?.footer ?? {}) }
       });
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load store settings.');
@@ -366,7 +375,8 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .from('restaurant_website_customizations')
         .upsert({
           restaurant_id: restaurantId,
-          theme: websiteTheme
+          theme: websiteTheme,
+          storefront
         }, { onConflict: 'restaurant_id' });
 
       if (themeSaveError) throw themeSaveError;
@@ -601,6 +611,96 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
                 <span className="restaurant-settings-theme-swatch" style={{ flex: 1, background: websiteTheme.colors.surface }} />
               </div>
             </div>
+          </div>
+        </div>
+
+        <div className="restaurant-settings-card">
+          <h2>Storefront content</h2>
+          <p className="restaurant-settings-help">Control the homepage hero and the supporting customer-facing sections. Changes apply to this restaurant only.</p>
+
+          <div className="restaurant-settings-theme-grid">
+            <label className="restaurant-settings-field">
+              <span>Hero eyebrow</span>
+              <input type="text" value={storefront.hero.eyebrow} disabled={loading || saving}
+                onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, eyebrow: event.target.value } }))} />
+            </label>
+            <label className="restaurant-settings-field">
+              <span>Hero title</span>
+              <input type="text" value={storefront.hero.title} disabled={loading || saving}
+                onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, title: event.target.value } }))} />
+            </label>
+            <label className="restaurant-settings-field" style={{ gridColumn: '1 / -1' }}>
+              <span>Hero description</span>
+              <input type="text" value={storefront.hero.description} disabled={loading || saving}
+                onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, description: event.target.value } }))} />
+            </label>
+            <label className="restaurant-settings-field">
+              <span>Hero image URL</span>
+              <input type="text" placeholder="https://..." value={storefront.hero.imageUrl ?? ''} disabled={loading || saving}
+                onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, imageUrl: event.target.value } }))} />
+            </label>
+            <label className="restaurant-settings-field">
+              <span>Hero primary button</span>
+              <input type="text" value={storefront.hero.primaryButtonLabel} disabled={loading || saving}
+                onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, primaryButtonLabel: event.target.value } }))} />
+            </label>
+            <label className="restaurant-settings-field">
+              <span>Primary button link</span>
+              <input type="text" value={storefront.hero.primaryButtonHref} disabled={loading || saving}
+                onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, primaryButtonHref: event.target.value } }))} />
+            </label>
+            <label className="restaurant-settings-field">
+              <span>Hero secondary button</span>
+              <input type="text" value={storefront.hero.secondaryButtonLabel ?? ''} disabled={loading || saving}
+                onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, secondaryButtonLabel: event.target.value } }))} />
+            </label>
+            <label className="restaurant-settings-field">
+              <span>Secondary button link</span>
+              <input type="text" value={storefront.hero.secondaryButtonHref ?? ''} disabled={loading || saving}
+                onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, secondaryButtonHref: event.target.value } }))} />
+            </label>
+          </div>
+
+          <label className="restaurant-settings-switch-row">
+            <span>Show homepage hero</span>
+            <span className="restaurant-settings-switch">
+              <input type="checkbox" checked={storefront.hero.enabled} disabled={loading || saving}
+                onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, enabled: event.target.checked } }))} />
+              <span className="restaurant-settings-switch-track"><span className="restaurant-settings-switch-thumb" /></span>
+            </span>
+          </label>
+
+          <div className="restaurant-settings-theme-grid" style={{ marginTop: 22 }}>
+            {([
+              ['categories', 'Show menu categories'],
+              ['about', 'Show about section'],
+              ['location', 'Show location'],
+              ['hours', 'Show operating hours'],
+              ['contact', 'Show contact information'],
+              ['social', 'Show social links'],
+            ] as const).map(([key, label]) => (
+              <label className="restaurant-settings-toggle" key={key} style={{ justifyContent: 'flex-start', minHeight: 44 }}>
+                <input type="checkbox" checked={storefront.sections[key]} disabled={loading || saving}
+                  onChange={(event) => setStorefront((current) => ({ ...current, sections: { ...current.sections, [key]: event.target.checked } }))} />
+                {label}
+              </label>
+            ))}
+          </div>
+
+          <div style={{ marginTop: 20 }}>
+            <label className="restaurant-settings-field">
+              <span>Footer text</span>
+              <input type="text" placeholder="Optional custom footer message" value={storefront.footer.text ?? ''} disabled={loading || saving}
+                onChange={(event) => setStorefront((current) => ({ ...current, footer: { ...current.footer, text: event.target.value } }))} />
+            </label>
+            <label className="restaurant-settings-switch-row">
+              <span>Show footer</span>
+              <span className="restaurant-settings-switch">
+                <input type="checkbox" checked={storefront.footer.enabled} disabled={loading || saving}
+                  onChange={(event) => setStorefront((current) => ({ ...current, footer: { ...current.footer, enabled: event.target.checked } }))} />
+                <span className="restaurant-settings-switch-track"><span className="restaurant-settings-switch-thumb" /></span>
+              </span>
+            </label>
           </div>
         </div>
 
