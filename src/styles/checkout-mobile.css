@@ -891,3 +891,27 @@
   box-shadow: none;
   outline: none;
 }
+
+.checkout-payment-notice-error {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.checkout-payment-notice-error strong {
+  font-size: 1.1rem;
+}
+
+.checkout-payment-notice-error span {
+  line-height: 1.5;
+}
+
+.checkout-payment-notice-error .button {
+  align-self: flex-start;
+}
+
+@media (max-width: 640px) {
+  .checkout-payment-notice-error .button {
+    width: 100%;
+  }
+}
