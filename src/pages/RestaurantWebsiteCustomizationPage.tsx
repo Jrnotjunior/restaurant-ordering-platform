@@ -17,6 +17,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
+  const [showLivePreview, setShowLivePreview] = useState(false);
   const [previewPosition, setPreviewPosition] = useState({ x: 0, y: 0 });
   const [previewDragging, setPreviewDragging] = useState(false);
   const previewStageRef = useRef<HTMLDivElement>(null);
@@ -185,12 +186,20 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-form{display:grid;gap:22px}
         .website-customization-header{padding:24px;border:1px solid #e1e5eb;border-radius:14px;background:#fff}
         .website-customization-card{padding:24px;border:1px solid #e1e5eb;border-radius:14px;background:#fff}
-        .website-customization-preview-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
-        .website-customization-preview-badge{display:inline-flex;align-items:center;min-height:28px;padding:0 10px;border-radius:999px;background:#ecfdf5;color:#166534;font-size:12px;font-weight:800}
-        .website-customization-preview-stage{position:relative;margin-top:18px;height:790px;min-height:560px;overflow:hidden;border:1px solid #dbe2ea;border-radius:16px;background:linear-gradient(135deg,#f8fafc,#eef2f7);touch-action:none;display:flex;align-items:center;justify-content:center}
-        .website-customization-preview-stage::before{content:'Drag the phone to move the preview';position:absolute;top:14px;left:50%;transform:translateX(-50%);font-size:12px;font-weight:700;color:#94a3b8;white-space:nowrap;pointer-events:none}
-        .website-customization-preview-reset{position:absolute;right:14px;top:12px;z-index:5;border:1px solid #dbe2ea;background:#fff;color:#334155;border-radius:8px;padding:7px 10px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
-        .website-customization-phone{position:absolute;width:375px;height:760px;box-sizing:border-box;padding:9px;border:8px solid #111827;border-radius:38px;background:#111827;box-shadow:0 24px 55px rgba(15,23,42,.28);cursor:grab;user-select:none;touch-action:none;transition:box-shadow .15s ease}
+        .website-customization-preview-launch-card{display:flex;align-items:center;justify-content:space-between;gap:20px}
+        .website-customization-preview-launch-card h2{margin:0 0 6px}
+        .website-customization-preview-modal{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
+        .website-customization-preview-modal-backdrop{position:absolute;inset:0;background:rgba(15,23,42,.62);backdrop-filter:blur(3px)}
+        .website-customization-preview-modal-panel{position:relative;z-index:1;width:min(1100px,calc(100vw - 40px));height:min(900px,calc(100vh - 40px));display:flex;flex-direction:column;overflow:hidden;border:1px solid #dbe2ea;border-radius:18px;background:#fff;box-shadow:0 28px 90px rgba(15,23,42,.35)}
+        .website-customization-preview-modal-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px;border-bottom:1px solid #e2e8f0;background:#fff}
+        .website-customization-preview-modal-header h2{margin:0 0 3px;color:#0f172a;font-size:18px}
+        .website-customization-preview-modal-header p{margin:0;color:#64748b;font-size:13px}
+        .website-customization-preview-modal-actions{display:flex;align-items:center;gap:8px}
+        .website-customization-preview-reset,.website-customization-preview-close{position:static;border:1px solid #dbe2ea;background:#fff;color:#334155;border-radius:8px;padding:8px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+        .website-customization-preview-close{width:36px;height:36px;padding:0;font-size:24px;line-height:1}
+        .website-customization-preview-stage{position:relative;flex:1;min-height:0;overflow:hidden;background:radial-gradient(circle at center,#f8fafc 0,#eef2f7 58%,#e2e8f0 100%);touch-action:none;display:flex;align-items:center;justify-content:center}
+        .website-customization-preview-stage::before{content:'Drag the phone anywhere';position:absolute;top:14px;left:50%;transform:translateX(-50%);font-size:12px;font-weight:700;color:#94a3b8;white-space:nowrap;pointer-events:none}
+        .website-customization-phone{position:absolute;width:375px;height:760px;box-sizing:border-box;padding:9px;border:8px solid #111827;border-radius:38px;background:#111827;box-shadow:0 24px 55px rgba(15,23,42,.28);cursor:grab;user-select:none;touch-action:none}
         .website-customization-phone.is-dragging{cursor:grabbing;box-shadow:0 30px 70px rgba(15,23,42,.34)}
         .website-customization-phone-screen{width:100%;height:100%;box-sizing:border-box;overflow:auto;border-radius:25px;scrollbar-width:none}
         .website-customization-phone-screen::-webkit-scrollbar{display:none}
@@ -209,40 +218,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-live-section-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px}
         .website-customization-live-section-grid>div{display:grid;gap:3px;padding:11px;border:1px solid;border-color:inherit;border-radius:9px;font-size:11px}
         .website-customization-live-footer{padding:14px;border-top:1px solid;text-align:center;font-size:10px}
-        .website-customization-card h2{margin:0 0 8px}
-        .website-customization-help{margin:0;color:#64748b;line-height:1.6}
-        .website-customization-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}
-        .website-customization-field{display:grid;gap:7px;font-weight:600;font-size:14px}
-        .website-customization-field input[type=text],.website-customization-field select{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:10px;padding:12px;font:inherit;color:#0f172a;background:#fff}
-        .website-customization-field input[type=color]{width:100%;height:44px;padding:4px;border:1px solid #dbe2ea;border-radius:10px;background:#fff;cursor:pointer}
-        .website-customization-field input:focus,.website-customization-field select:focus{outline:none;border-color:#94a3b8;box-shadow:0 0 0 3px rgba(148,163,184,.18)}
-        .website-customization-preview{margin-top:20px;padding:20px;border:1px solid #e1e5eb;border-radius:14px;background:var(--color-background);color:var(--color-text)}
-        .website-customization-preview-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:14px;border-bottom:1px solid var(--color-border)}
-        .website-customization-brand{display:flex;align-items:center;gap:10px;font-weight:800}
-        .website-customization-dot{width:30px;height:30px;border-radius:var(--radius-sm);background:var(--color-primary)}
-        .website-customization-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
-        .website-customization-swatch{height:46px;border-radius:var(--radius-md);border:1px solid var(--color-border)}
-        .website-customization-logo-row{display:flex;align-items:center;gap:16px;margin-top:16px;flex-wrap:wrap}
-        .website-customization-logo-preview{width:96px;height:96px;border:1px solid #dbe2ea;border-radius:12px;background:#f8fafc;display:flex;align-items:center;justify-content:center;overflow:hidden;color:#94a3b8;font-size:12px}
-        .website-customization-logo-preview img{width:100%;height:100%;object-fit:contain}
-        .website-customization-logo-button{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center}
-        .website-customization-logo-button input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
-        .website-customization-switch-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:14px;font-weight:700;color:#0f172a}
-        .website-customization-switch{position:relative;display:inline-flex;flex:0 0 auto}
-        .website-customization-switch input{position:absolute;opacity:0;pointer-events:none}
-        .website-customization-switch-track{position:relative;width:48px;height:28px;border-radius:999px;background:#cbd5e1;display:block}
-        .website-customization-switch-thumb{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.25);transition:transform .2s ease}
-        .website-customization-switch input:checked + .website-customization-switch-track{background:#101b2f}
-        .website-customization-switch input:checked + .website-customization-switch-track .website-customization-switch-thumb{transform:translateX(20px)}
-        .website-customization-toggle-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:22px}
-        .website-customization-toggle{display:flex;align-items:center;gap:8px;min-height:44px;font-size:14px;font-weight:600}
-        .website-customization-actions-bar{display:flex;justify-content:flex-end}
-        .website-customization-confirm-overlay{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.45)}
-        .website-customization-confirm-modal{width:min(420px,100%);box-sizing:border-box;padding:24px;border:1px solid #dbe2ea;border-radius:14px;background:#fff;box-shadow:0 20px 60px rgba(15,23,42,.2)}
-        .website-customization-confirm-modal h2{margin:0 0 8px;color:#0f172a;font-size:20px}
-        .website-customization-confirm-modal p{margin:0;color:#64748b;line-height:1.5}
-        .website-customization-confirm-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
-        @media(max-width:700px){.website-customization-grid,.website-customization-toggle-grid,.website-customization-live-section-grid{grid-template-columns:1fr}.website-customization-preview-stage{height:650px}.website-customization-live-hero h3{font-size:24px}.website-customization-actions-bar .button{width:100%}}
+        @media(max-width:700px){.website-customization-grid,.website-customization-toggle-grid,.website-customization-live-section-grid{grid-template-columns:1fr}.website-customization-preview-launch-card{align-items:flex-start;flex-direction:column}.website-customization-preview-modal{padding:8px}.website-customization-preview-modal-panel{width:100%;height:calc(100vh - 16px);border-radius:14px}.website-customization-preview-modal-header{padding:12px}.website-customization-preview-modal-header p{display:none}.website-customization-phone{transform:scale(.82);transform-origin:center}.website-customization-live-hero h3{font-size:24px}.website-customization-actions-bar .button{width:100%}}
         @media(max-width:480px){.website-customization-confirm-actions{flex-direction:column-reverse}.website-customization-confirm-actions .button{width:100%}}
       `}</style>
 
@@ -256,8 +232,31 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
           <p className="website-customization-help" style={{ marginTop: 8 }}>Customize your restaurant's branding, homepage content, and visible customer-facing sections. These settings affect this restaurant only.</p>
         </div>
 
-        <div className="website-customization-card website-customization-live-preview-card">
-          <div className="website-customization-preview-heading">
+        <div className="website-customization-card website-customization-preview-launch-card">
+          <div>
+            <h2>Website Preview</h2>
+            <p className="website-customization-help">Open a draggable mobile preview to see the customer website while you customize it.</p>
+          </div>
+          <button type="button" className="button button-primary" onClick={() => { resetPreviewPosition(); setShowLivePreview(true); }}>
+            See Live Preview
+          </button>
+        </div>
+
+
+          {showLivePreview ? (
+        <div className="website-customization-preview-modal" role="dialog" aria-modal="true" aria-label="Live website preview">
+          <div className="website-customization-preview-modal-backdrop" onPointerDown={() => setShowLivePreview(false)} />
+          <div className="website-customization-preview-modal-panel">
+            <div className="website-customization-preview-modal-header">
+              <div>
+                <h2>Live Preview</h2>
+                <p>Drag the phone anywhere in this preview.</p>
+              </div>
+              <div className="website-customization-preview-modal-actions">
+                <button type="button" className="website-customization-preview-reset" onClick={resetPreviewPosition}>Reset</button>
+                <button type="button" className="website-customization-preview-close" onClick={() => setShowLivePreview(false)} aria-label="Close preview">×</button>
+              </div>
+            </div>
             <div>
               <h2>Live Preview</h2>
               <p className="website-customization-help">See how the customer website changes as you customize it. Preview updates are local until you save.</p>
@@ -328,8 +327,6 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
               </div>
             </div>
           </div>
-        </div>
-
         <div className="website-customization-card">
           <h2>Branding</h2>
           <p className="website-customization-help">Upload the logo customers will see on the restaurant website. PNG, JPG, or WebP up to 2 MB.</p>
