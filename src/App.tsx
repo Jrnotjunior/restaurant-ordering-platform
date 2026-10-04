@@ -13,6 +13,7 @@ import { RestaurantSalesPage } from './pages/RestaurantSalesPage';
 import { RestaurantCashierPosPage } from './pages/RestaurantCashierPosPage';
 import { RestaurantDeliveryDispatchPage } from './pages/RestaurantDeliveryDispatchPage';
 import { RestaurantSettingsPage } from './pages/RestaurantSettingsPage';
+import { RestaurantWebsiteCustomizationPage } from './pages/RestaurantWebsiteCustomizationPage';
 import { RestaurantLoyaltyPage } from './pages/RestaurantLoyaltyPage';
 import { RestaurantOwnerLoginPage } from './pages/RestaurantOwnerLoginPage';
 import { RestaurantEmployeesPage } from './pages/RestaurantEmployeesPage';
@@ -62,6 +63,7 @@ function withBasePath(path: string) {
   if (path === '/restaurant/riders') return `${base}/#restaurant/riders`;
   if (path === '/restaurant/delivery-dispatch') return `${base}/#restaurant/delivery-dispatch`;
   if (path === '/restaurant/settings') return `${base}/#restaurant/settings`;
+  if (path === '/restaurant/website-customization') return `${base}/#restaurant/website-customization`;
   if (path === '/restaurant/loyalty') return `${base}/#restaurant/loyalty`;
   if (path === '/restaurant/employees') return `${base}/#restaurant/employees`;
   if (path === '/rider/dashboard') return `${base}/#rider/dashboard`;
@@ -509,6 +511,7 @@ function AppContent() {
   const isCashierPosPage = route === '#restaurant/cashier-pos';
   const isRestaurantDeliveryDispatchPage = route === '#restaurant/delivery-dispatch';
   const isRestaurantSettingsPage = route === '#restaurant/settings';
+  const isRestaurantWebsiteCustomizationPage = route === '#restaurant/website-customization';
   const isRestaurantLoyaltyPage = route === '#restaurant/loyalty';
   const isRestaurantEmployeesPage = route === '#restaurant/employees';
   const isCashierPage = route === '#restaurant/cashier';
@@ -618,6 +621,7 @@ function AppContent() {
                   <a href="#restaurant/shipping-fee">Shipping Fee</a>
                   <a href="#restaurant/sales">Sales</a>
                   <a href="#restaurant/settings">Store Settings</a>
+                  <a href="#restaurant/website-customization">Website Customization</a>
                 </> : null}
                 {restaurantRoleRoute === 'cashier' ? <a href="#restaurant/orders">Open Orders</a> : null}
                 {restaurantRoleRoute === 'kitchen' ? <a href="#restaurant/orders">Open Kitchen Orders</a> : null}
@@ -644,6 +648,7 @@ function AppContent() {
               : isRestaurantEmployeesPage ? <RestaurantEmployeesPage restaurantId={ownerRestaurant.id!} />
               : isRestaurantDeliveryDispatchPage ? <RestaurantDeliveryDispatchPage restaurantId={ownerRestaurant.id!} />
               : isRestaurantSettingsPage ? <RestaurantSettingsPage restaurantId={ownerRestaurant.id!} />
+              : isRestaurantWebsiteCustomizationPage ? <RestaurantWebsiteCustomizationPage restaurantId={ownerRestaurant.id!} />
               : isRestaurantLoyaltyPage ? <RestaurantLoyaltyPage restaurantId={ownerRestaurant.id!} />
               : <RestaurantSalesPage restaurantId={ownerRestaurant.id!} />}
           </RestaurantLayout>
