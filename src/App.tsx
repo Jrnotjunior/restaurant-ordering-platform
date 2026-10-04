@@ -621,7 +621,7 @@ function AppContent() {
                   <a href="#restaurant/shipping-fee">Shipping Fee</a>
                   <a href="#restaurant/sales">Sales</a>
                   <a href="#restaurant/settings">Store Settings</a>
-                  <a href="#restaurant/website-customization">Website Customization</a>
+                  <a href="#restaurant/website-customization">Customize</a>
                 </> : null}
                 {restaurantRoleRoute === 'cashier' ? <a href="#restaurant/orders">Open Orders</a> : null}
                 {restaurantRoleRoute === 'kitchen' ? <a href="#restaurant/orders">Open Kitchen Orders</a> : null}
