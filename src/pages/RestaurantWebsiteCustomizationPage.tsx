@@ -270,8 +270,18 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-phone.is-dragging{cursor:grabbing;box-shadow:0 30px 70px rgba(15,23,42,.34)}
         .website-customization-phone-screen{width:100%;height:calc(100% - 34px);box-sizing:border-box;overflow:auto;border-radius:25px;scrollbar-width:none}
         .website-customization-phone-screen::-webkit-scrollbar{display:none}
-        @media(max-width:700px){.website-customization-grid,.website-customization-toggle-grid,.website-customization-live-section-grid{grid-template-columns:1fr}.website-customization-preview-launch-card{align-items:flex-start;flex-direction:column}.website-customization-phone{width:320px;height:650px}.website-customization-live-hero h3{font-size:24px}.website-customization-actions-bar .button{width:100%}}
-      `}</style>
+        @media(max-width:700px){.website-customization-simple-grid{grid-template-columns:1fr}.website-customization-grid,.website-customization-toggle-grid,.website-customization-live-section-grid{grid-template-columns:1fr}.website-customization-preview-launch-card{align-items:flex-start;flex-direction:column}.website-customization-phone{width:320px;height:650px}.website-customization-live-hero h3{font-size:24px}.website-customization-actions-bar .button{width:100%}}
+      `}        .website-customization-simple-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+        .website-customization-color-control{display:flex;align-items:center;gap:10px}
+        .website-customization-color-control input[type="color"]{width:46px;height:38px;padding:3px;border:1px solid var(--color-border);border-radius:8px;cursor:pointer}
+        .website-customization-color-control span{font-size:13px;font-weight:700;color:var(--color-text)}
+        .website-customization-field-hint{display:block;margin-top:5px;color:var(--color-muted);font-size:12px}
+        .website-customization-advanced{margin-top:22px;border-top:1px solid var(--color-border);padding-top:16px}
+        .website-customization-advanced summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--color-text);list-style:none}
+        .website-customization-advanced summary::-webkit-details-marker{display:none}
+        .website-customization-advanced summary:after{content:'+';float:right;font-size:16px;color:var(--color-muted)}
+        .website-customization-advanced[open] summary:after{content:'−'}
+</style>
 
       {error ? <div className="restaurant-shipping-message is-error" role="alert">{error}</div> : null}
       {message ? <div className="restaurant-shipping-message is-success" role="status">{message}</div> : null}
@@ -379,28 +389,71 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         </div>
 
         <div className="website-customization-card">
-          <h2>Colors &amp; typography</h2>
-          <p className="website-customization-help">Set the visual language used across the customer storefront.</p>
-          <div className="website-customization-grid">
-            {([
-              ['primary', 'Primary color'], ['primaryHover', 'Primary hover'], ['primaryText', 'Primary button text'],
-              ['secondary', 'Secondary color'], ['secondaryText', 'Secondary text'], ['background', 'Website background'],
-              ['surface', 'Card surface'], ['text', 'Main text'], ['muted', 'Muted text'], ['border', 'Border color'],
-            ] as const).map(([key, label]) => (
-              <label className="website-customization-field" key={key}>
-                <span>{label}</span>
-                <input type="color" value={websiteTheme.colors[key]} disabled={loading || saving} onChange={(event) => {
+          <h2>Look &amp; feel</h2>
+          <p className="website-customization-help">Choose the main look of your customer website. You only need to change these settings if you want to personalize the design.</p>
+
+          <div className="website-customization-simple-grid">
+            <label className="website-customization-field">
+              <span>Brand color</span>
+              <div className="website-customization-color-control">
+                <input type="color" value={websiteTheme.colors.primary} disabled={loading || saving} onChange={(event) => {
                   const value = event.target.value;
-                  setWebsiteTheme((current) => ({ ...current, colors: { ...current.colors, [key]: value } }));
+                  setWebsiteTheme((current) => ({ ...current, colors: { ...current.colors, primary: value, primaryHover: value } }));
                   setMessage(''); setError('');
                 }} />
-              </label>
-            ))}
-            <label className="website-customization-field"><span>Heading font</span><select value={websiteTheme.fontHeading} disabled={loading || saving} onChange={(event) => setWebsiteTheme((current) => ({ ...current, fontHeading: event.target.value }))}><option value="Manrope">Manrope</option><option value="Inter">Inter</option></select></label>
-            <label className="website-customization-field"><span>Body &amp; UI font</span><select value={websiteTheme.fontBody} disabled={loading || saving} onChange={(event) => setWebsiteTheme((current) => ({ ...current, fontBody: event.target.value, fontUi: event.target.value }))}><option value="Inter">Inter</option><option value="Manrope">Manrope</option></select></label>
-            <label className="website-customization-field"><span>Corner style</span><select value={websiteTheme.borderRadius ?? 'medium'} disabled={loading || saving} onChange={(event) => setWebsiteTheme((current) => ({ ...current, borderRadius: event.target.value as RestaurantTheme['borderRadius'] }))}><option value="small">Small / sharp</option><option value="medium">Medium</option><option value="large">Large / soft</option></select></label>
-            <label className="website-customization-field"><span>Button style</span><select value={websiteTheme.buttonStyle ?? 'filled'} disabled={loading || saving} onChange={(event) => setWebsiteTheme((current) => ({ ...current, buttonStyle: event.target.value as RestaurantTheme['buttonStyle'] }))}><option value="filled">Filled</option><option value="outline">Outline</option><option value="soft">Soft</option></select></label>
+                <span>{websiteTheme.colors.primary.toUpperCase()}</span>
+              </div>
+              <small className="website-customization-field-hint">Used for buttons and key accents.</small>
+            </label>
+
+            <label className="website-customization-field">
+              <span>Button style</span>
+              <select value={websiteTheme.buttonStyle ?? 'filled'} disabled={loading || saving} onChange={(event) => setWebsiteTheme((current) => ({ ...current, buttonStyle: event.target.value as RestaurantTheme['buttonStyle'] }))}>
+                <option value="filled">Filled</option>
+                <option value="outline">Outline</option>
+                <option value="soft">Soft</option>
+              </select>
+            </label>
+
+            <label className="website-customization-field">
+              <span>Heading font</span>
+              <select value={websiteTheme.fontHeading} disabled={loading || saving} onChange={(event) => setWebsiteTheme((current) => ({ ...current, fontHeading: event.target.value }))}>
+                <option value="Manrope">Manrope</option>
+                <option value="Inter">Inter</option>
+              </select>
+            </label>
+
+            <label className="website-customization-field">
+              <span>Body font</span>
+              <select value={websiteTheme.fontBody} disabled={loading || saving} onChange={(event) => setWebsiteTheme((current) => ({ ...current, fontBody: event.target.value, fontUi: event.target.value }))}>
+                <option value="Inter">Inter</option>
+                <option value="Manrope">Manrope</option>
+              </select>
+            </label>
           </div>
+
+          <details className="website-customization-advanced">
+            <summary>Advanced color settings</summary>
+            <p className="website-customization-help">For owners who want full control over individual website colors.</p>
+            <div className="website-customization-grid">
+              {([
+                ['primaryHover', 'Primary hover'], ['primaryText', 'Button text'],
+                ['secondary', 'Secondary color'], ['secondaryText', 'Secondary text'],
+                ['background', 'Website background'], ['surface', 'Card surface'],
+                ['text', 'Main text'], ['muted', 'Muted text'], ['border', 'Border color'],
+              ] as const).map(([key, label]) => (
+                <label className="website-customization-field" key={key}>
+                  <span>{label}</span>
+                  <input type="color" value={websiteTheme.colors[key]} disabled={loading || saving} onChange={(event) => {
+                    const value = event.target.value;
+                    setWebsiteTheme((current) => ({ ...current, colors: { ...current.colors, [key]: value } }));
+                    setMessage(''); setError('');
+                  }} />
+                </label>
+              ))}
+              <label className="website-customization-field"><span>Corner style</span><select value={websiteTheme.borderRadius ?? 'medium'} disabled={loading || saving} onChange={(event) => setWebsiteTheme((current) => ({ ...current, borderRadius: event.target.value as RestaurantTheme['borderRadius'] }))}><option value="small">Small / sharp</option><option value="medium">Medium</option><option value="large">Large / soft</option></select></label>
+            </div>
+          </details>
         </div>
 
         <div className="website-customization-card">
