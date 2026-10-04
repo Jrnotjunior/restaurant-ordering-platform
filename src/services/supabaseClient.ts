@@ -27,11 +27,13 @@ function getRestaurantContextHeaders(): Record<string, string> {
 function getRestaurantAuthStorageKey(): string {
   if (typeof window === 'undefined') return 'restaurant-ordering-platform-auth';
 
-  // sessionStorage is scoped to a browser tab. Persisting a random tab id
-  // there keeps the same Auth session after refresh while giving every tab
-  // its own storage key and therefore its own Supabase Auth BroadcastChannel.
-  const tabKeyStorage = window.sessionStorage;
-  const existingTabId = tabKeyStorage.getItem('restaurant-ordering-tab-id');
+  // window.name belongs to the individual browser browsing context and
+  // survives refreshes. It gives each restaurant tab a distinct Supabase
+  // storage key and therefore a distinct Auth BroadcastChannel.
+  const existingTabId = window.name.startsWith('restaurant-ordering-tab:')
+    ? window.name.slice('restaurant-ordering-tab:'.length)
+    : '';
+
   const tabId = existingTabId || (
     typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
       ? crypto.randomUUID()
@@ -39,7 +41,7 @@ function getRestaurantAuthStorageKey(): string {
   );
 
   if (!existingTabId) {
-    tabKeyStorage.setItem('restaurant-ordering-tab-id', tabId);
+    window.name = `restaurant-ordering-tab:${tabId}`;
   }
 
   return `restaurant-ordering-platform-auth:${tabId}`;
