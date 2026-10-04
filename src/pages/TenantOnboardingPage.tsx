@@ -16,6 +16,7 @@ export function TenantOnboardingPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordSet, setPasswordSet] = useState(false);
+  const [restaurantName, setRestaurantName] = useState('');
   const [error, setError] = useState('');
 
   const [name, setName] = useState('');
@@ -58,6 +59,7 @@ export function TenantOnboardingPage() {
       const row = Array.isArray(data) ? data[0] : data;
       setInvitation(row ?? null);
       setRestaurantEmail(currentUser.email ?? '');
+      setRestaurantName(row?.restaurant_name ?? '');
       setLoading(false);
     }
 
@@ -95,50 +97,26 @@ export function TenantOnboardingPage() {
       return;
     }
 
+    const { data: setupData, error: setupError } = await supabase.rpc('complete_tenant_owner_setup');
+    if (setupError) {
+      setError(setupError.message);
+      setSaving(false);
+      return;
+    }
+
+    const setup = Array.isArray(setupData) ? setupData[0] : setupData;
+    if (!setup?.restaurant_id) {
+      setError('Account setup completed, but the restaurant could not be confirmed.');
+      setSaving(false);
+      return;
+    }
+
     setPassword('');
     setConfirmPassword('');
-    setPasswordSet(true);
-    setSaving(false);
-  }
-
-  async function createRestaurant(event: FormEvent) {
-    event.preventDefault();
-    if (!invitation || !supabase) return;
-
-    setSaving(true);
-    setError('');
-
-    const { data, error: createError } = await supabase.rpc(
-      'create_restaurant_from_tenant_invitation',
-      {
-        p_invitation_id: invitation.id,
-        p_name: name.trim(),
-        p_slug: slug.trim().toLowerCase(),
-        p_tagline: tagline.trim(),
-        p_logo_url: logoUrl.trim() || null,
-        p_location_text: location.trim() || null,
-        p_contact_number: contactNumber.trim() || null,
-        p_email: restaurantEmail.trim() || null,
-      },
-    );
-
-    if (createError) {
-      setError(createError.message);
-      setSaving(false);
-      return;
-    }
-
-    const restaurant = Array.isArray(data) ? data[0] : data;
-
-    if (!restaurant?.restaurant_id) {
-      setError('Restaurant was created but no restaurant ID was returned.');
-      setSaving(false);
-      return;
-    }
-
     window.history.replaceState({}, document.title, window.location.pathname);
     window.location.hash = '#restaurant/owner';
   }
+
 
   if (authLoading || loading) {
     return <section className="restaurant-owner-auth-loading">Preparing your tenant setup…</section>;
@@ -182,7 +160,10 @@ export function TenantOnboardingPage() {
         {!passwordSet ? (
           <form className="restaurant-form" onSubmit={setOwnerPassword}>
             <h2>Set your password</h2>
-            <p>Secure your tenant owner account before creating your restaurant identity.</p>
+            <p>
+              Your restaurant <strong>{restaurantName || 'restaurant'}</strong> has already been created by the Web2Table System Administrator.
+              Your assigned package and access are already configured.
+            </p>
 
             <label>
               New password
@@ -212,67 +193,10 @@ export function TenantOnboardingPage() {
 
             <div className="modal-actions">
               <button type="submit" disabled={saving}>
-                {saving ? 'Saving password…' : 'Set password and continue'}
+                {saving ? 'Finishing setup…' : 'Set password and enter restaurant'}
               </button>
             </div>
           </form>
-        ) : (
-        <form className="restaurant-form" onSubmit={createRestaurant}>
-          <div className="form-grid">
-            <label>
-              Restaurant name
-              <input value={name} onChange={(event) => setName(event.target.value)} required />
-            </label>
-
-            <label>
-              Restaurant slug
-              <input
-                value={slug}
-                onChange={(event) => setSlug(event.target.value.toLowerCase())}
-                placeholder="my-restaurant"
-                pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
-                title="Use lowercase letters, numbers, and single hyphens."
-                required
-              />
-            </label>
-          </div>
-
-          <label>
-            Tagline
-            <input value={tagline} onChange={(event) => setTagline(event.target.value)} placeholder="Fresh food, made for you." />
-          </label>
-
-          <label>
-            Logo URL
-            <input type="url" value={logoUrl} onChange={(event) => setLogoUrl(event.target.value)} placeholder="https://..." />
-          </label>
-
-          <label>
-            Location
-            <input value={location} onChange={(event) => setLocation(event.target.value)} placeholder="Branch address or location" />
-          </label>
-
-          <div className="form-grid">
-            <label>
-              Contact number
-              <input value={contactNumber} onChange={(event) => setContactNumber(event.target.value)} />
-            </label>
-
-            <label>
-              Restaurant email
-              <input type="email" value={restaurantEmail} onChange={(event) => setRestaurantEmail(event.target.value)} />
-            </label>
-          </div>
-
-          {error && <div className="error-banner">{error}</div>}
-
-          <div className="modal-actions">
-            <button type="submit" disabled={saving}>
-              {saving ? 'Creating restaurant…' : 'Create my restaurant'}
-            </button>
-          </div>
-        </form>
-        )}
       </div>
     </section>
   );
