@@ -69,6 +69,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const [submitError, setSubmitError] = useState('');
   const [confirmedOrder, setConfirmedOrder] = useState<ConfirmedOrder | null>(null);
   const [paymentNotCompleted, setPaymentNotCompleted] = useState(false);
+  const [paymentFailureMessage, setPaymentFailureMessage] = useState('');
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [loyaltySettings, setLoyaltySettings] = useState<{ enabled: boolean; pointsRequired: number; discountAmount: number } | null>(null);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
@@ -104,6 +105,34 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
     if (paymentState === 'not_completed') {
       setPaymentNotCompleted(true);
+      setPaymentFailureMessage('Payment was not completed. No restaurant order was created. You can try the payment again.');
+      const savedReference = window.localStorage.getItem(PENDING_PAYMENT_REFERENCE_KEY);
+      if (savedReference) {
+        void getOnlinePaymentStatus(savedReference).then((result) => {
+          if (result.status === 'failed') {
+            setPaymentFailureMessage('Payment failed. No restaurant order was created. Please try again.');
+          } else if (result.status === 'expired') {
+            setPaymentFailureMessage('Payment checkout expired. No restaurant order was created. Please try again.');
+          } else if (result.status === 'paid' && result.orderNumber) {
+            window.history.replaceState({}, '', window.location.pathname + window.location.hash);
+            setPaymentNotCompleted(false);
+            window.localStorage.removeItem(PENDING_PAYMENT_REFERENCE_KEY);
+            window.localStorage.removeItem(PENDING_PAYMENT_CHECKOUT_URL_KEY);
+            window.localStorage.removeItem(PENDING_PAYMENT_ORDER_KEY);
+            window.localStorage.setItem(ACTIVE_ORDER_KEY, result.orderNumber);
+            window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
+            window.dispatchEvent(new Event(CART_CLEAR_EVENT));
+            setConfirmedOrder({
+              orderNumber: result.orderNumber,
+              paymentMethod: 'online',
+              orderType: isDelivery && thirdPartyCourierDelivery ? 'pickup' : orderType,
+              total: result.total,
+            });
+          }
+        }).catch((error) => {
+          console.error('Unable to check incomplete online payment status.', error);
+        });
+      }
       return;
     }
 
@@ -117,6 +146,25 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       for (let attempt = 0; attempt < 20 && !cancelled; attempt += 1) {
         try {
           const result = await getOnlinePaymentStatus(paymentReference);
+          if (result.status === 'failed' || result.status === 'expired' || result.status === 'cancelled') {
+            window.localStorage.removeItem(PENDING_PAYMENT_REFERENCE_KEY);
+            window.localStorage.removeItem(PENDING_PAYMENT_CHECKOUT_URL_KEY);
+            window.localStorage.removeItem(PENDING_PAYMENT_ORDER_KEY);
+            window.history.replaceState({}, '', window.location.pathname + window.location.hash);
+            if (!cancelled) {
+              setPaymentProcessing(false);
+              setPaymentNotCompleted(true);
+              setPaymentFailureMessage(
+                result.status === 'expired'
+                  ? 'Payment checkout expired. No restaurant order was created. Please try again.'
+                  : result.status === 'cancelled'
+                    ? 'Payment was cancelled. No restaurant order was created.'
+                    : 'Payment failed. No restaurant order was created. Please try again.',
+              );
+            }
+            return;
+          }
+
           if (result.status === 'paid' && result.orderNumber) {
             window.localStorage.removeItem(PENDING_PAYMENT_REFERENCE_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_CHECKOUT_URL_KEY);
@@ -144,7 +192,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
       if (!cancelled) {
         setPaymentProcessing(false);
-        setSubmitError('Your payment was received, but we are still confirming it. Please wait a moment and try tracking your order again.');
+        setSubmitError('We could not confirm the payment yet. No restaurant order has been confirmed. Please wait a moment and check again before paying again.');
       }
     }
 
@@ -267,6 +315,18 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   }, [restaurantId, user?.id]);
 
   if (paymentProcessing) return <section className="checkout-page"><div className="checkout-payment-notice" role="status"><strong>Payment received.</strong><span>We're confirming your order with the restaurant. Please wait a moment.</span></div></section>;
+
+  if (paymentNotCompleted && !confirmedOrder) return (
+    <section className="checkout-page">
+      <div className="checkout-payment-notice checkout-payment-notice-error" role="alert">
+        <strong>{paymentFailureMessage || 'Payment was not completed.'}</strong>
+        <span>No restaurant order was created from this payment attempt. You can try the online payment again.</span>
+        <button className="button button-primary" type="button" onClick={() => { setPaymentNotCompleted(false); setPaymentFailureMessage(''); setPaymentMethod(''); setShowPaymentModal(true); }}>
+          Try Online Payment Again
+        </button>
+      </div>
+    </section>
+  );
 
   if (confirmedOrder) return <OrderConfirmationPage orderNumber={confirmedOrder.orderNumber} paymentMethod={confirmedOrder.paymentMethod} orderType={confirmedOrder.orderType} total={confirmedOrder.total} onReturnHome={() => { window.location.hash = ''; }} />;
 
