@@ -185,23 +185,44 @@ function OwnerRestaurantGuard({ children }: { children: (restaurant: RestaurantC
         return;
       }
 
-      const { data: riderProfile, error: riderLookupError } = await supabase
+      // Owner-only routes can sometimes be opened from an old bookmark or
+      // browser tab by a staff account. Resolve the staff role first so the
+      // account is sent to its own workspace instead of showing "No restaurant
+      // assigned".
+      const { data: staffRows, error: staffLookupError } = await supabase
         .from('restaurant_staff')
-        .select('id')
+        .select('role')
         .eq('auth_user_id', user.id)
-        .eq('role', 'rider')
         .eq('is_active', true)
-        .maybeSingle();
+        .order('created_at', { ascending: true })
+        .limit(1);
 
       if (!mounted) return;
 
-      if (riderLookupError) {
-        console.error('Unable to verify rider access.', riderLookupError);
+      if (staffLookupError) {
+        console.error('Unable to verify staff access.', staffLookupError);
         setCheckingRole(false);
         return;
       }
 
-      if (riderProfile || role === 'rider') {
+      const staffRole = staffRows?.[0]?.role;
+
+      if (staffRole === 'cashier') {
+        window.location.hash = '#restaurant/cashier';
+        return;
+      }
+
+      if (staffRole === 'kitchen') {
+        window.location.hash = '#restaurant/kitchen';
+        return;
+      }
+
+      if (staffRole === 'dispatcher') {
+        window.location.hash = '#restaurant/dispatcher';
+        return;
+      }
+
+      if (staffRole === 'rider' || role === 'rider') {
         window.location.hash = '#rider/dashboard';
         return;
       }
