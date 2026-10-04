@@ -305,3 +305,56 @@
     padding: 16px;
   }
 }
+
+
+.restaurant-sales-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 24px;
+}
+
+.restaurant-sales-summary-item,
+.restaurant-sales-modal-financials > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid var(--restaurant-border, #e5e7eb);
+  border-radius: 12px;
+  background: var(--restaurant-surface, #fff);
+}
+
+.restaurant-sales-summary-item small,
+.restaurant-sales-modal-financials small {
+  font-size: 12px;
+  color: var(--restaurant-muted, #6b7280);
+}
+
+.restaurant-sales-summary-item strong,
+.restaurant-sales-modal-financials strong {
+  font-size: 18px;
+}
+
+.restaurant-sales-modal-financials {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+
+@media (max-width: 900px) {
+  .restaurant-sales-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .restaurant-sales-modal-financials {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .restaurant-sales-summary {
+    grid-template-columns: 1fr;
+  }
+}
