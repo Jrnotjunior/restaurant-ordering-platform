@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { defaultRestaurant } from '../config/defaultRestaurant';
 import { supabase } from '../services/supabaseClient';
 import type { RestaurantStorefront, RestaurantTheme } from '../types/restaurant';
@@ -18,6 +18,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
   const [error, setError] = useState('');
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
   const [previewPosition, setPreviewPosition] = useState({ x: 0, y: 0 });
+  const [previewDragging, setPreviewDragging] = useState(false);
   const previewStageRef = useRef<HTMLDivElement>(null);
   const previewDragRef = useRef<{ active: boolean; startX: number; startY: number; originX: number; originY: number }>({
     active: false, startX: 0, startY: 0, originX: 0, originY: 0
@@ -85,6 +86,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
     };
     const handlePointerUp = () => {
       previewDragRef.current.active = false;
+      setPreviewDragging(false);
     };
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerup', handlePointerUp);
@@ -96,7 +98,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
     };
   }, []);
 
-  function startPreviewDrag(event: React.PointerEvent<HTMLDivElement>) {
+  function startPreviewDrag(event: ReactPointerEvent<HTMLDivElement>) {
     if ((event.target as HTMLElement).closest('button, input, select, a')) return;
     const stage = previewStageRef.current;
     if (!stage) return;
@@ -107,11 +109,13 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
       originX: previewPosition.x,
       originY: previewPosition.y
     };
+    setPreviewDragging(true);
     event.currentTarget.setPointerCapture?.(event.pointerId);
   }
 
   function resetPreviewPosition() {
     setPreviewPosition({ x: 0, y: 0 });
+    setPreviewDragging(false);
   }
 
   async function handleLogoChange(event: ChangeEvent<HTMLInputElement>) {
@@ -238,7 +242,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-confirm-modal h2{margin:0 0 8px;color:#0f172a;font-size:20px}
         .website-customization-confirm-modal p{margin:0;color:#64748b;line-height:1.5}
         .website-customization-confirm-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
-        @media(max-width:700px){.website-customization-grid,.website-customization-toggle-grid,.website-customization-live-section-grid{grid-template-columns:1fr}.website-customization-preview-stage{height:650px}.website-customization-phone{transform:scale(.82);transform-origin:center}.website-customization-live-hero h3{font-size:24px}.website-customization-actions-bar .button{width:100%}}
+        @media(max-width:700px){.website-customization-grid,.website-customization-toggle-grid,.website-customization-live-section-grid{grid-template-columns:1fr}.website-customization-preview-stage{height:650px}.website-customization-live-hero h3{font-size:24px}.website-customization-actions-bar .button{width:100%}}
         @media(max-width:480px){.website-customization-confirm-actions{flex-direction:column-reverse}.website-customization-confirm-actions .button{width:100%}}
       `}</style>
 
@@ -263,7 +267,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
           <div ref={previewStageRef} className="website-customization-preview-stage">
             <button type="button" className="website-customization-preview-reset" onPointerDown={(event) => event.stopPropagation()} onClick={resetPreviewPosition}>Reset</button>
             <div
-              className={`website-customization-phone${previewDragRef.current.active ? ' is-dragging' : ''}`}
+              className={`website-customization-phone${previewDragging ? ' is-dragging' : ''}`}
               onPointerDown={startPreviewDrag}
               style={{
                 transform: `translate(${previewPosition.x}px, ${previewPosition.y}px)`,
