@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { supabase } from '../services/supabaseClient';
 
 type Props = {
@@ -34,6 +34,126 @@ const DEFAULT_HOURS: OperatingHours = {
   saturday: { isOpen: true, open: '09:00', close: '21:00' },
   sunday: { isOpen: true, open: '09:00', close: '21:00' },
 };
+
+function formatTimeLabel(value: string): string {
+  const [rawHour, rawMinute] = value.split(':').map(Number);
+  const period = rawHour >= 12 ? 'PM' : 'AM';
+  const hour = rawHour % 12 || 12;
+  return `${String(hour).padStart(2, '0')}:${String(rawMinute).padStart(2, '0')} ${period}`;
+}
+
+function to24Hour(hour: number, minute: number, period: 'AM' | 'PM'): string {
+  let h = hour % 12;
+  if (period === 'PM') h += 12;
+  return `${String(h).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+}
+
+type TimePickerProps = {
+  value: string;
+  disabled?: boolean;
+  label: string;
+  onChange: (value: string) => void;
+};
+
+function TimePicker({ value, disabled, label, onChange }: TimePickerProps) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handlePointerDown = (event: PointerEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [open]);
+
+  const [draftHour, draftMinute] = draft.split(':').map(Number);
+  const draftPeriod: 'AM' | 'PM' = draftHour >= 12 ? 'PM' : 'AM';
+  const displayHour = draftHour % 12 || 12;
+
+  function commit(nextHour = displayHour, nextMinute = draftMinute, nextPeriod = draftPeriod) {
+    const next = to24Hour(nextHour, nextMinute, nextPeriod);
+    setDraft(next);
+    onChange(next);
+    setOpen(false);
+  }
+
+  return (
+    <div className="restaurant-time-picker" ref={ref}>
+      <button
+        type="button"
+        className="restaurant-time-picker-trigger"
+        aria-label={label}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        disabled={disabled}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span>{formatTimeLabel(value)}</span>
+        <span className="restaurant-time-picker-icon" aria-hidden="true">◷</span>
+      </button>
+
+      {open && (
+        <div className="restaurant-time-picker-popover" role="dialog" aria-label={label}>
+          <div className="restaurant-time-picker-heading">{label}</div>
+          <div className="restaurant-time-picker-selects">
+            <select
+              aria-label="Hour"
+              value={displayHour}
+              onChange={(event) => commit(Number(event.target.value), draftMinute, draftPeriod)}
+            >
+              {Array.from({ length: 12 }, (_, index) => index + 1).map((hour) => (
+                <option key={hour} value={hour}>{String(hour).padStart(2, '0')}</option>
+              ))}
+            </select>
+            <span>:</span>
+            <select
+              aria-label="Minute"
+              value={draftMinute}
+              onChange={(event) => commit(displayHour, Number(event.target.value), draftPeriod)}
+            >
+              {Array.from({ length: 60 }, (_, minute) => minute).map((minute) => (
+                <option key={minute} value={minute}>{String(minute).padStart(2, '0')}</option>
+              ))}
+            </select>
+            <select
+              aria-label="AM or PM"
+              value={draftPeriod}
+              onChange={(event) => commit(displayHour, draftMinute, event.target.value as 'AM' | 'PM')}
+            >
+              <option value="AM">AM</option>
+              <option value="PM">PM</option>
+            </select>
+          </div>
+          <div className="restaurant-time-picker-quick">
+            {[0, 15, 30, 45].map((minute) => (
+              <button
+                key={minute}
+                type="button"
+                onClick={() => commit(displayHour, minute, draftPeriod)}
+              >
+                :{String(minute).padStart(2, '0')}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="restaurant-time-picker-done"
+            onClick={() => setOpen(false)}
+          >
+            Done
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function normalizeTimeForStorage(value: unknown, fallback: string): string {
   if (typeof value !== 'string') return fallback;
@@ -297,6 +417,18 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .restaurant-settings-day{border-top:1px solid #e5e7eb}
         .restaurant-settings-day-name{font-weight:600}
         .restaurant-settings-day input[type=time]{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:8px;padding:8px 9px;font:inherit;background:#fff}
+        .restaurant-time-picker{position:relative;width:100%}
+        .restaurant-time-picker-trigger{width:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #dbe2ea;border-radius:8px;padding:8px 10px;font:inherit;background:#fff;color:#0f172a;text-align:left;cursor:pointer}
+        .restaurant-time-picker-trigger:disabled{background:#f8fafc;color:#94a3b8;cursor:not-allowed}
+        .restaurant-time-picker-icon{font-size:18px;line-height:1}
+        .restaurant-time-picker-popover{position:absolute;z-index:30;top:calc(100% + 6px);left:0;width:260px;box-sizing:border-box;padding:12px;border:1px solid #dbe2ea;border-radius:10px;background:#fff;box-shadow:0 12px 30px rgba(15,23,42,.16)}
+        .restaurant-time-picker-heading{font-size:12px;font-weight:700;color:#64748b;margin-bottom:10px}
+        .restaurant-time-picker-selects{display:grid;grid-template-columns:1fr auto 1fr 1.1fr;align-items:center;gap:5px}
+        .restaurant-time-picker-selects select{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:7px;padding:8px 6px;font:inherit;background:#fff;color:#0f172a}
+        .restaurant-time-picker-quick{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:9px}
+        .restaurant-time-picker-quick button,.restaurant-time-picker-done{border:1px solid #dbe2ea;border-radius:7px;background:#f8fafc;color:#0f172a;padding:7px 5px;font:inherit;cursor:pointer}
+        .restaurant-time-picker-quick button:hover,.restaurant-time-picker-done:hover{background:#eef2f7}
+        .restaurant-time-picker-done{width:100%;margin-top:9px;font-weight:700}
         .restaurant-settings-day input[type=time]:disabled{background:#f8fafc;color:#94a3b8}
         .restaurant-settings-toggle{display:flex;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:600;white-space:nowrap}
         .restaurant-settings-toggle input{margin:0}
@@ -464,19 +596,17 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
               return (
                 <div className="restaurant-settings-day" key={day.key}>
                   <span className="restaurant-settings-day-name">{day.label}</span>
-                  <input
-                    aria-label={day.label + ' opening time'}
-                    type="time"
+                  <TimePicker
+                    label={day.label + ' opening time'}
                     value={value.open}
                     disabled={!value.isOpen || loading || saving}
-                    onChange={(event) => updateDay(day.key, { open: event.target.value })}
+                    onChange={(next) => updateDay(day.key, { open: next })}
                   />
-                  <input
-                    aria-label={day.label + ' closing time'}
-                    type="time"
+                  <TimePicker
+                    label={day.label + ' closing time'}
                     value={value.close}
                     disabled={!value.isOpen || loading || saving}
-                    onChange={(event) => updateDay(day.key, { close: event.target.value })}
+                    onChange={(next) => updateDay(day.key, { close: next })}
                   />
                   <label className="restaurant-settings-toggle">
                     <input
