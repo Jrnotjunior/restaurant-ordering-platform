@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { supabase } from '../services/supabaseClient';
+import { useRestaurant } from './RestaurantProvider';
 
 export type RestaurantNavigationRole = 'owner' | 'cashier' | 'kitchen' | 'dispatcher' | 'rider';
 
@@ -104,6 +105,33 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
   const [passwordError, setPasswordError] = useState('');
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [logoutSaving, setLogoutSaving] = useState(false);
+  const restaurant = useRestaurant();
+  const [ownerModules, setOwnerModules] = useState<Record<string, boolean>>({});
+  const [modulesLoading, setModulesLoading] = useState(role === 'owner');
+
+  useEffect(() => {
+    if (!supabase || role !== 'owner') {
+      setModulesLoading(false);
+      return;
+    }
+
+    let mounted = true;
+    void supabase.rpc('restaurant_get_my_modules', { p_restaurant_id: restaurant.id }).then(({ data, error }) => {
+      if (!mounted) return;
+      if (error) {
+        console.error('Unable to load restaurant package modules.', error);
+        setOwnerModules({});
+      } else {
+        const modules = Array.isArray(data) ? data as Array<{ module_key: string; enabled: boolean }> : [];
+        setOwnerModules(Object.fromEntries(modules.map((module) => [module.module_key, module.enabled])));
+      }
+      setModulesLoading(false);
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, [role, restaurant.id]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -162,6 +190,30 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
           </a>
           <nav className="restaurant-owner-sidebar-nav">
             {ownerNavigationItems.map((item) => {
+              const requiredModules =
+                item.href === '#restaurant/orders'
+                  ? ['self_ordering', 'dispatch_delivery']
+                  : item.href === '#restaurant/menu'
+                    ? ['self_ordering', 'pos']
+                    : item.href === '#restaurant/delivery-dispatch' || item.href === '#restaurant/shipping-fee'
+                      ? ['dispatch_delivery']
+                      : item.href === '#restaurant/sales'
+                        ? ['sales']
+                        : item.href === '#restaurant/loyalty'
+                          ? ['loyalty']
+                          : item.href === '#restaurant/website-customization'
+                            ? ['website']
+                            : [];
+
+              const shouldShow =
+                item.href === '#restaurant/owner' ||
+                item.href === '#restaurant/employees' ||
+                item.href === '#restaurant/settings' ||
+                requiredModules.length === 0 ||
+                requiredModules.some((moduleKey) => ownerModules[moduleKey] === true);
+
+              if (modulesLoading || !shouldShow) return null;
+
               const active = currentRoute === item.href;
               return (
                 <a key={item.href} className={active ? 'is-active' : ''} href={item.href} aria-current={active ? 'page' : undefined}>
