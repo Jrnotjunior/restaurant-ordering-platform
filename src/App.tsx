@@ -91,7 +91,8 @@ function RestaurantModuleGuard({
     let mounted = true;
 
     async function checkModuleAccess() {
-      if (!supabase) {
+      const client = supabase;
+      if (!client) {
         if (mounted) {
           setAllowed(false);
           setChecking(false);
@@ -101,7 +102,7 @@ function RestaurantModuleGuard({
 
       const checks = await Promise.all(
         anyOf.map(async (moduleKey) => {
-          const { data, error } = await supabase.rpc('restaurant_has_module', {
+          const { data, error } = await client.rpc('restaurant_has_module', {
             p_restaurant_id: restaurantId,
             p_module_key: moduleKey,
           });
@@ -668,8 +669,8 @@ function AppContent() {
   if (isRiderInvitePage) return <RiderInvitePage />;
   if (isSignUpPage) return <CustomerSignUpPage />;
   if (isPrivacyPage) return <PrivacyNoticePage />;
-  if (route === '#saved-address') return <PublicCustomerRouteGuard><RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}><SavedAddressPage /></RestaurantLayout></ThemeProvider></RestaurantProvider></PublicCustomerRouteGuard>;
-  if (route === '#order-history') return <PublicCustomerRouteGuard><RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}><CustomerOrderHistoryPage /></RestaurantLayout></ThemeProvider></RestaurantProvider></PublicCustomerRouteGuard>;
+  if (route === '#saved-address') return <PublicCustomerRouteGuard restaurantId={restaurant.id!}><RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}><SavedAddressPage /></RestaurantLayout></ThemeProvider></RestaurantProvider></PublicCustomerRouteGuard>;
+  if (route === '#order-history') return <PublicCustomerRouteGuard restaurantId={restaurant.id!}><RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}><CustomerOrderHistoryPage /></RestaurantLayout></ThemeProvider></RestaurantProvider></PublicCustomerRouteGuard>;
   if (isAccountPage) return <RestaurantOwnerLoginPage />;
   if (isRiderDashboardPage) return <RiderRouteGuard><RiderDashboardPage /></RiderRouteGuard>;
   if (riderDeliveryMatch) return <RiderRouteGuard><RiderDeliveryPage orderId={decodeURIComponent(riderDeliveryMatch[1])} /></RiderRouteGuard>;
