@@ -61,12 +61,41 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
 
     let authListener: { subscription: { unsubscribe: () => void } } | null = null;
 
-    // Wait for Supabase Auth to finish its initial session recovery before
-    // registering the auth listener. Registering the listener during auth
-    // initialization can race with token refresh on page reload and leave
-    // the app stuck on the authentication loading screen.
+    // Handle Supabase invitation/auth callbacks before checking the current user.
+    // Depending on the Supabase auth flow, the redirect can contain either a
+    // PKCE code or an invitation token hash. Explicitly exchanging/verifying
+    // these values makes tenant invitation onboarding reliable.
     const initializeAuth = async () => {
       try {
+        if (typeof window !== 'undefined') {
+          const url = new URL(window.location.href);
+          const code = url.searchParams.get('code');
+          const tokenHash = url.searchParams.get('token_hash');
+          const type = url.searchParams.get('type');
+
+          if (code) {
+            const { error: exchangeError } = await client.auth.exchangeCodeForSession(code);
+            if (exchangeError) {
+              console.error('Tenant invitation code exchange failed', exchangeError);
+            } else {
+              url.searchParams.delete('code');
+              window.history.replaceState({}, document.title, url.toString());
+            }
+          } else if (tokenHash && type === 'invite') {
+            const { error: verifyError } = await client.auth.verifyOtp({
+              token_hash: tokenHash,
+              type: 'invite',
+            });
+            if (verifyError) {
+              console.error('Tenant invitation token verification failed', verifyError);
+            } else {
+              url.searchParams.delete('token_hash');
+              url.searchParams.delete('type');
+              window.history.replaceState({}, document.title, url.toString());
+            }
+          }
+        }
+
         const { data, error: userError } = await client.auth.getUser();
 
         if (!mounted) return;
