@@ -5,8 +5,30 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undef
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
+function getRestaurantContextHeaders(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+
+  const hostname = window.location.hostname.trim().toLowerCase();
+  const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+  const headers: Record<string, string> = {};
+
+  if (!isLocalHost && hostname) {
+    headers['x-restaurant-domain'] = hostname;
+  }
+
+  const configuredSlug = String(import.meta.env.VITE_RESTAURANT_SLUG ?? '').trim();
+  if (configuredSlug) {
+    headers['x-restaurant-slug'] = configuredSlug;
+  }
+
+  return headers;
+}
+
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl!, supabaseAnonKey!, {
+      global: {
+        headers: getRestaurantContextHeaders(),
+      },
       realtime: {
         params: {
           eventsPerSecond: 10,
@@ -31,6 +53,7 @@ export async function supabaseGet<T>(path: string, params: Record<string, string
   const response = await fetch(`${supabaseUrl}/rest/v1/${path}?${searchParams.toString()}`, {
     headers: {
       apikey: supabaseAnonKey,
+      ...getRestaurantContextHeaders(),
       Accept: 'application/json',
       ...(await getAuthorizationHeaders()),
     }
@@ -65,6 +88,7 @@ export async function supabaseRpc<T>(functionName: string, body: Record<string, 
     method: 'POST',
     headers: {
       apikey: supabaseAnonKey,
+      ...getRestaurantContextHeaders(),
       ...(await getAuthorizationHeaders()),
       Accept: 'application/json',
       'Content-Type': 'application/json'
