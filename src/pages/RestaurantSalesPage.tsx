@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
-import { getRestaurantOrders, type RestaurantOrder } from '../services/restaurantOrderRepository';
+import { getRestaurantOrders, getRestaurantSales, type RestaurantOrder } from '../services/restaurantOrderRepository';
 import { supabase } from '../services/supabaseClient';
 
 type Props = { restaurantId: string; role?: 'owner' | 'cashier' };
@@ -10,6 +10,9 @@ type DailySales = {
   dateLabel: string;
   orders: RestaurantOrder[];
   total: number;
+  paymongoFees: number;
+  netAfterPaymongoFees: number;
+  recordedPaymongoFees: number;
 };
 
 function localDateKey(dateString: string) {
@@ -46,7 +49,9 @@ export function RestaurantSalesPage({ restaurantId, role = 'owner' }: Props) {
   async function loadOrders() {
     try {
       setError('');
-      setOrders(await getRestaurantOrders(restaurantId));
+      setOrders(role === 'owner'
+        ? await getRestaurantSales(restaurantId)
+        : await getRestaurantOrders(restaurantId));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to load sales.');
     } finally {
@@ -95,6 +100,12 @@ export function RestaurantSalesPage({ restaurantId, role = 'owner' }: Props) {
         dateLabel: formatDateLabel(dateKey),
         orders: dayOrders,
         total: dayOrders.reduce((sum, order) => sum + order.total, 0),
+        paymongoFees: dayOrders.reduce((sum, order) => sum + (order.paymongoFee ?? 0), 0),
+        netAfterPaymongoFees: dayOrders.reduce(
+          (sum, order) => sum + order.total - (order.paymongoFee ?? 0),
+          0,
+        ),
+        recordedPaymongoFees: dayOrders.filter((order) => order.paymongoFee != null).length,
       }))
       .sort((a, b) => b.dateKey.localeCompare(a.dateKey));
   }, [completedOrders]);
@@ -107,6 +118,17 @@ export function RestaurantSalesPage({ restaurantId, role = 'owner' }: Props) {
       day.dateLabel.toLowerCase().includes(query) || day.dateKey.includes(query),
     );
   }, [dailySales, searchDate]);
+
+  const salesSummary = useMemo(() => ({
+    total: completedOrders.reduce((sum, order) => sum + order.total, 0),
+    paymongoFees: completedOrders.reduce((sum, order) => sum + (order.paymongoFee ?? 0), 0),
+    netAfterPaymongoFees: completedOrders.reduce(
+      (sum, order) => sum + order.total - (order.paymongoFee ?? 0),
+      0,
+    ),
+    recordedPaymongoFees: completedOrders.filter((order) => order.paymongoFee != null).length,
+    onlineOrders: completedOrders.filter((order) => order.paymentMethod === 'gcash').length,
+  }), [completedOrders]);
 
   const selectedDay = useMemo(
     () => dailySales.find((day) => day.dateKey === selectedDateKey) ?? null,
@@ -129,6 +151,9 @@ export function RestaurantSalesPage({ restaurantId, role = 'owner' }: Props) {
       Payment: paymentLabel(order),
       'Shipping Fee': order.shippingFee,
       'Order Total': order.total,
+      'PayMongo Payment Method': order.paymongoPaymentMethod ?? '',
+      'PayMongo Fee': order.paymongoFee ?? '',
+      'Net After PayMongo Fee': order.paymongoFee == null ? '' : order.total - order.paymongoFee,
     }));
 
     const workbook = XLSX.utils.book_new();
@@ -136,6 +161,9 @@ export function RestaurantSalesPage({ restaurantId, role = 'owner' }: Props) {
       ['Daily Sales Report'],
       ['Date', day.dateLabel],
       ['Total Sales', day.total],
+      ['PayMongo Fees', day.paymongoFees],
+      ['Net After PayMongo Fees', day.netAfterPaymongoFees],
+      ['PayMongo Fees Recorded', day.recordedPaymongoFees],
       ['Completed Orders', day.orders.length],
       [],
     ]);
@@ -172,6 +200,27 @@ export function RestaurantSalesPage({ restaurantId, role = 'owner' }: Props) {
         </div>
 
         {error && <div className="restaurant-sales-error" role="alert">{error}</div>}
+
+        {!loading && dailySales.length > 0 && role === 'owner' && (
+          <div className="restaurant-sales-summary" aria-label="Sales summary">
+            <div className="restaurant-sales-summary-item">
+              <small>Total sales</small>
+              <strong>₱ {salesSummary.total.toFixed(2)}</strong>
+            </div>
+            <div className="restaurant-sales-summary-item">
+              <small>PayMongo fees</small>
+              <strong>₱ {salesSummary.paymongoFees.toFixed(2)}</strong>
+            </div>
+            <div className="restaurant-sales-summary-item">
+              <small>Net after PayMongo fees</small>
+              <strong>₱ {salesSummary.netAfterPaymongoFees.toFixed(2)}</strong>
+            </div>
+            <div className="restaurant-sales-summary-item">
+              <small>Online orders</small>
+              <strong>{salesSummary.onlineOrders}</strong>
+            </div>
+          </div>
+        )}
 
         {loading ? (
           <div className="restaurant-sales-empty">Loading sales…</div>
@@ -221,6 +270,18 @@ export function RestaurantSalesPage({ restaurantId, role = 'owner' }: Props) {
                         <small>Total sales</small>
                         <strong>₱ {day.total.toFixed(2)}</strong>
                       </span>
+                      {role === 'owner' && (
+                        <span>
+                          <small>PayMongo fees</small>
+                          <strong>₱ {day.paymongoFees.toFixed(2)}</strong>
+                        </span>
+                      )}
+                      {role === 'owner' && (
+                        <span>
+                          <small>Net after fees</small>
+                          <strong>₱ {day.netAfterPaymongoFees.toFixed(2)}</strong>
+                        </span>
+                      )}
                       <span>
                         <small>Completed orders</small>
                         <strong>{day.orders.length}</strong>
@@ -262,8 +323,26 @@ export function RestaurantSalesPage({ restaurantId, role = 'owner' }: Props) {
                 </button>
               </div>
 
+              <div className="restaurant-sales-modal-financials">
+                <div>
+                  <small>Total sales</small>
+                  <strong>₱ {selectedDay.total.toFixed(2)}</strong>
+                </div>
+                <div>
+                  <small>PayMongo fees</small>
+                  <strong>₱ {selectedDay.paymongoFees.toFixed(2)}</strong>
+                </div>
+                <div>
+                  <small>Net after fees</small>
+                  <strong>₱ {selectedDay.netAfterPaymongoFees.toFixed(2)}</strong>
+                </div>
+              </div>
+
               <p className="restaurant-sales-modal-description">
-                Save the completed sales for this date as an Excel spreadsheet.
+                PayMongo fees are the actual processing fees returned by PayMongo for recorded online payments.
+                {selectedDay.recordedPaymongoFees < selectedDay.orders.filter((order) => order.paymentMethod === 'gcash').length
+                  ? ' Some older online orders do not have a recorded fee and are not deducted from the net figure.'
+                  : ''}
               </p>
 
               <button
