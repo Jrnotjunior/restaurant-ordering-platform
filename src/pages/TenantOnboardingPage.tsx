@@ -36,11 +36,14 @@ export function TenantOnboardingPage() {
 
     let cancelled = false;
 
+    const currentUser = user;
+    const client = supabase;
+
     async function loadInvitation() {
       setLoading(true);
       setError('');
 
-      const { data, error: invitationError } = await supabase!.rpc(
+      const { data, error: invitationError } = await client.rpc(
         'get_my_pending_tenant_invitation',
       );
 
@@ -54,7 +57,7 @@ export function TenantOnboardingPage() {
 
       const row = Array.isArray(data) ? data[0] : data;
       setInvitation(row ?? null);
-      setRestaurantEmail(user.email ?? '');
+      setRestaurantEmail(currentUser.email ?? '');
       setLoading(false);
     }
 
