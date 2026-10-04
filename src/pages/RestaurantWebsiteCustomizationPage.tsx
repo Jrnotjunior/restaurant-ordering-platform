@@ -242,91 +242,90 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
           </button>
         </div>
 
-
-          {showLivePreview ? (
-        <div className="website-customization-preview-modal" role="dialog" aria-modal="true" aria-label="Live website preview">
-          <div className="website-customization-preview-modal-backdrop" onPointerDown={() => setShowLivePreview(false)} />
-          <div className="website-customization-preview-modal-panel">
-            <div className="website-customization-preview-modal-header">
-              <div>
-                <h2>Live Preview</h2>
-                <p>Drag the phone anywhere in this preview.</p>
-              </div>
-              <div className="website-customization-preview-modal-actions">
-                <button type="button" className="website-customization-preview-reset" onClick={resetPreviewPosition}>Reset</button>
-                <button type="button" className="website-customization-preview-close" onClick={() => setShowLivePreview(false)} aria-label="Close preview">×</button>
-              </div>
-            </div>
-            <div>
-              <h2>Live Preview</h2>
-              <p className="website-customization-help">See how the customer website changes as you customize it. Preview updates are local until you save.</p>
-            </div>
-            <span className="website-customization-preview-badge">Live</span>
-          </div>
-          <div ref={previewStageRef} className="website-customization-preview-stage">
-            <button type="button" className="website-customization-preview-reset" onPointerDown={(event) => event.stopPropagation()} onClick={resetPreviewPosition}>Reset</button>
-            <div
-              className={`website-customization-phone${previewDragging ? ' is-dragging' : ''}`}
-              onPointerDown={startPreviewDrag}
-              style={{
-                transform: `translate(${previewPosition.x}px, ${previewPosition.y}px)`,
-              }}
-            >
-              <div
-                className="website-customization-phone-screen"
-                style={{
-              background: websiteTheme.colors.background,
-              color: websiteTheme.colors.text,
-              borderColor: websiteTheme.colors.border,
-              borderRadius: websiteTheme.borderRadius === 'large' ? 18 : websiteTheme.borderRadius === 'small' ? 8 : 12,
-              fontFamily: websiteTheme.fontBody
-            }}
-          >
-            <div className="website-customization-live-nav" style={{ borderBottomColor: websiteTheme.colors.border }}>
-              <div className="website-customization-live-brand">
-                {logoUrl ? <img src={logoUrl} alt="" /> : <span className="website-customization-live-logo-fallback" style={{ background: websiteTheme.colors.primary, color: websiteTheme.colors.primaryText }}>🍴</span>}
-                <strong style={{ fontFamily: websiteTheme.fontHeading }}>{restaurantName}</strong>
-              </div>
-              <span style={{ color: websiteTheme.colors.muted }}>Menu</span>
-            </div>
-            {storefront.hero.enabled ? (
-              <div
-                className="website-customization-live-hero"
-                style={{
-                  backgroundColor: websiteTheme.colors.surface,
-                  backgroundImage: storefront.hero.imageUrl ? `linear-gradient(rgba(0,0,0,.38),rgba(0,0,0,.38)), url("${storefront.hero.imageUrl}")` : undefined,
-                  color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.text,
-                  borderColor: websiteTheme.colors.border,
-                  borderRadius: websiteTheme.borderRadius === 'large' ? 16 : websiteTheme.borderRadius === 'small' ? 8 : 12
-                }}
-              >
-                {storefront.hero.eyebrow ? <span className="website-customization-live-eyebrow" style={{ color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.primary }}>{storefront.hero.eyebrow}</span> : null}
-                <h3 style={{ fontFamily: websiteTheme.fontHeading }}>{storefront.hero.title || restaurantName}</h3>
-                {storefront.hero.description ? <p>{storefront.hero.description}</p> : null}
-                <div className="website-customization-live-buttons">
-                  {storefront.hero.primaryButtonLabel ? <span style={{ background: websiteTheme.buttonStyle === 'soft' ? websiteTheme.colors.secondary : websiteTheme.buttonStyle === 'outline' ? 'transparent' : websiteTheme.colors.primary, color: websiteTheme.buttonStyle === 'soft' ? websiteTheme.colors.secondaryText : websiteTheme.buttonStyle === 'outline' ? websiteTheme.colors.primary : websiteTheme.colors.primaryText, borderColor: websiteTheme.colors.primary }}>{storefront.hero.primaryButtonLabel}</span> : null}
-                  {storefront.hero.secondaryButtonLabel ? <span style={{ background: 'transparent', color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.text, borderColor: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.border }}>{storefront.hero.secondaryButtonLabel}</span> : null}
+        {showLivePreview ? (
+          <div className="website-customization-preview-modal" role="dialog" aria-modal="true" aria-label="Live website preview">
+            <button type="button" className="website-customization-preview-modal-backdrop" onClick={() => setShowLivePreview(false)} aria-label="Close live preview" />
+            <div className="website-customization-preview-modal-panel">
+              <div className="website-customization-preview-modal-header">
+                <div>
+                  <h2>Live Preview</h2>
+                  <p>Drag the phone anywhere in this preview.</p>
+                </div>
+                <div className="website-customization-preview-modal-actions">
+                  <button type="button" className="website-customization-preview-reset" onClick={resetPreviewPosition}>Reset</button>
+                  <button type="button" className="website-customization-preview-close" onClick={() => setShowLivePreview(false)} aria-label="Close preview">×</button>
                 </div>
               </div>
-            ) : (
-              <div className="website-customization-live-disabled" style={{ background: websiteTheme.colors.surface, borderColor: websiteTheme.colors.border, color: websiteTheme.colors.muted }}>Homepage hero is hidden.</div>
-            )}
-            {storefront.sections.categories ? <div className="website-customization-live-section"><strong>Menu categories</strong><span style={{ color: websiteTheme.colors.muted }}>Featured menu categories</span></div> : null}
-            <div className="website-customization-live-section-grid">
-              {storefront.sections.about ? <div><strong>About</strong><span style={{ color: websiteTheme.colors.muted }}>About your restaurant</span></div> : null}
-              {storefront.sections.location ? <div><strong>Location</strong><span style={{ color: websiteTheme.colors.muted }}>Restaurant location</span></div> : null}
-              {storefront.sections.hours ? <div><strong>Hours</strong><span style={{ color: websiteTheme.colors.muted }}>Operating hours</span></div> : null}
-              {storefront.sections.contact ? <div><strong>Contact</strong><span style={{ color: websiteTheme.colors.muted }}>Contact information</span></div> : null}
-              {storefront.sections.social ? <div><strong>Social</strong><span style={{ color: websiteTheme.colors.muted }}>Social links</span></div> : null}
-            </div>
-                {storefront.footer.enabled ? (
-                  <div className="website-customization-live-footer" style={{ borderTopColor: websiteTheme.colors.border, color: websiteTheme.colors.muted }}>
-                    {storefront.footer.text || `© ${new Date().getFullYear()} ${restaurantName}. All rights reserved.`}
+
+              <div ref={previewStageRef} className="website-customization-preview-stage">
+                <div
+                  className={`website-customization-phone${previewDragging ? ' is-dragging' : ''}`}
+                  onPointerDown={startPreviewDrag}
+                  style={{ transform: `translate(${previewPosition.x}px, ${previewPosition.y}px)` }}
+                >
+                  <div
+                    className="website-customization-phone-screen"
+                    style={{
+                      background: websiteTheme.colors.background,
+                      color: websiteTheme.colors.text,
+                      borderColor: websiteTheme.colors.border,
+                      borderRadius: websiteTheme.borderRadius === 'large' ? 18 : websiteTheme.borderRadius === 'small' ? 8 : 12,
+                      fontFamily: websiteTheme.fontBody
+                    }}
+                  >
+                    <div className="website-customization-live-nav" style={{ borderBottomColor: websiteTheme.colors.border }}>
+                      <div className="website-customization-live-brand">
+                        {logoUrl ? <img src={logoUrl} alt="" /> : <span className="website-customization-live-logo-fallback" style={{ background: websiteTheme.colors.primary, color: websiteTheme.colors.primaryText }}>🍴</span>}
+                        <strong style={{ fontFamily: websiteTheme.fontHeading }}>{restaurantName}</strong>
+                      </div>
+                      <span style={{ color: websiteTheme.colors.muted }}>Menu</span>
+                    </div>
+
+                    {storefront.hero.enabled ? (
+                      <div
+                        className="website-customization-live-hero"
+                        style={{
+                          backgroundColor: websiteTheme.colors.surface,
+                          backgroundImage: storefront.hero.imageUrl ? `linear-gradient(rgba(0,0,0,.38),rgba(0,0,0,.38)), url("${storefront.hero.imageUrl}")` : undefined,
+                          color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.text,
+                          borderColor: websiteTheme.colors.border,
+                          borderRadius: websiteTheme.borderRadius === 'large' ? 16 : websiteTheme.borderRadius === 'small' ? 8 : 12
+                        }}
+                      >
+                        {storefront.hero.eyebrow ? <span className="website-customization-live-eyebrow" style={{ color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.primary }}>{storefront.hero.eyebrow}</span> : null}
+                        <h3 style={{ fontFamily: websiteTheme.fontHeading }}>{storefront.hero.title || restaurantName}</h3>
+                        {storefront.hero.description ? <p>{storefront.hero.description}</p> : null}
+                        <div className="website-customization-live-buttons">
+                          {storefront.hero.primaryButtonLabel ? <span style={{ background: websiteTheme.buttonStyle === 'soft' ? websiteTheme.colors.secondary : websiteTheme.buttonStyle === 'outline' ? 'transparent' : websiteTheme.colors.primary, color: websiteTheme.buttonStyle === 'soft' ? websiteTheme.colors.secondaryText : websiteTheme.buttonStyle === 'outline' ? websiteTheme.colors.primary : websiteTheme.colors.primaryText, borderColor: websiteTheme.colors.primary }}>{storefront.hero.primaryButtonLabel}</span> : null}
+                          {storefront.hero.secondaryButtonLabel ? <span style={{ background: 'transparent', color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.text, borderColor: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.border }}>{storefront.hero.secondaryButtonLabel}</span> : null}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="website-customization-live-disabled" style={{ background: websiteTheme.colors.surface, borderColor: websiteTheme.colors.border, color: websiteTheme.colors.muted }}>Homepage hero is hidden.</div>
+                    )}
+
+                    {storefront.sections.categories ? <div className="website-customization-live-section"><strong>Menu categories</strong><span style={{ color: websiteTheme.colors.muted }}>Featured menu categories</span></div> : null}
+
+                    <div className="website-customization-live-section-grid">
+                      {storefront.sections.about ? <div><strong>About</strong><span style={{ color: websiteTheme.colors.muted }}>About your restaurant</span></div> : null}
+                      {storefront.sections.location ? <div><strong>Location</strong><span style={{ color: websiteTheme.colors.muted }}>Restaurant location</span></div> : null}
+                      {storefront.sections.hours ? <div><strong>Hours</strong><span style={{ color: websiteTheme.colors.muted }}>Operating hours</span></div> : null}
+                      {storefront.sections.contact ? <div><strong>Contact</strong><span style={{ color: websiteTheme.colors.muted }}>Contact information</span></div> : null}
+                      {storefront.sections.social ? <div><strong>Social</strong><span style={{ color: websiteTheme.colors.muted }}>Social links</span></div> : null}
+                    </div>
+
+                    {storefront.footer.enabled ? (
+                      <div className="website-customization-live-footer" style={{ borderTopColor: websiteTheme.colors.border, color: websiteTheme.colors.muted }}>
+                        {storefront.footer.text || `© ${new Date().getFullYear()} ${restaurantName}. All rights reserved.`}
+                      </div>
+                    ) : null}
                   </div>
-                ) : null}
+                </div>
               </div>
             </div>
           </div>
+        ) : null}
+
         <div className="website-customization-card">
           <h2>Branding</h2>
           <p className="website-customization-help">Upload the logo customers will see on the restaurant website. PNG, JPG, or WebP up to 2 MB.</p>
