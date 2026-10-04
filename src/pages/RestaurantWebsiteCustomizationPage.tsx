@@ -80,9 +80,18 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
     const handlePointerMove = (event: PointerEvent) => {
       const drag = previewDragRef.current;
       if (!drag.active) return;
+      const stage = previewStageRef.current;
+      if (!stage) return;
+      const rect = stage.getBoundingClientRect();
+      const phoneWidth = 375;
+      const phoneHeight = 760;
+      const maxX = Math.max(0, (rect.width - phoneWidth) / 2);
+      const maxY = Math.max(0, (rect.height - phoneHeight) / 2);
+      const nextX = drag.originX + event.clientX - drag.startX;
+      const nextY = drag.originY + event.clientY - drag.startY;
       setPreviewPosition({
-        x: drag.originX + event.clientX - drag.startX,
-        y: drag.originY + event.clientY - drag.startY
+        x: Math.max(-maxX, Math.min(maxX, nextX)),
+        y: Math.max(-maxY, Math.min(maxY, nextY))
       });
     };
     const handlePointerUp = () => {
@@ -189,7 +198,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-preview-launch-card{display:flex;align-items:center;justify-content:space-between;gap:20px}
         .website-customization-preview-launch-card h2{margin:0 0 6px}
         .website-customization-preview-modal{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
-        .website-customization-preview-modal-backdrop{position:absolute;inset:0;background:rgba(15,23,42,.62);backdrop-filter:blur(3px)}
+        .website-customization-preview-modal-backdrop{position:absolute;inset:0;width:100%;height:100%;padding:0;border:0;background:rgba(15,23,42,.62);backdrop-filter:blur(3px);cursor:default}
         .website-customization-preview-modal-panel{position:relative;z-index:1;width:min(1100px,calc(100vw - 40px));height:min(900px,calc(100vh - 40px));display:flex;flex-direction:column;overflow:hidden;border:1px solid #dbe2ea;border-radius:18px;background:#fff;box-shadow:0 28px 90px rgba(15,23,42,.35)}
         .website-customization-preview-modal-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px;border-bottom:1px solid #e2e8f0;background:#fff}
         .website-customization-preview-modal-header h2{margin:0 0 3px;color:#0f172a;font-size:18px}
