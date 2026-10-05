@@ -75,7 +75,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const [redeemPoints, setRedeemPoints] = useState(false);
   const [loyaltyLoading, setLoyaltyLoading] = useState(false);
   const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
-  const restaurantId = items[0]?.product.restaurantId ?? '';
+  const restaurantId = restaurant.id;
 
   useEffect(() => {
     if (!supabase || !restaurantId) return;
@@ -278,15 +278,18 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
   const subtotal = useMemo(() => items.reduce((total, item) => total + item.product.price * item.quantity, 0), [items]);
   const selectedDeliveryZone = useMemo(() => {
-    if (!cityIsSupported || thirdPartyCourierDelivery) return null;
+    if (thirdPartyCourierDelivery) return null;
+    const city = normalize(deliveryCity);
     const value = normalize(deliveryBarangay);
-    return value ? deliveryZones.find((zone) => normalize(zone.city) === normalize(deliveryCity) && normalize(zone.barangay) === value) ?? null : null;
-  }, [cityIsSupported, deliveryZones, deliveryBarangay, thirdPartyCourierDelivery]);
+    if (!city || !value) return null;
+    return deliveryZones.find((zone) => normalize(zone.city) === city && normalize(zone.barangay) === value) ?? null;
+  }, [deliveryZones, deliveryCity, deliveryBarangay, thirdPartyCourierDelivery]);
   const suggestions = useMemo(() => {
+    const city = normalize(deliveryCity);
     const value = normalize(deliveryBarangay);
-    if (!cityIsSupported || thirdPartyCourierDelivery || !value || selectedDeliveryZone) return [];
-    return deliveryZones.filter((zone) => normalize(zone.city) === normalize(deliveryCity) && normalize(zone.barangay).startsWith(value)).slice(0, 6);
-  }, [cityIsSupported, deliveryZones, deliveryBarangay, selectedDeliveryZone, thirdPartyCourierDelivery]);
+    if (!city || thirdPartyCourierDelivery || !value || selectedDeliveryZone) return [];
+    return deliveryZones.filter((zone) => normalize(zone.city) === city && normalize(zone.barangay).startsWith(value)).slice(0, 6);
+  }, [deliveryZones, deliveryCity, deliveryBarangay, selectedDeliveryZone, thirdPartyCourierDelivery]);
   const deliveryFee = isDelivery && !thirdPartyCourierDelivery ? Number(selectedDeliveryZone?.shippingFee ?? 0) : 0;
   const loyaltyEligible = Boolean(user && loyaltySettings?.enabled && loyaltyPoints >= (loyaltySettings?.pointsRequired ?? Number.MAX_SAFE_INTEGER));
   const loyaltyDiscountPreview = loyaltyEligible && redeemPoints
@@ -533,7 +536,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
               {!thirdPartyCourierDelivery && <div className="delivery-field-group"><label htmlFor="delivery-barangay">Barangay</label><div className="barangay-input-wrap"><input id="delivery-barangay" type="text" value={deliveryBarangay} onChange={(e) => { setDeliveryBarangay(e.target.value); resetPayment(); }} placeholder={loadingDeliveryZones ? 'Loading delivery areas…' : deliveryCity.trim() ? 'Enter your barangay' : 'Enter your city first'} disabled={!deliveryCity.trim()} required />{suggestions.length > 0 && <div className="barangay-suggestions" role="listbox">{suggestions.map((zone) => <button className="barangay-suggestion" key={zone.id} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { setDeliveryBarangay(zone.barangay); resetPayment(); }}><span>{zone.barangay}</span><small>{zone.isSupported ? `₱${zone.shippingFee.toFixed(2)} delivery fee` : 'Outside delivery area'}</small></button>)}</div>}</div></div>}
               {cityIsSupported && deliveryBarangay.trim() && <label><span>Unit/Bldg./Street Address</span><textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Enter your unit, building, house number, and street" rows={4} required /></label>}
             </div>}
-            {!thirdPartyCourierDelivery && deliveryCity.trim() && !cityIsSupported && <p className="checkout-error" role="alert">{outsideDeliveryAreaMessage}</p>}
+            {!thirdPartyCourierDelivery && !loadingDeliveryZones && !deliveryZonesError && deliveryCity.trim() && deliveryBarangay.trim() && !selectedDeliveryZone && <p className="checkout-error" role="alert">{outsideDeliveryAreaMessage}</p>}
             {!thirdPartyCourierDelivery && loadingDeliveryZones && <p className="checkout-hint">Loading delivery areas…</p>}
             {!thirdPartyCourierDelivery && cityIsSupported && deliveryBarangay.trim() && !selectedDeliveryZone && <p className="checkout-error" role="alert">{outsideDeliveryAreaMessage}</p>}
             {!thirdPartyCourierDelivery && cityIsSupported && selectedDeliveryZone && !selectedDeliveryZone.isSupported && <div className="checkout-outside-scope-card"><p className="checkout-error" role="alert">{selectedDeliveryZone.outOfScopeMessage || outsideDeliveryAreaMessage}</p><button className="button button-secondary" type="button" onClick={openThirdPartyCourierTerms}>Use my own courier instead</button></div>}
