@@ -15,10 +15,11 @@ type CartItem = { product: RestaurantProduct; quantity: number };
 type OrderType = 'delivery' | 'pickup' | 'dine_in';
 type PaymentMethod = 'cash' | 'online';
 type CheckoutPageProps = { items: CartItem[] };
-type ConfirmedOrder = { orderNumber: string; paymentMethod: PaymentMethod; orderType: OrderType; total: number };
+type ConfirmedOrder = { orderNumber: string; paymentMethod: PaymentMethod; orderType: OrderType; pickupMethod?: 'customer' | 'third_party_courier'; total: number };
 const PENDING_PAYMENT_CHECKOUT_URL_KEY = 'restaurant-ordering-pending-payment-checkout-url';
 const ACTIVE_ORDER_KEY = 'restaurant-ordering-active-order';
 const PENDING_PAYMENT_REFERENCE_KEY = 'restaurant-ordering-pending-payment-reference';
+const PENDING_PAYMENT_PICKUP_METHOD_KEY = 'restaurant-ordering-pending-payment-pickup-method';
 
 const orderTypes: Array<{ value: OrderType; label: string; description: string }> = [
   { value: 'delivery', label: 'Delivery', description: 'Have the restaurant deliver your order.' },
@@ -117,13 +118,16 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             window.localStorage.removeItem(PENDING_PAYMENT_REFERENCE_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_CHECKOUT_URL_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_ORDER_KEY);
+            const pickupMethod = window.localStorage.getItem(PENDING_PAYMENT_PICKUP_METHOD_KEY);
+            window.localStorage.removeItem(PENDING_PAYMENT_PICKUP_METHOD_KEY);
             window.localStorage.setItem(ACTIVE_ORDER_KEY, result.orderNumber);
             window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
             window.dispatchEvent(new Event(CART_CLEAR_EVENT));
             setConfirmedOrder({
               orderNumber: result.orderNumber,
               paymentMethod: 'online',
-              orderType: isDelivery && thirdPartyCourierDelivery ? 'pickup' : orderType,
+              orderType: pickupMethod === 'third_party_courier' ? 'pickup' : orderType,
+              pickupMethod: pickupMethod === 'third_party_courier' ? 'third_party_courier' : undefined,
               total: result.total,
             });
           }
@@ -148,6 +152,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             window.localStorage.removeItem(PENDING_PAYMENT_REFERENCE_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_CHECKOUT_URL_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_ORDER_KEY);
+            window.localStorage.removeItem(PENDING_PAYMENT_PICKUP_METHOD_KEY);
             window.history.replaceState({}, '', window.location.pathname + window.location.hash);
             if (!cancelled) {
               setPaymentProcessing(false);
@@ -167,6 +172,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             window.localStorage.removeItem(PENDING_PAYMENT_REFERENCE_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_CHECKOUT_URL_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_ORDER_KEY);
+            window.localStorage.removeItem(PENDING_PAYMENT_PICKUP_METHOD_KEY);
             window.history.replaceState({}, '', window.location.pathname + window.location.hash);
             window.dispatchEvent(new Event(CART_CLEAR_EVENT));
             if (!cancelled) {
@@ -176,7 +182,8 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             setConfirmedOrder({
                 orderNumber: result.orderNumber,
                 paymentMethod: 'online',
-                orderType: isDelivery && thirdPartyCourierDelivery ? 'pickup' : orderType,
+                orderType: pickupMethod === 'third_party_courier' ? 'pickup' : orderType,
+                pickupMethod: pickupMethod === 'third_party_courier' ? 'third_party_courier' : undefined,
                 total: result.total,
               });
             }
@@ -439,6 +446,11 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         throw new Error('The loyalty reward covers the entire order. Please choose cash payment or contact the restaurant for a free-order arrangement.');
       }
       window.localStorage.setItem(PENDING_PAYMENT_REFERENCE_KEY, pendingPayment.referenceNumber);
+      if (isDelivery && thirdPartyCourierDelivery) {
+        window.localStorage.setItem(PENDING_PAYMENT_PICKUP_METHOD_KEY, 'third_party_courier');
+      } else {
+        window.localStorage.removeItem(PENDING_PAYMENT_PICKUP_METHOD_KEY);
+      }
       const checkoutUrl = await createPayMongoCheckout(pendingPayment.paymentId);
       window.localStorage.setItem(PENDING_PAYMENT_CHECKOUT_URL_KEY, checkoutUrl);
       setShowPaymentModal(false);
@@ -473,7 +485,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       window.localStorage.setItem(ACTIVE_ORDER_KEY, createdOrder.orderNumber);
       window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
       window.dispatchEvent(new Event(CART_CLEAR_EVENT));
-      setConfirmedOrder({ orderNumber: createdOrder.orderNumber, paymentMethod: 'cash', orderType, total: confirmedTotal });
+      setConfirmedOrder({ orderNumber: createdOrder.orderNumber, paymentMethod: 'cash', orderType: thirdPartyCourierDelivery ? 'pickup' : orderType, pickupMethod: thirdPartyCourierDelivery ? 'third_party_courier' : undefined, total: confirmedTotal });
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'We could not create your order. Please try again.');
     } finally {
@@ -504,12 +516,12 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             {orderType !== 'dine_in' && <label><span>Mobile number</span><input type="tel" value={customerProfileLoading ? '' : mobileNumber} onChange={(event) => setMobileNumber(event.target.value)} autoComplete="tel" inputMode="numeric" maxLength={11} pattern="09[0-9]{9}" title="Enter an 11-digit Philippine mobile number starting with 09." required />{mobileNumber.length >= 2 && !mobileNumber.startsWith('09') && <span className="checkout-field-error" role="alert">Mobile number must start with 09.</span>}{mobileNumber.length > 0 && mobileNumber.startsWith('09') && mobileNumber.length < 11 && <span className="checkout-field-hint">Enter all 11 digits.</span>}</label>}
           </div></fieldset>
 
-          {isDelivery && <fieldset className="checkout-section"><legend>{thirdPartyCourierDelivery ? 'Third-party courier delivery' : 'Delivery address'}</legend>
+          {isDelivery && <fieldset className="checkout-section"><legend>{thirdPartyCourierDelivery ? 'Pickup with Your Own Courier' : 'Delivery address'}</legend>
             {deliveryZonesError && <p className="checkout-error" role="alert">{deliveryZonesError}</p>}
             {!thirdPartyCourierDelivery && !hasDefaultAddress && <p className="checkout-address-note">Please enter your delivery address. We’ll save it as your default address for future orders.</p>}
             {thirdPartyCourierDelivery ? <div className="third-party-courier-card">
-              <strong>Restaurant pickup point</strong><p className="pickup-label">Give this to your courier.</p><p className="pickup-address">{restaurantPickupPoint || 'Restaurant pickup address is not configured.'}</p>
-              <div className="pickup-callout">Your destination address is not entered here. Provide your destination directly to Lalamove, Grab Express, or your chosen courier.</div><p>You are responsible for booking and paying the third-party courier.</p>
+              <strong>Restaurant pickup point</strong><p className="pickup-label">Your order will be prepared here for pickup by you or your courier.</p><p className="pickup-address">{restaurantPickupPoint || 'Restaurant pickup address is not configured.'}</p>
+              <div className="pickup-callout">Your destination address is handled by your courier. Provide the destination directly to Lalamove, Grab Express, or your chosen courier.</div><p><strong>Important:</strong> After payment, your order will be sent to the kitchen for preparation. Please arrange your courier to be available when the order is ready. If your courier is unavailable or arrives late, this alone does not make the order eligible for a refund.</p><p>You are responsible for booking and paying the courier and for the trip from the restaurant to your destination.</p>
               <label><span>Courier</span><select value={thirdPartyCourier} onChange={(event) => { setThirdPartyCourier(event.target.value); if (event.target.value !== 'Other') setThirdPartyCourierName(''); }} required><option value="">Select your courier</option><option value="Lalamove">Lalamove</option><option value="Grab Express">Grab Express</option><option value="Other">Other courier</option></select></label>
               {thirdPartyCourier === 'Other' && <label><span>Courier name</span><input type="text" value={thirdPartyCourierName} onChange={(event) => setThirdPartyCourierName(event.target.value)} placeholder="Enter courier name" required /></label>
               }
@@ -547,7 +559,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             <div><p className="eyebrow">Checkout</p><h2 id="payment-modal-title">Choose your payment method</h2><p>Select how you would like to pay for this order.</p></div>
             <button className="payment-modal-close" type="button" aria-label="Close payment method" onClick={() => setShowPaymentModal(false)} disabled={isSubmitting}>×</button>
           </div>
-          {thirdPartyCourierDelivery && <p className="courier-payment-note"><strong>Online payment is required.</strong> Please complete your payment before the order is sent to the restaurant. You are responsible for booking and paying the courier separately.</p>}
+          {thirdPartyCourierDelivery && <p className="courier-payment-note"><strong>Pickup with your own courier.</strong> Online payment is required. After payment is confirmed, your order will be sent to the kitchen for preparation. Please make sure your courier is available when the order is ready. The restaurant does not provide delivery to your destination and is not responsible for courier delays or unavailability after the order is ready.</p>}
           <div className="payment-method-options">
             {paymentMethods
               .filter((method) => !thirdPartyCourierDelivery || method.value === 'online')
@@ -573,7 +585,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         </div>
       </div>}
 
-      {showDeliveryTerms && <div className="delivery-terms-backdrop" role="presentation"><div className="delivery-terms-modal" role="dialog" aria-modal="true" aria-labelledby="delivery-terms-title"><h2 id="delivery-terms-title">Delivery Terms</h2><p className="terms-intro">This destination is outside the restaurant's in-house delivery area. The restaurant cannot deliver to this destination directly.</p><div className="terms-box"><p><strong>Proceed with your own courier.</strong> You may book Lalamove, Grab Express, or another courier to collect your order from the restaurant.</p><p>You are responsible for booking and paying the courier, and for providing the courier with your destination address.</p><p>The restaurant will pack your order securely and prepare it as fresh as possible for courier pickup at its listed restaurant pickup point.</p><p>After the order is handed over to your courier, the restaurant is not responsible for courier-related delays, loss, spills, damage, or other issues that happen during transit.</p><label className="delivery-terms-checkbox"><input type="checkbox" checked={thirdPartyCourierTermsAccepted} onChange={(event) => setThirdPartyCourierTermsAccepted(event.target.checked)} /><span>I understand and agree to these third-party courier terms.</span></label></div><div className="terms-actions"><button className="button" type="button" onClick={handleCancelThirdPartyDelivery}>Cancel</button><button className="button button-primary" type="button" onClick={handleProceedWithThirdPartyCourier} disabled={!thirdPartyCourierTermsAccepted}>Proceed with Order</button></div></div></div>}
+      {showDeliveryTerms && <div className="delivery-terms-backdrop" role="presentation"><div className="delivery-terms-modal" role="dialog" aria-modal="true" aria-labelledby="delivery-terms-title"><h2 id="delivery-terms-title">Pickup with Your Own Courier</h2><p className="terms-intro">This destination is outside the restaurant's delivery area, so the restaurant cannot deliver to this destination directly.</p><div className="terms-box"><p><strong>Choose pickup with your own courier.</strong> You may book Lalamove, Grab Express, or another courier to collect your order from the restaurant.</p><p><strong>Important:</strong> Once payment is completed, your order will be sent to the kitchen for preparation. Please make sure your courier is available to collect the order when it is ready.</p><p>If your courier is unavailable or arrives late after the order is ready, the restaurant is not responsible for that delay, and the order is not eligible for a refund solely for that reason.</p><p>You are responsible for booking and paying the courier and for providing the courier with the correct destination address.</p><p>The restaurant will pack your order securely and prepare it as fresh as possible for pickup at its listed restaurant pickup point. After the order is handed over to your courier, the restaurant is not responsible for courier-related delays, loss, spills, damage, or other issues during transit.</p><label className="delivery-terms-checkbox"><input type="checkbox" checked={thirdPartyCourierTermsAccepted} onChange={(event) => setThirdPartyCourierTermsAccepted(event.target.checked)} /><span>I understand that this is a pickup order, that my order will be prepared after payment, and that I am responsible for arranging a courier to collect it when ready.</span></label></div><div className="terms-actions"><button className="button button-secondary" type="button" onClick={handleCancelThirdPartyDelivery}>Cancel</button><button className="button button-primary" type="button" onClick={handleProceedWithThirdPartyCourier} disabled={!thirdPartyCourierTermsAccepted}>Choose Pickup</button></div></div></div>}
     </section>
   );
 }
