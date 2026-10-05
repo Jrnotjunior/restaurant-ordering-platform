@@ -37,6 +37,9 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          # GitHub Pages is our temporary test storefront. Production
+          # multi-tenant routing will resolve by custom domain/Hostinger.
+          VITE_RESTAURANT_SLUG: solutions
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
