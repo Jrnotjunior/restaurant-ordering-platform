@@ -9,11 +9,6 @@ function normalize(value: string) {
   return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
 }
 
-function isValenzuela(value: string) {
-  const city = normalize(value);
-  return city === 'valenzuela' || city === 'valenzuela city';
-}
-
 export function SavedAddressPage() {
   const restaurant = useRestaurant();
   const { user } = useRestaurantOwnerAuth();
@@ -63,13 +58,13 @@ export function SavedAddressPage() {
 
   useEffect(() => { void loadAddresses(); }, [restaurant.id, user?.id]);
 
-  const cityIsSupported = isValenzuela(city);
+  const cityIsSupported = Boolean(city.trim()) && zones.some((zone) => normalize(zone.city) === normalize(city));
   const suggestions = zones.filter((zone) => {
-    if (!cityIsSupported) return false;
+    if (!cityIsSupported || normalize(zone.city) !== normalize(city)) return false;
     const search = normalize(barangay);
     return !search || normalize(zone.barangay).includes(search);
   });
-  const selectedZone = zones.find((zone) => normalize(zone.barangay) === normalize(barangay));
+  const selectedZone = zones.find((zone) => normalize(zone.city) === normalize(city) && normalize(zone.barangay) === normalize(barangay));
 
   function openEditForm(item: CustomerSavedAddress) {
     setEditingAddressId(item.id);
