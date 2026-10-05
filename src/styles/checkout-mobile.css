@@ -545,6 +545,18 @@
   margin-top: 1.2rem;
 }
 
+.payment-modal-actions .button-secondary {
+  background: #fff;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.payment-modal-actions .button-secondary:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
 @media (max-width: 560px) {
   .payment-modal-backdrop {
     align-items: center;
