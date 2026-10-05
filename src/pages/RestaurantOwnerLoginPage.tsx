@@ -27,7 +27,7 @@ export function RestaurantOwnerLoginPage() {
       const role = user?.app_metadata?.role ?? user?.user_metadata?.role;
 
       if (role === 'customer') {
-        window.location.hash = '#menu';
+        window.location.hash = '';
         return;
       }
 
