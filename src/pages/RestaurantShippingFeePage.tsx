@@ -72,6 +72,25 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
     void loadSettings();
   }, [restaurantId]);
 
+  function useCurrentLocationForDelivery() {
+    if (!navigator.geolocation) {
+      setDeliverySettingsError('This browser does not support location services. Click the map to set the restaurant location.');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setDeliverySettings((current) => current ? {
+          ...current,
+          deliveryLatitude: position.coords.latitude,
+          deliveryLongitude: position.coords.longitude,
+        } : current);
+        setDeliverySettingsError('');
+      },
+      () => setDeliverySettingsError('We could not read your location. You can click the map or drag the marker instead.'),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+    );
+  }
+
   async function handleSaveDeliverySettings() {
     if (!deliverySettings) return;
     if (deliverySettings.deliveryLatitude == null || deliverySettings.deliveryLongitude == null) {
@@ -202,6 +221,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
         .restaurant-delivery-radius-form label{display:grid;gap:6px;font-weight:600;font-size:14px}
         .restaurant-delivery-radius-form input[type=number]{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:10px;padding:11px 12px;font:inherit;color:#0f172a;background:#fff}
         .restaurant-delivery-radius-form input[type=number]:focus{outline:none;border-color:#94a3b8;box-shadow:0 0 0 3px rgba(148,163,184,.18)}
+        .restaurant-delivery-map-actions{display:flex;align-items:center;justify-content:space-between;gap:12px}
         .restaurant-delivery-map-help{margin:8px 0 0;color:#64748b;font-size:13px}
         .restaurant-delivery-radius-coordinates{display:grid;gap:3px;padding:12px;border:1px solid #e1e5eb;border-radius:10px;background:#f8fafc}
         .restaurant-delivery-radius-coordinates span{font-size:12px;color:#64748b}
@@ -276,7 +296,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
                   onMarkerChange={(coordinate) => setDeliverySettings((current) => current ? { ...current, deliveryLatitude: coordinate.latitude, deliveryLongitude: coordinate.longitude } : current)}
                   height={360}
                 />
-                <p className="restaurant-delivery-map-help">Click the map or drag the marker to set the restaurant location.</p>
+                <div className="restaurant-delivery-map-actions"><p className="restaurant-delivery-map-help">Click the map or drag the marker to set the restaurant location.</p><button type="button" className="button" onClick={useCurrentLocationForDelivery}>Use my current location</button></div>
               </div>
               <div className="restaurant-delivery-radius-form">
                 <label className="restaurant-shipping-coverage">
