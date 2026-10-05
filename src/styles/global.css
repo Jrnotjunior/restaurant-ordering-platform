@@ -1013,5 +1013,5 @@ textarea {
   }
 }
 
-.restaurant-dispatch-order-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%}
-.restaurant-dispatch-order-heading strong:last-child{white-space:nowrap}
+.restaurant-dispatch-order-heading{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%}
+.restaurant-dispatch-order-heading strong:last-child{white-space:nowrap;font-size:14px;font-weight:700}
