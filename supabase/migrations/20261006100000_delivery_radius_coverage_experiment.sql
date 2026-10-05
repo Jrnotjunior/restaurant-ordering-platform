@@ -298,7 +298,7 @@ begin
 end;
 $function$;
 
-grant execute on function public.create_order(uuid,text,text,text,text,text,text,text,text,text,boolean,jsonb) to anon, authenticated;
+grant execute on function public.create_order(uuid,text,text,text,text,text,text,numeric,numeric,text,text,boolean,jsonb) to anon, authenticated;
 
 drop function if exists public.create_pending_online_payment(uuid,text,text,text,text,text,text,text,boolean,jsonb,boolean);
 
@@ -424,7 +424,7 @@ begin
 end;
 $function$;
 
-grant execute on function public.create_pending_online_payment(uuid,text,text,text,text,text,text,text,text,boolean,jsonb,boolean) to anon, authenticated;
+grant execute on function public.create_pending_online_payment(uuid,text,text,text,text,text,text,numeric,numeric,text,boolean,jsonb,boolean) to anon, authenticated;
 
 -- Keep online-payment finalization consistent with the same stored delivery data.
 create or replace function public.finalize_online_payment(p_reference_number text)
