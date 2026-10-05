@@ -10,6 +10,7 @@ export type CreateOrderInput = {
   customerName: string;
   mobileNumber: string;
   orderType: 'delivery' | 'pickup' | 'dine_in';
+  deliveryCity: string;
   deliveryBarangay: string;
   deliveryAddress: string;
   notes: string;
@@ -79,6 +80,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreatedOrder
     p_customer_name: input.customerName,
     p_mobile_number: input.mobileNumber,
     p_order_type: input.orderType,
+    p_delivery_city: input.deliveryCity || null,
     p_delivery_barangay: input.deliveryBarangay || null,
     p_delivery_address: input.deliveryAddress || null,
     p_notes: input.notes,
