@@ -15,8 +15,7 @@
     "vite": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "xlsx": "latest",
-    "maplibre-gl": "6.11.2"
+    "xlsx": "latest"
   },
   "devDependencies": {
     "@types/node": "latest",
