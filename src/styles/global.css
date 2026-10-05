@@ -54,17 +54,35 @@ main { flex: 1; }
 }
 .button:active { transform: translateY(1px); }
 .button:disabled { cursor: not-allowed; opacity: 1; }
-.button-primary,
-.button-secondary {
+.button-primary {
   color: var(--color-button-text);
   background: var(--color-button-background);
   border-color: var(--color-button-border);
 }
-.button-primary:hover:not(:disabled),
-.button-secondary:hover:not(:disabled) {
+.button-primary:hover:not(:disabled) {
   color: var(--color-button-hover-text, var(--color-button-text));
   background: var(--color-button-hover-background);
   border-color: var(--color-button-hover-border);
+}
+.button-secondary {
+  color: #0f172a;
+  background: #ffffff;
+  border-color: #cbd5e1;
+}
+.button-secondary:hover:not(:disabled) {
+  color: #0f172a;
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+.button-danger {
+  color: #ffffff;
+  background: #dc2626;
+  border-color: #dc2626;
+}
+.button-danger:hover:not(:disabled) {
+  color: #ffffff;
+  background: #b91c1c;
+  border-color: #b91c1c;
 }
 .site-footer {
   display: grid;
@@ -175,7 +193,7 @@ main { flex: 1; }
   .eyebrow { font-size: 0.72rem; }
   .hero-actions { display: grid; gap: 0.75rem; margin-top: 1.5rem; }
   .hero-actions .button { width: 100%; }
-  .button { min-height: 50px; padding-inline: 1rem; }
+  .button { padding-inline: 1rem; }
   .menu-intro h1 { font-size: clamp(2rem, 9vw, 2.75rem); line-height: 1.03; }
   .menu-intro > p:last-child { margin-top: 0.75rem; font-size: 1rem; line-height: 1.55; }
   .menu-categories { margin: 1.25rem 0; padding: 0.25rem 0; gap: 0.5rem; }
