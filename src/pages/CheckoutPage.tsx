@@ -610,7 +610,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
                 <p className="checkout-map-help">Click the map or drag the pin to your delivery location.</p>
                 {!selectedDeliveryCoordinate && <p className="checkout-hint">A delivery location pin is required.</p>}
               </div>}
-              {!thirdPartyCourierDelivery && (radiusCoverageEnabled || cityIsSupported) && <label><span>Unit/Bldg./Street Address</span><textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Enter your unit, building, house number, and street" rows={4} required /></label>}
+              {!thirdPartyCourierDelivery && (radiusCoverageEnabled || cityIsSupported) && <label><span>Unit/Bldg./Street Address</span><textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Enter your unit, building, house number, and street" rows={4} required /></label></div>}
             {!thirdPartyCourierDelivery && radiusCoverageEnabled && deliveryDistance != null && !withinRadius && <div className="checkout-outside-scope-card">
               <p className="checkout-error" role="alert">This address is outside the store delivery area ({deliveryDistance.toFixed(1)} km away; limit {deliverySettings?.deliveryRadiusKm.toFixed(1)} km).</p>
               {deliverySettings?.allowThirdPartyCourier && <button className="button button-secondary" type="button" onClick={openThirdPartyCourierTerms}>Use my own courier instead</button>}
