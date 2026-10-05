@@ -13,6 +13,8 @@ export type CreateOrderInput = {
   deliveryCity: string;
   deliveryBarangay: string;
   deliveryAddress: string;
+  deliveryLatitude?: number | null;
+  deliveryLongitude?: number | null;
   notes: string;
   paymentMethod: 'cash' | 'gcash';
   isThirdPartyCourier?: boolean;
@@ -85,6 +87,8 @@ export async function createOrder(input: CreateOrderInput): Promise<CreatedOrder
     p_delivery_city: input.deliveryCity || null,
     p_delivery_barangay: input.deliveryBarangay || null,
     p_delivery_address: input.deliveryAddress || null,
+    p_delivery_latitude: input.deliveryLatitude ?? null,
+    p_delivery_longitude: input.deliveryLongitude ?? null,
     p_notes: input.notes,
     p_payment_method: input.paymentMethod,
     p_is_third_party_courier: input.isThirdPartyCourier ?? false,
