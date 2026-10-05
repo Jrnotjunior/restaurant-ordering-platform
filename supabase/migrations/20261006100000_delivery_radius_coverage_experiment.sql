@@ -556,3 +556,74 @@ end;
 $$;
 
 revoke all on function public.auto_assign_ready_delivery_order() from public,anon,authenticated;
+
+-- Keep a signed-in customer's default map pin with the saved address.
+alter table public.customer_profiles
+  add column if not exists default_delivery_latitude numeric(9,6),
+  add column if not exists default_delivery_longitude numeric(9,6);
+
+drop function if exists public.get_my_customer_profile(uuid);
+
+create or replace function public.get_my_customer_profile(p_restaurant_id uuid)
+returns table(
+  customer_id uuid,
+  name text,
+  phone text,
+  default_delivery_city text,
+  default_delivery_barangay text,
+  default_delivery_address text,
+  default_delivery_latitude numeric,
+  default_delivery_longitude numeric
+)
+language plpgsql security definer set search_path=public,pg_temp as $function$
+begin
+  if auth.uid() is null then raise exception 'You must be signed in'; end if;
+
+  return query
+  select cp.id,cp.name,cp.phone,cp.default_delivery_city,cp.default_delivery_barangay,cp.default_delivery_address,
+         cp.default_delivery_latitude,cp.default_delivery_longitude
+  from public.customer_profiles cp
+  where cp.restaurant_id=p_restaurant_id
+    and cp.auth_user_id=auth.uid()
+  limit 1;
+end;
+$function$;
+
+revoke all on function public.get_my_customer_profile(uuid) from public,anon;
+grant execute on function public.get_my_customer_profile(uuid) to authenticated;
+
+drop function if exists public.save_my_default_delivery_address(uuid,text,text,text);
+
+create or replace function public.save_my_default_delivery_address(
+  p_restaurant_id uuid,
+  p_city text,
+  p_barangay text,
+  p_address text,
+  p_latitude numeric default null,
+  p_longitude numeric default null
+)
+returns void
+language plpgsql security definer set search_path=public,pg_temp as $function$
+begin
+  if auth.uid() is null then raise exception 'You must be signed in'; end if;
+  if length(trim(coalesce(p_city,'')))=0 then raise exception 'City is required'; end if;
+  if length(trim(coalesce(p_address,'')))=0 then raise exception 'Complete delivery address is required'; end if;
+  if (p_latitude is null) <> (p_longitude is null) then raise exception 'Delivery coordinates must include both latitude and longitude'; end if;
+  if p_latitude is not null and (p_latitude not between -90 and 90 or p_longitude not between -180 and 180) then raise exception 'Delivery coordinates are invalid'; end if;
+
+  update public.customer_profiles
+  set default_delivery_city=trim(p_city),
+      default_delivery_barangay=nullif(trim(coalesce(p_barangay,'')),''),
+      default_delivery_address=trim(p_address),
+      default_delivery_latitude=p_latitude,
+      default_delivery_longitude=p_longitude,
+      updated_at=now()
+  where restaurant_id=p_restaurant_id
+    and auth_user_id=auth.uid();
+
+  if not found then raise exception 'Customer profile not found'; end if;
+end;
+$function$;
+
+revoke all on function public.save_my_default_delivery_address(uuid,text,text,text,numeric,numeric) from public,anon;
+grant execute on function public.save_my_default_delivery_address(uuid,text,text,text,numeric,numeric) to authenticated;
