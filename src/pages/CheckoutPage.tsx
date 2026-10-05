@@ -75,7 +75,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const [redeemPoints, setRedeemPoints] = useState(false);
   const [loyaltyLoading, setLoyaltyLoading] = useState(false);
   const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
-  const restaurantId = items[0]?.product.restaurantId ?? '';
+  const restaurantId = restaurant.id;
 
   useEffect(() => {
     if (!supabase || !restaurantId) return;
@@ -278,15 +278,18 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
   const subtotal = useMemo(() => items.reduce((total, item) => total + item.product.price * item.quantity, 0), [items]);
   const selectedDeliveryZone = useMemo(() => {
-    if (!cityIsSupported || thirdPartyCourierDelivery) return null;
+    if (thirdPartyCourierDelivery) return null;
+    const city = normalize(deliveryCity);
     const value = normalize(deliveryBarangay);
-    return value ? deliveryZones.find((zone) => normalize(zone.city) === normalize(deliveryCity) && normalize(zone.barangay) === value) ?? null : null;
-  }, [cityIsSupported, deliveryZones, deliveryBarangay, thirdPartyCourierDelivery]);
+    if (!city || !value) return null;
+    return deliveryZones.find((zone) => normalize(zone.city) === city && normalize(zone.barangay) === value) ?? null;
+  }, [deliveryZones, deliveryCity, deliveryBarangay, thirdPartyCourierDelivery]);
   const suggestions = useMemo(() => {
+    const city = normalize(deliveryCity);
     const value = normalize(deliveryBarangay);
-    if (!cityIsSupported || thirdPartyCourierDelivery || !value || selectedDeliveryZone) return [];
-    return deliveryZones.filter((zone) => normalize(zone.city) === normalize(deliveryCity) && normalize(zone.barangay).startsWith(value)).slice(0, 6);
-  }, [cityIsSupported, deliveryZones, deliveryBarangay, selectedDeliveryZone, thirdPartyCourierDelivery]);
+    if (!city || thirdPartyCourierDelivery || !value || selectedDeliveryZone) return [];
+    return deliveryZones.filter((zone) => normalize(zone.city) === city && normalize(zone.barangay).startsWith(value)).slice(0, 6);
+  }, [deliveryZones, deliveryCity, deliveryBarangay, selectedDeliveryZone, thirdPartyCourierDelivery]);
   const deliveryFee = isDelivery && !thirdPartyCourierDelivery ? Number(selectedDeliveryZone?.shippingFee ?? 0) : 0;
   const loyaltyEligible = Boolean(user && loyaltySettings?.enabled && loyaltyPoints >= (loyaltySettings?.pointsRequired ?? Number.MAX_SAFE_INTEGER));
   const loyaltyDiscountPreview = loyaltyEligible && redeemPoints
