@@ -437,7 +437,12 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     const barangay = deliveryBarangay.trim();
     const completeAddress = address.trim();
     if (!city || !completeAddress) return;
-    if (radiusCoverageEnabled) return;
+    if (radiusCoverageEnabled) {
+      if (deliveryLatitude == null || deliveryLongitude == null) return;
+      await saveMyDefaultDeliveryAddress(items[0].product.restaurantId, city, barangay, completeAddress, deliveryLatitude, deliveryLongitude);
+      setHasDefaultAddress(true);
+      return;
+    }
     if (!barangay || !selectedDeliveryZone?.isSupported) return;
     await saveMyDefaultDeliveryAddress(items[0].product.restaurantId, city, barangay, completeAddress, deliveryLatitude, deliveryLongitude);
     setHasDefaultAddress(true);
