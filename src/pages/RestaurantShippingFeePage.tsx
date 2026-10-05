@@ -31,7 +31,7 @@ function toDraft(zone: RestaurantDeliveryZone): ZoneDraft {
 
 export function RestaurantShippingFeePage({ restaurantId }: Props) {
   const [zones, setZones] = useState<ZoneDraft[]>([]);
-  const [searchDeliveryZones, setSearchBarangay] = useState('');
+  const [searchDeliveryZones, setSearchDeliveryZones] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -202,8 +202,8 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
         <div className="restaurant-shipping-search">
           <label className="restaurant-shipping-search-label" htmlFor="restaurant-barangay-search">Search delivery zones</label>
           <div className="restaurant-shipping-search-input-wrap">
-            <input id="restaurant-barangay-search" type="search" value={searchDeliveryZones} onChange={(event) => setSearchBarangay(event.target.value)} placeholder="Search by city or delivery area" />
-            {searchDeliveryZones && <button type="button" className="restaurant-shipping-search-clear" onClick={() => setSearchBarangay('')} aria-label="Clear delivery zone search">×</button>}
+            <input id="restaurant-delivery-zone-search" type="search" value={searchDeliveryZones} onChange={(event) => setSearchDeliveryZones(event.target.value)} placeholder="Search by city or delivery area" />
+            {searchDeliveryZones && <button type="button" className="restaurant-shipping-search-clear" onClick={() => setSearchDeliveryZones('')} aria-label="Clear delivery zone search">×</button>}
           </div>
         </div>
 
@@ -245,7 +245,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
             <form className="restaurant-shipping-form" onSubmit={(event) => { event.preventDefault(); void handleSaveZone(editingIndex); }}>
               <label>
                 City
-                <input type="text" value={editingZone.city} onChange={(event) => updateZone(editingIndex, { city: event.target.value })} placeholder="e.g. Valenzuela City" autoComplete="address-level2" />
+                <input type="text" value={editingZone.city} onChange={(event) => updateZone(editingIndex, { city: event.target.value })} placeholder="Enter city" autoComplete="address-level2" />
               </label>
               <label>
                 Delivery area
