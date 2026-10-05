@@ -37,6 +37,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingDraft, setEditingDraft] = useState<ZoneDraft | null>(null);
 
   async function loadSettings() {
     setLoading(true);
@@ -56,32 +57,33 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
   }, [restaurantId]);
 
   function addZone() {
-    setZones((current) => [
-      ...current,
-      { id: '', city: '', barangay: '', shippingFee: '0', isSupported: true, outOfScopeMessage: DEFAULT_OUT_OF_SCOPE_MESSAGE },
-    ]);
-    setEditingIndex(zones.length);
+    setEditingIndex(null);
+    setEditingDraft({ id: '', city: '', barangay: '', shippingFee: '0', isSupported: true, outOfScopeMessage: DEFAULT_OUT_OF_SCOPE_MESSAGE });
     setMessage('');
     setError('');
   }
 
-  function updateZone(index: number, patch: Partial<ZoneDraft>) {
-    setZones((current) => current.map((zone, zoneIndex) => zoneIndex === index ? { ...zone, ...patch } : zone));
+  function openEditor(index: number) {
+    setEditingIndex(index);
+    setEditingDraft({ ...zones[index] });
+    setMessage('');
+    setError('');
+  }
+
+  function updateZone(patch: Partial<ZoneDraft>) {
+    setEditingDraft((current) => current ? { ...current, ...patch } : current);
     setMessage('');
     setError('');
   }
 
   function closeEditor() {
     if (saving) return;
-    const zone = editingIndex === null ? null : zones[editingIndex];
-    if (zone && !zone.id && !zone.barangay.trim()) {
-      setZones((current) => current.filter((_, index) => index !== editingIndex));
-    }
     setEditingIndex(null);
+    setEditingDraft(null);
   }
 
-  async function handleSaveZone(index: number) {
-    const zone = zones[index];
+  async function handleSaveZone() {
+    const zone = editingDraft;
     if (!zone?.city.trim()) {
       setError('Enter a city before saving.');
       return;
@@ -118,14 +120,13 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
     }
   }
 
-  async function handleDeleteZone(index: number) {
-    const zone = zones[index];
-    if (!zone) return;
-    if (!zone.id) {
-      setZones((current) => current.filter((_, zoneIndex) => zoneIndex !== index));
-      setEditingIndex(null);
+  async function handleDeleteZone() {
+    if (editingIndex === null) {
+      setEditingDraft(null);
       return;
     }
+    const zone = zones[editingIndex];
+    if (!zone) return;
     if (!window.confirm(`Remove ${zone.barangay} from your delivery zones?`)) return;
 
     setSaving(true);
@@ -134,6 +135,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
       await deleteRestaurantDeliveryZone(restaurantId, zone.id);
       await loadSettings();
       setEditingIndex(null);
+      setEditingDraft(null);
       setMessage('Delivery zone removed.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to remove delivery area.');
@@ -148,7 +150,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
     return zones.filter((zone) => `${zone.city} ${zone.barangay}`.toLowerCase().includes(query));
   }, [zones, searchDeliveryZones]);
 
-  const editingZone = editingIndex === null ? null : zones[editingIndex];
+  const editingZone = editingDraft;
 
   return (
     <section className="restaurant-page restaurant-shipping-page">
@@ -218,7 +220,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
             {filteredZones.map((zone) => {
               const index = zones.findIndex((item) => item === zone);
               return (
-                <button type="button" className="restaurant-delivery-zone-row" key={zone.id || `new-${index}`} onClick={() => setEditingIndex(index)}>
+                <button type="button" className="restaurant-delivery-zone-row" key={zone.id || `new-${index}`} onClick={() => openEditor(index)}>
                   <span className="restaurant-delivery-zone-cell">
                     <span className="restaurant-delivery-zone-cell-label">City / Delivery area</span>
                     <span className="restaurant-delivery-zone-cell-value">{zone.city ? `${zone.city} / ` : ''}{zone.barangay || 'New delivery zone'}</span>
@@ -244,32 +246,32 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
           <div className="restaurant-shipping-modal" role="dialog" aria-modal="true" aria-labelledby="shipping-zone-modal-title">
             <button className="restaurant-shipping-modal-close" type="button" disabled={saving} onClick={closeEditor}>×</button>
             <h2 id="shipping-zone-modal-title">{editingZone.id ? `Edit ${editingZone.barangay}` : 'Add Delivery Zone'}</h2>
-            <form className="restaurant-shipping-form" onSubmit={(event) => { event.preventDefault(); void handleSaveZone(editingIndex); }}>
+            <form className="restaurant-shipping-form" onSubmit={(event) => { event.preventDefault(); void handleSaveZone(); }}>
               <label>
                 City
-                <input type="text" value={editingZone.city} onChange={(event) => updateZone(editingIndex, { city: event.target.value })} placeholder="Enter city" autoComplete="address-level2" />
+                <input type="text" value={editingZone.city} onChange={(event) => updateZone({ city: event.target.value })} placeholder="Enter city" autoComplete="address-level2" />
               </label>
               <label>
                 Delivery area
-                <input type="text" value={editingZone.barangay} readOnly={Boolean(editingZone.id)} onChange={(event) => updateZone(editingIndex, { barangay: event.target.value })} placeholder="e.g. Malinta" autoFocus={!editingZone.id} />
+                <input type="text" value={editingZone.barangay} readOnly={Boolean(editingZone.id)} onChange={(event) => updateZone({ barangay: event.target.value })} placeholder="e.g. Malinta" autoFocus={!editingZone.id} />
               </label>
               <label>
                 Shipping fee
-                <input type="number" min="0" step="0.01" value={editingZone.shippingFee} onChange={(event) => updateZone(editingIndex, { shippingFee: event.target.value })} />
+                <input type="number" min="0" step="0.01" value={editingZone.shippingFee} onChange={(event) => updateZone({ shippingFee: event.target.value })} />
               </label>
               <label className="restaurant-shipping-coverage">
-                <input type="checkbox" checked={editingZone.isSupported} onChange={(event) => updateZone(editingIndex, { isSupported: event.target.checked })} />
+                <input type="checkbox" checked={editingZone.isSupported} onChange={(event) => updateZone({ isSupported: event.target.checked })} />
                 <span>{editingZone.isSupported ? 'Within our delivery' : 'Outside our delivery area'}</span>
               </label>
               {!editingZone.isSupported && (
                 <label>
                   Customer message
-                  <textarea rows={3} value={editingZone.outOfScopeMessage} onChange={(event) => updateZone(editingIndex, { outOfScopeMessage: event.target.value })} />
+                  <textarea rows={3} value={editingZone.outOfScopeMessage} onChange={(event) => updateZone({ outOfScopeMessage: event.target.value })} />
                   <small>Suggested: This area is outside our delivery coverage. If you want to proceed, please book your own courier like Lalamove or Grab Express.</small>
                 </label>
               )}
               <div className="restaurant-shipping-modal-actions">
-                <button type="button" className="button restaurant-shipping-delete" onClick={() => void handleDeleteZone(editingIndex)} disabled={saving}>Delete</button>
+                <button type="button" className="button restaurant-shipping-delete" onClick={() => void handleDeleteZone()} disabled={saving}>Delete</button>
                 <button type="button" className="button" onClick={closeEditor} disabled={saving}>Cancel</button>
                 <button type="submit" className="button button-primary" disabled={saving || !editingZone.barangay.trim()}>{saving ? 'Saving…' : 'Save'}</button>
               </div>
