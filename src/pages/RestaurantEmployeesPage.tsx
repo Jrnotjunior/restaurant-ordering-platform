@@ -46,6 +46,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
   const [saving, setSaving] = useState(false);
   const [resendingInvitationId, setResendingInvitationId] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [confirmation, setConfirmation] = useState('');
   const [searchEmployee, setSearchEmployee] = useState('');
   const [deliveryZones, setDeliveryZones] = useState<Array<{ id: string; barangay: string; isSupported: boolean }>>([]);
   const [riderScopeZoneIds, setRiderScopeZoneIds] = useState<string[]>([]);
@@ -160,6 +161,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
     if (!supabase) return;
     setResendingInvitationId(employee.id);
     setError('');
+    setConfirmation('');
     try {
       const { data, error: functionError } = await supabase.functions.invoke('resend-staff-invitation', {
         body: { restaurantId, staffId: employee.id },
@@ -181,12 +183,12 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
         const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}?employee-invite=1`;
         const { error: resetError } = await supabase.auth.resetPasswordForEmail(employee.email, { redirectTo });
         if (resetError) throw resetError;
-        window.alert(`A password setup email was sent to ${employee.email}.`);
+        setConfirmation(`A password setup email was sent to ${employee.email}.`);
         return;
       }
       if (!data?.invitationSent) throw new Error('The invitation was not sent.');
       setError('');
-      window.alert(`A new invitation was sent to ${employee.email}.`);
+      setConfirmation(`A new invitation was sent to ${employee.email}.`);
     } catch (resendError) {
       setError(resendError instanceof Error ? resendError.message : 'Unable to resend employee invitation.');
     } finally {
@@ -350,6 +352,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
         </div>
 
         {error ? <div className="restaurant-employees-error" role="alert">{error}</div> : null}
+        {confirmation ? <div className="restaurant-employees-success" role="status" aria-live="polite">{confirmation}</div> : null}
 
         {showForm ? (
           <form className="restaurant-employee-form" onSubmit={(event) => void handleSubmit(event)}>
