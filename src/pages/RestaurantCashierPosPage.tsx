@@ -244,6 +244,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
         customerName: enteredCustomerName,
         mobileNumber: 'N/A',
         orderType,
+        deliveryCity: '',
         deliveryBarangay: '',
         deliveryAddress: '',
         notes: 'POS ORDER — cash collected by cashier.',
