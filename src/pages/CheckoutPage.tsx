@@ -286,10 +286,10 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     return deliveryZones.find((zone) => normalizeCity(zone.city) === city && normalize(zone.barangay) === value) ?? null;
   }, [deliveryZones, deliveryCity, deliveryBarangay, thirdPartyCourierDelivery]);
   const suggestions = useMemo(() => {
-    const city = normalize(deliveryCity);
+    const city = normalizeCity(deliveryCity);
     const value = normalize(deliveryBarangay);
     if (!city || thirdPartyCourierDelivery || !value || selectedDeliveryZone) return [];
-    return deliveryZones.filter((zone) => normalize(zone.city) === city && normalize(zone.barangay).startsWith(value)).slice(0, 6);
+    return deliveryZones.filter((zone) => normalizeCity(zone.city) === city && normalize(zone.barangay).startsWith(value)).slice(0, 6);
   }, [deliveryZones, deliveryCity, deliveryBarangay, selectedDeliveryZone, thirdPartyCourierDelivery]);
   const deliveryFee = isDelivery && !thirdPartyCourierDelivery ? Number(selectedDeliveryZone?.shippingFee ?? 0) : 0;
   const loyaltyEligible = Boolean(user && loyaltySettings?.enabled && loyaltyPoints >= (loyaltySettings?.pointsRequired ?? Number.MAX_SAFE_INTEGER));
