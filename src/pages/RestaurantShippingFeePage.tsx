@@ -307,53 +307,56 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
           </>
         )}
       </div>
-      <div className="restaurant-shipping-card restaurant-delivery-zones-card">
-        <div className="restaurant-shipping-section-header">
-          <div>
-            <h2>Delivery Zones</h2>
-            <p className="restaurant-shipping-help">Your restaurant's configured delivery areas are shown here. Click an area to edit its city, area, and shipping settings.</p>
-          </div>
-          <button type="button" className="button" onClick={addZone} disabled={loading || saving}>+ Add Delivery Zone</button>
-        </div>
-
-        <div className="restaurant-shipping-search">
-          <label className="restaurant-shipping-search-label" htmlFor="restaurant-barangay-search">Search delivery zones</label>
-          <div className="restaurant-shipping-search-input-wrap">
-            <input id="restaurant-delivery-zone-search" type="search" value={searchDeliveryZones} onChange={(event) => setSearchDeliveryZones(event.target.value)} placeholder="Search by city or delivery area" />
-            {searchDeliveryZones && <button type="button" className="restaurant-shipping-search-clear" onClick={() => setSearchDeliveryZones('')} aria-label="Clear delivery zone search">×</button>}
-          </div>
-        </div>
-
-        {loading ? <p>Loading delivery areas…</p> : filteredZones.length === 0 ? (
-          <div className="restaurant-shipping-empty restaurant-shipping-search-empty">
-            {zones.length === 0 ? 'No delivery zones configured yet. Add the areas where your restaurant delivers.' : `No delivery zone found for “${searchDeliveryZones}”.`}
-          </div>
-        ) : (
-          <div className="restaurant-delivery-zone-list">
-            {filteredZones.map((zone) => {
-              const index = zones.findIndex((item) => item === zone);
-              return (
-                <button type="button" className="restaurant-delivery-zone-row" key={zone.id || `new-${index}`} onClick={() => openEditor(index)}>
-                  <span className="restaurant-delivery-zone-cell">
-                    <span className="restaurant-delivery-zone-cell-label">City / Delivery area</span>
-                    <span className="restaurant-delivery-zone-cell-value">{zone.city ? `${zone.city} / ` : ''}{zone.barangay || 'New delivery zone'}</span>
-                  </span>
-                  <span className="restaurant-delivery-zone-cell">
-                    <span className="restaurant-delivery-zone-cell-label">Shipping fee</span>
-                    <span className="restaurant-delivery-zone-cell-value restaurant-delivery-zone-fee">₱ {Number(zone.shippingFee || 0).toFixed(2)}</span>
-                  </span>
-                  <span className="restaurant-delivery-zone-cell">
-                    <span className="restaurant-delivery-zone-cell-label">Delivery coverage</span>
-                    <span className="restaurant-delivery-zone-coverage"><span className={`restaurant-delivery-zone-dot ${zone.isSupported ? '' : 'is-out'}`} />{zone.isSupported ? 'Within our delivery' : 'Outside delivery area'}</span>
-                  </span>
-                  <span className="restaurant-delivery-zone-chevron" aria-hidden="true">›</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
+      {(!deliverySettings?.deliveryLatitude || !deliverySettings?.deliveryLongitude) && (
+              <div className="restaurant-shipping-card restaurant-delivery-zones-card">
+                <div className="restaurant-shipping-section-header">
+                  <div>
+                    <h2>Delivery Zones</h2>
+                    <p className="restaurant-shipping-help">Your restaurant's configured delivery areas are shown here. Click an area to edit its city, area, and shipping settings.</p>
+                  </div>
+                  <button type="button" className="button" onClick={addZone} disabled={loading || saving}>+ Add Delivery Zone</button>
+                </div>
+        
+                <div className="restaurant-shipping-search">
+                  <label className="restaurant-shipping-search-label" htmlFor="restaurant-barangay-search">Search delivery zones</label>
+                  <div className="restaurant-shipping-search-input-wrap">
+                    <input id="restaurant-delivery-zone-search" type="search" value={searchDeliveryZones} onChange={(event) => setSearchDeliveryZones(event.target.value)} placeholder="Search by city or delivery area" />
+                    {searchDeliveryZones && <button type="button" className="restaurant-shipping-search-clear" onClick={() => setSearchDeliveryZones('')} aria-label="Clear delivery zone search">×</button>}
+                  </div>
+                </div>
+        
+                {loading ? <p>Loading delivery areas…</p> : filteredZones.length === 0 ? (
+                  <div className="restaurant-shipping-empty restaurant-shipping-search-empty">
+                    {zones.length === 0 ? 'No delivery zones configured yet. Add the areas where your restaurant delivers.' : `No delivery zone found for “${searchDeliveryZones}”.`}
+                  </div>
+                ) : (
+                  <div className="restaurant-delivery-zone-list">
+                    {filteredZones.map((zone) => {
+                      const index = zones.findIndex((item) => item === zone);
+                      return (
+                        <button type="button" className="restaurant-delivery-zone-row" key={zone.id || `new-${index}`} onClick={() => openEditor(index)}>
+                          <span className="restaurant-delivery-zone-cell">
+                            <span className="restaurant-delivery-zone-cell-label">City / Delivery area</span>
+                            <span className="restaurant-delivery-zone-cell-value">{zone.city ? `${zone.city} / ` : ''}{zone.barangay || 'New delivery zone'}</span>
+                          </span>
+                          <span className="restaurant-delivery-zone-cell">
+                            <span className="restaurant-delivery-zone-cell-label">Shipping fee</span>
+                            <span className="restaurant-delivery-zone-cell-value restaurant-delivery-zone-fee">₱ {Number(zone.shippingFee || 0).toFixed(2)}</span>
+                          </span>
+                          <span className="restaurant-delivery-zone-cell">
+                            <span className="restaurant-delivery-zone-cell-label">Delivery coverage</span>
+                            <span className="restaurant-delivery-zone-coverage"><span className={`restaurant-delivery-zone-dot ${zone.isSupported ? '' : 'is-out'}`} />{zone.isSupported ? 'Within our delivery' : 'Outside delivery area'}</span>
+                          </span>
+                          <span className="restaurant-delivery-zone-chevron" aria-hidden="true">›</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+        
+        
+      )}
       {editingZone && (editingIndex !== null || !editingZone.id) && (
         <div className="restaurant-shipping-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) closeEditor(); }}>
           <div className="restaurant-shipping-modal" role="dialog" aria-modal="true" aria-labelledby="shipping-zone-modal-title">
