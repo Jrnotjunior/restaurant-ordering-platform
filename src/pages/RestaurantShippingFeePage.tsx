@@ -31,7 +31,7 @@ function toDraft(zone: RestaurantDeliveryZone): ZoneDraft {
 
 export function RestaurantShippingFeePage({ restaurantId }: Props) {
   const [zones, setZones] = useState<ZoneDraft[]>([]);
-  const [searchBarangay, setSearchBarangay] = useState('');
+  const [searchDeliveryZones, setSearchDeliveryZones] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -87,12 +87,12 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
       return;
     }
     if (!zone?.barangay.trim()) {
-      setError('Enter a barangay name before saving.');
+      setError('Enter a delivery area before saving.');
       return;
     }
     const fee = Number(zone.shippingFee);
     if (!Number.isFinite(fee) || fee < 0) {
-      setError('Enter a valid barangay shipping fee of ₱0 or more.');
+      setError('Enter a valid delivery zone shipping fee of ₱0 or more.');
       return;
     }
 
@@ -110,7 +110,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
       });
       await loadSettings();
       setEditingIndex(null);
-      setMessage(`${zone.barangay.trim()} delivery setting saved.`);
+      setMessage(`${zone.barangay.trim()} delivery zone saved.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to save delivery area.');
     } finally {
@@ -126,7 +126,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
       setEditingIndex(null);
       return;
     }
-    if (!window.confirm(`Remove ${zone.barangay} from your delivery areas?`)) return;
+    if (!window.confirm(`Remove ${zone.barangay} from your delivery zones?`)) return;
 
     setSaving(true);
     setError('');
@@ -134,7 +134,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
       await deleteRestaurantDeliveryZone(restaurantId, zone.id);
       await loadSettings();
       setEditingIndex(null);
-      setMessage('Delivery area removed.');
+      setMessage('Delivery zone removed.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to remove delivery area.');
     } finally {
@@ -143,10 +143,10 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
   }
 
   const filteredZones = useMemo(() => {
-    const query = searchBarangay.trim().toLowerCase();
+    const query = searchDeliveryZones.trim().toLowerCase();
     if (!query) return zones;
     return zones.filter((zone) => `${zone.city} ${zone.barangay}`.toLowerCase().includes(query));
-  }, [zones, searchBarangay]);
+  }, [zones, searchDeliveryZones]);
 
   const editingZone = editingIndex === null ? null : zones[editingIndex];
 
@@ -193,23 +193,23 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
       <div className="restaurant-shipping-card restaurant-delivery-zones-card">
         <div className="restaurant-shipping-section-header">
           <div>
-            <h2>Delivery by Barangay</h2>
-            <p className="restaurant-shipping-help">Your restaurant's configured delivery areas are shown here. Click an area to edit its city, barangay, and shipping settings.</p>
+            <h2>Delivery Zones</h2>
+            <p className="restaurant-shipping-help">Your restaurant's configured delivery areas are shown here. Click an area to edit its city, area, and shipping settings.</p>
           </div>
-          <button type="button" className="button" onClick={addZone} disabled={loading || saving}>+ Add Barangay</button>
+          <button type="button" className="button" onClick={addZone} disabled={loading || saving}>+ Add Delivery Zone</button>
         </div>
 
         <div className="restaurant-shipping-search">
-          <label className="restaurant-shipping-search-label" htmlFor="restaurant-barangay-search">Search barangay</label>
+          <label className="restaurant-shipping-search-label" htmlFor="restaurant-barangay-search">Search delivery zones</label>
           <div className="restaurant-shipping-search-input-wrap">
-            <input id="restaurant-barangay-search" type="search" value={searchBarangay} onChange={(event) => setSearchBarangay(event.target.value)} placeholder="Search by barangay name" />
-            {searchBarangay && <button type="button" className="restaurant-shipping-search-clear" onClick={() => setSearchBarangay('')} aria-label="Clear barangay search">×</button>}
+            <input id="restaurant-delivery-zone-search" type="search" value={searchDeliveryZones} onChange={(event) => setSearchDeliveryZones(event.target.value)} placeholder="Search by city or delivery area" />
+            {searchDeliveryZones && <button type="button" className="restaurant-shipping-search-clear" onClick={() => setSearchDeliveryZones('')} aria-label="Clear delivery zone search">×</button>}
           </div>
         </div>
 
         {loading ? <p>Loading delivery areas…</p> : filteredZones.length === 0 ? (
           <div className="restaurant-shipping-empty restaurant-shipping-search-empty">
-            {zones.length === 0 ? 'No barangays configured yet. Add the areas where your restaurant delivers.' : `No barangay found for “${searchBarangay}”.`}
+            {zones.length === 0 ? 'No delivery zones configured yet. Add the areas where your restaurant delivers.' : `No delivery zone found for “${searchDeliveryZones}”.`}
           </div>
         ) : (
           <div className="restaurant-delivery-zone-list">
@@ -218,8 +218,8 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
               return (
                 <button type="button" className="restaurant-delivery-zone-row" key={zone.id || `new-${index}`} onClick={() => setEditingIndex(index)}>
                   <span className="restaurant-delivery-zone-cell">
-                    <span className="restaurant-delivery-zone-cell-label">City / Barangay</span>
-                    <span className="restaurant-delivery-zone-cell-value">{zone.city ? `${zone.city} / ` : ''}{zone.barangay || 'New barangay'}</span>
+                    <span className="restaurant-delivery-zone-cell-label">City / Delivery area</span>
+                    <span className="restaurant-delivery-zone-cell-value">{zone.city ? `${zone.city} / ` : ''}{zone.barangay || 'New delivery zone'}</span>
                   </span>
                   <span className="restaurant-delivery-zone-cell">
                     <span className="restaurant-delivery-zone-cell-label">Shipping fee</span>
@@ -241,15 +241,15 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
         <div className="restaurant-shipping-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) closeEditor(); }}>
           <div className="restaurant-shipping-modal" role="dialog" aria-modal="true" aria-labelledby="shipping-zone-modal-title">
             <button className="restaurant-shipping-modal-close" type="button" disabled={saving} onClick={closeEditor}>×</button>
-            <h2 id="shipping-zone-modal-title">{editingZone.id ? `Edit ${editingZone.barangay}` : 'Add Barangay'}</h2>
+            <h2 id="shipping-zone-modal-title">{editingZone.id ? `Edit ${editingZone.barangay}` : 'Add Delivery Zone'}</h2>
             <form className="restaurant-shipping-form" onSubmit={(event) => { event.preventDefault(); void handleSaveZone(editingIndex); }}>
               <label>
                 City
-                <input type="text" value={editingZone.city} onChange={(event) => updateZone(editingIndex, { city: event.target.value })} placeholder="e.g. Valenzuela City" autoComplete="address-level2" />
+                <input type="text" value={editingZone.city} onChange={(event) => updateZone(editingIndex, { city: event.target.value })} placeholder="Enter city" autoComplete="address-level2" />
               </label>
               <label>
-                Barangay
-                <input type="text" value={editingZone.barangay} readOnly={Boolean(editingZone.id)} onChange={(event) => updateZone(editingIndex, { barangay: event.target.value })} placeholder="e.g. Barangay Bagbag" autoFocus={!editingZone.id} />
+                Delivery area
+                <input type="text" value={editingZone.barangay} readOnly={Boolean(editingZone.id)} onChange={(event) => updateZone(editingIndex, { barangay: event.target.value })} placeholder="e.g. Malinta" autoFocus={!editingZone.id} />
               </label>
               <label>
                 Shipping fee
