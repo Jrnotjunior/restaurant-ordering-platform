@@ -915,28 +915,3 @@
     width: 100%;
   }
 }
-
-
-/* Keep online payment visually distinct and compact. */
-.payment-modal-online-button {
-  width: auto !important;
-  min-width: 0;
-  padding-inline: 1.1rem;
-  background: #0f766e !important;
-  border-color: #0f766e !important;
-  color: #ffffff !important;
-}
-
-.payment-modal-online-button:hover:not(:disabled) {
-  background: #115e59 !important;
-  border-color: #115e59 !important;
-  color: #ffffff !important;
-}
-
-@media (max-width: 560px) {
-  .payment-modal-actions .payment-modal-online-button {
-    width: auto !important;
-    min-width: 0;
-    align-self: flex-end;
-  }
-}
