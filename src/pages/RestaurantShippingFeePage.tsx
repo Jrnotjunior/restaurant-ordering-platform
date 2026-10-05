@@ -11,6 +11,7 @@ type Props = { restaurantId: string };
 
 type ZoneDraft = {
   id: string;
+  city: string;
   barangay: string;
   shippingFee: string;
   isSupported: boolean;
@@ -20,6 +21,7 @@ type ZoneDraft = {
 function toDraft(zone: RestaurantDeliveryZone): ZoneDraft {
   return {
     id: zone.id,
+    city: zone.city,
     barangay: zone.barangay,
     shippingFee: String(zone.shippingFee),
     isSupported: zone.isSupported,
@@ -56,7 +58,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
   function addZone() {
     setZones((current) => [
       ...current,
-      { id: '', barangay: '', shippingFee: '0', isSupported: true, outOfScopeMessage: DEFAULT_OUT_OF_SCOPE_MESSAGE },
+      { id: '', city: '', barangay: '', shippingFee: '0', isSupported: true, outOfScopeMessage: DEFAULT_OUT_OF_SCOPE_MESSAGE },
     ]);
     setEditingIndex(zones.length);
     setMessage('');
@@ -80,6 +82,10 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
 
   async function handleSaveZone(index: number) {
     const zone = zones[index];
+    if (!zone?.city.trim()) {
+      setError('Enter a city before saving.');
+      return;
+    }
     if (!zone?.barangay.trim()) {
       setError('Enter a barangay name before saving.');
       return;
@@ -96,6 +102,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
     try {
       await upsertRestaurantDeliveryZone(restaurantId, {
         id: zone.id,
+        city: zone.city,
         barangay: zone.barangay,
         shippingFee: Math.round(fee * 100) / 100,
         isSupported: zone.isSupported,
@@ -138,7 +145,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
   const filteredZones = useMemo(() => {
     const query = searchBarangay.trim().toLowerCase();
     if (!query) return zones;
-    return zones.filter((zone) => zone.barangay.toLowerCase().includes(query));
+    return zones.filter((zone) => `${zone.city} ${zone.barangay}`.toLowerCase().includes(query));
   }, [zones, searchBarangay]);
 
   const editingZone = editingIndex === null ? null : zones[editingIndex];
@@ -187,7 +194,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
         <div className="restaurant-shipping-section-header">
           <div>
             <h2>Delivery by Barangay</h2>
-            <p className="restaurant-shipping-help">Your restaurant's configured delivery areas are shown here. Click an area to edit its shipping settings.</p>
+            <p className="restaurant-shipping-help">Your restaurant's configured delivery areas are shown here. Click an area to edit its city, barangay, and shipping settings.</p>
           </div>
           <button type="button" className="button" onClick={addZone} disabled={loading || saving}>+ Add Barangay</button>
         </div>
@@ -211,8 +218,8 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
               return (
                 <button type="button" className="restaurant-delivery-zone-row" key={zone.id || `new-${index}`} onClick={() => setEditingIndex(index)}>
                   <span className="restaurant-delivery-zone-cell">
-                    <span className="restaurant-delivery-zone-cell-label">Barangay</span>
-                    <span className="restaurant-delivery-zone-cell-value">{zone.barangay || 'New barangay'}</span>
+                    <span className="restaurant-delivery-zone-cell-label">City / Barangay</span>
+                    <span className="restaurant-delivery-zone-cell-value">{zone.city ? `${zone.city} / ` : ''}{zone.barangay || 'New barangay'}</span>
                   </span>
                   <span className="restaurant-delivery-zone-cell">
                     <span className="restaurant-delivery-zone-cell-label">Shipping fee</span>
@@ -236,6 +243,10 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
             <button className="restaurant-shipping-modal-close" type="button" disabled={saving} onClick={closeEditor}>×</button>
             <h2 id="shipping-zone-modal-title">{editingZone.id ? `Edit ${editingZone.barangay}` : 'Add Barangay'}</h2>
             <form className="restaurant-shipping-form" onSubmit={(event) => { event.preventDefault(); void handleSaveZone(editingIndex); }}>
+              <label>
+                City
+                <input type="text" value={editingZone.city} onChange={(event) => updateZone(editingIndex, { city: event.target.value })} placeholder="e.g. Valenzuela City" autoComplete="address-level2" />
+              </label>
               <label>
                 Barangay
                 <input type="text" value={editingZone.barangay} readOnly={Boolean(editingZone.id)} onChange={(event) => updateZone(editingIndex, { barangay: event.target.value })} placeholder="e.g. Barangay Bagbag" autoFocus={!editingZone.id} />

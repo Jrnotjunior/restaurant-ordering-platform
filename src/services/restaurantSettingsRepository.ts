@@ -3,6 +3,7 @@ import { supabase } from './supabaseClient';
 export type RestaurantDeliveryZone = {
   id: string;
   restaurantId: string;
+  city: string;
   barangay: string;
   shippingFee: number;
   isSupported: boolean;
@@ -28,13 +29,14 @@ export async function getRestaurantDeliveryZones(restaurantId: string): Promise<
   if (!supabase) throw new Error('Supabase environment variables are not configured.');
   const { data, error } = await supabase
     .from('restaurant_delivery_zones')
-    .select('id, restaurant_id, barangay, shipping_fee, is_supported, out_of_scope_message')
+    .select('id, restaurant_id, city, barangay, shipping_fee, is_supported, out_of_scope_message')
     .eq('restaurant_id', restaurantId)
     .order('barangay', { ascending: true });
   if (error) throw new Error(error.message);
   return (data ?? []).map((row) => ({
     id: row.id,
     restaurantId: row.restaurant_id,
+    city: row.city,
     barangay: row.barangay,
     shippingFee: Number(row.shipping_fee ?? 0),
     isSupported: Boolean(row.is_supported),
@@ -44,18 +46,19 @@ export async function getRestaurantDeliveryZones(restaurantId: string): Promise<
 
 export async function upsertRestaurantDeliveryZone(
   restaurantId: string,
-  zone: Pick<RestaurantDeliveryZone, 'id' | 'barangay' | 'shippingFee' | 'isSupported' | 'outOfScopeMessage'>,
+  zone: Pick<RestaurantDeliveryZone, 'id' | 'city' | 'barangay' | 'shippingFee' | 'isSupported' | 'outOfScopeMessage'>,
 ): Promise<void> {
   if (!supabase) throw new Error('Supabase environment variables are not configured.');
   const payload = {
     ...(zone.id ? { id: zone.id } : {}),
     restaurant_id: restaurantId,
+    city: zone.city.trim(),
     barangay: zone.barangay.trim(),
     shipping_fee: zone.shippingFee,
     is_supported: zone.isSupported,
     out_of_scope_message: zone.outOfScopeMessage.trim() || DEFAULT_OUT_OF_SCOPE_MESSAGE,
   };
-  const { error } = await supabase.from('restaurant_delivery_zones').upsert(payload, { onConflict: 'restaurant_id,barangay' });
+  const { error } = await supabase.from('restaurant_delivery_zones').upsert(payload, { onConflict: 'restaurant_id,city,barangay' });
   if (error) throw new Error(error.message);
 }
 

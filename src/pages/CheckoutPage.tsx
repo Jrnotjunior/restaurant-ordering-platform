@@ -31,14 +31,12 @@ const paymentMethods: Array<{ value: PaymentMethod; label: string; description: 
   { value: 'online', label: 'Online Payment', description: 'Pay securely through our online payment gateway.' },
 ];
 
-const outsideCityMessage = 'We currently deliver only within selected barangays in Valenzuela City. If you are outside our delivery area, you can proceed using your own courier.';
 const outsideDeliveryAreaMessage = 'This address is outside the store delivery area. You can still order by choosing your own courier to pick up the order from the restaurant.';
 const PENDING_PAYMENT_ORDER_KEY = 'restaurant-ordering-pending-payment-order';
 const CART_CLEAR_EVENT = 'restaurant-ordering-cart-clear';
 const thirdPartyCourierNote = 'THIRD-PARTY COURIER: Customer is responsible for booking and paying the delivery courier (such as Lalamove or Grab Express). The restaurant will prepare the food for courier pickup at the listed restaurant pickup point.';
 
 function normalize(value: string) { return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase(); }
-function isValenzuela(value: string) { const city = normalize(value); return city === 'valenzuela' || city === 'valenzuela city'; }
 
 export function CheckoutPage({ items }: CheckoutPageProps) {
   const restaurant = useRestaurant();
@@ -250,7 +248,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   }, [restaurantId, user?.id]);
 
   const restaurantPickupPoint = restaurant.locationText?.trim() ?? '';
-  const cityIsSupported = isValenzuela(deliveryCity);
+  const cityIsSupported = Boolean(deliveryCity.trim()) && deliveryZones.some((zone) => normalize(zone.city) === normalize(deliveryCity));
   const isDelivery = orderType === 'delivery';
 
   useEffect(() => {
@@ -273,12 +271,12 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const selectedDeliveryZone = useMemo(() => {
     if (!cityIsSupported || thirdPartyCourierDelivery) return null;
     const value = normalize(deliveryBarangay);
-    return value ? deliveryZones.find((zone) => normalize(zone.barangay) === value) ?? null : null;
+    return value ? deliveryZones.find((zone) => normalize(zone.city) === normalize(deliveryCity) && normalize(zone.barangay) === value) ?? null : null;
   }, [cityIsSupported, deliveryZones, deliveryBarangay, thirdPartyCourierDelivery]);
   const suggestions = useMemo(() => {
     const value = normalize(deliveryBarangay);
     if (!cityIsSupported || thirdPartyCourierDelivery || !value || selectedDeliveryZone) return [];
-    return deliveryZones.filter((zone) => normalize(zone.barangay).startsWith(value)).slice(0, 6);
+    return deliveryZones.filter((zone) => normalize(zone.city) === normalize(deliveryCity) && normalize(zone.barangay).startsWith(value)).slice(0, 6);
   }, [cityIsSupported, deliveryZones, deliveryBarangay, selectedDeliveryZone, thirdPartyCourierDelivery]);
   const deliveryFee = isDelivery && !thirdPartyCourierDelivery ? Number(selectedDeliveryZone?.shippingFee ?? 0) : 0;
   const loyaltyEligible = Boolean(user && loyaltySettings?.enabled && loyaltyPoints >= (loyaltySettings?.pointsRequired ?? Number.MAX_SAFE_INTEGER));
@@ -344,7 +342,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   function commitCity() {
     const city = deliveryCity.trim();
     if (!city || thirdPartyCourierDelivery) return;
-    if (isValenzuela(city)) {
+    if (deliveryZones.some((zone) => normalize(zone.city) === normalize(city))) {
       setShowDeliveryTerms(false);
       return;
     }
@@ -393,6 +391,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       customerName: customerName.trim(),
       mobileNumber: orderType === 'dine_in' ? '' : mobileNumber.trim(),
       orderType: isDelivery && thirdPartyCourierDelivery ? 'pickup' : orderType,
+      deliveryCity: isDelivery && !thirdPartyCourierDelivery ? deliveryCity.trim() : '',
       deliveryBarangay: isDelivery && !thirdPartyCourierDelivery ? deliveryBarangay.trim() : '',
       deliveryAddress: isDelivery ? (thirdPartyCourierDelivery ? restaurantPickupPoint : [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')) : address.trim(),
       notes: finalNotes,
@@ -427,6 +426,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         customerName: customerName.trim(),
         mobileNumber: orderType === 'dine_in' ? '' : mobileNumber.trim(),
         orderType: isDelivery && thirdPartyCourierDelivery ? 'pickup' : orderType,
+        deliveryCity: isDelivery && !thirdPartyCourierDelivery ? deliveryCity.trim() : '',
         deliveryBarangay: isDelivery && !thirdPartyCourierDelivery ? deliveryBarangay.trim() : '',
         deliveryAddress: isDelivery ? (thirdPartyCourierDelivery ? restaurantPickupPoint : [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')) : address.trim(),
         notes: [notes.trim(), isDelivery && thirdPartyCourierDelivery ? `${thirdPartyCourierNote}\\nCourier: ${thirdPartyCourier === 'Other' ? (thirdPartyCourierName || 'Other courier') : thirdPartyCourier}\\nDestination: ${thirdPartyDestination || [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')}` : ''].filter(Boolean).join('\\n\\n'),
@@ -519,7 +519,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
               {cityIsSupported && <div className="delivery-field-group"><label htmlFor="delivery-barangay">Barangay</label><div className="barangay-input-wrap"><input id="delivery-barangay" type="text" value={deliveryBarangay} onChange={(e) => { setDeliveryBarangay(e.target.value); resetPayment(); }} placeholder="Enter your barangay" disabled={loadingDeliveryZones || deliveryZones.length === 0} required />{suggestions.length > 0 && <div className="barangay-suggestions" role="listbox">{suggestions.map((zone) => <button className="barangay-suggestion" key={zone.id} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { setDeliveryBarangay(zone.barangay); resetPayment(); }}><span>{zone.barangay}</span><small>{zone.isSupported ? `₱${zone.shippingFee.toFixed(2)} delivery fee` : 'Outside delivery area'}</small></button>)}</div>}</div></div>}
               {cityIsSupported && deliveryBarangay.trim() && <label><span>Unit/Bldg./Street Address</span><textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Enter your unit, building, house number, and street" rows={4} required /></label>}
             </div>}
-            {!thirdPartyCourierDelivery && deliveryCity.trim() && !cityIsSupported && <p className="checkout-error" role="alert">{outsideCityMessage}</p>}
+            {!thirdPartyCourierDelivery && deliveryCity.trim() && !cityIsSupported && <p className="checkout-error" role="alert">{outsideDeliveryAreaMessage}</p>}
             {!thirdPartyCourierDelivery && loadingDeliveryZones && <p className="checkout-hint">Loading delivery areas…</p>}
             {!thirdPartyCourierDelivery && cityIsSupported && deliveryBarangay.trim() && !selectedDeliveryZone && <p className="checkout-error" role="alert">{outsideDeliveryAreaMessage}</p>}
             {!thirdPartyCourierDelivery && cityIsSupported && selectedDeliveryZone && !selectedDeliveryZone.isSupported && <div className="checkout-outside-scope-card"><p className="checkout-error" role="alert">{selectedDeliveryZone.outOfScopeMessage || outsideDeliveryAreaMessage}</p><button className="button button-secondary" type="button" onClick={openThirdPartyCourierTerms}>Use my own courier instead</button></div>}
