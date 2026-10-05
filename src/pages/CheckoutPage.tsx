@@ -406,7 +406,6 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       orderType: isDelivery && thirdPartyCourierDelivery ? 'pickup' : orderType,
       deliveryCity: isDelivery && !thirdPartyCourierDelivery ? (selectedDeliveryZone?.city ?? deliveryCity.trim()) : '',
       deliveryBarangay: isDelivery && !thirdPartyCourierDelivery ? deliveryBarangay.trim() : '',
-        deliveryCity: isDelivery && !thirdPartyCourierDelivery ? (selectedDeliveryZone?.city ?? deliveryCity.trim()) : '',
       deliveryAddress: isDelivery ? (thirdPartyCourierDelivery ? restaurantPickupPoint : [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')) : address.trim(),
       notes: finalNotes,
       // Keep the existing database payment value while the customer-facing method is "Online Payment".
@@ -440,7 +439,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         customerName: customerName.trim(),
         mobileNumber: orderType === 'dine_in' ? '' : mobileNumber.trim(),
         orderType: isDelivery && thirdPartyCourierDelivery ? 'pickup' : orderType,
-        deliveryCity: isDelivery && !thirdPartyCourierDelivery ? deliveryCity.trim() : '',
+        deliveryCity: isDelivery && !thirdPartyCourierDelivery ? (selectedDeliveryZone?.city ?? deliveryCity.trim()) : '',
         deliveryBarangay: isDelivery && !thirdPartyCourierDelivery ? deliveryBarangay.trim() : '',
         deliveryAddress: isDelivery ? (thirdPartyCourierDelivery ? restaurantPickupPoint : [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')) : address.trim(),
         notes: [notes.trim(), isDelivery && thirdPartyCourierDelivery ? `${thirdPartyCourierNote}\\nCourier: ${thirdPartyCourier === 'Other' ? (thirdPartyCourierName || 'Other courier') : thirdPartyCourier}\\nDestination: ${thirdPartyDestination || [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')}` : ''].filter(Boolean).join('\\n\\n'),
