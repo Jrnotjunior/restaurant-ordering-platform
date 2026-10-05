@@ -140,7 +140,7 @@ export function CustomerSignUpPage() {
 
       setShowSignInModal(false);
       setSignInPassword('');
-      window.location.hash = '#menu';
+      window.location.hash = '';
     } catch (err) {
       setSignInError(err instanceof Error ? err.message : 'Unable to sign in.');
     } finally {
