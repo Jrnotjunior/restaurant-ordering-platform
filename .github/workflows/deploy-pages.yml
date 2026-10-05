@@ -21,10 +21,8 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout experiment branch
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: delivery-radius-map-experiment
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -39,7 +37,8 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}
+          # GitHub Pages is our temporary test storefront. Production
+          # multi-tenant routing will resolve by custom domain/Hostinger.
           VITE_RESTAURANT_SLUG: solutions
 
       - name: Setup Pages
