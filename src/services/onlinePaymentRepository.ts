@@ -8,6 +8,8 @@ export type PendingOnlinePaymentInput = {
   deliveryCity: string;
   deliveryBarangay: string;
   deliveryAddress: string;
+  deliveryLatitude?: number | null;
+  deliveryLongitude?: number | null;
   notes: string;
   isThirdPartyCourier?: boolean;
   items: Array<{ productId: string; quantity: number }>;
@@ -39,6 +41,8 @@ export async function createPendingOnlinePayment(input: PendingOnlinePaymentInpu
     p_delivery_city: input.deliveryCity || null,
     p_delivery_barangay: input.deliveryBarangay || null,
     p_delivery_address: input.deliveryAddress || null,
+    p_delivery_latitude: input.deliveryLatitude ?? null,
+    p_delivery_longitude: input.deliveryLongitude ?? null,
     p_notes: input.notes,
     p_is_third_party_courier: input.isThirdPartyCourier ?? false,
     p_items: input.items.map((item) => ({ product_id: item.productId, quantity: item.quantity })),
