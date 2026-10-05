@@ -591,26 +591,34 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
           {isDelivery && <fieldset className="checkout-section"><legend>{thirdPartyCourierDelivery ? 'Pickup with Your Own Courier' : 'Delivery address'}</legend>
             {deliveryZonesError && <p className="checkout-error" role="alert">{deliveryZonesError}</p>}
             {!thirdPartyCourierDelivery && !hasDefaultAddress && <p className="checkout-address-note">{user ? 'Please enter your delivery address. We’ll save it as your default address for future orders.' : 'Please enter your delivery address.'}</p>}
-            {thirdPartyCourierDelivery ? <div className="third-party-courier-card">
-              <strong>Restaurant pickup point</strong><p className="pickup-label">Your order will be prepared here for pickup by you or your courier.</p><p className="pickup-address">{restaurantPickupPoint || 'Restaurant pickup address is not configured.'}</p>
-              <div className="pickup-callout">Your destination address is handled by your courier. Provide the destination directly to Lalamove, Grab Express, or your chosen courier.</div><p><strong>Important:</strong> After payment, your order will be sent to the kitchen for preparation. Please arrange your courier to be available when the order is ready. If your courier is unavailable or arrives late, this alone does not make the order eligible for a refund.</p><p>You are responsible for booking and paying the courier and for the trip from the restaurant to your destination.</p>
-              <label><span>Courier</span><select value={thirdPartyCourier} onChange={(event) => { setThirdPartyCourier(event.target.value); if (event.target.value !== 'Other') setThirdPartyCourierName(''); }} required><option value="">Select your courier</option><option value="Lalamove">Lalamove</option><option value="Grab Express">Grab Express</option><option value="Other">Other courier</option></select></label>
-              {thirdPartyCourier === 'Other' && <label><span>Courier name</span><input type="text" value={thirdPartyCourierName} onChange={(event) => setThirdPartyCourierName(event.target.value)} placeholder="Enter courier name" required /></label>
-              }
-              {thirdPartyDestination && <p className="pickup-callout"><strong>Destination:</strong> {thirdPartyDestination}</p>}
-            </div> : <div className="delivery-address-fields">
-              <label><span>City</span><input type="text" name="deliveryCity" value={deliveryCity} onChange={(e) => { setDeliveryCity(e.target.value); setDeliveryBarangay(''); setAddress(''); setThirdPartyCourierDelivery(false); setThirdPartyCourierTermsAccepted(false); setShowDeliveryTerms(false); resetPayment(); }} onKeyDownCapture={handleCityKeyboard} onKeyUpCapture={handleCityKeyboard} autoComplete="address-level2" placeholder="Enter your city, then press Enter" required /></label>
-              {!thirdPartyCourierDelivery && !radiusCoverageEnabled && <div className="delivery-field-group"><label htmlFor="delivery-barangay">Barangay</label><div className="barangay-input-wrap"><input id="delivery-barangay" type="text" value={deliveryBarangay} onChange={(e) => { setDeliveryBarangay(e.target.value); resetPayment(); }} placeholder={loadingDeliveryZones ? 'Loading delivery areas…' : deliveryCity.trim() ? 'Enter your barangay' : 'Enter your city first'} disabled={!deliveryCity.trim()} required />{suggestions.length > 0 && <div className="barangay-suggestions" role="listbox">{suggestions.map((zone) => <button className="barangay-suggestion" key={zone.id} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { setDeliveryBarangay(zone.barangay); resetPayment(); }}><span>{zone.barangay}</span><small>{zone.isSupported ? 'Delivery fee: ₱' + zone.shippingFee.toFixed(2) : 'Outside delivery area'}</small></button>)}</div>}</div></div>}
-              {!thirdPartyCourierDelivery && radiusCoverageEnabled && restaurantDeliveryCoordinate && <div className="checkout-radius-map-card">
-                <div className="checkout-radius-map-heading">
-                  <div><strong>Choose your delivery location</strong><span>Pin the address on the map. We use the pin only to check the delivery radius.</span></div>
-                  {deliveryDistance != null && <strong>{deliveryDistance.toFixed(1)} km</strong>}
-                </div>
-                <DeliveryCoverageMap center={restaurantDeliveryCoordinate} marker={selectedDeliveryCoordinate} radiusKm={deliverySettings?.deliveryRadiusKm ?? 5} interactive onMarkerChange={(coordinate) => { setDeliveryLatitude(coordinate.latitude); setDeliveryLongitude(coordinate.longitude); resetPayment(); }} height={300} />
-                <p className="checkout-map-help">Click the map or drag the pin to your delivery location.</p>
-                {!selectedDeliveryCoordinate && <p className="checkout-hint">A delivery location pin is required.</p>}
-              </div>}
-              {!thirdPartyCourierDelivery && (radiusCoverageEnabled || cityIsSupported) && <label><span>Unit/Bldg./Street Address</span><textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Enter your unit, building, house number, and street" rows={4} required /></label></div>}
+            {thirdPartyCourierDelivery ? (
+              <div className="third-party-courier-card">
+                <strong>Restaurant pickup point</strong>
+                <p className="pickup-label">Your order will be prepared here for pickup by you or your courier.</p>
+                <p className="pickup-address">{restaurantPickupPoint || 'Restaurant pickup address is not configured.'}</p>
+                <div className="pickup-callout">Your destination address is handled by your courier. Provide the destination directly to Lalamove, Grab Express, or your chosen courier.</div>
+                <p><strong>Important:</strong> After payment, your order will be sent to the kitchen for preparation. Please arrange your courier to be available when the order is ready. If your courier is unavailable or arrives late, this alone does not make the order eligible for a refund.</p>
+                <p>You are responsible for booking and paying the courier and for the trip from the restaurant to your destination.</p>
+                <label><span>Courier</span><select value={thirdPartyCourier} onChange={(event) => { setThirdPartyCourier(event.target.value); if (event.target.value !== 'Other') setThirdPartyCourierName(''); }} required><option value="">Select your courier</option><option value="Lalamove">Lalamove</option><option value="Grab Express">Grab Express</option><option value="Other">Other courier</option></select></label>
+                {thirdPartyCourier === 'Other' && <label><span>Courier name</span><input type="text" value={thirdPartyCourierName} onChange={(event) => setThirdPartyCourierName(event.target.value)} placeholder="Enter courier name" required /></label>}
+                {thirdPartyDestination && <p className="pickup-callout"><strong>Destination:</strong> {thirdPartyDestination}</p>}
+              </div>
+            ) : (
+              <div className="delivery-address-fields">
+                <label><span>City</span><input type="text" name="deliveryCity" value={deliveryCity} onChange={(e) => { setDeliveryCity(e.target.value); setDeliveryBarangay(''); setAddress(''); setThirdPartyCourierDelivery(false); setThirdPartyCourierTermsAccepted(false); setShowDeliveryTerms(false); resetPayment(); }} onKeyDownCapture={handleCityKeyboard} onKeyUpCapture={handleCityKeyboard} autoComplete="address-level2" placeholder="Enter your city, then press Enter" required /></label>
+                {!thirdPartyCourierDelivery && !radiusCoverageEnabled && <div className="delivery-field-group"><label htmlFor="delivery-barangay">Barangay</label><div className="barangay-input-wrap"><input id="delivery-barangay" type="text" value={deliveryBarangay} onChange={(e) => { setDeliveryBarangay(e.target.value); resetPayment(); }} placeholder={loadingDeliveryZones ? 'Loading delivery areas…' : deliveryCity.trim() ? 'Enter your barangay' : 'Enter your city first'} disabled={!deliveryCity.trim()} required />{suggestions.length > 0 && <div className="barangay-suggestions" role="listbox">{suggestions.map((zone) => <button className="barangay-suggestion" key={zone.id} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { setDeliveryBarangay(zone.barangay); resetPayment(); }}><span>{zone.barangay}</span><small>{zone.isSupported ? 'Delivery fee: ₱' + zone.shippingFee.toFixed(2) : 'Outside delivery area'}</small></button>)}</div>}</div></div>}
+                {!thirdPartyCourierDelivery && radiusCoverageEnabled && restaurantDeliveryCoordinate && <div className="checkout-radius-map-card">
+                  <div className="checkout-radius-map-heading">
+                    <div><strong>Choose your delivery location</strong><span>Pin the address on the map. We use the pin only to check the delivery radius.</span></div>
+                    {deliveryDistance != null && <strong>{deliveryDistance.toFixed(1)} km</strong>}
+                  </div>
+                  <DeliveryCoverageMap center={restaurantDeliveryCoordinate} marker={selectedDeliveryCoordinate} radiusKm={deliverySettings?.deliveryRadiusKm ?? 5} interactive onMarkerChange={(coordinate) => { setDeliveryLatitude(coordinate.latitude); setDeliveryLongitude(coordinate.longitude); resetPayment(); }} height={300} />
+                  <p className="checkout-map-help">Click the map or drag the pin to your delivery location.</p>
+                  {!selectedDeliveryCoordinate && <p className="checkout-hint">A delivery location pin is required.</p>}
+                </div>}
+                {!thirdPartyCourierDelivery && (radiusCoverageEnabled || cityIsSupported) && <label><span>Unit/Bldg./Street Address</span><textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Enter your unit, building, house number, and street" rows={4} required /></label>}
+              </div>
+            )}
             {!thirdPartyCourierDelivery && radiusCoverageEnabled && deliveryDistance != null && !withinRadius && <div className="checkout-outside-scope-card">
               <p className="checkout-error" role="alert">This address is outside the store delivery area ({deliveryDistance.toFixed(1)} km away; limit {deliverySettings?.deliveryRadiusKm.toFixed(1)} km).</p>
               {deliverySettings?.allowThirdPartyCourier && <button className="button button-secondary" type="button" onClick={openThirdPartyCourierTerms}>Use my own courier instead</button>}
