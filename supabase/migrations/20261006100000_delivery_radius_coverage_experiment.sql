@@ -474,3 +474,85 @@ $function$;
 
 revoke execute on function public.finalize_online_payment(text) from public,anon,authenticated;
 grant execute on function public.finalize_online_payment(text) to service_role;
+
+-- Automatic rider assignment uses the radius as the delivery boundary when configured.
+-- Legacy rider delivery-zone matching remains active for restaurants still using zones.
+create or replace function public.auto_assign_ready_delivery_order()
+returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
+declare
+  v_restaurant public.restaurants%rowtype;
+  v_rider_id uuid;
+  v_order_id uuid;
+  v_today_start timestamptz;
+begin
+  if new.order_type<>'delivery'
+    or new.status<>'ready'
+    or coalesce(new.delivery_status,'unassigned')<>'unassigned'
+    or new.rider_id is not null then
+    return new;
+  end if;
+
+  select * into v_restaurant
+  from public.restaurants
+  where id=new.restaurant_id
+    and is_active=true
+    and automatic_rider_assignment_enabled=true
+  for update;
+
+  if not found then return new; end if;
+
+  v_today_start:=date_trunc('day',now());
+
+  select s.id into v_rider_id
+  from public.restaurant_staff s
+  where s.restaurant_id=new.restaurant_id
+    and s.role='rider'
+    and s.is_active=true
+    and (
+      (
+        v_restaurant.delivery_latitude is not null
+        and v_restaurant.delivery_longitude is not null
+      )
+      or exists(
+        select 1
+        from public.rider_delivery_zones rdz
+        join public.restaurant_delivery_zones z on z.id=rdz.delivery_zone_id
+        where rdz.restaurant_id=new.restaurant_id
+          and rdz.rider_id=s.id
+          and z.restaurant_id=new.restaurant_id
+          and z.is_supported=true
+          and lower(trim(z.city))=lower(trim(new.delivery_city))
+          and lower(trim(z.barangay))=lower(trim(new.delivery_barangay))
+      )
+    )
+    and not exists(
+      select 1 from public.delivery_assignments da
+      where da.restaurant_id=new.restaurant_id
+        and da.rider_id=s.id
+        and da.status in('assigned','delivering')
+    )
+  order by
+    (select count(*) from public.delivery_assignments da where da.restaurant_id=new.restaurant_id and da.rider_id=s.id and da.status in('assigned','delivering')) asc,
+    (select count(*) from public.delivery_assignments da where da.restaurant_id=new.restaurant_id and da.rider_id=s.id and da.status='delivered' and da.delivered_at>=v_today_start) asc,
+    s.created_at asc,
+    s.id asc
+  limit 1;
+
+  if v_rider_id is null then return new; end if;
+
+  insert into public.delivery_assignments(order_id,rider_id,restaurant_id,status)
+  values(new.id,v_rider_id,new.restaurant_id,'assigned')
+  on conflict(order_id) where status in('assigned','delivering') do nothing
+  returning order_id into v_order_id;
+
+  if v_order_id is not null then
+    update public.orders
+    set rider_id=v_rider_id,delivery_status='assigned',rider_assigned_at=now()
+    where id=new.id and rider_id is null and coalesce(delivery_status,'unassigned')='unassigned';
+  end if;
+
+  return new;
+end;
+$$;
+
+revoke all on function public.auto_assign_ready_delivery_order() from public,anon,authenticated;
