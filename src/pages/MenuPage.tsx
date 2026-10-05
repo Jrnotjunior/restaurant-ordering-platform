@@ -18,14 +18,6 @@ function storefrontHref(href: string): string {
   return href;
 }
 
-function formatStorefrontTime(value: string): string {
-  const [hour, minute] = value.split(':').map(Number);
-  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return value;
-  const period = hour >= 12 ? 'PM' : 'AM';
-  const displayHour = hour % 12 || 12;
-  return `${displayHour}:${String(minute).padStart(2, '0')} ${period}`;
-}
-
 export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
   const restaurant = useRestaurant();
   const [categories, setCategories] = useState<RestaurantCategory[]>([]);
