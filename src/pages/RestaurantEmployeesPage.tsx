@@ -44,6 +44,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
   const [editingStaff, setEditingStaff] = useState<StaffAccount | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [resendingInvitationId, setResendingInvitationId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [searchEmployee, setSearchEmployee] = useState('');
   const [deliveryZones, setDeliveryZones] = useState<Array<{ id: string; barangay: string; isSupported: boolean }>>([]);
@@ -152,6 +153,34 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
       setError(saveError instanceof Error ? saveError.message : 'Unable to add employee.');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function resendInvitation(employee: StaffAccount) {
+    if (!supabase) return;
+    setResendingInvitationId(employee.id);
+    setError('');
+    try {
+      const { data, error: functionError } = await supabase.functions.invoke('resend-staff-invitation', {
+        body: { restaurantId, staffId: employee.id },
+      });
+      if (functionError) {
+        let message = functionError.message || 'Unable to resend employee invitation.';
+        if (functionError.context instanceof Response) {
+          try {
+            const payload = await functionError.context.clone().json();
+            if (payload?.error) message = payload.error;
+          } catch {}
+        }
+        throw new Error(message);
+      }
+      if (!data?.invitationSent) throw new Error('The invitation was not sent.');
+      setError('');
+      window.alert(`A new invitation was sent to ${employee.email}.`);
+    } catch (resendError) {
+      setError(resendError instanceof Error ? resendError.message : 'Unable to resend employee invitation.');
+    } finally {
+      setResendingInvitationId(null);
     }
   }
 
@@ -345,8 +374,9 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
                   {!employee.isActive ? <p className="restaurant-employee-status">Inactive</p> : null}
                 </div>
                 <div className="restaurant-employee-actions">
-                  <button className="button button-secondary" type="button" onClick={() => openEmployeeEditor(employee)} disabled={saving}>Edit</button>
-                  <button className="button button-secondary" type="button" onClick={() => void toggleActive(employee)} disabled={saving}>
+                  <button className="button button-secondary" type="button" onClick={() => openEmployeeEditor(employee)} disabled={saving || resendingInvitationId === employee.id}>Edit</button>
+                  {!employee.isActive ? null : <button className="button button-secondary" type="button" onClick={() => void resendInvitation(employee)} disabled={saving || resendingInvitationId !== null}>{resendingInvitationId === employee.id ? 'Sending…' : 'Resend Invitation'}</button>}
+                  <button className="button button-secondary" type="button" onClick={() => void toggleActive(employee)} disabled={saving || resendingInvitationId === employee.id}>
                     {employee.isActive ? 'Deactivate' : 'Activate'}
                   </button>
                 </div>
