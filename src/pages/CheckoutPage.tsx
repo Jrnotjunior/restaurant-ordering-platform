@@ -38,6 +38,7 @@ const CART_CLEAR_EVENT = 'restaurant-ordering-cart-clear';
 const thirdPartyCourierNote = 'THIRD-PARTY COURIER: Customer is responsible for booking and paying the delivery courier (such as Lalamove or Grab Express). The restaurant will prepare the food for courier pickup at the listed restaurant pickup point.';
 
 function normalize(value: string) { return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase(); }
+function normalizeCity(value: string) { return normalize(value).replace(/\s+city$/, ''); }
 
 export function CheckoutPage({ items }: CheckoutPageProps) {
   const restaurant = useRestaurant();
@@ -256,7 +257,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   }, [restaurantId, user?.id]);
 
   const restaurantPickupPoint = restaurant.locationText?.trim() ?? '';
-  const cityIsSupported = Boolean(deliveryCity.trim()) && deliveryZones.some((zone) => normalize(zone.city) === normalize(deliveryCity));
+  const cityIsSupported = Boolean(deliveryCity.trim()) && deliveryZones.some((zone) => normalizeCity(zone.city) === normalizeCity(deliveryCity));
   const isDelivery = orderType === 'delivery';
 
   useEffect(() => {
@@ -279,10 +280,10 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const subtotal = useMemo(() => items.reduce((total, item) => total + item.product.price * item.quantity, 0), [items]);
   const selectedDeliveryZone = useMemo(() => {
     if (thirdPartyCourierDelivery) return null;
-    const city = normalize(deliveryCity);
+    const city = normalizeCity(deliveryCity);
     const value = normalize(deliveryBarangay);
     if (!city || !value) return null;
-    return deliveryZones.find((zone) => normalize(zone.city) === city && normalize(zone.barangay) === value) ?? null;
+    return deliveryZones.find((zone) => normalizeCity(zone.city) === city && normalize(zone.barangay) === value) ?? null;
   }, [deliveryZones, deliveryCity, deliveryBarangay, thirdPartyCourierDelivery]);
   const suggestions = useMemo(() => {
     const city = normalize(deliveryCity);
@@ -403,7 +404,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       customerName: customerName.trim(),
       mobileNumber: orderType === 'dine_in' ? '' : mobileNumber.trim(),
       orderType: isDelivery && thirdPartyCourierDelivery ? 'pickup' : orderType,
-      deliveryCity: isDelivery && !thirdPartyCourierDelivery ? deliveryCity.trim() : '',
+      deliveryCity: isDelivery && !thirdPartyCourierDelivery ? (selectedDeliveryZone?.city ?? deliveryCity.trim()) : '',
       deliveryBarangay: isDelivery && !thirdPartyCourierDelivery ? deliveryBarangay.trim() : '',
       deliveryAddress: isDelivery ? (thirdPartyCourierDelivery ? restaurantPickupPoint : [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')) : address.trim(),
       notes: finalNotes,
@@ -438,7 +439,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         customerName: customerName.trim(),
         mobileNumber: orderType === 'dine_in' ? '' : mobileNumber.trim(),
         orderType: isDelivery && thirdPartyCourierDelivery ? 'pickup' : orderType,
-        deliveryCity: isDelivery && !thirdPartyCourierDelivery ? deliveryCity.trim() : '',
+        deliveryCity: isDelivery && !thirdPartyCourierDelivery ? (selectedDeliveryZone?.city ?? deliveryCity.trim()) : '',
         deliveryBarangay: isDelivery && !thirdPartyCourierDelivery ? deliveryBarangay.trim() : '',
         deliveryAddress: isDelivery ? (thirdPartyCourierDelivery ? restaurantPickupPoint : [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')) : address.trim(),
         notes: [notes.trim(), isDelivery && thirdPartyCourierDelivery ? `${thirdPartyCourierNote}\\nCourier: ${thirdPartyCourier === 'Other' ? (thirdPartyCourierName || 'Other courier') : thirdPartyCourier}\\nDestination: ${thirdPartyDestination || [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')}` : ''].filter(Boolean).join('\\n\\n'),
