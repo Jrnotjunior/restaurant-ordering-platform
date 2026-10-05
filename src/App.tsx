@@ -491,15 +491,17 @@ function PublicCustomerRouteGuard({ children, restaurantId }: { children: ReactN
   }
 
   if (!orderingEnabled) {
-    return (
-      <section className="restaurant-owner-auth-no-restaurant">
-        <div className="restaurant-owner-auth-no-restaurant-card">
-          <p className="eyebrow">Online Ordering</p>
-          <h1>Online ordering is not available</h1>
-          <p>This restaurant's current package does not include Self Ordering, or online ordering has been disabled by the restaurant.</p>
-        </div>
-      </section>
-    );
+    // Restaurants that do not have Self Ordering are operational/staff-only
+    // tenants (for example POS-only). Their custom domain must not expose a
+    // customer storefront. Send unauthenticated visitors directly to login.
+    if (!user) {
+      if (window.location.hash !== '#account') {
+        window.location.hash = '#account';
+      }
+      return <section className="restaurant-owner-auth-loading">Redirecting to sign in…</section>;
+    }
+
+    return <section className="restaurant-owner-auth-loading">Checking account access…</section>;
   }
 
   return <>{children}</>;
