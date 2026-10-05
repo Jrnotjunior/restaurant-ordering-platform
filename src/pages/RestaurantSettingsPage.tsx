@@ -146,7 +146,7 @@ function TimePicker({ value, disabled, label, onChange }: TimePickerProps) {
 function normalizeTimeForStorage(value: unknown, fallback: string): string {
   if (typeof value !== 'string') return fallback;
   const trimmed = value.trim();
-  const match24 = trimmed.match(/^(\\d{1,2}):(\\d{2})$/);
+  const match24 = trimmed.match(/^(\d{1,2}):(\d{2})$/);
   if (match24) {
     const hour = Number(match24[1]);
     const minute = Number(match24[2]);
@@ -155,7 +155,7 @@ function normalizeTimeForStorage(value: unknown, fallback: string): string {
     }
   }
 
-  const match12 = trimmed.match(/^(\\d{1,2}):(\\d{2})\\s*(AM|PM)$/i);
+  const match12 = trimmed.match(/^(\d{1,2}):(\d{2})\\s*(AM|PM)$/i);
   if (match12) {
     let hour = Number(match12[1]);
     const minute = Number(match12[2]);
