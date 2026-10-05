@@ -3,9 +3,13 @@ import {
   DEFAULT_OUT_OF_SCOPE_MESSAGE,
   deleteRestaurantDeliveryZone,
   getRestaurantDeliveryZones,
+  getRestaurantDeliverySettings,
+  updateRestaurantDeliverySettings,
+  type RestaurantDeliverySettings,
   type RestaurantDeliveryZone,
   upsertRestaurantDeliveryZone,
 } from '../services/restaurantSettingsRepository';
+import { DeliveryCoverageMap } from '../components/DeliveryCoverageMap';
 
 type Props = { restaurantId: string };
 
@@ -38,13 +42,22 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
   const [error, setError] = useState('');
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingDraft, setEditingDraft] = useState<ZoneDraft | null>(null);
+  const [deliverySettings, setDeliverySettings] = useState<RestaurantDeliverySettings | null>(null);
+  const [deliverySettingsLoading, setDeliverySettingsLoading] = useState(true);
+  const [deliverySettingsSaving, setDeliverySettingsSaving] = useState(false);
+  const [deliverySettingsMessage, setDeliverySettingsMessage] = useState('');
+  const [deliverySettingsError, setDeliverySettingsError] = useState('');
 
   async function loadSettings() {
     setLoading(true);
     setError('');
     try {
-      const deliveryZones = await getRestaurantDeliveryZones(restaurantId);
+      const [deliveryZones, radiusSettings] = await Promise.all([
+        getRestaurantDeliveryZones(restaurantId),
+        getRestaurantDeliverySettings(restaurantId),
+      ]);
       setZones(deliveryZones.map(toDraft));
+      setDeliverySettings(radiusSettings);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to load shipping settings.');
     } finally {
@@ -56,6 +69,32 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
     void loadSettings();
   }, [restaurantId]);
 
+  async function handleSaveDeliverySettings() {
+    if (!deliverySettings) return;
+    if (deliverySettings.deliveryLatitude == null || deliverySettings.deliveryLongitude == null) {
+      setDeliverySettingsError('Pin the restaurant location on the map before saving.');
+      return;
+    }
+    if (!Number.isFinite(deliverySettings.deliveryRadiusKm) || deliverySettings.deliveryRadiusKm <= 0) {
+      setDeliverySettingsError('Enter a delivery radius greater than 0 km.');
+      return;
+    }
+    if (!Number.isFinite(deliverySettings.deliveryFee) || deliverySettings.deliveryFee < 0) {
+      setDeliverySettingsError('Enter a valid delivery fee of ₱0 or more.');
+      return;
+    }
+    setDeliverySettingsSaving(true);
+    setDeliverySettingsError('');
+    setDeliverySettingsMessage('');
+    try {
+      await updateRestaurantDeliverySettings(restaurantId, deliverySettings);
+      setDeliverySettingsMessage('Delivery coverage settings saved.');
+    } catch (err) {
+      setDeliverySettingsError(err instanceof Error ? err.message : 'Unable to save delivery coverage settings.');
+    } finally {
+      setDeliverySettingsSaving(false);
+    }
+  }
   function addZone() {
     setEditingIndex(null);
     setEditingDraft({ id: '', city: '', barangay: '', shippingFee: '0', isSupported: true, outOfScopeMessage: DEFAULT_OUT_OF_SCOPE_MESSAGE });
@@ -155,6 +194,19 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
   return (
     <section className="restaurant-page restaurant-shipping-page">
       <style>{`
+        .restaurant-delivery-radius-layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,.8fr);gap:20px;align-items:start}
+        .restaurant-delivery-radius-form{display:grid;gap:14px}
+        .restaurant-delivery-radius-form label{display:grid;gap:6px;font-weight:600;font-size:14px}
+        .restaurant-delivery-radius-form input[type=number]{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:10px;padding:11px 12px;font:inherit;color:#0f172a;background:#fff}
+        .restaurant-delivery-radius-form input[type=number]:focus{outline:none;border-color:#94a3b8;box-shadow:0 0 0 3px rgba(148,163,184,.18)}
+        .restaurant-delivery-map-help{margin:8px 0 0;color:#64748b;font-size:13px}
+        .restaurant-delivery-radius-coordinates{display:grid;gap:3px;padding:12px;border:1px solid #e1e5eb;border-radius:10px;background:#f8fafc}
+        .restaurant-delivery-radius-coordinates span{font-size:12px;color:#64748b}
+        .restaurant-delivery-radius-coordinates strong{font-size:13px;color:#0f172a}
+        .delivery-map{width:100%;min-height:240px;border-radius:14px;overflow:hidden;border:1px solid #dbe2ea;background:#e2e8f0}
+        .delivery-map-marker{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:grid;place-items:center;background:#111827;border:3px solid #fff;box-shadow:0 3px 10px rgba(15,23,42,.3);cursor:grab}
+        .delivery-map-marker span{font-size:13px;color:#fff;transform:rotate(45deg)}
+        .delivery-map-marker:active{cursor:grabbing}
         .restaurant-shipping-search{display:flex;align-items:center;gap:10px;margin:18px 0 14px}
         .restaurant-shipping-search-input-wrap{position:relative;flex:1;max-width:360px}
         .restaurant-shipping-search input{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:10px;padding:11px 40px 11px 12px;font:inherit;color:#0f172a;background:#fff}
@@ -188,12 +240,70 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
         .restaurant-shipping-coverage input{width:18px;height:18px}
         .restaurant-shipping-modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:6px}
         .restaurant-shipping-delete{margin-right:auto}
-        @media(max-width:700px){.restaurant-delivery-zone-row{grid-template-columns:1fr auto;gap:10px}.restaurant-delivery-zone-row .restaurant-delivery-zone-cell:nth-child(2),.restaurant-delivery-zone-row .restaurant-delivery-zone-cell:nth-child(3){grid-column:1}.restaurant-delivery-zone-chevron{grid-column:2;grid-row:1 / span 3;align-self:center}.restaurant-shipping-modal-backdrop{padding:10px;align-items:flex-end}.restaurant-shipping-modal{max-height:92vh;border-radius:18px 18px 12px 12px;padding:20px}.restaurant-shipping-modal-actions{flex-wrap:wrap}.restaurant-shipping-modal-actions .button{flex:1}.restaurant-shipping-delete{flex-basis:100%;margin-right:0}}
+        @media(max-width:900px){.restaurant-delivery-radius-layout{grid-template-columns:1fr}} @media(max-width:700px){.restaurant-delivery-zone-row{grid-template-columns:1fr auto;gap:10px}.restaurant-delivery-zone-row .restaurant-delivery-zone-cell:nth-child(2),.restaurant-delivery-zone-row .restaurant-delivery-zone-cell:nth-child(3){grid-column:1}.restaurant-delivery-zone-chevron{grid-column:2;grid-row:1 / span 3;align-self:center}.restaurant-shipping-modal-backdrop{padding:10px;align-items:flex-end}.restaurant-shipping-modal{max-height:92vh;border-radius:18px 18px 12px 12px;padding:20px}.restaurant-shipping-modal-actions{flex-wrap:wrap}.restaurant-shipping-modal-actions .button{flex:1}.restaurant-shipping-delete{flex-basis:100%;margin-right:0}}
       `}</style>
 
       {error && <div className="restaurant-shipping-message is-error" role="alert">{error}</div>}
       {message && <div className="restaurant-shipping-message is-success" role="status">{message}</div>}
 
+      <div className="restaurant-shipping-card restaurant-delivery-radius-card">
+        <div className="restaurant-shipping-section-header">
+          <div>
+            <h2>Delivery Coverage</h2>
+            <p className="restaurant-shipping-help">Set one delivery radius around your restaurant. Customers inside the radius receive normal restaurant delivery. Customers outside can use their own courier if you allow it.</p>
+          </div>
+        </div>
+        {deliverySettingsLoading || !deliverySettings ? <p>Loading delivery coverage…</p> : (
+          <>
+            {deliverySettingsError && <div className="restaurant-shipping-message is-error" role="alert">{deliverySettingsError}</div>}
+            {deliverySettingsMessage && <div className="restaurant-shipping-message is-success" role="status">{deliverySettingsMessage}</div>}
+            <div className="restaurant-delivery-radius-layout">
+              <div>
+                <DeliveryCoverageMap
+                  center={{
+                    latitude: deliverySettings.deliveryLatitude ?? 14.5995,
+                    longitude: deliverySettings.deliveryLongitude ?? 120.9842,
+                  }}
+                  marker={deliverySettings.deliveryLatitude == null || deliverySettings.deliveryLongitude == null ? null : {
+                    latitude: deliverySettings.deliveryLatitude,
+                    longitude: deliverySettings.deliveryLongitude,
+                  }}
+                  radiusKm={deliverySettings.deliveryRadiusKm}
+                  interactive
+                  onMarkerChange={(coordinate) => setDeliverySettings((current) => current ? { ...current, deliveryLatitude: coordinate.latitude, deliveryLongitude: coordinate.longitude } : current)}
+                  height={360}
+                />
+                <p className="restaurant-delivery-map-help">Click the map or drag the marker to set the restaurant location.</p>
+              </div>
+              <div className="restaurant-delivery-radius-form">
+                <label className="restaurant-shipping-coverage">
+                  <input type="checkbox" checked={deliverySettings.deliveryEnabled} onChange={(event) => setDeliverySettings({ ...deliverySettings, deliveryEnabled: event.target.checked })} />
+                  <span>Enable restaurant delivery</span>
+                </label>
+                <label>
+                  Delivery radius (km)
+                  <input type="number" min="0.1" max="100" step="0.1" value={deliverySettings.deliveryRadiusKm} onChange={(event) => setDeliverySettings({ ...deliverySettings, deliveryRadiusKm: Number(event.target.value) })} />
+                </label>
+                <label>
+                  Delivery fee
+                  <input type="number" min="0" step="0.01" value={deliverySettings.deliveryFee} onChange={(event) => setDeliverySettings({ ...deliverySettings, deliveryFee: Number(event.target.value) })} />
+                </label>
+                <label className="restaurant-shipping-coverage">
+                  <input type="checkbox" checked={deliverySettings.allowThirdPartyCourier} onChange={(event) => setDeliverySettings({ ...deliverySettings, allowThirdPartyCourier: event.target.checked })} />
+                  <span>Allow own courier outside delivery area</span>
+                </label>
+                <div className="restaurant-delivery-radius-coordinates">
+                  <span>Restaurant pin</span>
+                  <strong>{deliverySettings.deliveryLatitude == null ? 'Not set' : `${deliverySettings.deliveryLatitude.toFixed(6)}, ${deliverySettings.deliveryLongitude?.toFixed(6)}`}</strong>
+                </div>
+                <button type="button" className="button button-primary" onClick={() => void handleSaveDeliverySettings()} disabled={deliverySettingsSaving}>
+                  {deliverySettingsSaving ? 'Saving…' : 'Save Delivery Coverage'}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
       <div className="restaurant-shipping-card restaurant-delivery-zones-card">
         <div className="restaurant-shipping-section-header">
           <div>
