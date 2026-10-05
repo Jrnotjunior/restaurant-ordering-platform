@@ -488,17 +488,23 @@ function PublicCustomerRouteGuard({ children, restaurantId }: { children: ReactN
   }
 
   if (!orderingEnabled) {
-    // Restaurants that do not have Self Ordering are operational/staff-only
-    // tenants (for example POS-only). Their custom domain must not expose a
-    // customer storefront. Send unauthenticated visitors directly to login.
+    // Package/module entitlements are an internal system detail. Never expose
+    // them to customers or restaurant staff. Non-self-ordering tenants have
+    // no public storefront, so guests are quietly sent to login.
     if (!user) {
       if (window.location.hash !== '#account') {
         window.location.hash = '#account';
       }
-      return <section className="restaurant-owner-auth-loading">Redirecting to sign in…</section>;
+      return <section className="restaurant-owner-auth-loading">Redirecting…</section>;
     }
 
-    return <section className="restaurant-owner-auth-loading">Checking account access…</section>;
+    // An authenticated user will be handled by the normal role routing.
+    // Do not reveal which package or module caused the public storefront to
+    // be unavailable.
+    if (window.location.hash !== '#restaurant/owner') {
+      window.location.hash = '#restaurant/owner';
+    }
+    return <section className="restaurant-owner-auth-loading">Loading…</section>;
   }
 
   return <>{children}</>;
