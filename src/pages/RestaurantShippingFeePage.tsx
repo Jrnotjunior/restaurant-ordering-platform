@@ -241,7 +241,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
         )}
       </div>
 
-      {editingZone && editingIndex !== null && (
+      {editingZone && (editingIndex !== null || !editingZone.id) && (
         <div className="restaurant-shipping-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) closeEditor(); }}>
           <div className="restaurant-shipping-modal" role="dialog" aria-modal="true" aria-labelledby="shipping-zone-modal-title">
             <button className="restaurant-shipping-modal-close" type="button" disabled={saving} onClick={closeEditor}>×</button>
