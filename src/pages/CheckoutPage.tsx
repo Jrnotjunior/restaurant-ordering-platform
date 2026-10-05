@@ -253,6 +253,10 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
           setDeliveryCity(profile.defaultDeliveryCity ?? '');
           setDeliveryBarangay(profile.defaultDeliveryBarangay ?? '');
           setAddress(profile.defaultDeliveryAddress ?? '');
+          if (profile.defaultDeliveryLatitude != null && profile.defaultDeliveryLongitude != null) {
+            setDeliveryLatitude(profile.defaultDeliveryLatitude);
+            setDeliveryLongitude(profile.defaultDeliveryLongitude);
+          }
         }
       })
       .catch((error) => {
@@ -435,7 +439,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     if (!city || !completeAddress) return;
     if (radiusCoverageEnabled) return;
     if (!barangay || !selectedDeliveryZone?.isSupported) return;
-    await saveMyDefaultDeliveryAddress(items[0].product.restaurantId, city, barangay, completeAddress);
+    await saveMyDefaultDeliveryAddress(items[0].product.restaurantId, city, barangay, completeAddress, deliveryLatitude, deliveryLongitude);
     setHasDefaultAddress(true);
   }
 
