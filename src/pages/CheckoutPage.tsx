@@ -334,7 +334,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     </section>
   );
 
-  if (confirmedOrder) return <OrderConfirmationPage orderNumber={confirmedOrder.orderNumber} paymentMethod={confirmedOrder.paymentMethod} orderType={confirmedOrder.orderType} total={confirmedOrder.total} onReturnHome={() => { window.location.hash = ''; }} />;
+  if (confirmedOrder) return <OrderConfirmationPage orderNumber={confirmedOrder.orderNumber} paymentMethod={confirmedOrder.paymentMethod} orderType={confirmedOrder.orderType} pickupMethod={confirmedOrder.pickupMethod} total={confirmedOrder.total} onReturnHome={() => { window.location.hash = ''; }} />;
 
   const canContinue = items.length > 0 && !customerProfileLoading && !customerProfileError && Boolean(customerName.trim()) && !/[0-9]/.test(customerName) && (orderType === 'dine_in' || /^09\d{9}$/.test(mobileNumber)) && (!isDelivery || (thirdPartyCourierDelivery ? Boolean(restaurantPickupPoint) : cityIsSupported && deliveryBarangay.trim() && address.trim() && Boolean(selectedDeliveryZone?.isSupported) && !loadingDeliveryZones));
 
