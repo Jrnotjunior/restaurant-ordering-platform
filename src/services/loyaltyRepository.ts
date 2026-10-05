@@ -166,6 +166,8 @@ export async function getMyCustomerProfile(restaurantId: string): Promise<Custom
     defaultDeliveryCity: row.default_delivery_city ?? null,
     defaultDeliveryBarangay: row.default_delivery_barangay ?? null,
     defaultDeliveryAddress: row.default_delivery_address ?? null,
+    defaultDeliveryLatitude: row.default_delivery_latitude == null ? null : Number(row.default_delivery_latitude),
+    defaultDeliveryLongitude: row.default_delivery_longitude == null ? null : Number(row.default_delivery_longitude),
   };
 }
 
