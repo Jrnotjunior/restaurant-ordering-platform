@@ -468,10 +468,6 @@ function PublicCustomerRouteGuard({ children, restaurantId }: { children: ReactN
     return () => { mounted = false; };
   }, [authLoading, user, restaurantId]);
 
-  if (!restaurantId) {
-    return <section className="restaurant-owner-auth-loading">Loading restaurant…</section>;
-  }
-
   useEffect(() => {
     if (checking || !staffRole) return;
 
@@ -485,6 +481,10 @@ function PublicCustomerRouteGuard({ children, restaurantId }: { children: ReactN
       window.location.hash = destination;
     }
   }, [checking, staffRole]);
+
+  if (!restaurantId) {
+    return <section className="restaurant-owner-auth-loading">Loading restaurant…</section>;
+  }
 
   if (staffRole) {
     return <section className="restaurant-owner-auth-loading">Redirecting to your workspace…</section>;
