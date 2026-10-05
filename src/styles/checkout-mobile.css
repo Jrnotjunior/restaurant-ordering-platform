@@ -358,11 +358,15 @@
   }
 
   .delivery-terms-modal .terms-actions {
-    flex-direction: column-reverse;
+    flex-direction: row;
+    justify-content: flex-end;
+    flex-wrap: wrap;
   }
 
   .delivery-terms-modal .terms-actions .button {
-    width: 100%;
+    width: auto;
+    min-width: 7.5rem;
+    flex: 0 0 auto;
   }
 }
 
@@ -914,4 +918,22 @@
   .checkout-payment-notice-error .button {
     width: 100%;
   }
+}
+
+
+/* Customer-courier terms: keep the primary and secondary actions visually distinct. */
+.delivery-terms-modal .terms-actions .button-primary {
+  min-width: 8.5rem;
+}
+
+.delivery-terms-modal .terms-actions .button-secondary {
+  background: #fff;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.delivery-terms-modal .terms-actions .button-secondary:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #94a3b8;
 }
