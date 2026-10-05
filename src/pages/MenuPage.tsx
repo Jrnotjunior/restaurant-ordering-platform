@@ -214,50 +214,6 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
         </div>
       ) : null}
 
-      {(visibleSections.about || visibleSections.location || visibleSections.hours || visibleSections.contact) ? (
-        <section className="storefront-info-grid">
-          {visibleSections.about ? (
-            <article className="storefront-info-card">
-              <p className="eyebrow">About us</p>
-              <h2>{restaurant.name}</h2>
-              <p>{restaurant.tagline || 'Good food, made for your next order.'}</p>
-            </article>
-          ) : null}
-          {visibleSections.location && restaurant.locationText ? (
-            <article className="storefront-info-card">
-              <p className="eyebrow">Visit us</p>
-              <h2>Location</h2>
-              <p>{restaurant.locationText}</p>
-            </article>
-          ) : null}
-          {visibleSections.hours && restaurant.operatingHours ? (
-            <article className="storefront-info-card">
-              <p className="eyebrow">Opening hours</p>
-              <h2>When we’re open</h2>
-              <div className="storefront-hours">
-                {Object.entries(restaurant.operatingHours).map(([day, hours]) => (
-                  <div key={day}><span>{day.charAt(0).toUpperCase() + day.slice(1)}</span><strong>{hours.isOpen ? `${formatStorefrontTime(hours.open)} – ${formatStorefrontTime(hours.close)}` : 'Closed'}</strong></div>
-                ))}
-              </div>
-            </article>
-          ) : null}
-          {visibleSections.contact && (restaurant.contactNumber || restaurant.email) ? (
-            <article className="storefront-info-card">
-              <p className="eyebrow">Contact</p>
-              <h2>Get in touch</h2>
-              {restaurant.contactNumber ? <p><a href={`tel:${restaurant.contactNumber}`}>{restaurant.contactNumber}</a></p> : null}
-              {restaurant.email ? <p><a href={`mailto:${restaurant.email}`}>{restaurant.email}</a></p> : null}
-            </article>
-          ) : null}
-        </section>
-      ) : null}
-
-      {visibleSections.social && restaurant.socialLinks?.length ? (
-        <section className="storefront-social">
-          <p className="eyebrow">Follow us</p>
-          <div>{restaurant.socialLinks.map((link) => <a key={link.href + link.label} href={link.href} target="_blank" rel="noreferrer">{link.label}</a>)}</div>
-        </section>
-      ) : null}
     </section>
   );
 }
