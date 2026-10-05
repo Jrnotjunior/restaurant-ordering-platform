@@ -27,6 +27,7 @@ import { CustomerOrderHistoryPage } from './pages/CustomerOrderHistoryPage';
 import { RiderDeliveryPage } from './pages/RiderDeliveryPage';
 import { RiderDashboardPage } from './pages/RiderDashboardPage';
 import { RiderInvitePage } from './pages/RiderInvitePage';
+import { DeliveryMapPreviewPage } from './pages/DeliveryMapPreviewPage';
 import { TenantOnboardingPage } from './pages/TenantOnboardingPage';
 import { defaultRestaurant } from './config/defaultRestaurant';
 import { currentRestaurantLookup } from './config/restaurant';
@@ -663,6 +664,7 @@ function AppContent() {
   const isAccountPage = route === '#account';
   const isSignUpPage = route === '#signup';
   const isPrivacyPage = route === '#privacy';
+  const isDeliveryMapPreviewPage = route === '#delivery-map-preview';
   const isCheckoutPage = route === '#checkout';
   const trackOrderNumber = searchParams.get('trackOrder');
   const isRestaurantOrdersPage = route === '#restaurant/orders';
@@ -690,6 +692,7 @@ function AppContent() {
   const isRestaurantOperationsPage = isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantShippingFeePage || isRestaurantSalesPage || isRestaurantDeliveryDispatchPage || isRestaurantSettingsPage || isRestaurantWebsiteCustomizationPage || isRestaurantLoyaltyPage || isRestaurantEmployeesPage;
   const trackingMatch = route.match(/^#order\/(.+)$/);
 
+  if (import.meta.env.DEV && isDeliveryMapPreviewPage) return <DeliveryMapPreviewPage />;
   if (isTenantInvitePage) return <TenantOnboardingPage />;
   if (isEmployeeInvitePage) return <RestaurantEmployeeInvitePage />;
   if (isRiderInvitePage) return <RiderInvitePage />;
