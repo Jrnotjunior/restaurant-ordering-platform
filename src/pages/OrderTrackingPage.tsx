@@ -25,7 +25,7 @@ const pickupSteps: Array<{ key: CustomerStatus; label: string; description: stri
   { key: 'pending', label: 'Order Received', description: 'Your order has been received by the restaurant.' },
   { key: 'confirmed', label: 'Confirmed', description: 'The restaurant has confirmed your order.' },
   { key: 'preparing', label: 'Preparing', description: 'The kitchen is preparing your food.' },
-  { key: 'ready', label: 'Ready for pickup', description: 'Your order is ready to be picked up.' },
+  { key: 'ready', label: 'Ready for pickup', description: 'Your order is ready. Please have your courier collect it from the restaurant.' },
   { key: 'completed', label: 'Picked up', description: 'Your order has been picked up.' },
 ];
 
@@ -135,6 +135,7 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
         ? 'preparing'
         : order.status;
   const isPickup = order.orderType === 'pickup';
+  const isCustomerCourierPickup = isPickup && order.pickupMethod === 'third_party_courier';
   const steps = isPickup ? pickupSteps : deliverySteps;
   const statusOrder = isPickup ? pickupStatusOrder : deliveryStatusOrder;
   const currentIndex = statusOrder.indexOf(customerStatus);
@@ -212,6 +213,13 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
           </div>
         )}
 
+        {isCustomerCourierPickup && !isCancelled && order.status !== 'completed' && (
+          <div className="order-tracking-cancelled" role="note">
+            <strong>Pickup with your own courier</strong>
+            <span>Your order is prepared by the restaurant for pickup. Please make sure your courier is available when the order is ready. Courier delays or unavailability after the order is ready are the customer's responsibility.</span>
+          </div>
+        )}
+
         {showPickupLocation && (
           <section className="order-pickup-location-card" aria-label="Store pickup location">
             <div className="order-pickup-location-header">
@@ -257,7 +265,7 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
         )}
 
         <div className="order-tracking-meta">
-          <span>{order.orderType === 'dine_in' ? 'Dine-in' : order.orderType === 'pickup' ? 'Pickup / Take-out' : 'Delivery'}</span>
+          <span>{order.orderType === 'dine_in' ? 'Dine-in' : order.orderType === 'pickup' ? (order.pickupMethod === 'third_party_courier' ? 'Pickup with Your Own Courier' : 'Pickup / Take-out') : 'Delivery'}</span>
           <span>{order.paymentMethod === 'gcash' ? 'Online Payment' : 'Cash'}</span>
         </div>
       </div>
