@@ -128,16 +128,13 @@ function RestaurantModuleGuard({
   }
 
   if (!allowed) {
-    return (
-      <section className="restaurant-owner-auth-no-restaurant">
-        <div className="restaurant-owner-auth-no-restaurant-card">
-          <p className="eyebrow">Feature unavailable</p>
-          <h1>Not included in this package</h1>
-          <p>This restaurant does not currently have access to this feature.</p>
-          <a className="button button-primary" href="#restaurant/owner">Back to Dashboard</a>
-        </div>
-      </section>
-    );
+    // Package restrictions are an internal system detail. Never expose them
+    // to restaurant users or customers. If a hidden/bookmarked route is
+    // opened, silently return to the restaurant workspace instead.
+    if (window.location.hash !== '#restaurant/owner') {
+      window.location.hash = '#restaurant/owner';
+    }
+    return <section className="restaurant-owner-auth-loading">Loading…</section>;
   }
 
   return <>{children}</>;
