@@ -545,17 +545,6 @@
   margin-top: 1.2rem;
 }
 
-.payment-modal-actions .button-secondary {
-  background: #fff;
-  color: #0f172a;
-  border-color: #cbd5e1;
-}
-
-.payment-modal-actions .button-secondary:hover:not(:disabled) {
-  background: #f1f5f9;
-  color: #0f172a;
-  border-color: #94a3b8;
-}
 
 @media (max-width: 560px) {
   .payment-modal-backdrop {
@@ -580,8 +569,6 @@
 
   .payment-modal-actions .button {
     width: auto;
-    min-width: 0;
-    padding-inline: 1.15rem;
   }
 }
 
@@ -867,27 +854,9 @@
 
 /* Compact payment action under the order summary. */
 .checkout-summary-submit {
-  width: auto !important;
-  min-width: 0;
+  width: auto;
   margin-top: 0.75rem;
   margin-left: auto;
-  padding-inline: 1.5rem;
-  background: #374151 !important;
-  border-color: #374151 !important;
-  color: #ffffff !important;
-}
-
-.checkout-summary-submit:hover:not(:disabled) {
-  background: #1f2937 !important;
-  border-color: #1f2937 !important;
-  color: #ffffff !important;
-}
-
-@media (max-width: 560px) {
-  .checkout-summary-submit {
-    width: auto !important;
-    padding-inline: 1.25rem;
-  }
 }
 
 
@@ -938,19 +907,3 @@
 }
 
 
-/* Customer-courier terms: keep the primary and secondary actions visually distinct. */
-.delivery-terms-modal .terms-actions .button-primary {
-  min-width: 8.5rem;
-}
-
-.delivery-terms-modal .terms-actions .button-secondary {
-  background: #fff;
-  color: #0f172a;
-  border-color: #cbd5e1;
-}
-
-.delivery-terms-modal .terms-actions .button-secondary:hover:not(:disabled) {
-  background: #f1f5f9;
-  color: #0f172a;
-  border-color: #94a3b8;
-}
