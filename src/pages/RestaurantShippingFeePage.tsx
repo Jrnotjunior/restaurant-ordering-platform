@@ -50,7 +50,9 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
 
   async function loadSettings() {
     setLoading(true);
+    setDeliverySettingsLoading(true);
     setError('');
+    setDeliverySettingsError('');
     try {
       const [deliveryZones, radiusSettings] = await Promise.all([
         getRestaurantDeliveryZones(restaurantId),
@@ -62,6 +64,7 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
       setError(err instanceof Error ? err.message : 'Unable to load shipping settings.');
     } finally {
       setLoading(false);
+      setDeliverySettingsLoading(false);
     }
   }
 
