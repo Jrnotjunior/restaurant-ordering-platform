@@ -432,7 +432,9 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     const city = deliveryCity.trim();
     const barangay = deliveryBarangay.trim();
     const completeAddress = address.trim();
-    if (!city || !barangay || !completeAddress || !selectedDeliveryZone?.isSupported) return;
+    if (!city || !completeAddress) return;
+    if (radiusCoverageEnabled) return;
+    if (!barangay || !selectedDeliveryZone?.isSupported) return;
     await saveMyDefaultDeliveryAddress(items[0].product.restaurantId, city, barangay, completeAddress);
     setHasDefaultAddress(true);
   }
@@ -440,7 +442,14 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   async function createPendingOrder(method: PaymentMethod) {
     if (new Set(items.map((item) => item.product.restaurantId)).size !== 1) throw new Error('Your cart contains items from different restaurants. Please clear your cart and try again.');
     if (isDelivery && thirdPartyCourierDelivery && !restaurantPickupPoint) throw new Error('The restaurant pickup address is not configured yet. Please contact the restaurant.');
-    if (isDelivery && !thirdPartyCourierDelivery && (!selectedDeliveryZone || !selectedDeliveryZone.isSupported)) throw new Error(outsideDeliveryAreaMessage);
+    if (isDelivery && !thirdPartyCourierDelivery) {
+      if (radiusCoverageEnabled) {
+        if (!selectedDeliveryCoordinate) throw new Error('Please pin your delivery location on the map');
+        if (!withinRadius) throw new Error(outsideDeliveryAreaMessage);
+      } else if (!selectedDeliveryZone || !selectedDeliveryZone.isSupported) {
+        throw new Error(outsideDeliveryAreaMessage);
+      }
+    }
 
     const finalNotes = [notes.trim(), isDelivery && thirdPartyCourierDelivery ? `${thirdPartyCourierNote}\nCourier: ${thirdPartyCourier === 'Other' ? (thirdPartyCourierName || 'Other courier') : thirdPartyCourier}\nDestination: ${thirdPartyDestination || [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')}` : ''].filter(Boolean).join('\n\n');
     return createOrder({
