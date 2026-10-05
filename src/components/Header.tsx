@@ -10,7 +10,7 @@ const ACTIVE_ORDER_KEY = 'restaurant-ordering-active-order';
 function withBasePath(path: string) {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   if (path === '/') return `${base}/`;
-  if (path === '/menu') return `${base}/#menu`;
+  if (path === '/menu') return `${base}/`;
   if (path === '/cart') return `${base}/#cart`;
   if (path === '/account') return `${base}/#account`;
   if (path === '/saved-address') return `${base}/#saved-address`;
@@ -106,7 +106,7 @@ export function Header({ cartCount = 0 }: HeaderProps) {
         </a>
 
         {activeOrderNumber ? (
-          <a className="header-track-order" href={`${import.meta.env.BASE_URL}?trackOrder=${encodeURIComponent(activeOrderNumber)}#menu`} aria-label={"Track order " + activeOrderNumber} title="Track my order">
+          <a className="header-track-order" href={`${import.meta.env.BASE_URL}?trackOrder=${encodeURIComponent(activeOrderNumber)}`} aria-label={"Track order " + activeOrderNumber} title="Track my order">
             <svg className="header-track-order-icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
               <path d="M4 5.5h16v13H4z" fill="none" stroke="currentColor" strokeWidth="1.8" />
               <path d="M8 9h8M8 13h5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -159,7 +159,7 @@ export function Header({ cartCount = 0 }: HeaderProps) {
                     {passwordMessage ? <span className="header-account-password-message" role="status">{passwordMessage}</span> : null}
                   </form>
                 ) : null}
-                <button className="header-account-menu-item" type="button" onClick={() => void signOut().then(() => { setAccountOpen(false); window.location.hash = '#menu'; })}>Log out</button>
+                <button className="header-account-menu-item" type="button" onClick={() => void signOut().then(() => { setAccountOpen(false); window.location.hash = ''; })}>Log out</button>
               </> : null}
             </div>
           ) : null}

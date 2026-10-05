@@ -167,7 +167,7 @@ export function SavedAddressPage() {
   return (
     <section className="saved-address-page">
       <div className="saved-address-card">
-        <a className="saved-address-back" href="#menu">← Back to menu</a>
+        <a className="saved-address-back" href={import.meta.env.BASE_URL}>← Back to menu</a>
         <p className="eyebrow">Customer account</p>
         <h1>Saved addresses</h1>
         <p className="saved-address-intro">Save multiple delivery addresses and choose which one checkout should use by default.</p>

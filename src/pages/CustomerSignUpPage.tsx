@@ -72,7 +72,7 @@ export function CustomerSignUpPage() {
         throw new Error('This restaurant could not be identified from the current website.');
       }
 
-      const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}#menu`;
+      const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}`;
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: trimmedEmail,
         password,
@@ -98,7 +98,7 @@ export function CustomerSignUpPage() {
 
         if (profileError) throw profileError;
 
-        window.location.hash = '#menu';
+        window.location.hash = '';
         return;
       }
 
@@ -140,7 +140,7 @@ export function CustomerSignUpPage() {
 
       setShowSignInModal(false);
       setSignInPassword('');
-      window.location.hash = '#menu';
+      window.location.hash = '';
     } catch (err) {
       setSignInError(err instanceof Error ? err.message : 'Unable to sign in.');
     } finally {

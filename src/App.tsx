@@ -50,7 +50,7 @@ type CartItem = { product: RestaurantProduct; quantity: number };
 function withBasePath(path: string) {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   if (path === '/') return `${base}/`;
-  if (path === '/menu') return `${base}/#menu`;
+  if (path === '/menu') return `${base}/`;
   if (path === '/cart') return `${base}/#cart`;
   if (path === '/checkout') return `${base}/#checkout`;
   if (path === '/account') return `${base}/#account`;
@@ -72,7 +72,8 @@ function withBasePath(path: string) {
 }
 
 function normalizeHashRoute(hash: string) {
-  return hash.replace(/^#\//, '#');
+  const normalized = hash.replace(/^#\//, '#');
+  return normalized === '#menu' ? '' : normalized;
 }
 
 function RestaurantModuleGuard({
@@ -195,7 +196,7 @@ function RiderRouteGuard({ children }: { children: ReactNode }) {
       }
 
       if (role === 'customer') {
-        window.location.hash = '#menu';
+        window.location.hash = '';
         return;
       }
 
@@ -258,7 +259,7 @@ function OwnerRestaurantGuard({ children }: { children: (restaurant: RestaurantC
       const role = user.app_metadata?.role ?? user.user_metadata?.role;
 
       if (role === 'customer') {
-        window.location.hash = '#menu';
+        window.location.hash = '';
         return;
       }
 
@@ -609,7 +610,19 @@ function AppContent() {
     window.localStorage.setItem(storageKey, JSON.stringify(cartItems));
   }, [authLoading, user?.id, cartItems]);
 
-  useEffect(() => { const handleHashChange = () => { setRoute(normalizeHashRoute(window.location.hash || '')); }; window.addEventListener('hashchange', handleHashChange); return () => window.removeEventListener('hashchange', handleHashChange); }, []);
+  useEffect(() => {
+    const handleHashChange = () => {
+      setRoute(normalizeHashRoute(window.location.hash || ''));
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+
+    if (window.location.hash === '#menu') {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
   useEffect(() => {
     function handleSuccessfulOrder() {
       setCartItems([]);
