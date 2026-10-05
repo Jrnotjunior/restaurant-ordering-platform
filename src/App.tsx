@@ -384,7 +384,7 @@ function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen' | 'dis
   return children({ ...defaultRestaurant, id: restaurantId });
 }
 
-function PublicCustomerRouteGuard({ children, restaurantId }: { children: ReactNode; restaurantId: string }) {
+function PublicCustomerRouteGuard({ children, restaurantId }: { children: ReactNode; restaurantId: string | null | undefined }) {
   const { user, loading: authLoading } = useRestaurantOwnerAuth();
   const [checking, setChecking] = useState(true);
   const [staffRole, setStaffRole] = useState<'cashier' | 'kitchen' | 'dispatcher' | 'rider' | null>(null);
@@ -394,7 +394,11 @@ function PublicCustomerRouteGuard({ children, restaurantId }: { children: ReactN
     let mounted = true;
 
     async function checkPublicAccess() {
-      if (authLoading) return;
+      // The restaurant is loaded asynchronously from Supabase. Do not run the
+      // package/self-ordering check against the initial default config, because
+      // that has no restaurant id yet and can briefly show the "ordering not
+      // available" screen before the real restaurant loads.
+      if (authLoading || !restaurantId) return;
 
       if (!supabase) {
         if (mounted) {
@@ -463,6 +467,10 @@ function PublicCustomerRouteGuard({ children, restaurantId }: { children: ReactN
     void checkPublicAccess();
     return () => { mounted = false; };
   }, [authLoading, user, restaurantId]);
+
+  if (!restaurantId) {
+    return <section className="restaurant-owner-auth-loading">Loading restaurant…</section>;
+  }
 
   useEffect(() => {
     if (checking || !staffRole) return;
