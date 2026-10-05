@@ -172,6 +172,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             window.localStorage.removeItem(PENDING_PAYMENT_REFERENCE_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_CHECKOUT_URL_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_ORDER_KEY);
+            const pickupMethod = window.localStorage.getItem(PENDING_PAYMENT_PICKUP_METHOD_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_PICKUP_METHOD_KEY);
             window.history.replaceState({}, '', window.location.pathname + window.location.hash);
             window.dispatchEvent(new Event(CART_CLEAR_EVENT));
