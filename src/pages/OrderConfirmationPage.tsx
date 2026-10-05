@@ -4,16 +4,20 @@ type OrderConfirmationPageProps = {
   orderNumber: string;
   paymentMethod: 'cash' | 'online';
   orderType: 'delivery' | 'pickup' | 'dine_in';
+  pickupMethod?: 'customer' | 'third_party_courier';
   total: number;
   onReturnHome: () => void;
 };
 
-export function OrderConfirmationPage({ orderNumber, paymentMethod, orderType, total, onReturnHome }: OrderConfirmationPageProps) {
-  const paymentMessage = paymentMethod === 'online'
+export function OrderConfirmationPage({ orderNumber, paymentMethod, orderType, pickupMethod, total, onReturnHome }: OrderConfirmationPageProps) {
+  const pickupMessage = pickupMethod === 'third_party_courier'
+    ? 'This is a pickup order. Your order will be prepared by the kitchen after payment. Please arrange your courier to collect it when it is ready. Courier delays or unavailability after the order is ready are the customer\'s responsibility.'
+    : '';
+  const paymentMessage = pickupMessage || (paymentMethod === 'online'
     ? 'Your online payment was received. Your order has been sent to the restaurant.'
     : orderType === 'dine_in'
       ? 'Please pay the cashier at the restaurant counter. Your order will enter the kitchen after the cashier confirms your payment.'
-      : 'Your order is recorded as pending. Please pay in cash when your order is received or collected.';
+      : 'Your order is recorded as pending. Please pay in cash when your order is received or collected.');
 
   function trackOrder() {
     window.location.hash = `#order/${encodeURIComponent(orderNumber)}`;
