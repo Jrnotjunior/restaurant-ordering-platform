@@ -89,7 +89,7 @@ export function CustomerOrderHistoryPage() {
 
       {loading ? <div className="customer-order-history-empty"><p>Loading your orders…</p></div>
         : error ? <div className="customer-order-history-empty"><p>{error}</p></div>
-        : orders.length === 0 ? <div className="customer-order-history-empty"><p>You don't have any orders yet.</p><a className="button button-primary" href="./#menu">Start an order</a></div>
+        : orders.length === 0 ? <div className="customer-order-history-empty"><p>You don't have any orders yet.</p><a className="button button-primary" href="./">Start an order</a></div>
         : <div className="customer-order-history-list">
           {orders.map((order) => (
             <article className="customer-order-history-card" key={order.order_id}>
@@ -101,7 +101,7 @@ export function CustomerOrderHistoryPage() {
               <div className="customer-order-history-items">
                 {order.items.map((item, index) => <div key={index}><span>{item.quantity} × {item.productName}</span><strong>₱{Number(item.lineTotal).toFixed(2)}</strong></div>)}
               </div>
-              <a className="button button-primary customer-order-history-track" href={`?trackOrder=${encodeURIComponent(order.order_number)}#menu`}>View order tracking</a>
+              <a className="button button-primary customer-order-history-track" href={`?trackOrder=${encodeURIComponent(order.order_number)}`}>View order tracking</a>
             </article>
           ))}
         </div>}
