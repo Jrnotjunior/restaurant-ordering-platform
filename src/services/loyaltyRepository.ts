@@ -138,6 +138,8 @@ export type CustomerCheckoutProfile = {
   defaultDeliveryCity: string | null;
   defaultDeliveryBarangay: string | null;
   defaultDeliveryAddress: string | null;
+  defaultDeliveryLatitude: number | null;
+  defaultDeliveryLongitude: number | null;
 };
 
 export async function getMyCustomerProfile(restaurantId: string): Promise<CustomerCheckoutProfile | null> {
@@ -148,6 +150,8 @@ export async function getMyCustomerProfile(restaurantId: string): Promise<Custom
     default_delivery_city: string | null;
     default_delivery_barangay: string | null;
     default_delivery_address: string | null;
+    default_delivery_latitude: number | null;
+    default_delivery_longitude: number | null;
   }>('get_my_customer_profile', {
     p_restaurant_id: restaurantId,
   });
@@ -171,12 +175,16 @@ export async function saveMyDefaultDeliveryAddress(
   city: string,
   barangay: string,
   address: string,
+  latitude?: number | null,
+  longitude?: number | null,
 ): Promise<void> {
   await supabaseRpc('save_my_default_delivery_address', {
     p_restaurant_id: restaurantId,
     p_city: city,
     p_barangay: barangay,
     p_address: address,
+    p_latitude: latitude ?? null,
+    p_longitude: longitude ?? null,
   });
 }
 
