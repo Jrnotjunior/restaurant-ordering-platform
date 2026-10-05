@@ -376,7 +376,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
             ) : activeOrders.map((order) => (
               <article className="restaurant-list-item" key={order.id}>
                 <div className="restaurant-list-item-main">
-                  <div>
+                  <div className="restaurant-dispatch-order-heading">
                     <strong>{order.orderNumber}</strong>
                     <strong>₱{order.total.toFixed(2)}</strong>
                   </div>
