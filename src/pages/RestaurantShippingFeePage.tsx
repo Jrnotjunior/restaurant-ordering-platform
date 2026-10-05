@@ -178,6 +178,8 @@ export function RestaurantShippingFeePage({ restaurantId }: Props) {
         .restaurant-shipping-form{display:grid;gap:14px}
         .restaurant-shipping-form label{display:grid;gap:6px;font-weight:600;font-size:14px}
         .restaurant-shipping-form input[type=text],.restaurant-shipping-form input[type=number],.restaurant-shipping-form textarea{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:10px;padding:11px 12px;font:inherit;color:#0f172a;background:#fff}
+        .restaurant-shipping-form input[type=number]{-moz-appearance:textfield}
+        .restaurant-shipping-form input[type=number]::-webkit-inner-spin-button,.restaurant-shipping-form input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
         .restaurant-shipping-form input:focus,.restaurant-shipping-form textarea:focus{outline:none;border-color:#94a3b8;box-shadow:0 0 0 3px rgba(148,163,184,.18)}
         .restaurant-shipping-form textarea{min-height:90px;resize:vertical}
         .restaurant-shipping-coverage{display:flex;align-items:center;gap:9px;font-weight:600}
