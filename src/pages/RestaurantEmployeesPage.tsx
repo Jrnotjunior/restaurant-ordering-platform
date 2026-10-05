@@ -166,13 +166,23 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
       });
       if (functionError) {
         let message = functionError.message || 'Unable to resend employee invitation.';
+        let alreadyConfirmed = false;
         if (functionError.context instanceof Response) {
           try {
             const payload = await functionError.context.clone().json();
-            if (payload?.error) message = payload.error;
+            if (payload?.error) {
+              message = payload.error;
+              alreadyConfirmed = String(payload.error).toLowerCase().includes('already completed the invitation');
+            }
           } catch {}
         }
-        throw new Error(message);
+        if (!alreadyConfirmed) throw new Error(message);
+
+        const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}?employee-invite=1`;
+        const { error: resetError } = await supabase.auth.resetPasswordForEmail(employee.email, { redirectTo });
+        if (resetError) throw resetError;
+        window.alert(`A password setup email was sent to ${employee.email}.`);
+        return;
       }
       if (!data?.invitationSent) throw new Error('The invitation was not sent.');
       setError('');
