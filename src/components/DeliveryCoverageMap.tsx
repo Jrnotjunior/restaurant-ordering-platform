@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Map, Marker, NavigationControl, setWorkerUrl } from 'maplibre-gl';
+import { Map, Marker, NavigationControl, setWorkerUrl, type GeoJSONSource } from 'maplibre-gl';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -58,7 +58,7 @@ export function DeliveryCoverageMap({ center, marker, radiusKm, interactive = fa
       style: 'https://tiles.openfreemap.org/styles/liberty',
       center: [center.longitude, center.latitude],
       zoom: Math.max(11, Math.min(15, 13 - Math.log2(Math.max(radiusKm, 1) / 2))),
-      attributionControl: true,
+      attributionControl: { compact: true },
     });
 
     map.addControl(new NavigationControl({ showCompass: false }), 'top-right');
@@ -103,9 +103,9 @@ export function DeliveryCoverageMap({ center, marker, radiusKm, interactive = fa
     if (!map) return;
 
     const update = () => {
-      const source = map.getSource('delivery-radius');
-      if (source && 'setData' in source) {
-        source.setData(circleFeature(center, Math.max(radiusKm, 0.1)) as GeoJSON.Feature<GeoJSON.Polygon>);
+      const source = map.getSource('delivery-radius') as GeoJSONSource | undefined;
+      if (source) {
+        source.setData(circleFeature(center, Math.max(radiusKm, 0.1)));
       }
     };
 
