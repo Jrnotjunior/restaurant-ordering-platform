@@ -451,6 +451,8 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       deliveryCity: isDelivery && !thirdPartyCourierDelivery ? (selectedDeliveryZone?.city ?? deliveryCity.trim()) : '',
       deliveryBarangay: isDelivery && !thirdPartyCourierDelivery ? deliveryBarangay.trim() : '',
       deliveryAddress: isDelivery ? (thirdPartyCourierDelivery ? restaurantPickupPoint : [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')) : address.trim(),
+      deliveryLatitude: isDelivery && !thirdPartyCourierDelivery ? deliveryLatitude : null,
+      deliveryLongitude: isDelivery && !thirdPartyCourierDelivery ? deliveryLongitude : null,
       notes: finalNotes,
       // Keep the existing database payment value while the customer-facing method is "Online Payment".
       paymentMethod: method === 'online' ? 'gcash' : 'cash',
@@ -486,8 +488,6 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         deliveryCity: isDelivery && !thirdPartyCourierDelivery ? (selectedDeliveryZone?.city ?? deliveryCity.trim()) : '',
         deliveryBarangay: isDelivery && !thirdPartyCourierDelivery ? deliveryBarangay.trim() : '',
         deliveryAddress: isDelivery ? (thirdPartyCourierDelivery ? restaurantPickupPoint : [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')) : address.trim(),
-        deliveryLatitude: isDelivery && !thirdPartyCourierDelivery ? deliveryLatitude : null,
-        deliveryLongitude: isDelivery && !thirdPartyCourierDelivery ? deliveryLongitude : null,
         deliveryLatitude: isDelivery && !thirdPartyCourierDelivery ? deliveryLatitude : null,
         deliveryLongitude: isDelivery && !thirdPartyCourierDelivery ? deliveryLongitude : null,
         notes: [notes.trim(), isDelivery && thirdPartyCourierDelivery ? `${thirdPartyCourierNote}\\nCourier: ${thirdPartyCourier === 'Other' ? (thirdPartyCourierName || 'Other courier') : thirdPartyCourier}\\nDestination: ${thirdPartyDestination || [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')}` : ''].filter(Boolean).join('\\n\\n'),
@@ -582,13 +582,25 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
               {thirdPartyDestination && <p className="pickup-callout"><strong>Destination:</strong> {thirdPartyDestination}</p>}
             </div> : <div className="delivery-address-fields">
               <label><span>City</span><input type="text" name="deliveryCity" value={deliveryCity} onChange={(e) => { setDeliveryCity(e.target.value); setDeliveryBarangay(''); setAddress(''); setThirdPartyCourierDelivery(false); setThirdPartyCourierTermsAccepted(false); setShowDeliveryTerms(false); resetPayment(); }} onKeyDownCapture={handleCityKeyboard} onKeyUpCapture={handleCityKeyboard} autoComplete="address-level2" placeholder="Enter your city, then press Enter" required /></label>
-              {!thirdPartyCourierDelivery && <div className="delivery-field-group"><label htmlFor="delivery-barangay">Barangay</label><div className="barangay-input-wrap"><input id="delivery-barangay" type="text" value={deliveryBarangay} onChange={(e) => { setDeliveryBarangay(e.target.value); resetPayment(); }} placeholder={loadingDeliveryZones ? 'Loading delivery areas…' : deliveryCity.trim() ? 'Enter your barangay' : 'Enter your city first'} disabled={!deliveryCity.trim()} required />{suggestions.length > 0 && <div className="barangay-suggestions" role="listbox">{suggestions.map((zone) => <button className="barangay-suggestion" key={zone.id} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { setDeliveryBarangay(zone.barangay); resetPayment(); }}><span>{zone.barangay}</span><small>{zone.isSupported ? `₱${zone.shippingFee.toFixed(2)} delivery fee` : 'Outside delivery area'}</small></button>)}</div>}</div></div>}
-              {cityIsSupported && deliveryBarangay.trim() && <label><span>Unit/Bldg./Street Address</span><textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Enter your unit, building, house number, and street" rows={4} required /></label>}
+              {!thirdPartyCourierDelivery && !radiusCoverageEnabled && <div className="delivery-field-group"><label htmlFor="delivery-barangay">Barangay</label><div className="barangay-input-wrap"><input id="delivery-barangay" type="text" value={deliveryBarangay} onChange={(e) => { setDeliveryBarangay(e.target.value); resetPayment(); }} placeholder={loadingDeliveryZones ? 'Loading delivery areas…' : deliveryCity.trim() ? 'Enter your barangay' : 'Enter your city first'} disabled={!deliveryCity.trim()} required />{suggestions.length > 0 && <div className="barangay-suggestions" role="listbox">{suggestions.map((zone) => <button className="barangay-suggestion" key={zone.id} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { setDeliveryBarangay(zone.barangay); resetPayment(); }}><span>{zone.barangay}</span><small>{zone.isSupported ? 'Delivery fee: ₱' + zone.shippingFee.toFixed(2) : 'Outside delivery area'}</small></button>)}</div>}</div></div>}
+              {!thirdPartyCourierDelivery && radiusCoverageEnabled && restaurantDeliveryCoordinate && <div className="checkout-radius-map-card">
+                <div className="checkout-radius-map-heading">
+                  <div><strong>Choose your delivery location</strong><span>Pin the address on the map. We use the pin only to check the delivery radius.</span></div>
+                  {deliveryDistance != null && <strong>{deliveryDistance.toFixed(1)} km</strong>}
+                </div>
+                <DeliveryCoverageMap center={restaurantDeliveryCoordinate} marker={selectedDeliveryCoordinate} radiusKm={deliverySettings?.deliveryRadiusKm ?? 5} interactive onMarkerChange={(coordinate) => { setDeliveryLatitude(coordinate.latitude); setDeliveryLongitude(coordinate.longitude); resetPayment(); }} height={300} />
+                <p className="checkout-map-help">Click the map or drag the pin to your delivery location.</p>
+                {!selectedDeliveryCoordinate && <p className="checkout-hint">A delivery location pin is required.</p>}
+              </div>}
+              {!thirdPartyCourierDelivery && (radiusCoverageEnabled || cityIsSupported) && <label><span>Unit/Bldg./Street Address</span><textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Enter your unit, building, house number, and street" rows={4} required /></label>}
+            {!thirdPartyCourierDelivery && radiusCoverageEnabled && deliveryDistance != null && !withinRadius && <div className="checkout-outside-scope-card">
+              <p className="checkout-error" role="alert">This address is outside the store delivery area ({deliveryDistance.toFixed(1)} km away; limit {deliverySettings?.deliveryRadiusKm.toFixed(1)} km).</p>
+              {deliverySettings?.allowThirdPartyCourier && <button className="button button-secondary" type="button" onClick={openThirdPartyCourierTerms}>Use my own courier instead</button>}
             </div>}
-            {!thirdPartyCourierDelivery && !loadingDeliveryZones && !deliveryZonesError && deliveryCity.trim() && deliveryBarangay.trim() && suggestions.length === 0 && !selectedDeliveryZone && <p className="checkout-error" role="alert">{outsideDeliveryAreaMessage}</p>}
+            {!thirdPartyCourierDelivery && !radiusCoverageEnabled && !loadingDeliveryZones && !deliveryZonesError && deliveryCity.trim() && deliveryBarangay.trim() && suggestions.length === 0 && !selectedDeliveryZone && <p className="checkout-error" role="alert">{outsideDeliveryAreaMessage}</p>}
             {!thirdPartyCourierDelivery && loadingDeliveryZones && <p className="checkout-hint">Loading delivery areas…</p>}
-            {!thirdPartyCourierDelivery && cityIsSupported && selectedDeliveryZone && !selectedDeliveryZone.isSupported && <div className="checkout-outside-scope-card"><p className="checkout-error" role="alert">{selectedDeliveryZone.outOfScopeMessage || outsideDeliveryAreaMessage}</p><button className="button button-secondary" type="button" onClick={openThirdPartyCourierTerms}>Use my own courier instead</button></div>}
-            {!thirdPartyCourierDelivery && selectedDeliveryZone?.isSupported && <p className="checkout-hint">Delivery fee: ₱{deliveryFee.toFixed(2)}</p>}
+            {!thirdPartyCourierDelivery && !radiusCoverageEnabled && cityIsSupported && selectedDeliveryZone && !selectedDeliveryZone.isSupported && <div className="checkout-outside-scope-card"><p className="checkout-error" role="alert">{selectedDeliveryZone.outOfScopeMessage || outsideDeliveryAreaMessage}</p><button className="button button-secondary" type="button" onClick={openThirdPartyCourierTerms}>Use my own courier instead</button></div>}
+            {!thirdPartyCourierDelivery && ((radiusCoverageEnabled && withinRadius && selectedDeliveryCoordinate) || selectedDeliveryZone?.isSupported) && <p className="checkout-hint">Delivery fee: ₱{deliveryFee.toFixed(2)}</p>}
           </fieldset>}
 
           <fieldset className="checkout-section"><legend>Order notes <span className="optional-label">Optional</span></legend><label><span>Special instructions</span><textarea className="order-notes-textarea" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Add a note for the restaurant" rows={3} /></label></fieldset>
