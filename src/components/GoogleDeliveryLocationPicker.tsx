@@ -270,16 +270,25 @@ export function GoogleDeliveryLocationPicker({
         picker.style.width = '100%';
 
         const handleSearchSelect = async (event: Event) => {
-          const place = (event as Event & { place?: {
-            id?: string;
-            formattedAddress?: string;
-            location?: { lat: () => number; lng: () => number };
-            addressComponents?: GoogleGeocodeComponent[];
-            fetchFields: (options: { fields: string[] }) => Promise<void>;
-          } }).place;
-          if (!place) return;
+          const placePrediction = (event as Event & {
+            placePrediction?: {
+              toPlace: () => {
+                id?: string;
+                formattedAddress?: string;
+                location?: { lat: () => number; lng: () => number };
+                addressComponents?: GoogleGeocodeComponent[];
+                fetchFields: (options: { fields: string[] }) => Promise<void>;
+              };
+            };
+          }).placePrediction;
+
+          if (!placePrediction) {
+            setError('We could not read that address. Please select an address from the Google suggestions.');
+            return;
+          }
 
           try {
+            const place = placePrediction.toPlace();
             await place.fetchFields({
               fields: ['id', 'formattedAddress', 'location', 'addressComponents'],
             });
@@ -317,9 +326,17 @@ export function GoogleDeliveryLocationPicker({
               longitude: location.lng,
             };
 
+            if (mapRef.current) {
+              mapRef.current.setCenter(location);
+              mapRef.current.setZoom(17);
+            }
+            if (markerRef.current) {
+              markerRef.current.position = location;
+            }
+
             setSelectedAddress(nextAddress);
             onSelectRef.current(nextAddress);
-            placePin(location);
+            setError('');
           } catch (selectionError) {
             console.error('Unable to read the selected Google address.', selectionError);
             setError('We could not read that address. Please select another result.');
