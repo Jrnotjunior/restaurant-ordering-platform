@@ -9,7 +9,7 @@ import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvide
 import { useRestaurant } from '../components/RestaurantProvider';
 import { supabase } from '../services/supabaseClient';
 import { OrderConfirmationPage } from './OrderConfirmationPage';
-import { GoogleDeliveryLocationPicker, type GoogleDeliveryAddress } from '../components/GoogleDeliveryLocationPicker';
+import { MapboxDeliveryLocationPicker, type MapboxDeliveryAddress } from '../components/MapboxDeliveryLocationPicker';
 import '../styles/checkout-mobile.css';
 
 type CartItem = { product: RestaurantProduct; quantity: number };
@@ -50,7 +50,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const [deliveryCity, setDeliveryCity] = useState('');
   const [address, setAddress] = useState('');
   const [deliveryBarangay, setDeliveryBarangay] = useState('');
-  const [selectedDeliveryLocation, setSelectedDeliveryLocation] = useState<GoogleDeliveryAddress | null>(null);
+  const [selectedDeliveryLocation, setSelectedDeliveryLocation] = useState<MapboxDeliveryAddress | null>(null);
   const [deliveryRouteQuote, setDeliveryRouteQuote] = useState<DeliveryRouteQuote | null>(null);
   const [deliveryRouteLoading, setDeliveryRouteLoading] = useState(false);
   const [notes, setNotes] = useState('');
@@ -497,9 +497,9 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             {!thirdPartyCourierDelivery && !hasDefaultAddress && <p className="checkout-address-note">{user ? 'Please enter your delivery address. We’ll save it as your default address for future orders.' : 'Please enter your delivery address.'}</p>}
             {!thirdPartyCourierDelivery && <div className="google-delivery-address-section">
               <label><span>Delivery location</span></label>
-              <GoogleDeliveryLocationPicker
+              <MapboxDeliveryLocationPicker
                 disabled={deliveryRouteLoading}
-                onSelect={async (selected: GoogleDeliveryAddress) => {
+                onSelect={async (selected: MapboxDeliveryAddress) => {
                   setSelectedDeliveryLocation(selected);
                   setDeliveryCity(selected.city);
                   setDeliveryBarangay(selected.barangay);
