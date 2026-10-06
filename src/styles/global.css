@@ -106,6 +106,34 @@ main { flex: 1; }
 .site-footer nav { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-4); }
 .site-footer nav a { min-height: 44px; display: inline-flex; align-items: center; }
 .site-footer small { grid-column: 1 / -1; margin-top: 0.25rem; }
+.site-footer-socials {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.site-footer-socials a {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text);
+  text-decoration: none;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  transition: opacity .2s ease, transform .2s ease;
+}
+.site-footer-socials a:hover {
+  opacity: .72;
+  transform: translateY(-1px);
+}
+.site-footer-socials svg {
+  width: 19px;
+  height: 19px;
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 1.6;
+}
 .site-footer-powered-by {
   display: inline-flex;
   align-items: center;
