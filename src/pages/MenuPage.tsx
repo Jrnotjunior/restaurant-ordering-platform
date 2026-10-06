@@ -12,12 +12,6 @@ type MenuPageProps = {
   cartCount: number;
 };
 
-function storefrontHref(href: string): string {
-  if (!href) return '#menu';
-  if (href.startsWith('#')) return href;
-  return href;
-}
-
 export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
   const restaurant = useRestaurant();
   const [categories, setCategories] = useState<RestaurantCategory[]>([]);
@@ -97,30 +91,20 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
     [products, selectedCategory]
   );
 
-  const storefront = restaurant.storefront;
-  const hero = storefront.hero;
-  const visibleSections = storefront.sections;
+  const hero = restaurant.storefront.hero;
 
   return (
     <section className="menu-page">
-      {hero.enabled ? (
-        <section className={`storefront-hero${hero.imageUrl ? ' has-image' : ''}`} style={hero.imageUrl ? { backgroundImage: `url("${hero.imageUrl}")` } : undefined}>
+      <section className={`storefront-hero${hero.imageUrl ? ' has-image' : ''}`} style={hero.imageUrl ? { backgroundImage: `url("${hero.imageUrl}")` } : undefined}>
           <div className="storefront-hero-overlay" />
           <div className="storefront-hero-content">
             {hero.eyebrow ? <p className="eyebrow">{hero.eyebrow}</p> : null}
             <h1>{restaurant.name}</h1>
             {restaurant.tagline ? <p>{restaurant.tagline}</p> : null}
-            {hero.secondaryButtonLabel ? (
-              <div className="storefront-hero-actions">
-                <a className="button button-secondary" href={storefrontHref(hero.secondaryButtonHref ?? '#menu')}>{hero.secondaryButtonLabel}</a>
-              </div>
-            ) : null}
           </div>
         </section>
-      ) : null}
-
       <div id="menu" />
-      {visibleSections.categories && categories.length > 0 ? (
+      {categories.length > 0 ? (
         <>
         <div className="menu-category-select menu-category-desktop">
           <label htmlFor="menu-category-desktop">Category</label>
