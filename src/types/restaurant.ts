@@ -43,8 +43,6 @@ export type RestaurantStorefront = {
   hero: {
     enabled: boolean;
     eyebrow: string;
-    title: string;
-    description: string;
     imageUrl?: string;
     primaryButtonLabel: string;
     primaryButtonHref: string;
