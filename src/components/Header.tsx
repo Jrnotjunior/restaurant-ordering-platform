@@ -24,8 +24,10 @@ type HeaderProps = {
 
 export function Header({ cartCount = 0 }: HeaderProps) {
   const restaurant = useRestaurant();
-  const { user, restaurant: ownerRestaurant, signOut } = useRestaurantOwnerAuth();
-  const isRestaurantOwner = Boolean(user && ownerRestaurant?.id === restaurant.id);
+  const { user, accountType, staffRole, signOut } = useRestaurantOwnerAuth();
+  const isRestaurantOwner = accountType === 'owner';
+  const isRestaurantStaff = accountType === 'staff';
+  const isCustomer = accountType === 'customer';
   const [accountOpen, setAccountOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [newPassword, setNewPassword] = useState('');
@@ -53,7 +55,7 @@ export function Header({ cartCount = 0 }: HeaderProps) {
     let mounted = true;
 
     async function loadLoyaltyPoints() {
-      if (!supabase || !user || isRestaurantOwner || !restaurant.id) {
+      if (!supabase || !user || !isCustomer || !restaurant.id) {
         setLoyaltyPoints(null);
         return;
       }
@@ -79,7 +81,7 @@ export function Header({ cartCount = 0 }: HeaderProps) {
     return () => {
       mounted = false;
     };
-  }, [isRestaurantOwner, restaurant.id, user?.id]);
+  }, [isCustomer, restaurant.id, user?.id]);
 
   useEffect(() => {
     const refreshActiveOrder = () => setActiveOrderNumber(window.localStorage.getItem(ACTIVE_ORDER_KEY));
@@ -133,11 +135,11 @@ export function Header({ cartCount = 0 }: HeaderProps) {
           {accountOpen ? (
             <div className="header-account-dropdown" role="menu">
               <div className="header-account-identity">
-                <strong>{isRestaurantOwner ? 'Restaurant Owner' : (typeof user?.user_metadata?.name === 'string' && user.user_metadata.name.trim() ? user.user_metadata.name.trim() : 'Customer')}</strong>
+                <strong>{isRestaurantOwner ? 'Restaurant Owner' : isRestaurantStaff ? (staffRole ? staffRole.charAt(0).toUpperCase() + staffRole.slice(1) : 'Staff') : (typeof user?.user_metadata?.name === 'string' && user.user_metadata.name.trim() ? user.user_metadata.name.trim() : 'Customer')}</strong>
                 <span>{user?.email}</span>
-                {!isRestaurantOwner ? <span className="header-account-points">Loyalty points: {loyaltyLoading ? '…' : loyaltyPoints ?? '—'}</span> : null}
+                {isCustomer ? <span className="header-account-points">Loyalty points: {loyaltyLoading ? '…' : loyaltyPoints ?? '—'}</span> : null}
               </div>
-              {user ? <>{!isRestaurantOwner ? <>
+              {user ? <>{isCustomer ? <>
                 <a className="header-account-menu-item" href={withBasePath('/order-history')} onClick={() => setAccountOpen(false)}>Order history</a>
                 <a className="header-account-menu-item" href={withBasePath('/saved-address')} onClick={() => setAccountOpen(false)}>Saved address</a>
               </> : null}
