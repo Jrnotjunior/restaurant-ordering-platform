@@ -59,17 +59,79 @@ Deno.serve(async (request) => {
 
   const rawBody = await request.text();
   const signatureHeader = request.headers.get("Paymongo-Signature") ?? "";
-  const webhookSecret = Deno.env.get("PAYMONGO_WEBHOOK_SECRET") ?? "";
 
-  if (!webhookSecret || !signatureHeader) {
+  if (!signatureHeader) {
     return jsonResponse({ error: "Webhook authentication is not configured." }, 500);
   }
 
   try {
+    const payload = JSON.parse(rawBody);
+    const eventType = payload?.data?.attributes?.type ?? payload?.data?.type ?? "";
+    const session = payload?.data?.attributes?.data;
+    const sessionMetadata = session?.attributes?.metadata ?? {};
+    const organizationId = String(payload?.data?.attributes?.organization_id ?? "").trim();
+    const metadataRestaurantId = String(sessionMetadata?.restaurant_id ?? "").trim();
+
+    const serviceRoleKey = getSecretKey();
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    if (!supabaseUrl || !serviceRoleKey) {
+      console.error("Supabase server configuration is incomplete.");
+      return jsonResponse({ error: "Server configuration is incomplete." }, 500);
+    }
+
+    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    let webhookSecret = Deno.env.get("PAYMONGO_WEBHOOK_SECRET") ?? "";
+
+    if (organizationId || metadataRestaurantId) {
+      let connection = null;
+
+      if (organizationId) {
+        const { data, error } = await adminClient
+          .from("restaurant_paymongo_accounts")
+          .select("restaurant_id,webhook_secret_id,paymongo_account_id")
+          .eq("paymongo_account_id", organizationId)
+          .maybeSingle();
+        if (error) throw error;
+        connection = data;
+      }
+
+      if (!connection && metadataRestaurantId) {
+        const { data, error } = await adminClient
+          .from("restaurant_paymongo_accounts")
+          .select("restaurant_id,webhook_secret_id,paymongo_account_id")
+          .eq("restaurant_id", metadataRestaurantId)
+          .maybeSingle();
+        if (error) throw error;
+        connection = data;
+      }
+
+      if (connection) {
+        const { data: linkedSecret, error: linkedSecretError } = await adminClient.rpc(
+          "get_paymongo_webhook_secret",
+          { p_restaurant_id: connection.restaurant_id },
+        );
+        if (linkedSecretError) throw linkedSecretError;
+        webhookSecret = typeof linkedSecret === "string" ? linkedSecret.trim() : "";
+        if (!webhookSecret) {
+          console.error("Linked PayMongo webhook secret is not configured.", {
+            restaurantId: connection.restaurant_id,
+            paymongoAccountId: connection.paymongo_account_id,
+          });
+          return jsonResponse({ error: "Linked PayMongo webhook authentication is not configured." }, 500);
+        }
+      }
+    }
+
+    if (!webhookSecret) {
+      return jsonResponse({ error: "Webhook authentication is not configured." }, 500);
+    }
+
     const signature = parseSignature(signatureHeader);
     if (!signature.timestamp) return jsonResponse({ error: "Invalid webhook signature." }, 401);
 
-    const payload = JSON.parse(rawBody);
     const isLiveMode = Boolean(payload?.data?.attributes?.livemode);
     const providedSignature = isLiveMode ? signature.live : signature.test;
     const expectedSignature = await hmacSha256Hex(webhookSecret, `${signature.timestamp}.${rawBody}`);
@@ -77,8 +139,6 @@ Deno.serve(async (request) => {
     if (!providedSignature || !timingSafeEqual(expectedSignature, providedSignature)) {
       return jsonResponse({ error: "Invalid webhook signature." }, 401);
     }
-
-    const eventType = payload?.data?.attributes?.type ?? payload?.data?.type ?? "";
     const session = payload?.data?.attributes?.data;
 
     if (
