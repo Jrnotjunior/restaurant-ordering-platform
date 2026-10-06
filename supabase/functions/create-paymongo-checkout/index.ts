@@ -18,8 +18,14 @@ function getSecretKey() {
   return secretKeys.default ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 }
 
-function getPayMongoSecretKey() {
-  return Deno.env.get("PAYMONGO_SECRET_KEY") ?? "";
+function getPayMongoSecretKey(environment: "test" | "live") {
+  if (environment === "live") {
+    const live = Deno.env.get("PAYMONGO_LIVE_SECRET_KEY") ?? "";
+    if (live) return live;
+    const legacy = Deno.env.get("PAYMONGO_SECRET_KEY") ?? "";
+    return legacy.startsWith("sk_live_") ? legacy : "";
+  }
+  return Deno.env.get("PAYMONGO_TEST_SECRET_KEY") ?? Deno.env.get("PAYMONGO_SECRET_KEY") ?? "";
 }
 
 const siteBaseUrl = "https://jrnotjunior.github.io/restaurant-ordering-platform/";
@@ -31,7 +37,12 @@ Deno.serve(async (request) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const serviceRoleKey = getSecretKey();
-    const paymongoSecretKey = getPayMongoSecretKey();
+    const paymongoEnvironment: "test" | "live" =
+      String(Deno.env.get("PAYMONGO_ENVIRONMENT") ?? "").trim() === "live" ||
+      (Deno.env.get("PAYMONGO_SECRET_KEY") ?? "").startsWith("sk_live_")
+        ? "live"
+        : "test";
+    const paymongoSecretKey = getPayMongoSecretKey(paymongoEnvironment);
 
     if (!supabaseUrl || !serviceRoleKey) {
       return jsonResponse({ error: "Supabase server configuration is incomplete." }, 500);
@@ -64,9 +75,16 @@ Deno.serve(async (request) => {
       .from("restaurant_paymongo_accounts")
       .select("paymongo_account_id,connection_status,webhook_secret_id")
       .eq("restaurant_id", pendingPayment.restaurant_id)
+      .eq("environment", paymongoEnvironment)
       .maybeSingle();
 
     if (paymongoConnectionError) throw paymongoConnectionError;
+
+    if (paymongoEnvironment === "live" && !paymongoConnection) {
+      return jsonResponse({
+        error: "This restaurant has not connected its live PayMongo account yet.",
+      }, 409);
+    }
 
     let linkedPayMongoAccountId = "";
     if (paymongoConnection) {
