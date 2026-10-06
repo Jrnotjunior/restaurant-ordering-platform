@@ -139,8 +139,6 @@ Deno.serve(async (request) => {
     if (!providedSignature || !timingSafeEqual(expectedSignature, providedSignature)) {
       return jsonResponse({ error: "Invalid webhook signature." }, 401);
     }
-    const session = payload?.data?.attributes?.data;
-
     if (
       eventType !== "checkout_session.payment.paid" &&
       eventType !== "checkout_session.payment.failed" &&
@@ -165,17 +163,6 @@ Deno.serve(async (request) => {
       ? Number(paymentAttributes.net_amount) / 100
       : null;
     const paymongoCheckoutSessionId = String(session?.id ?? "").trim() || null;
-
-    const serviceRoleKey = getSecretKey();
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-    if (!supabaseUrl || !serviceRoleKey) {
-      console.error("Supabase server configuration is incomplete.");
-      return jsonResponse({ error: "Server configuration is incomplete." }, 500);
-    }
-
-    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
 
     if (eventType === "checkout_session.payment.failed" || eventType === "checkout_session.expired") {
       const failedStatus = eventType === "checkout_session.expired" ? "expired" : "failed";
