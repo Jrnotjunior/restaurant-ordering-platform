@@ -41,7 +41,9 @@ function requireToken() {
   return token;
 }
 
-function contextName(context: MapboxLocationFeature['properties']?.context, key: keyof NonNullable<MapboxLocationFeature['properties']>['context']) {
+type MapboxContext = NonNullable<MapboxLocationFeature['properties']>['context'];
+
+function contextName(context: MapboxContext | undefined, key: keyof MapboxContext) {
   return context?.[key]?.name?.trim() ?? '';
 }
 
