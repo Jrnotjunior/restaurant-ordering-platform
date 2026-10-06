@@ -106,8 +106,7 @@ main { flex: 1; }
 .site-footer nav { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-4); }
 .site-footer nav a { min-height: 44px; display: inline-flex; align-items: center; }
 .site-footer small { grid-column: 1 / -1; margin-top: 0.25rem; }
-.menu-page, .cart-page, .checkout-page { width: min(1120px, calc(100% - 2rem)); margin: 0 auto; padding: var(--space-12) 0 var(--space-16); }
-.menu-page { width: min(900px, calc(100% - 2rem)); }
+.menu-page, .cart-page, .checkout-page { width: min(900px, calc(100% - 2rem)); margin: 0 auto; padding: var(--space-12) 0 var(--space-16); }
 .menu-intro { max-width: 720px; }
 .menu-intro h1 { margin: 0; font-family: var(--font-heading); font-size: clamp(2.25rem, 6vw, 4rem); line-height: 1; letter-spacing: -0.04em; }
 .menu-intro > p:last-child { margin: var(--space-5) 0 0; color: var(--color-muted); font-size: 1.05rem; line-height: 1.65; }
