@@ -207,6 +207,11 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
+  const [paymongoTestStatus, setPaymongoTestStatus] = useState("not_connected");
+  const [paymongoTestAccountId, setPaymongoTestAccountId] = useState("");
+  const [paymongoTestInvitationId, setPaymongoTestInvitationId] = useState("");
+  const [paymongoTestSignupUrl, setPaymongoTestSignupUrl] = useState("");
+  const [paymongoBusy, setPaymongoBusy] = useState(false);
 
   async function loadSettings() {
     if (!supabase) {
@@ -239,6 +244,18 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       setDeliveryMaxDistanceMeters(String(data?.delivery_max_distance_meters ?? 10000));
       setDeliveryLocationLatitude(data?.delivery_location_latitude ?? null);
       setDeliveryLocationLongitude(data?.delivery_location_longitude ?? null);
+
+      const { data: paymongoConnection, error: paymongoError } = await supabase
+        .from('restaurant_paymongo_accounts')
+        .select('connection_status,paymongo_account_id,invitation_id')
+        .eq('restaurant_id', restaurantId)
+        .eq('environment', 'test')
+        .maybeSingle();
+
+      if (paymongoError) throw paymongoError;
+      setPaymongoTestStatus(paymongoConnection?.connection_status ?? 'not_connected');
+      setPaymongoTestAccountId(paymongoConnection?.paymongo_account_id ?? '');
+      setPaymongoTestInvitationId(paymongoConnection?.invitation_id ?? '');
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load store settings.');
     } finally {
@@ -249,6 +266,64 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   useEffect(() => {
     void loadSettings();
   }, [restaurantId]);
+
+  async function startPayMongoTestConnection() {
+    if (!supabase) {
+      setError('Supabase is not configured.');
+      return;
+    }
+
+    setPaymongoBusy(true);
+    setError('');
+    setMessage('');
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user?.email) throw new Error('Your account email could not be determined.');
+
+      const { data, error: invokeError } = await supabase.functions.invoke('create-paymongo-linking-invitation', {
+        body: {
+          restaurantId,
+          environment: 'test',
+          email: userData.user.email,
+        },
+      });
+
+      if (invokeError) throw invokeError;
+      setPaymongoTestStatus(data?.status ?? 'pending');
+      setPaymongoTestAccountId(data?.paymongoAccountId ?? '');
+      setPaymongoTestInvitationId(data?.invitationId ?? '');
+      setPaymongoTestSignupUrl(data?.signupUrl ?? '');
+      if (data?.signupUrl) window.open(data.signupUrl, '_blank', 'noopener,noreferrer');
+      setMessage('PayMongo test onboarding link is ready. Complete the PayMongo signup, then return here and check the connection.');
+    } catch (connectError) {
+      setError(connectError instanceof Error ? connectError.message : 'Unable to start PayMongo onboarding.');
+    } finally {
+      setPaymongoBusy(false);
+    }
+  }
+
+  async function syncPayMongoTestConnection() {
+    if (!supabase) return;
+    setPaymongoBusy(true);
+    setError('');
+    try {
+      const { data, error: invokeError } = await supabase.functions.invoke('sync-paymongo-linking-invitation', {
+        body: { restaurantId, environment: 'test' },
+      });
+      if (invokeError) throw invokeError;
+      setPaymongoTestStatus(data?.status ?? 'not_connected');
+      setPaymongoTestAccountId(data?.paymongoAccountId ?? '');
+      if (data?.status === 'active') {
+        setMessage('PayMongo test account is connected and ready for online payments.');
+      } else {
+        setMessage(data?.activationStatus ? `PayMongo onboarding status: ${data.activationStatus}.` : 'PayMongo onboarding is still in progress.');
+      }
+    } catch (syncError) {
+      setError(syncError instanceof Error ? syncError.message : 'Unable to check PayMongo onboarding.');
+    } finally {
+      setPaymongoBusy(false);
+    }
+  }
 
   function updateDay(day: DayKey, patch: Partial<DayHours>) {
     setHours((current) => ({
@@ -389,6 +464,13 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .restaurant-settings-logo-button input:disabled{cursor:not-allowed}
         .restaurant-settings-card{padding:24px;border:1px solid #e1e5eb;border-radius:14px;background:#fff}
         .restaurant-settings-card h2{margin:0 0 8px}
+        .restaurant-paymongo-status{display:grid;gap:8px;margin-top:16px;padding:14px;border:1px solid #e1e5eb;border-radius:10px;background:#f8fafc}
+        .restaurant-paymongo-status>div{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+        .restaurant-paymongo-badge{display:inline-flex;align-items:center;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:700;text-transform:capitalize;background:#e2e8f0;color:#334155}
+        .restaurant-paymongo-badge.is-active{background:#dcfce7;color:#166534}
+        .restaurant-paymongo-badge.is-pending,.restaurant-paymongo-badge.is-linked{background:#fef3c7;color:#92400e}
+        .restaurant-paymongo-badge.is-error,.restaurant-paymongo-badge.is-revoked{background:#fee2e2;color:#991b1b}
+        .restaurant-paymongo-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
         .restaurant-settings-help{margin:0;color:#64748b;line-height:1.6}
         .restaurant-settings-form{display:grid;gap:22px}
         .restaurant-settings-field{display:grid;gap:7px;font-weight:600;font-size:14px}
@@ -536,6 +618,46 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           </div>
           <p className="restaurant-settings-help" style={{ marginTop: 12 }}>Controlled by the System Administrator. Contact the System Administrator to request a tax configuration change.</p>
           <p className="restaurant-settings-help" style={{ marginTop: 12 }}>For Senior Citizen/PWD transactions, the POS applies the 20% discount to the eligible VAT-exclusive share and removes the corresponding VAT when the restaurant is VAT-registered. Verify the restaurant’s actual BIR registration and pricing treatment before enabling VAT settings.</p>
+        </div>
+
+
+        <div className="restaurant-settings-card">
+          <h2>PayMongo Online Payments</h2>
+          <p className="restaurant-settings-help">Each restaurant connects its own PayMongo merchant account. Web2Table does not ask you to paste a PayMongo secret key into the website.</p>
+          <div className="restaurant-paymongo-status">
+            <div>
+              <strong>Test environment</strong>
+              <span className={`restaurant-paymongo-badge is-${paymongoTestStatus}`}>{paymongoTestStatus.replace('_', ' ')}</span>
+            </div>
+            {paymongoTestAccountId && <small>Connected account: {paymongoTestAccountId}</small>}
+            {paymongoTestInvitationId && !paymongoTestAccountId && <small>Invitation: {paymongoTestInvitationId}</small>}
+          </div>
+          <div className="restaurant-paymongo-actions">
+            {(paymongoTestStatus === 'not_connected' || paymongoTestStatus === 'error' || paymongoTestStatus === 'revoked') && (
+              <button type="button" className="button button-primary" disabled={paymongoBusy || loading || saving} onClick={() => void startPayMongoTestConnection()}>
+                {paymongoBusy ? 'Starting…' : 'Connect PayMongo'}
+              </button>
+            )}
+            {paymongoTestStatus === 'pending' && (
+              <>
+                {paymongoTestSignupUrl && <a className="button button-secondary" href={paymongoTestSignupUrl} target="_blank" rel="noreferrer">Open PayMongo</a>}
+                <button type="button" className="button button-primary" disabled={paymongoBusy || loading || saving} onClick={() => void syncPayMongoTestConnection()}>
+                  {paymongoBusy ? 'Checking…' : 'Check Connection'}
+                </button>
+              </>
+            )}
+            {paymongoTestStatus === 'linked' && (
+              <button type="button" className="button button-primary" disabled={paymongoBusy} onClick={() => void syncPayMongoTestConnection()}>
+                {paymongoBusy ? 'Checking…' : 'Finish Connection'}
+              </button>
+            )}
+            {paymongoTestStatus === 'active' && (
+              <button type="button" className="button button-secondary" disabled={paymongoBusy} onClick={() => void syncPayMongoTestConnection()}>
+                {paymongoBusy ? 'Checking…' : 'Refresh Status'}
+              </button>
+            )}
+          </div>
+          <p className="restaurant-settings-help" style={{ marginTop: 12 }}>Test mode is used while we complete platform onboarding. Production live payments will use the same restaurant-specific architecture after the platform is ready for launch.</p>
         </div>
 
         <div className="restaurant-settings-card">
