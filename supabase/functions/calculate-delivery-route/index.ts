@@ -1,0 +1,103 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+type RouteRequest = { restaurantId: string; latitude: number; longitude: number };
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method !== "POST") return json({ error: "Method not allowed." }, 405);
+
+  const routesApiKey = Deno.env.get("GOOGLE_MAPS_ROUTES_API_KEY");
+  if (!routesApiKey) return json({ error: "Delivery distance service is not configured yet." }, 503);
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !serviceRoleKey) return json({ error: "Delivery distance service is unavailable." }, 503);
+
+  const admin = createClient(supabaseUrl, serviceRoleKey);
+  let payload: RouteRequest;
+  try { payload = await req.json(); } catch { return json({ error: "Invalid delivery location request." }, 400); }
+
+  const restaurantId = String(payload.restaurantId ?? "").trim();
+  const latitude = Number(payload.latitude);
+  const longitude = Number(payload.longitude);
+  if (!restaurantId || !Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+    return json({ error: "Invalid delivery location." }, 400);
+  }
+
+  const { data: restaurant, error: restaurantError } = await admin.from("restaurants")
+    .select("id,is_active,delivery_location_latitude,delivery_location_longitude,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters")
+    .eq("id", restaurantId).single();
+
+  if (restaurantError || !restaurant) return json({ error: "Restaurant delivery settings could not be loaded." }, 404);
+  if (!restaurant.is_active) return json({ error: "Restaurant is not available." }, 409);
+
+  const originLat = Number(restaurant.delivery_location_latitude);
+  const originLng = Number(restaurant.delivery_location_longitude);
+  if (!Number.isFinite(originLat) || !Number.isFinite(originLng)) return json({ error: "This restaurant has not configured its delivery location yet." }, 409);
+
+  const incrementMeters = Number(restaurant.delivery_distance_increment_meters);
+  const feePerIncrement = Number(restaurant.delivery_fee_per_increment);
+  const baseFee = Number(restaurant.delivery_base_fee);
+  const maxDistanceMeters = Number(restaurant.delivery_max_distance_meters);
+  if (!Number.isFinite(incrementMeters) || incrementMeters <= 0 || !Number.isFinite(feePerIncrement) || feePerIncrement < 0 || !Number.isFinite(baseFee) || baseFee < 0 || !Number.isFinite(maxDistanceMeters) || maxDistanceMeters <= 0) {
+    return json({ error: "This restaurant has invalid delivery pricing settings." }, 409);
+  }
+
+  const routeResponse = await fetch("https://routes.googleapis.com/directions/v2:computeRoutes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Goog-Api-Key": routesApiKey, "X-Goog-FieldMask": "routes.distanceMeters" },
+    body: JSON.stringify({
+      origin: { location: { latLng: { latitude: originLat, longitude: originLng } } },
+      destination: { location: { latLng: { latitude, longitude } } },
+      travelMode: "DRIVE",
+      routingPreference: "TRAFFIC_UNAWARE",
+      computeAlternativeRoutes: false,
+      units: "METRIC",
+    }),
+  });
+
+  const routeBody = await routeResponse.json().catch(() => ({}));
+  const distanceMeters = Number(routeBody?.routes?.[0]?.distanceMeters);
+
+  if (!routeResponse.ok || !Number.isFinite(distanceMeters)) {
+    await admin.from("system_api_usage_events").insert({
+      provider: "google_maps", service: "routes", operation: "compute_routes_distance", restaurant_id: restaurantId,
+      request_count: 1, status: routeResponse.status === 429 ? "blocked" : "error", estimated_cost_usd: 0,
+      metadata: { http_status: routeResponse.status },
+    });
+    console.error("Google Routes API failed", { status: routeResponse.status, body: routeBody });
+    return json({ error: "We could not calculate the delivery distance. Please try again." }, 502);
+  }
+
+  const increments = Math.ceil(distanceMeters / incrementMeters);
+  const deliveryFee = Math.max(0, Number((baseFee + increments * feePerIncrement).toFixed(2)));
+  const inRange = distanceMeters <= maxDistanceMeters;
+
+  const { data: quote, error: quoteError } = await admin.from("delivery_quotes").insert({
+    restaurant_id: restaurantId, customer_latitude: latitude, customer_longitude: longitude,
+    distance_meters: Math.round(distanceMeters), delivery_fee: deliveryFee,
+  }).select("id,expires_at").single();
+
+  await admin.from("system_api_usage_events").insert({
+    provider: "google_maps", service: "routes", operation: "compute_routes_distance", restaurant_id: restaurantId,
+    request_count: 1, status: "success", estimated_cost_usd: 0,
+    metadata: { distance_meters: Math.round(distanceMeters), in_range: inRange, routing_preference: "TRAFFIC_UNAWARE" },
+  });
+
+  if (quoteError || !quote) {
+    console.error("Unable to store delivery quote", quoteError);
+    return json({ error: "We calculated the delivery distance but could not save the confirmation. Please try again." }, 500);
+  }
+
+  return json({ quoteId: quote.id, expiresAt: quote.expires_at, distanceMeters: Math.round(distanceMeters), deliveryFee, maxDistanceMeters, inRange });
+});
