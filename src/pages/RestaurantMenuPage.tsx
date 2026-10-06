@@ -160,15 +160,6 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
     if (!deletingId) setDeleteProductTarget(null);
   }
 
-  function openDeleteConfirmation(product: RestaurantProduct) {
-    if (deletingId) return;
-    setDeleteProductTarget(product);
-  }
-
-  function closeDeleteConfirmation() {
-    if (!deletingId) setDeleteProductTarget(null);
-  }
-
   async function removeProduct(product: RestaurantProduct) {
     setDeletingId(product.id);
     setError('');
