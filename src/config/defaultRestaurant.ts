@@ -16,6 +16,7 @@ export const defaultRestaurant: RestaurantConfig = {
   ],
   socialLinks: [],
   storefront: {
+    socialLinks: { facebook: '', instagram: '', tiktok: '' },
     hero: {
       enabled: true,
       eyebrow: 'Our menu',
