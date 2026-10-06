@@ -211,6 +211,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [paymongoTestAccountId, setPaymongoTestAccountId] = useState("");
   const [paymongoTestInvitationId, setPaymongoTestInvitationId] = useState("");
   const [paymongoTestSignupUrl, setPaymongoTestSignupUrl] = useState("");
+  const paymongoTestStorageKey = `web2table.paymongo.test.${restaurantId}`;
   const [paymongoBusy, setPaymongoBusy] = useState(false);
   const [paymongoError, setPaymongoError] = useState('');
 
@@ -254,8 +255,25 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .maybeSingle();
 
       if (paymongoError) throw paymongoError;
-      setPaymongoTestStatus(paymongoConnection?.connection_status ?? 'not_connected');
-      setPaymongoTestAccountId(paymongoConnection?.paymongo_account_id ?? '');
+      const simulatedTestAccount = (() => {
+        try {
+          const raw = window.localStorage.getItem(paymongoTestStorageKey);
+          return raw ? JSON.parse(raw) as { accountId?: string; status?: string } : null;
+        } catch {
+          return null;
+        }
+      })();
+
+      if (paymongoConnection?.connection_status && paymongoConnection.connection_status !== 'not_connected') {
+        setPaymongoTestStatus(paymongoConnection.connection_status);
+        setPaymongoTestAccountId(paymongoConnection.paymongo_account_id ?? '');
+      } else if (simulatedTestAccount?.status === 'active' && simulatedTestAccount.accountId) {
+        setPaymongoTestStatus('active');
+        setPaymongoTestAccountId(simulatedTestAccount.accountId);
+      } else {
+        setPaymongoTestStatus('not_connected');
+        setPaymongoTestAccountId('');
+      }
       setPaymongoTestInvitationId(paymongoConnection?.invitation_id ?? '');
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load store settings.');
@@ -299,17 +317,26 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         }
         throw invokeError;
       }
-      setPaymongoTestStatus(data?.status ?? 'pending');
+      setPaymongoTestStatus(data?.status ?? 'active');
       setPaymongoTestAccountId(data?.paymongoAccountId ?? '');
       setPaymongoTestInvitationId(data?.invitationId ?? '');
       setPaymongoTestSignupUrl(data?.signupUrl ?? data?.verificationUrl ?? '');
-      const onboardingUrl = data?.signupUrl ?? data?.verificationUrl ?? '';
-      if (onboardingUrl) window.open(onboardingUrl, '_blank', 'noopener,noreferrer');
-      setMessage(
-        data?.verificationUrl
-          ? 'PayMongo test identity verification is ready. Complete the verification flow in the PayMongo window.'
-          : 'PayMongo test onboarding link is ready. Complete the PayMongo signup, then return here and check the connection.',
-      );
+
+      if (data?.testMode && data?.paymongoAccountId) {
+        window.localStorage.setItem(paymongoTestStorageKey, JSON.stringify({
+          accountId: data.paymongoAccountId,
+          status: 'active',
+        }));
+        setMessage('PayMongo test connection is ready. Test mode uses a simulated merchant account; no real identity verification is required.');
+      } else {
+        const onboardingUrl = data?.signupUrl ?? data?.verificationUrl ?? '';
+        if (onboardingUrl) window.open(onboardingUrl, '_blank', 'noopener,noreferrer');
+        setMessage(
+          data?.verificationUrl
+            ? 'PayMongo test identity verification is ready. Complete the verification flow in the PayMongo window.'
+            : 'PayMongo test onboarding link is ready. Complete the PayMongo signup, then return here and check the connection.',
+        );
+      }
     } catch (connectError) {
       setPaymongoError(connectError instanceof Error ? connectError.message : 'Unable to start PayMongo onboarding.');
     } finally {
@@ -668,15 +695,9 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
                     {paymongoTestInvitationId ? 'Open PayMongo' : 'Open Verification'}
                   </a>
                 )}
-                {paymongoTestInvitationId ? (
-                  <button type="button" className="button button-primary" disabled={paymongoBusy || loading || saving} onClick={() => void syncPayMongoTestConnection()}>
-                    {paymongoBusy ? 'Checking…' : 'Check Connection'}
-                  </button>
-                ) : (
-                  <button type="button" className="button button-primary" disabled={paymongoBusy || loading || saving} onClick={() => void startPayMongoTestConnection()}>
-                    {paymongoBusy ? 'Starting…' : 'Refresh Verification'}
-                  </button>
-                )}
+                <button type="button" className="button button-primary" disabled={paymongoBusy || loading || saving} onClick={() => void startPayMongoTestConnection()}>
+                  {paymongoBusy ? 'Checking…' : 'Refresh Test Connection'}
+                </button>
               </>
             )}
             {paymongoTestStatus === 'linked' && (
@@ -690,7 +711,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
               </button>
             )}
           </div>
-          <p className="restaurant-settings-help" style={{ marginTop: 12 }}>Test mode is used while we complete platform onboarding. Production live payments will use the same restaurant-specific architecture after the platform is ready for launch.</p>
+          <p className="restaurant-settings-help" style={{ marginTop: 12 }}>Test mode uses a PayMongo simulated merchant account, so no real identity verification is required. Production live payments will use the same restaurant-specific architecture with real merchant onboarding after the platform is ready for launch.</p>
         </div>
 
         <div className="restaurant-settings-card">
