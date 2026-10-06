@@ -54,6 +54,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const [deliveryCity, setDeliveryCity] = useState('');
   const [address, setAddress] = useState('');
   const [deliveryBarangay, setDeliveryBarangay] = useState('');
+  const [selectedDeliveryLocation, setSelectedDeliveryLocation] = useState<GoogleDeliveryAddress | null>(null);
   const [deliveryZones, setDeliveryZones] = useState<RestaurantDeliveryZone[]>([]);
   const [loadingDeliveryZones, setLoadingDeliveryZones] = useState(false);
   const [deliveryZonesError, setDeliveryZonesError] = useState('');
