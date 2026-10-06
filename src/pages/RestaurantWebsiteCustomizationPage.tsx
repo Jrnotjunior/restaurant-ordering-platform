@@ -502,7 +502,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
 
           <div className="website-customization-homepage-group">
             <h3>Social links</h3>
-            <p className="website-customization-help">Add the links for the three social networks shown in your customer footer. Leave a field blank to hide that icon.</p>
+            <p className="website-customization-help">Add the links for Facebook, Instagram, and TikTok. The three icons stay visible in the footer; adding a link makes that icon clickable.</p>
             <div className="website-customization-grid">
               <label className="website-customization-field">
                 <span>Facebook</span>
