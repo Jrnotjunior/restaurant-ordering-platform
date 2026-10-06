@@ -907,3 +907,84 @@
 }
 
 
+
+/* Customer delivery map */
+.google-delivery-location-picker {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.google-delivery-location-picker > gmp-place-autocomplete {
+  width: 100%;
+  min-height: 3.25rem;
+}
+
+.google-delivery-location-picker .checkout-hint {
+  margin: 0;
+}
+
+.google-delivery-map {
+  width: 100%;
+  min-height: 320px;
+  height: min(46vw, 380px);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 0.9rem;
+  background: #eef2f7;
+}
+
+.google-delivery-map-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.google-delivery-map-actions span {
+  color: #64748b;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.google-delivery-location-confirmation {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid #d9dee7;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+}
+
+.google-delivery-location-confirmation strong {
+  color: #0f172a;
+  font-size: 0.85rem;
+}
+
+.google-delivery-location-confirmation span {
+  color: #334155;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.google-delivery-location-confirmation small {
+  color: #64748b;
+  font-size: 0.76rem;
+}
+
+@media (max-width: 560px) {
+  .google-delivery-map {
+    min-height: 280px;
+    height: 280px;
+    border-radius: 0.75rem;
+  }
+
+  .google-delivery-map-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .google-delivery-map-actions .button {
+    width: 100%;
+  }
+}
