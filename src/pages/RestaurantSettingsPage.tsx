@@ -560,7 +560,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
         <div className="restaurant-settings-card">
           <h2>Automatic Rider Assignment</h2>
-          <p className="restaurant-settings-help">Automatically assign a ready delivery order to an available rider. The system chooses an eligible rider according to the restaurant's configured delivery-zone workflow.</p>
+          <p className="restaurant-settings-help">Automatically assign a ready delivery order to an available rider. The system assigns ready delivery orders to an available rider using the restaurant's rider workload and delivery history.</p>
           <label className="restaurant-settings-switch-row">
             <span>Auto-assign delivery orders</span>
             <span className="restaurant-settings-switch">
