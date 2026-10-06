@@ -119,12 +119,7 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
         </section>
       ) : null}
 
-      <div className="menu-intro" id="menu">
-        {!hero.enabled ? <p className="eyebrow">Our menu</p> : null}
-        {!hero.enabled ? <h2>{restaurant.name}</h2> : null}
-        {restaurant.tagline ? <p>{restaurant.tagline}</p> : null}
-      </div>
-
+      <div id="menu" />
       {visibleSections.categories && categories.length > 0 ? (
         <>
         <div className="menu-category-select menu-category-desktop">
