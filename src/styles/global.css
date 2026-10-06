@@ -115,15 +115,10 @@ main { flex: 1; }
   line-height: 1.45;
 }
 .site-footer-web2table-logo {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.1rem;
-  color: var(--color-text);
-}
-.site-footer-web2table-mark {
-  display: inline-grid;
-  place-items: center;
-  font-weight: 800;
+  display: block;
+  width: 72px;
+  height: 28px;
+  object-fit: contain;
 }
 .menu-page, .cart-page, .checkout-page { width: min(900px, calc(100% - 2rem)); margin: 0 auto; padding: var(--space-12) 0 var(--space-16); }
 .menu-intro { max-width: 720px; }
