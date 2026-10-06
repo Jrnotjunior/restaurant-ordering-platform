@@ -106,6 +106,25 @@ main { flex: 1; }
 .site-footer nav { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-4); }
 .site-footer nav a { min-height: 44px; display: inline-flex; align-items: center; }
 .site-footer small { grid-column: 1 / -1; margin-top: 0.25rem; }
+.site-footer-powered-by {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  grid-column: 1 / -1;
+  color: var(--color-muted);
+  line-height: 1.45;
+}
+.site-footer-web2table-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
+  color: var(--color-text);
+}
+.site-footer-web2table-mark {
+  display: inline-grid;
+  place-items: center;
+  font-weight: 800;
+}
 .menu-page, .cart-page, .checkout-page { width: min(900px, calc(100% - 2rem)); margin: 0 auto; padding: var(--space-12) 0 var(--space-16); }
 .menu-intro { max-width: 720px; }
 .menu-intro h1 { margin: 0; font-family: var(--font-heading); font-size: clamp(2.25rem, 6vw, 4rem); line-height: 1; letter-spacing: -0.04em; }
