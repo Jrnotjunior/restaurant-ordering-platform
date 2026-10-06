@@ -140,11 +140,12 @@ main { flex: 1; }
 .site-footer-social-icon.is-disabled {
   opacity: .42;
 }
-.site-footer-socials svg {
+.site-footer-social-logo {
   width: 28px;
   height: 28px;
   display: block;
   flex: 0 0 auto;
+  object-fit: contain;
 }
 .site-footer-powered-by {
   display: inline-flex;
