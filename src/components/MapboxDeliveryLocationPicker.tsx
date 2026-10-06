@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import * as mapboxgl from 'mapbox-gl/esm';
+import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { mapboxFeatureToAddress, reverseMapboxLocation, searchMapboxAddresses, type MapboxLocationFeature } from '../services/mapboxLocationService';
 
