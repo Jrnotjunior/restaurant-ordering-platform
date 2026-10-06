@@ -4,8 +4,6 @@ export function Footer() {
   const restaurant = useRestaurant();
   const storefront = restaurant.storefront;
 
-  if (!storefront.footer.enabled) return null;
-
   const socialLinks = storefront.socialLinks;
 
   return (
@@ -83,7 +81,7 @@ export function Footer() {
         )}
       </nav>
 
-      <small>{storefront.footer.text || `© ${new Date().getFullYear()} All rights reserved.`}</small>
+      <small>{`© ${new Date().getFullYear()} All rights reserved.`}</small>
 
       <a className="site-footer-powered-by" href="https://web2table.com" target="_blank" rel="noreferrer" aria-label="Powered by Web2Table">
         <span>Powered by</span>
