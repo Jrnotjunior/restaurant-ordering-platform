@@ -39,28 +39,14 @@ export type RestaurantDayHours = {
 
 export type RestaurantOperatingHours = Record<string, RestaurantDayHours>;
 
-export type RestaurantStorefront = {
-  hero: {
-    enabled: boolean;
+export type RestaurantStorefront = {  hero: {
     eyebrow: string;
     imageUrl?: string;
-    primaryButtonLabel: string;
-    primaryButtonHref: string;
-    secondaryButtonLabel?: string;
-    secondaryButtonHref?: string;
   };
   socialLinks?: {
     facebook?: string;
     instagram?: string;
     tiktok?: string;
-  };
-  sections: {
-    categories: boolean;
-    about: boolean;
-    location: boolean;
-    hours: boolean;
-    contact: boolean;
-    social: boolean;
   };
 };
 
