@@ -212,6 +212,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [paymongoTestInvitationId, setPaymongoTestInvitationId] = useState("");
   const [paymongoTestSignupUrl, setPaymongoTestSignupUrl] = useState("");
   const [paymongoBusy, setPaymongoBusy] = useState(false);
+  const [paymongoError, setPaymongoError] = useState('');
 
   async function loadSettings() {
     if (!supabase) {
@@ -269,12 +270,12 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
   async function startPayMongoTestConnection() {
     if (!supabase) {
-      setError('Supabase is not configured.');
+      setPaymongoError('Supabase is not configured.');
       return;
     }
 
     setPaymongoBusy(true);
-    setError('');
+    setPaymongoError('');
     setMessage('');
     try {
       const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -296,7 +297,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       if (data?.signupUrl) window.open(data.signupUrl, '_blank', 'noopener,noreferrer');
       setMessage('PayMongo test onboarding link is ready. Complete the PayMongo signup, then return here and check the connection.');
     } catch (connectError) {
-      setError(connectError instanceof Error ? connectError.message : 'Unable to start PayMongo onboarding.');
+      setPaymongoError(connectError instanceof Error ? connectError.message : 'Unable to start PayMongo onboarding.');
     } finally {
       setPaymongoBusy(false);
     }
@@ -305,7 +306,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   async function syncPayMongoTestConnection() {
     if (!supabase) return;
     setPaymongoBusy(true);
-    setError('');
+    setPaymongoError('');
     try {
       const { data, error: invokeError } = await supabase.functions.invoke('sync-paymongo-linking-invitation', {
         body: { restaurantId, environment: 'test' },
@@ -319,7 +320,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         setMessage(data?.activationStatus ? `PayMongo onboarding status: ${data.activationStatus}.` : 'PayMongo onboarding is still in progress.');
       }
     } catch (syncError) {
-      setError(syncError instanceof Error ? syncError.message : 'Unable to check PayMongo onboarding.');
+      setPaymongoError(syncError instanceof Error ? syncError.message : 'Unable to check PayMongo onboarding.');
     } finally {
       setPaymongoBusy(false);
     }
@@ -513,6 +514,10 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .restaurant-settings-confirm-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
         @media(max-width:480px){.restaurant-settings-confirm-actions{flex-direction:column-reverse}.restaurant-settings-confirm-actions .button{width:100%}}
         .restaurant-settings-actions{display:flex;justify-content:flex-end}
+.restaurant-paymongo-card{position:relative}
+        .restaurant-paymongo-error{display:grid;gap:4px;margin:0 0 16px;padding:13px 15px;border:1px solid #fecaca;border-radius:10px;background:#fef2f2;color:#991b1b;line-height:1.4}
+        .restaurant-paymongo-error strong{font-size:14px}
+        .restaurant-paymongo-error span{font-size:13px;font-weight:600;overflow-wrap:anywhere}
         @media(max-width:700px){.restaurant-settings-hours-head{display:none}.restaurant-settings-day{grid-template-columns:1fr 1fr;padding:12px}.restaurant-settings-day-name{grid-column:1/-1}.restaurant-settings-toggle{justify-content:flex-start}.restaurant-settings-actions .button{width:100%}}
       `}</style>
 
@@ -621,7 +626,11 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         </div>
 
 
-        <div className="restaurant-settings-card">
+        <div className="restaurant-settings-card restaurant-paymongo-card">
+          {paymongoError && <div className="restaurant-paymongo-error" role="alert">
+            <strong>PayMongo connection error</strong>
+            <span>{paymongoError}</span>
+          </div>}
           <h2>PayMongo Online Payments</h2>
           <p className="restaurant-settings-help">Each restaurant connects its own PayMongo merchant account. Web2Table does not ask you to paste a PayMongo secret key into the website.</p>
           <div className="restaurant-paymongo-status">
