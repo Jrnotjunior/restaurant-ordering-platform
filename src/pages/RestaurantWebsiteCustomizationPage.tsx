@@ -86,7 +86,6 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         ...defaultRestaurant.storefront,
         ...(customStorefront ?? {}),
         hero: { ...defaultRestaurant.storefront.hero, ...(customStorefront?.hero ?? {}) },
-        sections: { ...defaultRestaurant.storefront.sections, ...(customStorefront?.sections ?? {}) },
       });
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load website customization.');
@@ -365,9 +364,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
                 </div>
                 <span style={{ color: websiteTheme.colors.muted }}>Menu</span>
               </div>
-
-              {storefront.hero.enabled ? (
-                <div
+<div
                   className="website-customization-live-hero"
                   style={{
                     backgroundColor: websiteTheme.colors.surface,
@@ -385,9 +382,6 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
                     {storefront.hero.secondaryButtonLabel ? <span style={{ background: 'transparent', color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.text, borderColor: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.border }}>{storefront.hero.secondaryButtonLabel}</span> : null}
                   </div>
                 </div>
-              ) : (
-                <div className="website-customization-live-disabled" style={{ background: websiteTheme.colors.surface, borderColor: websiteTheme.colors.border, color: websiteTheme.colors.muted }}>Homepage hero is hidden.</div>
-              )}
 
               {storefront.sections.categories ? <div className="website-customization-live-section"><strong>Menu categories</strong><span style={{ color: websiteTheme.colors.muted }}>Featured menu categories</span></div> : null}
 
@@ -472,47 +466,11 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
 
         <div className="website-customization-card">
           <h2>Homepage</h2>
-          <p className="website-customization-help">Choose what customers see when they open your restaurant website.</p>
-
-          <div className="website-customization-homepage-group">
-            <h3>Welcome message</h3>
-            <div className="website-customization-grid">
-              <label className="website-customization-field"><span>Hero image URL</span><input type="text" placeholder="https://..." value={storefront.hero.imageUrl ?? ''} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, imageUrl: event.target.value } }))} /></label>
-              <label className="website-customization-field"><span>Order button text</span><input type="text" value={storefront.hero.primaryButtonLabel} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, primaryButtonLabel: event.target.value } }))} /></label>
-            </div>
-            <label className="website-customization-switch-row"><span>Show welcome section</span><span className="website-customization-switch"><input type="checkbox" checked={storefront.hero.enabled} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, enabled: event.target.checked } }))} /><span className="website-customization-switch-track"><span className="website-customization-switch-thumb" /></span></span></label>
-          </div>
-
-          <div className="website-customization-homepage-group">
-            <h3>Sections</h3>
-            <div className="website-customization-toggle-grid">
-              {([
-                ['categories', 'Menu categories'], ['about', 'About'], ['location', 'Location'],
-                ['hours', 'Operating hours'], ['contact', 'Contact information'], ['social', 'Social links'],
-              ] as const).map(([key, label]) => (
-                <label className="website-customization-toggle" key={key}><input type="checkbox" checked={storefront.sections[key]} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, sections: { ...current.sections, [key]: event.target.checked } }))} />{label}</label>
-              ))}
-            </div>
-          </div>
-
-          <div className="website-customization-homepage-group">
-            <h3>Social links</h3>
-            <p className="website-customization-help">Add the links for Facebook, Instagram, and TikTok. The three icons stay visible in the footer; adding a link makes that icon clickable.</p>
-            <div className="website-customization-grid">
-              <label className="website-customization-field">
-                <span>Facebook</span>
-                <input type="url" placeholder="https://facebook.com/yourrestaurant" value={storefront.socialLinks?.facebook ?? ''} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, socialLinks: { ...current.socialLinks, facebook: event.target.value } }))} />
-              </label>
-              <label className="website-customization-field">
-                <span>Instagram</span>
-                <input type="url" placeholder="https://instagram.com/yourrestaurant" value={storefront.socialLinks?.instagram ?? ''} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, socialLinks: { ...current.socialLinks, instagram: event.target.value } }))} />
-              </label>
-              <label className="website-customization-field">
-                <span>TikTok</span>
-                <input type="url" placeholder="https://tiktok.com/@yourrestaurant" value={storefront.socialLinks?.tiktok ?? ''} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, socialLinks: { ...current.socialLinks, tiktok: event.target.value } }))} />
-              </label>
-            </div>
-          </div>
+          <p className="website-customization-help">Set the optional hero image shown behind your restaurant name and tagline.</p>
+          <label className="website-customization-field">
+            <span>Hero image URL</span>
+            <input type="text" placeholder="https://..." value={storefront.hero.imageUrl ?? ''} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, imageUrl: event.target.value } }))} />
+          </label>
         </div>
 
         <div className="website-customization-actions-bar">
