@@ -17,8 +17,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed." }, 405);
 
-  const routesApiKey = Deno.env.get("GOOGLE_MAPS_ROUTES_API_KEY");
-  if (!routesApiKey) return json({ error: "Delivery distance service is not configured yet." }, 503);
+  const directionsApiToken = Deno.env.get("MAPBOX_DIRECTIONS_API_TOKEN");
+  if (!directionsApiToken) return json({ error: "Delivery distance service is not configured yet." }, 503);
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !serviceRoleKey) return json({ error: "Delivery distance service is unavailable." }, 503);
@@ -73,33 +73,29 @@ Deno.serve(async (req) => {
       cached: true,
     });
   }
+
   if (!Number.isFinite(incrementMeters) || incrementMeters <= 0 || !Number.isFinite(feePerIncrement) || feePerIncrement < 0 || !Number.isFinite(baseFee) || baseFee < 0 || !Number.isFinite(maxDistanceMeters) || maxDistanceMeters <= 0) {
     return json({ error: "This restaurant has invalid delivery pricing settings." }, 409);
   }
 
-  const routeResponse = await fetch("https://routes.googleapis.com/directions/v2:computeRoutes", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Goog-Api-Key": routesApiKey, "X-Goog-FieldMask": "routes.distanceMeters" },
-    body: JSON.stringify({
-      origin: { location: { latLng: { latitude: originLat, longitude: originLng } } },
-      destination: { location: { latLng: { latitude, longitude } } },
-      travelMode: "DRIVE",
-      routingPreference: "TRAFFIC_UNAWARE",
-      computeAlternativeRoutes: false,
-      units: "METRIC",
-    }),
+  const coordinates = `${originLng},${originLat};${longitude},${latitude}`;
+  const params = new URLSearchParams({
+    access_token: directionsApiToken,
+    alternatives: 'false',
+    overview: 'false',
   });
 
+  const routeResponse = await fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${coordinates}?${params.toString()}`);
   const routeBody = await routeResponse.json().catch(() => ({}));
-  const distanceMeters = Number(routeBody?.routes?.[0]?.distanceMeters);
+  const distanceMeters = Number(routeBody?.routes?.[0]?.distance);
 
   if (!routeResponse.ok || !Number.isFinite(distanceMeters)) {
     await admin.from("system_api_usage_events").insert({
-      provider: "google_maps", service: "routes", operation: "compute_routes_distance", restaurant_id: restaurantId,
+      provider: "mapbox", service: "directions", operation: "calculate_driving_distance", restaurant_id: restaurantId,
       request_count: 1, status: routeResponse.status === 429 ? "blocked" : "error", estimated_cost_usd: 0,
       metadata: { http_status: routeResponse.status },
     });
-    console.error("Google Routes API failed", { status: routeResponse.status, body: routeBody });
+    console.error("Mapbox Directions API failed", { status: routeResponse.status, body: routeBody });
     return json({ error: "We could not calculate the delivery distance. Please try again." }, 502);
   }
 
@@ -113,9 +109,9 @@ Deno.serve(async (req) => {
   }).select("id,expires_at").single();
 
   await admin.from("system_api_usage_events").insert({
-    provider: "google_maps", service: "routes", operation: "compute_routes_distance", restaurant_id: restaurantId,
+    provider: "mapbox", service: "directions", operation: "calculate_driving_distance", restaurant_id: restaurantId,
     request_count: 1, status: "success", estimated_cost_usd: 0,
-    metadata: { distance_meters: Math.round(distanceMeters), in_range: inRange, routing_preference: "TRAFFIC_UNAWARE", cached: false },
+    metadata: { distance_meters: Math.round(distanceMeters), in_range: inRange, routing_profile: "mapbox/driving", cached: false },
   });
 
   if (quoteError || !quote) {
