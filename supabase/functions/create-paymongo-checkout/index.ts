@@ -50,7 +50,7 @@ Deno.serve(async (request) => {
 
     const { data: pendingPayment, error: paymentError } = await adminClient
       .from("pending_online_payments")
-      .select("id,reference_number,customer_name,mobile_number,items,subtotal,delivery_fee,total,status,checkout_session_id,checkout_url,loyalty_discount_amount")
+      .select("id,restaurant_id,reference_number,customer_name,mobile_number,items,subtotal,delivery_fee,total,status,checkout_session_id,checkout_url,loyalty_discount_amount")
       .eq("id", orderId)
       .maybeSingle();
 
@@ -58,6 +58,24 @@ Deno.serve(async (request) => {
     if (!pendingPayment) return jsonResponse({ error: "Pending payment not found." }, 404);
     if (pendingPayment.status !== "pending") {
       return jsonResponse({ error: "This payment is no longer awaiting payment." }, 409);
+    }
+
+    const { data: paymongoConnection, error: paymongoConnectionError } = await adminClient
+      .from("restaurant_paymongo_accounts")
+      .select("paymongo_account_id,connection_status")
+      .eq("restaurant_id", pendingPayment.restaurant_id)
+      .maybeSingle();
+
+    if (paymongoConnectionError) throw paymongoConnectionError;
+
+    let linkedPayMongoAccountId = "";
+    if (paymongoConnection) {
+      if (paymongoConnection.connection_status !== "active" || !paymongoConnection.paymongo_account_id) {
+        return jsonResponse({
+          error: "This restaurant's PayMongo account is not ready for online payments yet.",
+        }, 409);
+      }
+      linkedPayMongoAccountId = String(paymongoConnection.paymongo_account_id).trim();
     }
 
     if (pendingPayment.checkout_url) {
@@ -137,6 +155,7 @@ Deno.serve(async (request) => {
         Authorization: `Basic ${btoa(`${paymongoSecretKey}:`)}`,
         "Content-Type": "application/json",
         "Idempotency-Key": `online-payment-${pendingPayment.id}`,
+        ...(linkedPayMongoAccountId ? { "Account-ID": linkedPayMongoAccountId } : {}),
       },
       body: JSON.stringify({
         data: {
@@ -153,6 +172,7 @@ Deno.serve(async (request) => {
             metadata: {
               payment_id: pendingPayment.id,
               reference_number: pendingPayment.reference_number,
+              restaurant_id: pendingPayment.restaurant_id,
             },
           },
         },
