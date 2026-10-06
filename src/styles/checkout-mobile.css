@@ -1112,12 +1112,12 @@
   width: auto;
   min-width: 0;
   align-self: center;
-  background: #2563eb;
-  border-color: #2563eb;
-  color: #fff;
+  background: #fff;
+  border-color: #d1d5db;
+  color: #1f2937;
 }
 
 .checkout-outside-scope-card .button:hover {
-  background: #1d4ed8;
-  border-color: #1d4ed8;
+  background: #f3f4f6;
+  border-color: #cbd5e1;
 }
