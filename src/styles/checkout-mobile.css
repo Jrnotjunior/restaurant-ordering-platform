@@ -942,12 +942,66 @@
   gap: 0.75rem;
 }
 
-.google-delivery-location-picker > gmp-place-autocomplete {
+.google-delivery-search {
+  position: relative;
   width: 100%;
   min-width: 0;
-  max-width: 100%;
-  box-sizing: border-box;
+}
+
+.google-delivery-search-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.google-delivery-search-input {
+  flex: 1;
+  min-width: 0;
   min-height: 3.25rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.65rem;
+  background: #fff;
+  color: #0f172a;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.google-delivery-search-input:focus {
+  outline: 2px solid rgba(15, 23, 42, 0.12);
+  outline-offset: 1px;
+}
+
+.google-delivery-search-row .button {
+  flex: 0 0 auto;
+}
+
+.google-delivery-search-results {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  padding: 0.35rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.65rem;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.google-delivery-search-result {
+  width: 100%;
+  padding: 0.7rem 0.75rem;
+  border: 0;
+  border-radius: 0.45rem;
+  background: transparent;
+  color: #0f172a;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.google-delivery-search-result:hover,
+.google-delivery-search-result:focus-visible {
+  background: #f1f5f9;
 }
 
 .google-delivery-location-picker .checkout-hint {
@@ -1013,6 +1067,14 @@
     height: 220px;
     margin-inline: auto;
     border-radius: 0.75rem;
+  }
+
+  .google-delivery-search-row {
+    flex-direction: column;
+  }
+
+  .google-delivery-search-row .button {
+    width: 100%;
   }
 
   .google-delivery-map-actions {
