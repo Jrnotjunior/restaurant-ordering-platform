@@ -325,7 +325,7 @@ function OwnerRestaurantGuard({ children }: { children: (restaurant: RestaurantC
 }
 
 function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen' | 'dispatcher'; children: (restaurant: RestaurantConfig) => ReactNode }) {
-  const { user, loading: authLoading } = useRestaurantOwnerAuth();
+  const { user, accountType, loading: authLoading } = useRestaurantOwnerAuth();
   const [checking, setChecking] = useState(true);
   const [allowed, setAllowed] = useState(false);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
@@ -426,6 +426,13 @@ function PublicCustomerRouteGuard({ children, restaurantId }: { children: ReactN
         return;
       }
 
+      if (accountType === 'owner') {
+        if (mounted && window.location.hash !== '#restaurant/owner') {
+          window.location.hash = '#restaurant/owner';
+        }
+        return;
+      }
+
       const metadataRole = user.app_metadata?.role ?? user.user_metadata?.role;
 
       if (metadataRole === 'rider') {
@@ -462,7 +469,7 @@ function PublicCustomerRouteGuard({ children, restaurantId }: { children: ReactN
 
     void checkPublicAccess();
     return () => { mounted = false; };
-  }, [authLoading, user, restaurantId]);
+  }, [accountType, authLoading, user, restaurantId]);
 
   useEffect(() => {
     if (checking || !staffRole) return;
