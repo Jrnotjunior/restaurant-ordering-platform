@@ -72,9 +72,15 @@ function componentText(components: GoogleGeocodeComponent[], types: string[]) {
 function getLatLng(marker: GoogleMarker): LatLng | null {
   const position = marker.position;
   if (!position) return null;
+
   if (typeof position.lat === 'function' && typeof position.lng === 'function') {
     return { lat: position.lat(), lng: position.lng() };
   }
+
+  if (typeof position.lat !== 'number' || typeof position.lng !== 'number') {
+    return null;
+  }
+
   return { lat: position.lat, lng: position.lng };
 }
 
