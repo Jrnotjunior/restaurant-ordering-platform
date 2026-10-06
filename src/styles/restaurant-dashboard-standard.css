@@ -143,6 +143,28 @@
 
 .restaurant-shipping-header { margin-bottom: 22px; }
 .restaurant-shipping-card { margin-bottom: 14px; border-radius: var(--dashboard-radius); }
+.restaurant-settings-page .restaurant-shipping-message {
+  margin: 0 0 14px;
+  padding: 13px 16px;
+  border: 1px solid var(--dashboard-border);
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.45;
+  box-sizing: border-box;
+}
+
+.restaurant-settings-page .restaurant-shipping-message.is-error {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.restaurant-settings-page .restaurant-shipping-message.is-success {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
 .restaurant-shipping-card h2 { font-size: 20px; }
 .restaurant-delivery-zone { border-radius: 12px; background: #fff; }
 
