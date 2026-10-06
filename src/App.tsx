@@ -8,7 +8,6 @@ import { CheckoutPage } from './pages/CheckoutPage';
 import { OrderTrackingPage } from './pages/OrderTrackingPage';
 import { RestaurantOrdersPage } from './pages/RestaurantOrdersPage';
 import { RestaurantMenuPage } from './pages/RestaurantMenuPage';
-import { RestaurantShippingFeePage } from './pages/RestaurantShippingFeePage';
 import { RestaurantSalesPage } from './pages/RestaurantSalesPage';
 import { RestaurantCashierPosPage } from './pages/RestaurantCashierPosPage';
 import { RestaurantDeliveryDispatchPage } from './pages/RestaurantDeliveryDispatchPage';
@@ -790,7 +789,6 @@ function AppContent() {
                   <a href="#restaurant/menu">Products</a>
                   <a href="#restaurant/employees">Employees</a>
                   <a href="#restaurant/delivery-dispatch">Dispatch</a>
-                  <a href="#restaurant/shipping-fee">Delivery Zones</a>
                   <a href="#restaurant/sales">Sales</a>
                   <a href="#restaurant/settings">Store Settings</a>
                   <a href="#restaurant/website-customization">Customize</a>
@@ -821,10 +819,6 @@ function AppContent() {
               ) : isRestaurantMenuPage ? (
                 <RestaurantModuleGuard restaurantId={ownerRestaurant.id!} anyOf={['self_ordering', 'pos', 'kitchen']}>
                   <RestaurantMenuPage restaurantId={ownerRestaurant.id!} />
-                </RestaurantModuleGuard>
-              ) : isRestaurantShippingFeePage ? (
-                <RestaurantModuleGuard restaurantId={ownerRestaurant.id!} anyOf={['dispatch_delivery']}>
-                  <RestaurantShippingFeePage restaurantId={ownerRestaurant.id!} />
                 </RestaurantModuleGuard>
               ) : isRestaurantEmployeesPage ? <RestaurantEmployeesPage restaurantId={ownerRestaurant.id!} />
               : isRestaurantDeliveryDispatchPage ? (
