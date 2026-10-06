@@ -16,6 +16,12 @@ export type CreateOrderInput = {
   notes: string;
   paymentMethod: 'cash' | 'gcash';
   isThirdPartyCourier?: boolean;
+  customerDeliveryAddress?: string;
+  customerDeliveryCity?: string;
+  customerDeliveryBarangay?: string;
+  customerDeliveryLatitude?: number;
+  customerDeliveryLongitude?: number;
+  customerDeliveryPlaceId?: string;
   items: CreateOrderItem[];
 };
 
@@ -89,6 +95,12 @@ export async function createOrder(input: CreateOrderInput): Promise<CreatedOrder
     p_payment_method: input.paymentMethod,
     p_is_third_party_courier: input.isThirdPartyCourier ?? false,
     p_items: input.items.map((item) => ({ product_id: item.productId, quantity: item.quantity })),
+    p_customer_delivery_address: input.customerDeliveryAddress || null,
+    p_customer_delivery_city: input.customerDeliveryCity || null,
+    p_customer_delivery_barangay: input.customerDeliveryBarangay || null,
+    p_customer_delivery_latitude: input.customerDeliveryLatitude ?? null,
+    p_customer_delivery_longitude: input.customerDeliveryLongitude ?? null,
+    p_customer_delivery_place_id: input.customerDeliveryPlaceId || null,
   });
 
   const row = rows[0];
