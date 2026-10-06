@@ -289,7 +289,16 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         },
       });
 
-      if (invokeError) throw invokeError;
+      if (invokeError) {
+        const response = (invokeError as { context?: Response }).context;
+        if (response) {
+          const responseBody = await response.clone().json().catch(() => null);
+          if (typeof responseBody?.error === 'string' && responseBody.error.trim()) {
+            throw new Error(responseBody.error);
+          }
+        }
+        throw invokeError;
+      }
       setPaymongoTestStatus(data?.status ?? 'pending');
       setPaymongoTestAccountId(data?.paymongoAccountId ?? '');
       setPaymongoTestInvitationId(data?.invitationId ?? '');
