@@ -20,6 +20,7 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 .app-shell { min-height: 100vh; display: flex; flex-direction: column; }
 main { flex: 1; }
 .site-header, .site-footer { width: min(1120px, calc(100% - 2rem)); margin-inline: auto; }
+.app-shell-compact-public .site-header, .app-shell-compact-public .site-footer { width: min(900px, calc(100% - 2rem)); }
 .site-header { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: var(--space-6); border-bottom: 1px solid var(--color-border); }
 .brand { display: inline-flex; align-items: center; gap: var(--space-3); min-width: 0; font-family: var(--font-heading); font-weight: 800; }
 .brand span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -185,6 +186,7 @@ main { flex: 1; }
 
 @media (max-width: 560px) {
   .site-header, .site-footer, .cart-page, .checkout-page, .hero { width: min(100% - 2rem, 1120px); }
+  .app-shell-compact-public .site-header, .app-shell-compact-public .site-footer { width: min(100% - 2rem, 900px); }
   .menu-page { width: min(100% - 2rem, 900px); }
   .site-header { min-height: 60px; gap: 0.75rem; }
   .site-header nav { display: none; }
