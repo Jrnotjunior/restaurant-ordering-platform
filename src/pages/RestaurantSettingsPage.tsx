@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { supabase } from '../services/supabaseClient';
-import { GoogleDeliveryLocationPicker, type GoogleDeliveryAddress } from '../components/GoogleDeliveryLocationPicker';
+import { MapboxDeliveryLocationPicker, type MapboxDeliveryAddress } from '../components/MapboxDeliveryLocationPicker';
 
 type Props = {
   restaurantId: string;
@@ -465,12 +465,12 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           <p className="restaurant-settings-help" style={{ marginTop: 12 }}>Example: ₱10 per 500 meters means 1.2 km = 3 distance increments. A base fee, if configured, is added on top.</p>
           <div style={{ marginTop: 18 }}>
             <p className="restaurant-settings-help" style={{ marginBottom: 10 }}><strong>Restaurant delivery location</strong><br />This is the origin Google Routes uses for driving-distance calculations.</p>
-            <GoogleDeliveryLocationPicker
+            <MapboxDeliveryLocationPicker
               variant="restaurant"
               disabled={loading || saving}
               initialLatitude={deliveryLocationLatitude}
               initialLongitude={deliveryLocationLongitude}
-              onSelect={(selected: GoogleDeliveryAddress) => {
+              onSelect={(selected: MapboxDeliveryAddress) => {
                 if (selected.latitude === null || selected.longitude === null) throw new Error('Google did not return an exact restaurant location.');
                 setDeliveryLocationLatitude(selected.latitude);
                 setDeliveryLocationLongitude(selected.longitude);
