@@ -1,8 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { loadGoogleMaps } from '../services/googleMapsLoader';
-import type { GoogleDeliveryAddress } from './GoogleDeliveryAddressPicker';
-
 type LatLng = { lat: number; lng: number };
+
+export type GoogleDeliveryAddress = {
+  formattedAddress: string;
+  city: string;
+  barangay: string;
+  address: string;
+  placeId: string;
+  latitude: number | null;
+  longitude: number | null;
+};
 
 type GoogleMapsApi = {
   maps: {
