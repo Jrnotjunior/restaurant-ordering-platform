@@ -108,6 +108,7 @@ export function GoogleDeliveryLocationPicker({
   const reverseGeocodeRequestRef = useRef(0);
   const [searchPicker, setSearchPicker] = useState<HTMLElement | null>(null);
   const [selectedAddress, setSelectedAddress] = useState<GoogleDeliveryAddress | null>(null);
+  const [locationConfirmed, setLocationConfirmed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [locating, setLocating] = useState(false);
   const [error, setError] = useState('');
@@ -140,7 +141,7 @@ export function GoogleDeliveryLocationPicker({
             longitude: location.lng,
           };
 
-      onSelectRef.current(updatedAddress);
+      setLocationConfirmed(false);
       return updatedAddress;
     });
   }
@@ -195,7 +196,7 @@ export function GoogleDeliveryLocationPicker({
       };
 
       setSelectedAddress(nextAddress);
-      onSelectRef.current(nextAddress);
+      setLocationConfirmed(false);
       setError('');
     });
   }
@@ -335,7 +336,7 @@ export function GoogleDeliveryLocationPicker({
             }
 
             setSelectedAddress(nextAddress);
-            onSelectRef.current(nextAddress);
+            setLocationConfirmed(false);
             setError('');
           } catch (selectionError) {
             console.error('Unable to read the selected Google address.', selectionError);
@@ -407,9 +408,20 @@ export function GoogleDeliveryLocationPicker({
       </div>
       {selectedAddress && (
         <div className="google-delivery-location-confirmation">
-          <strong>Delivery pin</strong>
+          <strong>{locationConfirmed ? 'Delivery location confirmed' : 'Confirm your delivery location'}</strong>
           <span>{selectedAddress.formattedAddress || selectedAddress.address || 'Exact map location selected. Complete the address details below.'}</span>
           {(selectedAddress.city || selectedAddress.barangay) && <small>{selectedAddress.city}{selectedAddress.barangay ? `, ${selectedAddress.barangay}` : ''}</small>}
+          <button
+            className="button button-primary"
+            type="button"
+            onClick={() => {
+              setLocationConfirmed(true);
+              onSelectRef.current(selectedAddress);
+            }}
+            disabled={disabled || locationConfirmed}
+          >
+            {locationConfirmed ? 'Location Confirmed' : 'Confirm Location'}
+          </button>
         </div>
       )}
       {error && <p className="checkout-error" role="alert">{error}</p>}
