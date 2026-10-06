@@ -174,19 +174,6 @@ Deno.serve(async (request) => {
         }
       }
 
-      const { error: saveError } = await admin.from("restaurant_paymongo_accounts").upsert({
-        restaurant_id: restaurantId,
-        environment,
-        paymongo_account_id: paymongoAccountId,
-        connection_status: activationStatus === "activated" ? "active" : "pending",
-        invitation_id: null,
-        invitation_email: email,
-        activation_status: activationStatus || null,
-        webhook_id: null,
-        webhook_secret_id: null,
-      }, { onConflict: "restaurant_id,environment" });
-      if (saveError) throw saveError;
-
       return jsonResponse({
         status: activationStatus === "activated" ? "active" : "pending",
         paymongoAccountId,
