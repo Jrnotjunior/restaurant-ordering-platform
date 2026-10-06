@@ -41,7 +41,7 @@ export function Footer() {
         )}
         {storefront.socialLinks?.tiktok ? (
           <a href={storefront.socialLinks.tiktok} target="_blank" rel="noreferrer" aria-label="TikTok">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M14.2 3.2h3.1c.3 1.8 1.3 3.1 3.1 3.8v3.2c-1.3-.1-2.4-.5-3.4-1.1v6.1c0 3.1-2.2 5.2-5.3 5.2-2.8 0-5-1.9-5-4.7 0-3 2.5-5 5.5-4.9v3.2c-1.1-.1-2.2.5-2.2 1.7.9 0 1.6.7 1.6 1.6 0 1.1-.8 1.6-1.8 1.6V3.2h.8z"/></svg>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M14.2 3.2h3.1c.3 1.8 1.3 3.1 3.1 3.8v3.2c-1.3-.1-2.4-.5-3.4-1.1v6.1c0 3.1-2.2 5.2-5.3 5.2-2.8 0-5-1.9-5-4.7 0-3 2.5-5 5.5-4.9v3.2c-1.1-.1-2.2.5-2.2 1.7 0 .9.7 1.6 1.6 1.6 1.1 0 1.8-.8 1.8-2V3.2h.8z"/></svg>
           </a>
         ) : (
           <span className="site-footer-social-icon is-disabled" aria-label="TikTok">
