@@ -7,3 +7,7 @@ verify_jwt = false
 
 [functions.paymongo-webhook]
 verify_jwt = false
+
+
+[functions.calculate-delivery-route]
+verify_jwt = false
