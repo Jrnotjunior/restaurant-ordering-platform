@@ -59,7 +59,6 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showDeliveryTerms, setShowDeliveryTerms] = useState(false);
   const [thirdPartyCourierDelivery, setThirdPartyCourierDelivery] = useState(false);
-  const [thirdPartyDestination, setThirdPartyDestination] = useState('');
   const [thirdPartyCourierTermsAccepted, setThirdPartyCourierTermsAccepted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -368,7 +367,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     if (isOwnCourierPickup && !restaurantPickupPoint) throw new Error('The restaurant pickup address is not configured yet. Please contact the restaurant.');
     if (isDelivery && !thirdPartyCourierDelivery && (!deliveryRouteQuote || !deliveryRouteQuote.inRange)) throw new Error(outsideDeliveryAreaMessage);
 
-    const finalNotes = [notes.trim(), isOwnCourierPickup ? thirdPartyCourierNote + '\\nDestination: ' + (thirdPartyDestination || [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')) : ''].filter(Boolean).join('\\n\\n');
+    const finalNotes = [notes.trim(), isOwnCourierPickup ? thirdPartyCourierNote : ''].filter(Boolean).join('\\n\\n');
     return createOrder({
       restaurantId: items[0].product.restaurantId,
       customerName: customerName.trim(),
@@ -499,8 +498,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
               if (type.value !== 'delivery' && !(thirdPartyCourierDelivery && type.value === 'pickup')) setSelectedDeliveryLocation(null);
               if (type.value !== 'pickup') {
                 setThirdPartyCourierDelivery(false);
-                setThirdPartyDestination('');
-              }
+                          }
               resetPayment();
             }} /><span className="order-type-content"><strong>{type.label}</strong></span></label>)}
           </div></fieldset>
@@ -542,7 +540,6 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             {thirdPartyCourierDelivery ? <div className="third-party-courier-card">
               <strong>Restaurant pickup point</strong><p className="pickup-label">Your order will be prepared here for pickup by you or your courier.</p><p className="pickup-address">{restaurantPickupPoint || 'Restaurant pickup address is not configured.'}</p>
               <div className="pickup-callout">Your destination address is handled by your courier. Provide the destination directly to Lalamove, Grab Express, or your chosen courier.</div><p><strong>Important:</strong> After payment, your order will be sent to the kitchen for preparation. Please arrange your courier to be available when the order is ready. If your courier is unavailable or arrives late, this alone does not make the order eligible for a refund.</p><p>You are responsible for booking and paying the courier and for the trip from the restaurant to your destination.</p>
-              {thirdPartyDestination && <p className="pickup-callout"><strong>Destination:</strong> {thirdPartyDestination}</p>}
             </div> : <div className="delivery-address-fields">
               <div className="delivery-field-group">
                 <span className="checkout-field-label">City</span>
