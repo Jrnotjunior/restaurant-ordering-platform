@@ -5,6 +5,16 @@ import { supabase } from '../services/supabaseClient';
 
 type Props = { restaurantId: string; role?: 'owner' | 'cashier' };
 
+type DayKey = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+
+type DayHours = {
+  isOpen: boolean;
+  open: string;
+  close: string;
+};
+
+type OperatingHours = Record<DayKey, DayHours>;
+
 type DailySales = {
   dateKey: string;
   dateLabel: string;
@@ -15,12 +25,72 @@ type DailySales = {
   recordedPaymongoFees: number;
 };
 
-function localDateKey(dateString: string) {
-  const date = new Date(dateString);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+const DAY_KEYS: DayKey[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+function getManilaDateParts(dateString: string) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Manila',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(new Date(dateString));
+
+  const get = (type: string) => Number(parts.find((part) => part.type === type)?.value ?? 0);
+  const year = get('year');
+  const month = get('month');
+  const day = get('day');
+  const hour = get('hour');
+  const minute = get('minute');
+  const date = new Date(Date.UTC(year, month - 1, day));
+  const weekday = DAY_KEYS[date.getUTCDay()];
+  return { year, month, day, hour, minute, weekday, date };
+}
+
+function formatDateKey(year: number, month: number, day: number) {
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function salesDateKey(dateString: string, operatingHours: OperatingHours): string {
+  const current = getManilaDateParts(dateString);
+  const currentHours = operatingHours[current.weekday];
+
+  if (currentHours?.isOpen) {
+    const [openHour, openMinute] = currentHours.open.split(':').map(Number);
+    const [closeHour, closeMinute] = currentHours.close.split(':').map(Number);
+    const nowMinutes = current.hour * 60 + current.minute;
+    const openMinutes = openHour * 60 + openMinute;
+    const closeMinutes = closeHour * 60 + closeMinute;
+
+    if (
+      openMinutes === closeMinutes ||
+      (closeMinutes > openMinutes && nowMinutes >= openMinutes && nowMinutes < closeMinutes) ||
+      (closeMinutes < openMinutes && nowMinutes >= openMinutes)
+    ) {
+      return formatDateKey(current.year, current.month, current.day);
+    }
+  }
+
+  const previousDate = new Date(current.date);
+  previousDate.setUTCDate(previousDate.getUTCDate() - 1);
+  const previousWeekday = DAY_KEYS[previousDate.getUTCDay()];
+  const previousHours = operatingHours[previousWeekday];
+
+  if (previousHours?.isOpen) {
+    const [openHour, openMinute] = previousHours.open.split(':').map(Number);
+    const [closeHour, closeMinute] = previousHours.close.split(':').map(Number);
+    const nowMinutes = current.hour * 60 + current.minute;
+    const openMinutes = openHour * 60 + openMinute;
+    const closeMinutes = closeHour * 60 + closeMinute;
+
+    if (closeMinutes < openMinutes && nowMinutes < closeMinutes) {
+      return formatDateKey(previousDate.getUTCFullYear(), previousDate.getUTCMonth() + 1, previousDate.getUTCDate());
+    }
+  }
+
+  return formatDateKey(current.year, current.month, current.day);
 }
 
 function formatDateLabel(dateKey: string) {
@@ -40,6 +110,7 @@ function paymentLabel(order: RestaurantOrder) {
 
 export function RestaurantSalesPage({ restaurantId, role = 'owner' }: Props) {
   const [orders, setOrders] = useState<RestaurantOrder[]>([]);
+  const [operatingHours, setOperatingHours] = useState<OperatingHours | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
@@ -48,6 +119,15 @@ export function RestaurantSalesPage({ restaurantId, role = 'owner' }: Props) {
 
   async function loadOrders() {
     try {
+      if (supabase) {
+        const { data, error: hoursError } = await supabase
+          .from('restaurants')
+          .select('operating_hours')
+          .eq('id', restaurantId)
+          .single();
+        if (hoursError) throw hoursError;
+        if (data?.operating_hours) setOperatingHours(data.operating_hours as OperatingHours);
+      }
       setError('');
       setOrders(role === 'owner'
         ? await getRestaurantSales(restaurantId)
@@ -88,7 +168,13 @@ export function RestaurantSalesPage({ restaurantId, role = 'owner' }: Props) {
     const grouped = new Map<string, RestaurantOrder[]>();
 
     for (const order of completedOrders) {
-      const key = localDateKey(order.createdAt);
+      const key = operatingHours
+        ? salesDateKey(order.createdAt, operatingHours)
+        : getManilaDateParts(order.createdAt) && formatDateKey(
+            getManilaDateParts(order.createdAt).year,
+            getManilaDateParts(order.createdAt).month,
+            getManilaDateParts(order.createdAt).day,
+          );
       const dayOrders = grouped.get(key) ?? [];
       dayOrders.push(order);
       grouped.set(key, dayOrders);
@@ -108,7 +194,7 @@ export function RestaurantSalesPage({ restaurantId, role = 'owner' }: Props) {
         recordedPaymongoFees: dayOrders.filter((order) => order.paymongoFee != null).length,
       }))
       .sort((a, b) => b.dateKey.localeCompare(a.dateKey));
-  }, [completedOrders]);
+  }, [completedOrders, operatingHours]);
 
   const filteredDailySales = useMemo(() => {
     const query = searchDate.trim().toLowerCase();
