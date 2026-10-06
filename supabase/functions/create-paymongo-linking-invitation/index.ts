@@ -82,11 +82,7 @@ Deno.serve(async (request) => {
             "Idempotency-Key": `restaurant-paymongo-account-${restaurantId}-${environment}`,
           },
           body: JSON.stringify({
-            data: {
-              attributes: {
-                type: "merchant",
-              },
-            },
+            type: "merchant",
           }),
         });
 
