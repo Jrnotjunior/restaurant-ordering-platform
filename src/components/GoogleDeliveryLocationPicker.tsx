@@ -123,7 +123,7 @@ export function GoogleDeliveryLocationPicker({
         const googleMaps = (window as Window & { google?: GoogleMapsApi }).google;
         if (!googleMaps?.maps?.importLibrary || !mapContainerRef.current || cancelled) return;
 
-        const [{ Map }, { AdvancedMarkerElement }, { Geocoder }] = await Promise.all([
+        const [{ Map }, { AdvancedMarkerElement }] = await Promise.all([
           googleMaps.maps.importLibrary('maps') as Promise<MapsLibrary>,
           googleMaps.maps.importLibrary('marker') as Promise<MarkerLibrary>,
         ]);
