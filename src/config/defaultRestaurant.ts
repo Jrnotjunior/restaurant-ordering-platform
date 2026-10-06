@@ -34,10 +34,6 @@ export const defaultRestaurant: RestaurantConfig = {
       contact: true,
       social: true
     },
-    footer: {
-      enabled: true,
-      text: ''
-    }
   },
   theme: {
     fontHeading: 'Manrope',
