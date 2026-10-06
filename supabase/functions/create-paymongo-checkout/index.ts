@@ -62,7 +62,7 @@ Deno.serve(async (request) => {
 
     const { data: paymongoConnection, error: paymongoConnectionError } = await adminClient
       .from("restaurant_paymongo_accounts")
-      .select("paymongo_account_id,connection_status")
+      .select("paymongo_account_id,connection_status,webhook_secret_id")
       .eq("restaurant_id", pendingPayment.restaurant_id)
       .maybeSingle();
 
@@ -70,7 +70,7 @@ Deno.serve(async (request) => {
 
     let linkedPayMongoAccountId = "";
     if (paymongoConnection) {
-      if (paymongoConnection.connection_status !== "active" || !paymongoConnection.paymongo_account_id) {
+      if (paymongoConnection.connection_status !== "active" || !paymongoConnection.paymongo_account_id || !paymongoConnection.webhook_secret_id) {
         return jsonResponse({
           error: "This restaurant's PayMongo account is not ready for online payments yet.",
         }, 409);
