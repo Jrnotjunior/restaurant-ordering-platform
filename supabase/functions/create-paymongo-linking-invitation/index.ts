@@ -91,7 +91,16 @@ Deno.serve(async (request) => {
     const payload = await response.json().catch(() => null);
     if (!response.ok) {
       const detail = payload?.errors?.[0]?.detail;
-      return jsonResponse({ error: typeof detail === "string" ? detail : "Unable to create the PayMongo invitation." }, 502);
+      console.error("PayMongo invitation API error", {
+        status: response.status,
+        detail: typeof detail === "string" ? detail : null,
+        payload,
+      });
+      return jsonResponse({
+        error: typeof detail === "string"
+          ? detail
+          : `PayMongo invitation API returned HTTP ${response.status}.`,
+      }, 502);
     }
 
     const invite = Array.isArray(payload?.invites) ? payload.invites[0] : null;
