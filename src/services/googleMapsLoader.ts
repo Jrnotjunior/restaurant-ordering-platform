@@ -23,7 +23,7 @@ export function loadGoogleMaps(): Promise<void> {
     script.id = GOOGLE_MAPS_SCRIPT_ID;
     script.async = true;
     script.defer = true;
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&v=weekly&libraries=places`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&v=weekly&loading=async`;
     script.onload = () => resolve();
     script.onerror = () => reject(new Error('Unable to load Google Maps. Check the API key and API restrictions.'));
     document.head.appendChild(script);
