@@ -5,11 +5,12 @@ type OrderConfirmationPageProps = {
   paymentMethod: 'cash' | 'online';
   orderType: 'delivery' | 'pickup' | 'dine_in';
   pickupMethod?: 'customer' | 'third_party_courier';
+  pickupAddress?: string;
   total: number;
   onReturnHome: () => void;
 };
 
-export function OrderConfirmationPage({ orderNumber, paymentMethod, orderType, pickupMethod, total, onReturnHome }: OrderConfirmationPageProps) {
+export function OrderConfirmationPage({ orderNumber, paymentMethod, orderType, pickupMethod, pickupAddress, total, onReturnHome }: OrderConfirmationPageProps) {
   const pickupMessage = pickupMethod === 'third_party_courier'
     ? 'This is a pickup order. Your order will be prepared by the kitchen after payment. Please arrange your courier to collect it when it is ready. Courier delays or unavailability after the order is ready are the customer\'s responsibility.'
     : '';
@@ -29,6 +30,12 @@ export function OrderConfirmationPage({ orderNumber, paymentMethod, orderType, p
         <p className="eyebrow">Order received</p>
         <h1>Thank you for your order.</h1>
         <p className="order-confirmation-copy">{paymentMethod === 'online' ? 'Your payment has been confirmed and your order is now with the restaurant.' : 'Your order has been created and is now waiting for restaurant confirmation.'}</p>
+        {pickupMethod === 'third_party_courier' && (
+          <div className="order-confirmation-counter">
+            <strong>Pickup address</strong>
+            <span>{pickupAddress || 'Restaurant pickup address is not configured.'}</span>
+          </div>
+        )}
         {orderType === 'dine_in' && (
           <div className="order-confirmation-counter">
             <strong>Show this order number to the cashier</strong>
