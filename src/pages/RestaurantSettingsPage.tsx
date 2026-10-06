@@ -302,9 +302,14 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       setPaymongoTestStatus(data?.status ?? 'pending');
       setPaymongoTestAccountId(data?.paymongoAccountId ?? '');
       setPaymongoTestInvitationId(data?.invitationId ?? '');
-      setPaymongoTestSignupUrl(data?.signupUrl ?? '');
-      if (data?.signupUrl) window.open(data.signupUrl, '_blank', 'noopener,noreferrer');
-      setMessage('PayMongo test onboarding link is ready. Complete the PayMongo signup, then return here and check the connection.');
+      setPaymongoTestSignupUrl(data?.signupUrl ?? data?.verificationUrl ?? '');
+      const onboardingUrl = data?.signupUrl ?? data?.verificationUrl ?? '';
+      if (onboardingUrl) window.open(onboardingUrl, '_blank', 'noopener,noreferrer');
+      setMessage(
+        data?.verificationUrl
+          ? 'PayMongo test identity verification is ready. Complete the verification flow in the PayMongo window.'
+          : 'PayMongo test onboarding link is ready. Complete the PayMongo signup, then return here and check the connection.',
+      );
     } catch (connectError) {
       setPaymongoError(connectError instanceof Error ? connectError.message : 'Unable to start PayMongo onboarding.');
     } finally {
@@ -658,10 +663,20 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
             )}
             {paymongoTestStatus === 'pending' && (
               <>
-                {paymongoTestSignupUrl && <a className="button button-secondary" href={paymongoTestSignupUrl} target="_blank" rel="noreferrer">Open PayMongo</a>}
-                <button type="button" className="button button-primary" disabled={paymongoBusy || loading || saving} onClick={() => void syncPayMongoTestConnection()}>
-                  {paymongoBusy ? 'Checking…' : 'Check Connection'}
-                </button>
+                {paymongoTestSignupUrl && (
+                  <a className="button button-secondary" href={paymongoTestSignupUrl} target="_blank" rel="noreferrer">
+                    {paymongoTestInvitationId ? 'Open PayMongo' : 'Open Verification'}
+                  </a>
+                )}
+                {paymongoTestInvitationId ? (
+                  <button type="button" className="button button-primary" disabled={paymongoBusy || loading || saving} onClick={() => void syncPayMongoTestConnection()}>
+                    {paymongoBusy ? 'Checking…' : 'Check Connection'}
+                  </button>
+                ) : (
+                  <button type="button" className="button button-primary" disabled={paymongoBusy || loading || saving} onClick={() => void startPayMongoTestConnection()}>
+                    {paymongoBusy ? 'Starting…' : 'Refresh Verification'}
+                  </button>
+                )}
               </>
             )}
             {paymongoTestStatus === 'linked' && (
