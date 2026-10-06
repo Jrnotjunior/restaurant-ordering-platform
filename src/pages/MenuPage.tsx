@@ -108,8 +108,8 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
           <div className="storefront-hero-overlay" />
           <div className="storefront-hero-content">
             {hero.eyebrow ? <p className="eyebrow">{hero.eyebrow}</p> : null}
-            <h1>{hero.title}</h1>
-            {hero.description ? <p>{hero.description}</p> : null}
+            <h1>{restaurant.name}</h1>
+            {restaurant.tagline ? <p>{restaurant.tagline}</p> : null}
             {hero.secondaryButtonLabel ? (
               <div className="storefront-hero-actions">
                 <a className="button button-secondary" href={storefrontHref(hero.secondaryButtonHref ?? '#menu')}>{hero.secondaryButtonLabel}</a>
@@ -121,8 +121,8 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
 
       <div className="menu-intro" id="menu">
         {!hero.enabled ? <p className="eyebrow">Our menu</p> : null}
-        {!hero.enabled ? <h2>Choose what you’re craving.</h2> : null}
-        <p>Browse available items and add your favorites to your order.</p>
+        {!hero.enabled ? <h2>{restaurant.name}</h2> : null}
+        {restaurant.tagline ? <p>{restaurant.tagline}</p> : null}
       </div>
 
       {visibleSections.categories && categories.length > 0 ? (
