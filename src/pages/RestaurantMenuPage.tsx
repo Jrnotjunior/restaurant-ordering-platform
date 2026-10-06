@@ -25,6 +25,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
   const [imagePreview, setImagePreview] = useState('');
   const [savingForm, setSavingForm] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteProductTarget, setDeleteProductTarget] = useState<RestaurantProduct | null>(null);
 
   async function loadMenu() {
     try {
@@ -150,13 +151,19 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
     }
   }
 
-  async function removeProduct(product: RestaurantProduct) {
-    const confirmed = window.confirm(
-      `Delete ${product.name}?\n\nThis will remove the product from the restaurant products list.`
-    );
-    if (!confirmed) return;
+  function openDeleteConfirmation(product: RestaurantProduct) {
+    if (deletingId) return;
+    setDeleteProductTarget(product);
+  }
 
+  function closeDeleteConfirmation() {
+    if (!deletingId) setDeleteProductTarget(null);
+  }
+
+  async function removeProduct(product: RestaurantProduct) {
     setDeletingId(product.id);
+    setError('');
+    try {
     setError('');
     try {
       await deleteProduct(product.id);
@@ -165,6 +172,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
       setError(err instanceof Error ? err.message : 'Unable to delete product.');
     } finally {
       setDeletingId(null);
+    setDeleteProductTarget(null);
     }
   }
 
@@ -206,6 +214,16 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
         .restaurant-product-image-picker input[type=file]{display:none}
         .restaurant-product-image-picker .button{justify-self:center}
         .restaurant-product-form-actions{display:flex;justify-content:center;gap:10px;margin-top:4px}
+        .restaurant-delete-modal-backdrop{position:fixed;inset:0;z-index:1100;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.58);backdrop-filter:blur(3px)}
+        .restaurant-delete-modal{width:min(430px,100%);box-sizing:border-box;background:#fff;border-radius:18px;padding:28px;box-shadow:0 24px 70px rgba(15,23,42,.3);text-align:center;color:#0f172a}
+        .restaurant-delete-modal-icon{width:46px;height:46px;margin:0 auto 14px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:#fff1f2;border:1px solid #fecdd3;color:#be123c;font-size:24px;font-weight:800}
+        .restaurant-delete-modal h2{margin:0 0 10px;font-size:22px}
+        .restaurant-delete-modal p{margin:0;color:#334155;font-size:15px;line-height:1.55}
+        .restaurant-delete-modal-note{display:block;margin-top:8px;color:#64748b;font-size:13px;line-height:1.5}
+        .restaurant-delete-modal-actions{display:flex;justify-content:center;gap:10px;margin-top:24px}
+        .restaurant-delete-modal-actions .button{min-width:130px;min-height:42px}
+        .restaurant-delete-confirm-button{border:1px solid #fecaca;background:#fff1f2;color:#b91c1c}
+        .restaurant-delete-confirm-button:hover:not(:disabled){background:#ffe4e6}
         .restaurant-product-form-actions .button{min-width:130px}
         .restaurant-product-category-hint{font-size:12px;font-weight:400;color:#64748b}
         @media(max-width:600px){.restaurant-menu-section-header{flex-direction:column}.restaurant-menu-add-button{width:100%}.restaurant-menu-search{align-items:stretch;flex-direction:column}.restaurant-menu-search-label{white-space:normal}.restaurant-menu-search-input-wrap{max-width:none}.restaurant-product-modal-backdrop{padding:10px;align-items:flex-end}.restaurant-product-modal{max-height:92vh;border-radius:18px 18px 12px 12px;padding:20px}.restaurant-product-form-actions .button{flex:1}}
@@ -281,7 +299,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
                     {savingId === product.id ? '…' : product.isAvailable ? '−' : '+'}
                   </button>
                   <button className="button restaurant-management-product-icon" type="button" disabled={deletingId === product.id} onClick={() => openEdit(product)} aria-label={`Edit ${product.name}`}>✎</button>
-                  <button className="button restaurant-management-product-icon is-danger" type="button" disabled={deletingId === product.id} onClick={() => void removeProduct(product)} aria-label={`Delete ${product.name}`}>
+                  <button className="button restaurant-management-product-icon is-danger" type="button" disabled={deletingId === product.id} onClick={() => openDeleteConfirmation(product)} aria-label={`Delete ${product.name}`}>
                     {deletingId === product.id ? '…' : '×'}
                   </button>
                 </div>
@@ -290,6 +308,32 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
           </div>
         )}
       </div>
+
+      {deleteProductTarget && (
+        <div
+          className="restaurant-delete-modal-backdrop"
+          onMouseDown={(event) => { if (event.target === event.currentTarget && !deletingId) closeDeleteConfirmation(); }}
+        >
+          <div className="restaurant-delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-product-modal-title">
+            <div className="restaurant-delete-modal-icon" aria-hidden="true">!</div>
+            <h2 id="delete-product-modal-title">Delete product?</h2>
+            <p>
+              Are you sure you want to delete <strong>{deleteProductTarget.name}</strong>?
+            </p>
+            <span className="restaurant-delete-modal-note">
+              This will remove the product from the restaurant products list.
+            </span>
+            <div className="restaurant-delete-modal-actions">
+              <button className="button button-secondary" type="button" disabled={Boolean(deletingId)} onClick={closeDeleteConfirmation}>
+                Cancel
+              </button>
+              <button className="button restaurant-delete-confirm-button" type="button" disabled={Boolean(deletingId)} onClick={() => void removeProduct(deleteProductTarget)}>
+                {deletingId === deleteProductTarget.id ? 'Deleting…' : 'Delete Product'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {(editingProduct || isAddingProduct) && (
         <div className="restaurant-product-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !savingForm) closeProductModal(); }}>
