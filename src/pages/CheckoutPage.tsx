@@ -444,6 +444,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     setSubmitError('');
 
     try {
+      const isOwnCourierPickup = thirdPartyCourierDelivery && orderType === 'pickup';
       await saveDefaultAddressIfNeeded();
       const createdOrder = await createPendingOrder('cash');
       let confirmedTotal = createdOrder.total;
