@@ -41,18 +41,9 @@ function requireToken() {
   return token;
 }
 
-type MapboxContext = {
-  country?: { name?: string };
-  region?: { name?: string };
-  district?: { name?: string };
-  place?: { name?: string };
-  locality?: { name?: string };
-  neighborhood?: { name?: string };
-  address?: { name?: string; address_number?: string; street_name?: string };
-  street?: { name?: string };
-};
+type MapboxContext = Record<string, { name?: string } | undefined>;
 
-function contextName(context: MapboxContext | undefined, key: keyof MapboxContext) {
+function contextName(context: MapboxContext | undefined, key: string) {
   return context?.[key]?.name?.trim() ?? '';
 }
 
