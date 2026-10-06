@@ -121,7 +121,7 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
 
       <div className="menu-intro" id="menu">
         {!hero.enabled ? <p className="eyebrow">Our menu</p> : null}
-        <h2>{hero.enabled ? 'Order from our menu.' : 'Choose what you’re craving.'}</h2>
+        {!hero.enabled ? <h2>Choose what you’re craving.</h2> : null}
         <p>Browse available items and add your favorites to your order.</p>
       </div>
 
