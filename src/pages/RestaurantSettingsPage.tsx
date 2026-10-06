@@ -353,7 +353,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const openDays = useMemo(() => DAYS.filter((day) => hours[day.key].isOpen).length, [hours]);
 
   return (
-    <section className="restaurant-page restaurant-shipping-page">
+    <section className="restaurant-page restaurant-settings-page">
       <div className="restaurant-settings-card">
         <p className="eyebrow">Restaurant configuration</p>
         <h1 style={{ margin: 0 }}>Store Settings</h1>
