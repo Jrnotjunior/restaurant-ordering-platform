@@ -471,6 +471,9 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
                 inputMode="decimal"
                 value={cashReceived}
                 onChange={(event) => setCashReceived(event.target.value)}
+                onWheel={(event) => {
+                  event.currentTarget.blur();
+                }}
                 placeholder="0.00"
                 disabled={saving}
               />
