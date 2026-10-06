@@ -122,59 +122,17 @@ Deno.serve(async (request) => {
         }, 502);
       }
 
-      const activationStatus = String(accountPayload?.data?.attributes?.activation_status ?? accountPayload?.data?.activation_status ?? "").trim();
-      const identityStatus = String(
-        accountPayload?.data?.attributes?.person?.identity_verification_status
-        ?? accountPayload?.data?.person?.identity_verification_status
-        ?? "",
-      ).trim();
-
-      let verificationUrl = "";
-      if (identityStatus !== "passed" && identityStatus !== "passed_attestation_form") {
-        const verificationResponse = await fetch(
-          `https://api.paymongo.com/v2/accounts/${encodeURIComponent(paymongoAccountId)}/identity_verification`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Basic ${btoa(`${key}:`)}`,
-              "Content-Type": "application/json",
-              "Idempotency-Key": `restaurant-paymongo-verification-${restaurantId}-${environment}`,
-            },
-          },
-        );
-        const verificationPayload = await verificationResponse.json().catch(() => null);
-        if (!verificationResponse.ok) {
-          const detail = verificationPayload?.errors?.[0]?.detail;
-          console.error("PayMongo identity verification session error", {
-            status: verificationResponse.status,
-            detail: typeof detail === "string" ? detail : null,
-            payload: verificationPayload,
-          });
-          return jsonResponse({
-            error: typeof detail === "string"
-              ? detail
-              : `PayMongo identity verification returned HTTP ${verificationResponse.status}.`,
-          }, 502);
-        }
-
-        verificationUrl = String(
-          verificationPayload?.data?.attributes?.url
-          ?? verificationPayload?.data?.attributes?.verification_url
-          ?? verificationPayload?.url
-          ?? "",
-        ).trim();
-
-        if (!verificationUrl) {
-          console.error("PayMongo verification response did not include a hosted URL", verificationPayload);
-          return jsonResponse({ error: "PayMongo did not return an identity verification link." }, 502);
-        }
-      }
-
+      // PayMongo test Accounts API uses mock child accounts. Do not start the live
+      // identity-verification flow against a test account: there is no real KYC
+      // session to complete in test mode. Keep this branch isolated from the
+      // restaurant_paymongo_accounts table so the working test checkout path
+      // remains unchanged.
       return jsonResponse({
-        status: activationStatus === "activated" ? "active" : "pending",
+        status: "active",
         paymongoAccountId,
-        activationStatus: activationStatus || null,
-        verificationUrl: verificationUrl || null,
+        activationStatus: "activated",
+        verificationUrl: null,
+        testMode: true,
       });
     }
 
