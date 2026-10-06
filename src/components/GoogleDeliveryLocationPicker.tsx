@@ -31,10 +31,6 @@ type MarkerLibrary = {
   }) => GoogleMarker;
 };
 
-type GeocodingLibrary = {
-  Geocoder: new () => GoogleGeocoder;
-};
-
 type GoogleMap = {
   setCenter: (position: LatLng) => void;
   setZoom: (zoom: number) => void;
@@ -46,21 +42,10 @@ type GoogleMarker = {
   addEventListener: (eventName: string, handler: () => void) => void;
 };
 
-type GoogleGeocoder = {
-  geocode: (request: { location: LatLng }) => Promise<{ results?: GoogleGeocodeResult[] }>;
-};
-
 type GoogleGeocodeComponent = {
   long_name?: string;
   longText?: string;
   types?: string[];
-};
-
-type GoogleGeocodeResult = {
-  formatted_address?: string;
-  place_id?: string;
-  address_components?: GoogleGeocodeComponent[];
-  addressComponents?: GoogleGeocodeComponent[];
 };
 
 function componentText(components: GoogleGeocodeComponent[], types: string[]) {
@@ -84,33 +69,6 @@ function getLatLng(marker: GoogleMarker): LatLng | null {
   return { lat: position.lat, lng: position.lng };
 }
 
-function addressFromGeocode(result: GoogleGeocodeResult, location: LatLng): GoogleDeliveryAddress {
-  const components = result.address_components ?? result.addressComponents ?? [];
-  const city = componentText(components, ['locality', 'administrative_area_level_2']);
-  const barangay = componentText(components, [
-    'sublocality_level_1',
-    'sublocality_level_2',
-    'sublocality',
-    'neighborhood',
-  ]);
-  const street = componentText(components, ['route']);
-  const streetNumber = componentText(components, ['street_number']);
-  const premise = componentText(components, ['premise', 'subpremise']);
-  const address = [streetNumber, street, premise].filter(Boolean).join(' ').trim()
-    || result.formatted_address?.trim()
-    || '';
-
-  return {
-    formattedAddress: result.formatted_address?.trim() || '',
-    city,
-    barangay,
-    address,
-    placeId: result.place_id?.trim() || '',
-    latitude: location.lat,
-    longitude: location.lng,
-  };
-}
-
 export function GoogleDeliveryLocationPicker({
   disabled = false,
   onSelect,
@@ -121,7 +79,6 @@ export function GoogleDeliveryLocationPicker({
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<GoogleMap | null>(null);
   const markerRef = useRef<GoogleMarker | null>(null);
-  const geocoderRef = useRef<GoogleGeocoder | null>(null);
   const [searchPicker, setSearchPicker] = useState<HTMLElement | null>(null);
   const [selectedAddress, setSelectedAddress] = useState<GoogleDeliveryAddress | null>(null);
   const [loading, setLoading] = useState(true);
@@ -131,35 +88,25 @@ export function GoogleDeliveryLocationPicker({
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
 
-  async function reverseGeocode(location: LatLng) {
-    if (!geocoderRef.current) return;
-
-    try {
-      setError('');
-      const response = await geocoderRef.current.geocode({ location });
-      const result = response.results?.[0];
-      if (!result) {
-        setError('We could not identify an address at that pin. Please move the pin to a nearby street or building.');
-        return;
-      }
-
-      const nextAddress = addressFromGeocode(result, location);
-      setSelectedAddress(nextAddress);
-      onSelectRef.current(nextAddress);
-    } catch (geocodeError) {
-      console.error('Unable to reverse geocode delivery pin.', geocodeError);
-      setError('We could not read that map location. Please try moving the pin again.');
-    }
-  }
-
-  function placePin(location: LatLng, shouldReverseGeocode = true) {
+  function placePin(location: LatLng) {
     const map = mapRef.current;
     const marker = markerRef.current;
     if (!map || !marker) return;
 
     marker.position = location;
     map.setCenter(location);
-    if (shouldReverseGeocode) void reverseGeocode(location);
+
+    setSelectedAddress((current) => {
+      if (!current) return current;
+
+      const updatedAddress: GoogleDeliveryAddress = {
+        ...current,
+        latitude: location.lat,
+        longitude: location.lng,
+      };
+      onSelectRef.current(updatedAddress);
+      return updatedAddress;
+    });
   }
 
   useEffect(() => {
@@ -179,7 +126,6 @@ export function GoogleDeliveryLocationPicker({
         const [{ Map }, { AdvancedMarkerElement }, { Geocoder }] = await Promise.all([
           googleMaps.maps.importLibrary('maps') as Promise<MapsLibrary>,
           googleMaps.maps.importLibrary('marker') as Promise<MarkerLibrary>,
-          googleMaps.maps.importLibrary('geocoding') as Promise<GeocodingLibrary>,
         ]);
 
         if (cancelled || !mapContainerRef.current) return;
@@ -202,14 +148,12 @@ export function GoogleDeliveryLocationPicker({
           title: 'Drag this pin to your exact delivery location',
         });
 
-        const geocoder = new Geocoder();
         mapRef.current = map;
         markerRef.current = marker;
-        geocoderRef.current = geocoder;
 
         marker.addEventListener('gmp-dragend', () => {
           const location = getLatLng(marker);
-          if (location) void reverseGeocode(location);
+          if (location) placePin(location);
         });
 
         mapClickListener = map.addListener('click', (event) => {
@@ -276,7 +220,7 @@ export function GoogleDeliveryLocationPicker({
 
             setSelectedAddress(nextAddress);
             onSelectRef.current(nextAddress);
-            placePin(location, false);
+            placePin(location);
           } catch (selectionError) {
             console.error('Unable to read the selected Google address.', selectionError);
             setError('We could not read that address. Please select another result.');
@@ -303,7 +247,6 @@ export function GoogleDeliveryLocationPicker({
       if (searchElement) searchElement.remove();
       mapRef.current = null;
       markerRef.current = null;
-      geocoderRef.current = null;
     };
   }, []);
 
