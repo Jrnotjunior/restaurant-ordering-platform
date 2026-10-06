@@ -239,12 +239,8 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-live-eyebrow{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
         .website-customization-live-hero h3{font-size:25px;line-height:1.08;margin:7px 0 8px}
         .website-customization-live-hero p{margin:0;font-size:13px;line-height:1.5}
-        .website-customization-live-buttons{display:flex;gap:7px;flex-wrap:wrap;margin-top:16px}
-        .website-customization-live-buttons span{display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:0 11px;border:1px solid;border-radius:var(--radius-sm);font-size:11px;font-weight:800}
         .website-customization-live-disabled{margin:12px;padding:22px;text-align:center;border:1px dashed;font-size:12px}
         .website-customization-live-section{margin:12px;padding:12px;border:1px solid;border-color:inherit;border-radius:9px;display:flex;justify-content:space-between;gap:8px;font-size:12px}
-        .website-customization-live-section-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px}
-        .website-customization-live-section-grid>div{display:grid;gap:3px;padding:11px;border:1px solid;border-color:inherit;border-radius:9px;font-size:11px}
         .website-customization-live-footer{padding:14px;border-top:1px solid;text-align:center;font-size:10px}
         .website-customization-live-footer-powered-by{display:inline-flex;align-items:center;justify-content:center;gap:5px;margin-top:8px;color:inherit;text-decoration:none;font-size:9px;opacity:.8}
         .website-customization-live-footer-powered-logo{display:inline-flex;align-items:center;gap:4px;font-weight:800}
@@ -377,21 +373,9 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
                   {storefront.hero.eyebrow ? <span className="website-customization-live-eyebrow" style={{ color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.primary }}>{storefront.hero.eyebrow}</span> : null}
                   <h3 style={{ fontFamily: websiteTheme.fontHeading }}>{restaurantName}</h3>
                   {restaurantTagline ? <p>{restaurantTagline}</p> : null}
-                  <div className="website-customization-live-buttons">
-                    {storefront.hero.primaryButtonLabel ? <span style={{ background: websiteTheme.buttonStyle === 'soft' ? websiteTheme.colors.secondary : websiteTheme.buttonStyle === 'outline' ? 'transparent' : websiteTheme.colors.primary, color: websiteTheme.buttonStyle === 'soft' ? websiteTheme.colors.secondaryText : websiteTheme.buttonStyle === 'outline' ? websiteTheme.colors.primary : websiteTheme.colors.primaryText, borderColor: websiteTheme.colors.primary }}>{storefront.hero.primaryButtonLabel}</span> : null}
-                    {storefront.hero.secondaryButtonLabel ? <span style={{ background: 'transparent', color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.text, borderColor: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.border }}>{storefront.hero.secondaryButtonLabel}</span> : null}
-                  </div>
                 </div>
 
-              {storefront.sections.categories ? <div className="website-customization-live-section"><strong>Menu categories</strong><span style={{ color: websiteTheme.colors.muted }}>Featured menu categories</span></div> : null}
-
-              <div className="website-customization-live-section-grid">
-                {storefront.sections.about ? <div><strong>About</strong><span style={{ color: websiteTheme.colors.muted }}>About your restaurant</span></div> : null}
-                {storefront.sections.location ? <div><strong>Location</strong><span style={{ color: websiteTheme.colors.muted }}>Restaurant location</span></div> : null}
-                {storefront.sections.hours ? <div><strong>Hours</strong><span style={{ color: websiteTheme.colors.muted }}>Operating hours</span></div> : null}
-                {storefront.sections.contact ? <div><strong>Contact</strong><span style={{ color: websiteTheme.colors.muted }}>Contact information</span></div> : null}
-                {storefront.sections.social ? <div><strong>Social</strong><span style={{ color: websiteTheme.colors.muted }}>Social links</span></div> : null}
-              </div>
+              <div className="website-customization-live-section"><strong>Menu</strong><span style={{ color: websiteTheme.colors.muted }}>Restaurant menu and categories</span></div>
 
               <div className="website-customization-live-footer" style={{ borderTopColor: websiteTheme.colors.border, color: websiteTheme.colors.muted }}>
                 <div>{`© ${new Date().getFullYear()} All rights reserved.`}</div>
