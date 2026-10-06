@@ -10,9 +10,10 @@ type RestaurantLayoutProps = {
   cartCount?: number;
   role?: RestaurantNavigationRole;
   ownerDashboard?: boolean;
+  compactPublicChrome?: boolean;
 };
 
-export function RestaurantLayout({ children, hideChrome = false, cartCount = 0, role = 'owner', ownerDashboard = false }: RestaurantLayoutProps) {
+export function RestaurantLayout({ children, hideChrome = false, cartCount = 0, role = 'owner', ownerDashboard = false, compactPublicChrome = false }: RestaurantLayoutProps) {
   useRestaurant();
 
   if (hideChrome) {
@@ -25,7 +26,7 @@ export function RestaurantLayout({ children, hideChrome = false, cartCount = 0, 
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${compactPublicChrome ? ' app-shell-compact-public' : ''}`}>
       <Header cartCount={cartCount} />
       <main>{children}</main>
       <Footer />
