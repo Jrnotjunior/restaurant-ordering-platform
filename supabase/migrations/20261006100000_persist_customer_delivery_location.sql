@@ -1,0 +1,242 @@
+-- Persist the customer's exact delivery destination separately from the restaurant pickup point.
+alter table public.orders
+  add column if not exists customer_delivery_address text,
+  add column if not exists customer_delivery_city text,
+  add column if not exists customer_delivery_barangay text,
+  add column if not exists customer_delivery_latitude double precision,
+  add column if not exists customer_delivery_longitude double precision,
+  add column if not exists customer_delivery_place_id text;
+
+alter table public.pending_online_payments
+  add column if not exists customer_delivery_address text,
+  add column if not exists customer_delivery_city text,
+  add column if not exists customer_delivery_barangay text,
+  add column if not exists customer_delivery_latitude double precision,
+  add column if not exists customer_delivery_longitude double precision,
+  add column if not exists customer_delivery_place_id text;
+
+alter table public.customer_addresses
+  add column if not exists latitude double precision,
+  add column if not exists longitude double precision,
+  add column if not exists place_id text;
+
+alter table public.orders
+  drop constraint if exists orders_customer_delivery_latitude_check,
+  drop constraint if exists orders_customer_delivery_longitude_check;
+
+alter table public.orders
+  add constraint orders_customer_delivery_latitude_check
+    check (customer_delivery_latitude is null or customer_delivery_latitude between -90 and 90),
+  add constraint orders_customer_delivery_longitude_check
+    check (customer_delivery_longitude is null or customer_delivery_longitude between -180 and 180);
+
+alter table public.pending_online_payments
+  drop constraint if exists pending_online_payments_customer_delivery_latitude_check,
+  drop constraint if exists pending_online_payments_customer_delivery_longitude_check;
+
+alter table public.pending_online_payments
+  add constraint pending_online_payments_customer_delivery_latitude_check
+    check (customer_delivery_latitude is null or customer_delivery_latitude between -90 and 90),
+  add constraint pending_online_payments_customer_delivery_longitude_check
+    check (customer_delivery_longitude is null or customer_delivery_longitude between -180 and 180);
+
+create index if not exists orders_customer_delivery_location_idx
+  on public.orders (restaurant_id, customer_delivery_latitude, customer_delivery_longitude)
+  where customer_delivery_latitude is not null and customer_delivery_longitude is not null;
+
+-- New overloaded checkout RPC. The existing create_order signature remains unchanged for POS and other callers.
+create or replace function public.create_order(
+  p_restaurant_id uuid,
+  p_customer_name text,
+  p_mobile_number text,
+  p_order_type text,
+  p_delivery_city text,
+  p_delivery_barangay text,
+  p_delivery_address text,
+  p_notes text,
+  p_payment_method text,
+  p_is_third_party_courier boolean,
+  p_items jsonb,
+  p_customer_delivery_address text,
+  p_customer_delivery_city text,
+  p_customer_delivery_barangay text,
+  p_customer_delivery_latitude double precision,
+  p_customer_delivery_longitude double precision,
+  p_customer_delivery_place_id text
+)
+returns table(order_id uuid, order_number text, subtotal numeric, delivery_fee numeric, total numeric)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_order public.orders%rowtype;
+begin
+  if p_order_type = 'delivery' then
+    if p_customer_delivery_latitude is null or p_customer_delivery_longitude is null then
+      raise exception 'A delivery map location is required';
+    end if;
+
+    if p_customer_delivery_latitude not between -90 and 90
+      or p_customer_delivery_longitude not between -180 and 180 then
+      raise exception 'Invalid delivery map coordinates';
+    end if;
+
+    if length(trim(coalesce(p_customer_delivery_address, ''))) = 0
+      or length(trim(coalesce(p_customer_delivery_city, ''))) = 0
+      or length(trim(coalesce(p_customer_delivery_barangay, ''))) = 0 then
+      raise exception 'Complete customer delivery address is required';
+    end if;
+  end if;
+
+  select * into v_order
+  from public.create_order(
+    p_restaurant_id,
+    p_customer_name,
+    p_mobile_number,
+    p_order_type,
+    p_delivery_city,
+    p_delivery_barangay,
+    p_delivery_address,
+    p_notes,
+    p_payment_method,
+    p_is_third_party_courier,
+    p_items
+  );
+
+  update public.orders
+  set customer_delivery_address = case when p_order_type = 'delivery' then nullif(trim(p_customer_delivery_address), '') else null end,
+      customer_delivery_city = case when p_order_type = 'delivery' then nullif(trim(p_customer_delivery_city), '') else null end,
+      customer_delivery_barangay = case when p_order_type = 'delivery' then nullif(trim(p_customer_delivery_barangay), '') else null end,
+      customer_delivery_latitude = case when p_order_type = 'delivery' then p_customer_delivery_latitude else null end,
+      customer_delivery_longitude = case when p_order_type = 'delivery' then p_customer_delivery_longitude else null end,
+      customer_delivery_place_id = case when p_order_type = 'delivery' then nullif(trim(p_customer_delivery_place_id), '') else null end,
+      updated_at = now()
+  where id = v_order.order_id
+  returning * into v_order;
+
+  return query
+  select v_order.id, v_order.order_number, v_order.subtotal, v_order.delivery_fee, v_order.total;
+end;
+$$;
+
+grant execute on function public.create_order(
+  uuid,text,text,text,text,text,text,text,text,boolean,jsonb,
+  text,text,text,double precision,double precision,text
+) to anon, authenticated;
+
+-- New overloaded online-payment staging RPC. Existing callers remain unchanged.
+create or replace function public.create_pending_online_payment(
+  p_restaurant_id uuid,
+  p_customer_name text,
+  p_mobile_number text,
+  p_order_type text,
+  p_delivery_city text,
+  p_delivery_barangay text,
+  p_delivery_address text,
+  p_notes text,
+  p_is_third_party_courier boolean,
+  p_items jsonb,
+  p_redeem_loyalty boolean,
+  p_customer_delivery_address text,
+  p_customer_delivery_city text,
+  p_customer_delivery_barangay text,
+  p_customer_delivery_latitude double precision,
+  p_customer_delivery_longitude double precision,
+  p_customer_delivery_place_id text
+)
+returns table(payment_id uuid, reference_number text, subtotal numeric, delivery_fee numeric, total numeric)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_payment public.pending_online_payments%rowtype;
+begin
+  if p_order_type = 'delivery' then
+    if p_customer_delivery_latitude is null or p_customer_delivery_longitude is null then
+      raise exception 'A delivery map location is required';
+    end if;
+
+    if p_customer_delivery_latitude not between -90 and 90
+      or p_customer_delivery_longitude not between -180 and 180 then
+      raise exception 'Invalid delivery map coordinates';
+    end if;
+
+    if length(trim(coalesce(p_customer_delivery_address, ''))) = 0
+      or length(trim(coalesce(p_customer_delivery_city, ''))) = 0
+      or length(trim(coalesce(p_customer_delivery_barangay, ''))) = 0 then
+      raise exception 'Complete customer delivery address is required';
+    end if;
+  end if;
+
+  select * into v_payment
+  from public.create_pending_online_payment(
+    p_restaurant_id,
+    p_customer_name,
+    p_mobile_number,
+    p_order_type,
+    p_delivery_city,
+    p_delivery_barangay,
+    p_delivery_address,
+    p_notes,
+    p_is_third_party_courier,
+    p_items,
+    p_redeem_loyalty
+  );
+
+  update public.pending_online_payments
+  set customer_delivery_address = case when p_order_type = 'delivery' then nullif(trim(p_customer_delivery_address), '') else null end,
+      customer_delivery_city = case when p_order_type = 'delivery' then nullif(trim(p_customer_delivery_city), '') else null end,
+      customer_delivery_barangay = case when p_order_type = 'delivery' then nullif(trim(p_customer_delivery_barangay), '') else null end,
+      customer_delivery_latitude = case when p_order_type = 'delivery' then p_customer_delivery_latitude else null end,
+      customer_delivery_longitude = case when p_order_type = 'delivery' then p_customer_delivery_longitude else null end,
+      customer_delivery_place_id = case when p_order_type = 'delivery' then nullif(trim(p_customer_delivery_place_id), '') else null end,
+      updated_at = now()
+  where id = v_payment.payment_id
+  returning * into v_payment;
+
+  return query
+  select v_payment.id, v_payment.reference_number, v_payment.subtotal, v_payment.delivery_fee, v_payment.total;
+end;
+$$;
+
+grant execute on function public.create_pending_online_payment(
+  uuid,text,text,text,text,text,text,text,boolean,jsonb,boolean,
+  text,text,text,double precision,double precision,text
+) to anon, authenticated;
+
+-- When PayMongo finalizes the staged payment, carry the exact customer destination into the order.
+create or replace function public.copy_pending_customer_delivery_location_to_order()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.status = 'paid' and new.order_id is not null then
+    update public.orders
+    set customer_delivery_address = new.customer_delivery_address,
+        customer_delivery_city = new.customer_delivery_city,
+        customer_delivery_barangay = new.customer_delivery_barangay,
+        customer_delivery_latitude = new.customer_delivery_latitude,
+        customer_delivery_longitude = new.customer_delivery_longitude,
+        customer_delivery_place_id = new.customer_delivery_place_id,
+        updated_at = now()
+    where id = new.order_id;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists pending_online_payment_copy_customer_delivery_location
+on public.pending_online_payments;
+
+create trigger pending_online_payment_copy_customer_delivery_location
+after update of status, order_id on public.pending_online_payments
+for each row
+when (new.status = 'paid' and new.order_id is not null)
+execute function public.copy_pending_customer_delivery_location_to_order();
+
+revoke all on function public.copy_pending_customer_delivery_location_to_order() from public, anon, authenticated;
