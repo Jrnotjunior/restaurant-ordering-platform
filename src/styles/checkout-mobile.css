@@ -1062,7 +1062,7 @@
 
 .delivery-location-confirmation .button {
   width: auto;
-  justify-self: start;
+  justify-self: center;
   min-width: 0;
   margin-top: 0.45rem;
   padding: 0.65rem 1rem;
