@@ -280,6 +280,7 @@ export function GoogleDeliveryLocationPicker({
         picker.addEventListener('gmp-select', handleSearchSelect as EventListener);
         mapContainerRef.current.parentElement?.insertBefore(picker, mapContainerRef.current);
         searchElement = picker;
+        setSearchPicker(picker);
       } catch (setupError) {
         console.error('Unable to initialize Google delivery map.', setupError);
         setError(setupError instanceof Error ? setupError.message : 'Google Maps is unavailable.');
