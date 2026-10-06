@@ -379,8 +379,8 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
                   }}
                 >
                   {storefront.hero.eyebrow ? <span className="website-customization-live-eyebrow" style={{ color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.primary }}>{storefront.hero.eyebrow}</span> : null}
-                  <h3 style={{ fontFamily: websiteTheme.fontHeading }}>{storefront.hero.title || restaurantName}</h3>
-                  {storefront.hero.description ? <p>{storefront.hero.description}</p> : null}
+                  <h3 style={{ fontFamily: websiteTheme.fontHeading }}>{restaurantName}</h3>
+                  {restaurantTagline ? <p>{restaurantTagline}</p> : null}
                   <div className="website-customization-live-buttons">
                     {storefront.hero.primaryButtonLabel ? <span style={{ background: websiteTheme.buttonStyle === 'soft' ? websiteTheme.colors.secondary : websiteTheme.buttonStyle === 'outline' ? 'transparent' : websiteTheme.colors.primary, color: websiteTheme.buttonStyle === 'soft' ? websiteTheme.colors.secondaryText : websiteTheme.buttonStyle === 'outline' ? websiteTheme.colors.primary : websiteTheme.colors.primaryText, borderColor: websiteTheme.colors.primary }}>{storefront.hero.primaryButtonLabel}</span> : null}
                     {storefront.hero.secondaryButtonLabel ? <span style={{ background: 'transparent', color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.text, borderColor: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.border }}>{storefront.hero.secondaryButtonLabel}</span> : null}
@@ -480,8 +480,6 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
           <div className="website-customization-homepage-group">
             <h3>Welcome message</h3>
             <div className="website-customization-grid">
-              <label className="website-customization-field"><span>Title</span><input type="text" value={storefront.hero.title} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, title: event.target.value } }))} /></label>
-              <label className="website-customization-field"><span>Description</span><input type="text" value={storefront.hero.description} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, description: event.target.value } }))} /></label>
               <label className="website-customization-field"><span>Hero image URL</span><input type="text" placeholder="https://..." value={storefront.hero.imageUrl ?? ''} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, imageUrl: event.target.value } }))} /></label>
               <label className="website-customization-field"><span>Order button text</span><input type="text" value={storefront.hero.primaryButtonLabel} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, primaryButtonLabel: event.target.value } }))} /></label>
             </div>
