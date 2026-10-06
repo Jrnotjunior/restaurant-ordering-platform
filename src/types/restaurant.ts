@@ -62,10 +62,6 @@ export type RestaurantStorefront = {
     contact: boolean;
     social: boolean;
   };
-  footer: {
-    enabled: boolean;
-    text?: string;
-  };
 };
 
 export type RestaurantConfig = {
