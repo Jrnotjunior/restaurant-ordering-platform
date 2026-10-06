@@ -986,6 +986,7 @@
     width: calc(100% - 2rem);
     min-height: 220px;
     height: 220px;
+    margin-inline: auto;
     border-radius: 0.75rem;
   }
 
