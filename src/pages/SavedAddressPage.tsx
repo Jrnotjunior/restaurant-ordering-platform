@@ -1,19 +1,13 @@
 import { useEffect, useState } from 'react';
 import { deleteMyCustomerAddress, getMyCustomerAddresses, saveMyCustomerAddress, setMyCustomerAddressDefault, updateMyCustomerAddress, type CustomerSavedAddress } from '../services/loyaltyRepository';
-import { getRestaurantDeliveryZones, type RestaurantDeliveryZone } from '../services/restaurantSettingsRepository';
 import { useRestaurant } from '../components/RestaurantProvider';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
 import '../styles/saved-address.css';
-
-function normalize(value: string) {
-  return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
-}
 
 export function SavedAddressPage() {
   const restaurant = useRestaurant();
   const { user } = useRestaurantOwnerAuth();
   const [addresses, setAddresses] = useState<CustomerSavedAddress[]>([]);
-  const [zones, setZones] = useState<RestaurantDeliveryZone[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
   const [label, setLabel] = useState('');
@@ -42,12 +36,8 @@ export function SavedAddressPage() {
     setLoading(true);
     setError('');
     try {
-      const [savedAddresses, deliveryZones] = await Promise.all([
-        getMyCustomerAddresses(restaurant.id),
-        getRestaurantDeliveryZones(restaurant.id),
-      ]);
+      const savedAddresses = await getMyCustomerAddresses(restaurant.id);
       setAddresses(savedAddresses);
-      setZones(deliveryZones);
     } catch (loadError) {
       console.error('Unable to load saved addresses.', loadError);
       setError(loadError instanceof Error ? loadError.message : 'Unable to load your saved addresses.');
@@ -58,13 +48,6 @@ export function SavedAddressPage() {
 
   useEffect(() => { void loadAddresses(); }, [restaurant.id, user?.id]);
 
-  const cityIsSupported = Boolean(city.trim()) && zones.some((zone) => normalize(zone.city) === normalize(city));
-  const suggestions = zones.filter((zone) => {
-    if (!cityIsSupported || normalize(zone.city) !== normalize(city)) return false;
-    const search = normalize(barangay);
-    return !search || normalize(zone.barangay).includes(search);
-  });
-  const selectedZone = zones.find((zone) => normalize(zone.city) === normalize(city) && normalize(zone.barangay) === normalize(barangay));
 
   function openEditForm(item: CustomerSavedAddress) {
     setEditingAddressId(item.id);
@@ -101,11 +84,6 @@ export function SavedAddressPage() {
       setError('Please complete your city, barangay, and unit/building/street address.');
       return;
     }
-    if (cityIsSupported && (!selectedZone || !selectedZone.isSupported)) {
-      setError('Please select a supported delivery barangay.');
-      return;
-    }
-
     setSaving(true);
     try {
       if (editingAddressId) {
@@ -197,7 +175,6 @@ export function SavedAddressPage() {
               <label><span>City</span><input type="text" value={city} onChange={(event) => { setCity(event.target.value); setBarangay(''); setMessage(''); setError(''); }} autoComplete="address-level2" required /></label>
               <label><span>Barangay</span><input type="text" value={barangay} onChange={(event) => { setBarangay(event.target.value); setMessage(''); setError(''); }} autoComplete="address-level3" required /></label>
               <label><span>Unit/Bldg./Street Address</span><textarea value={address} onChange={(event) => { setAddress(event.target.value); setMessage(''); setError(''); }} placeholder="Enter your unit, building, house number, and street" rows={4} required /></label>
-              {cityIsSupported && selectedZone && !selectedZone.isSupported ? <p className="saved-address-error" role="alert">This barangay is outside the restaurant's delivery area.</p> : null}
               <button className="button button-primary" type="submit" disabled={saving}>{saving ? 'Saving…' : editingAddressId ? 'Save Changes' : 'Save Address'}</button>
             </form></div>
           )}
