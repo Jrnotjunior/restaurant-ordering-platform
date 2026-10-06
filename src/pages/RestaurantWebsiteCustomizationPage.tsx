@@ -448,14 +448,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
           </div>
         </div>
 
-        <div className="website-customization-card">
-          <h2>Homepage</h2>
-          <p className="website-customization-help">Set the optional hero image shown behind your restaurant name and tagline.</p>
-          <label className="website-customization-field">
-            <span>Hero image URL</span>
-            <input type="text" placeholder="https://..." value={storefront.hero.imageUrl ?? ''} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, hero: { ...current.hero, imageUrl: event.target.value } }))} />
-          </label>
-        </div>
+
 
         <div className="website-customization-actions-bar">
           <button className="button button-primary" type="submit" disabled={loading || saving}>{saving ? 'Saving…' : 'Save Customizations'}</button>
