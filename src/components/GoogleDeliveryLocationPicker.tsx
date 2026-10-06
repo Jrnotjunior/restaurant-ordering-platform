@@ -99,7 +99,7 @@ export function GoogleDeliveryLocationPicker({
   onSelect,
 }: {
   disabled?: boolean;
-  onSelect: (address: GoogleDeliveryAddress) => void;
+  onSelect: (address: GoogleDeliveryAddress) => void | Promise<void>;
 }) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<GoogleMap | null>(null);
@@ -109,6 +109,7 @@ export function GoogleDeliveryLocationPicker({
   const [searchPicker, setSearchPicker] = useState<HTMLElement | null>(null);
   const [selectedAddress, setSelectedAddress] = useState<GoogleDeliveryAddress | null>(null);
   const [locationConfirmed, setLocationConfirmed] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(true);
   const [locating, setLocating] = useState(false);
   const [error, setError] = useState('');
@@ -414,13 +415,23 @@ export function GoogleDeliveryLocationPicker({
           <button
             className="button button-primary"
             type="button"
-            onClick={() => {
-              setLocationConfirmed(true);
-              onSelectRef.current(selectedAddress);
+            onClick={async () => {
+              setConfirming(true);
+              setError('');
+              try {
+                await onSelectRef.current(selectedAddress);
+                setLocationConfirmed(true);
+              } catch (confirmationError) {
+                console.error('Unable to confirm delivery location.', confirmationError);
+                setError(confirmationError instanceof Error ? confirmationError.message : 'We could not confirm this location. Please try again.');
+                setLocationConfirmed(false);
+              } finally {
+                setConfirming(false);
+              }
             }}
-            disabled={disabled || locationConfirmed}
+            disabled={disabled || locationConfirmed || confirming}
           >
-            {locationConfirmed ? 'Location Confirmed' : 'Confirm Location'}
+            {locationConfirmed ? 'Location Confirmed' : confirming ? 'Confirming Location…' : 'Confirm Location'}
           </button>
         </div>
       )}
