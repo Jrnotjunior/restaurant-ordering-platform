@@ -405,7 +405,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
                   <div>{storefront.footer.text || `© ${new Date().getFullYear()} ${restaurantName}. All rights reserved.`}</div>
                   <a className="website-customization-live-footer-powered-by" href="https://web2table.com" target="_blank" rel="noreferrer" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
                     <span>Powered by</span>
-                    <span className="website-customization-live-footer-powered-logo"><span className="website-customization-live-footer-powered-mark" style={{ background: websiteTheme.colors.text, color: websiteTheme.colors.background }}>W</span><strong>Web2Table</strong></span>
+                    <img src="/restaurant-ordering-platform/web2table.png" alt="Web2Table" className="website-customization-live-footer-powered-logo" />
                   </a>
                 </div>
               ) : null}
