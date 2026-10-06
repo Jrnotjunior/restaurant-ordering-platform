@@ -9,8 +9,7 @@ import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvide
 import { useRestaurant } from '../components/RestaurantProvider';
 import { supabase } from '../services/supabaseClient';
 import { OrderConfirmationPage } from './OrderConfirmationPage';
-import { GoogleDeliveryLocationPicker } from '../components/GoogleDeliveryLocationPicker';
-import type { GoogleDeliveryAddress } from '../components/GoogleDeliveryAddressPicker';
+import { GoogleDeliveryLocationPicker, type GoogleDeliveryAddress } from '../components/GoogleDeliveryLocationPicker';
 import '../styles/checkout-mobile.css';
 
 type CartItem = { product: RestaurantProduct; quantity: number };
