@@ -70,6 +70,131 @@ Deno.serve(async (request) => {
       return jsonResponse({ status: "active", paymongoAccountId: existing.paymongo_account_id });
     }
 
+    if (environment === "test") {
+      let paymongoAccountId = String(existing?.paymongo_account_id ?? "").trim();
+
+      if (!paymongoAccountId) {
+        const createResponse = await fetch("https://api.paymongo.com/v2/accounts", {
+          method: "POST",
+          headers: {
+            Authorization: `Basic ${btoa(`${key}:`)}`,
+            "Content-Type": "application/json",
+            "Idempotency-Key": `restaurant-paymongo-account-${restaurantId}-${environment}`,
+          },
+          body: JSON.stringify({
+            data: {
+              attributes: {
+                type: "merchant",
+              },
+            },
+          }),
+        });
+
+        const createPayload = await createResponse.json().catch(() => null);
+        if (!createResponse.ok) {
+          const detail = createPayload?.errors?.[0]?.detail;
+          console.error("PayMongo child account creation error", {
+            status: createResponse.status,
+            detail: typeof detail === "string" ? detail : null,
+            payload: createPayload,
+          });
+          return jsonResponse({
+            error: typeof detail === "string"
+              ? detail
+              : `PayMongo child account creation returned HTTP ${createResponse.status}.`,
+          }, 502);
+        }
+
+        paymongoAccountId = String(createPayload?.data?.id ?? "").trim();
+        if (!paymongoAccountId) {
+          console.error("PayMongo child account response did not include an account id", createPayload);
+          return jsonResponse({ error: "PayMongo did not return a child account ID." }, 502);
+        }
+      }
+
+      const accountResponse = await fetch(
+        `https://api.paymongo.com/v2/accounts/${encodeURIComponent(paymongoAccountId)}`,
+        { headers: { Authorization: `Basic ${btoa(`${key}:`)}`, Accept: "application/json" } },
+      );
+      const accountPayload = await accountResponse.json().catch(() => null);
+      if (!accountResponse.ok) {
+        const detail = accountPayload?.errors?.[0]?.detail;
+        return jsonResponse({
+          error: typeof detail === "string"
+            ? detail
+            : "Unable to read the PayMongo child account.",
+        }, 502);
+      }
+
+      const activationStatus = String(accountPayload?.data?.attributes?.activation_status ?? accountPayload?.data?.activation_status ?? "").trim();
+      const identityStatus = String(
+        accountPayload?.data?.attributes?.person?.identity_verification_status
+        ?? accountPayload?.data?.person?.identity_verification_status
+        ?? "",
+      ).trim();
+
+      let verificationUrl = "";
+      if (identityStatus !== "passed" && identityStatus !== "passed_attestation_form") {
+        const verificationResponse = await fetch(
+          `https://api.paymongo.com/v2/accounts/${encodeURIComponent(paymongoAccountId)}/identity_verification`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Basic ${btoa(`${key}:`)}`,
+              "Content-Type": "application/json",
+              "Idempotency-Key": `restaurant-paymongo-verification-${restaurantId}-${environment}`,
+            },
+          },
+        );
+        const verificationPayload = await verificationResponse.json().catch(() => null);
+        if (!verificationResponse.ok) {
+          const detail = verificationPayload?.errors?.[0]?.detail;
+          console.error("PayMongo identity verification session error", {
+            status: verificationResponse.status,
+            detail: typeof detail === "string" ? detail : null,
+            payload: verificationPayload,
+          });
+          return jsonResponse({
+            error: typeof detail === "string"
+              ? detail
+              : `PayMongo identity verification returned HTTP ${verificationResponse.status}.`,
+          }, 502);
+        }
+
+        verificationUrl = String(
+          verificationPayload?.data?.attributes?.url
+          ?? verificationPayload?.data?.attributes?.verification_url
+          ?? verificationPayload?.url
+          ?? "",
+        ).trim();
+
+        if (!verificationUrl) {
+          console.error("PayMongo verification response did not include a hosted URL", verificationPayload);
+          return jsonResponse({ error: "PayMongo did not return an identity verification link." }, 502);
+        }
+      }
+
+      const { error: saveError } = await admin.from("restaurant_paymongo_accounts").upsert({
+        restaurant_id: restaurantId,
+        environment,
+        paymongo_account_id: paymongoAccountId,
+        connection_status: activationStatus === "activated" ? "active" : "pending",
+        invitation_id: null,
+        invitation_email: email,
+        activation_status: activationStatus || null,
+        webhook_id: null,
+        webhook_secret_id: null,
+      }, { onConflict: "restaurant_id,environment" });
+      if (saveError) throw saveError;
+
+      return jsonResponse({
+        status: activationStatus === "activated" ? "active" : "pending",
+        paymongoAccountId,
+        activationStatus: activationStatus || null,
+        verificationUrl: verificationUrl || null,
+      });
+    }
+
     if (existing?.connection_status === "pending" && existing.invitation_id && existing.invitation_email === email) {
       return jsonResponse({
         status: "pending",
