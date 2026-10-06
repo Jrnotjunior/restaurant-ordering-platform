@@ -94,18 +94,21 @@ export function GoogleDeliveryLocationPicker({
   const mapRef = useRef<GoogleMap | null>(null);
   const markerRef = useRef<GoogleMarker | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  type SearchPlacePrediction = {
+    text?: { text?: string };
+    toPlace: () => {
+      id?: string;
+      formattedAddress?: string;
+      location?: { lat: () => number; lng: () => number };
+      addressComponents?: GoogleGeocodeComponent[];
+      fetchFields: (options: { fields: string[] }) => Promise<void>;
+    };
+  };
+
   const [searchResults, setSearchResults] = useState<Array<{
     id: string;
     text: string;
-    placePrediction: {
-      toPlace: () => {
-        id?: string;
-        formattedAddress?: string;
-        location?: { lat: () => number; lng: () => number };
-        addressComponents?: GoogleGeocodeComponent[];
-        fetchFields: (options: { fields: string[] }) => Promise<void>;
-      };
-    };
+    placePrediction: SearchPlacePrediction;
   }>>([]);
   const [searching, setSearching] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<GoogleDeliveryAddress | null>(null);
@@ -119,7 +122,7 @@ export function GoogleDeliveryLocationPicker({
         includedRegionCodes?: string[];
         language?: string;
         sessionToken?: unknown;
-      }) => Promise<{ suggestions: Array<{ placePrediction?: typeof searchResults[number]['placePrediction'] }> }>;
+      }) => Promise<{ suggestions: Array<{ placePrediction?: SearchPlacePrediction }> }>;
     };
     AutocompleteSessionToken: new () => unknown;
   } | null>(null);
@@ -250,13 +253,13 @@ export function GoogleDeliveryLocationPicker({
 
       if (!placesLibraryRef.current) {
         const places = await googleMaps.maps.importLibrary('places') as {
-          AutocompleteSuggestion: typeof placesLibraryRef.current extends null ? never : {
+          AutocompleteSuggestion: {
             fetchAutocompleteSuggestions: (request: {
               input: string;
               includedRegionCodes?: string[];
               language?: string;
               sessionToken?: unknown;
-            }) => Promise<{ suggestions: Array<{ placePrediction?: typeof searchResults[number]['placePrediction'] }> }>;
+            }) => Promise<{ suggestions: Array<{ placePrediction?: SearchPlacePrediction }> }>;
           };
           AutocompleteSessionToken: new () => unknown;
         };
