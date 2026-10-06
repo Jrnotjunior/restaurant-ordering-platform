@@ -1,11 +1,11 @@
 .storefront-hero{
   position:relative;
-  min-height:420px;
+  min-height:300px;
   display:flex;
   align-items:center;
   overflow:hidden;
   border-radius:var(--radius-lg);
-  margin-bottom:40px;
+  margin-bottom:32px;
   background:linear-gradient(135deg,var(--color-primary),var(--color-primary-hover));
   background-size:cover;
   background-position:center;
@@ -22,13 +22,13 @@
   position:relative;
   z-index:1;
   width:min(760px,100%);
-  padding:56px;
+  padding:40px;
 }
 .storefront-hero-content .eyebrow{color:inherit;opacity:.8}
 .storefront-hero-content h1{
-  margin:8px 0 14px;
+  margin:6px 0 12px;
   font-family:var(--font-heading);
-  font-size:clamp(2.5rem,6vw,5rem);
+  font-size:clamp(2.25rem,6vw,4.5rem);
   line-height:1.02;
   letter-spacing:-.04em;
 }
@@ -36,7 +36,7 @@
   max-width:650px;
   margin:0;
   font-size:1.08rem;
-  line-height:1.7;
+  line-height:1.55;
   opacity:.9;
 }
 .storefront-hero-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
@@ -79,8 +79,8 @@
 }
 .storefront-social a:hover{border-color:var(--color-primary);color:var(--color-primary)}
 @media(max-width:700px){
-  .storefront-hero{min-height:380px;margin-bottom:30px}
-  .storefront-hero-content{padding:32px 24px}
+  .storefront-hero{min-height:280px;margin-bottom:24px}
+  .storefront-hero-content{padding:28px 20px}
   .storefront-info-grid{grid-template-columns:1fr;margin-top:36px}
   .storefront-hours>div{font-size:14px}
 }
