@@ -23,6 +23,7 @@ function mergeStorefront(customization: WebsiteCustomizationRow | null): Restaur
     ...base,
     ...(custom ?? {}),
     hero: { ...base.hero, ...(custom?.hero ?? {}) },
+    socialLinks: { ...base.socialLinks, ...(custom?.socialLinks ?? {}) },
     sections: { ...base.sections, ...(custom?.sections ?? {}) },
     footer: { ...base.footer, ...(custom?.footer ?? {}) }
   };
