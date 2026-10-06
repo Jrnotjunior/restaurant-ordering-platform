@@ -501,6 +501,25 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
           </div>
 
           <div className="website-customization-homepage-group">
+            <h3>Social links</h3>
+            <p className="website-customization-help">Add the links for the three social networks shown in your customer footer. Leave a field blank to hide that icon.</p>
+            <div className="website-customization-grid">
+              <label className="website-customization-field">
+                <span>Facebook</span>
+                <input type="url" placeholder="https://facebook.com/yourrestaurant" value={storefront.socialLinks?.facebook ?? ''} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, socialLinks: { ...current.socialLinks, facebook: event.target.value } }))} />
+              </label>
+              <label className="website-customization-field">
+                <span>Instagram</span>
+                <input type="url" placeholder="https://instagram.com/yourrestaurant" value={storefront.socialLinks?.instagram ?? ''} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, socialLinks: { ...current.socialLinks, instagram: event.target.value } }))} />
+              </label>
+              <label className="website-customization-field">
+                <span>TikTok</span>
+                <input type="url" placeholder="https://tiktok.com/@yourrestaurant" value={storefront.socialLinks?.tiktok ?? ''} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, socialLinks: { ...current.socialLinks, tiktok: event.target.value } }))} />
+              </label>
+            </div>
+          </div>
+
+          <div className="website-customization-homepage-group">
             <h3>Footer</h3>
             <label className="website-customization-field"><span>Footer text</span><input type="text" placeholder="Optional custom footer message" value={storefront.footer.text ?? ''} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, footer: { ...current.footer, text: event.target.value } }))} /></label>
             <label className="website-customization-switch-row"><span>Show footer</span><span className="website-customization-switch"><input type="checkbox" checked={storefront.footer.enabled} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, footer: { ...current.footer, enabled: event.target.checked } }))} /><span className="website-customization-switch-track"><span className="website-customization-switch-thumb" /></span></span></label>
