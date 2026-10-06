@@ -9,7 +9,8 @@ import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvide
 import { useRestaurant } from '../components/RestaurantProvider';
 import { supabase } from '../services/supabaseClient';
 import { OrderConfirmationPage } from './OrderConfirmationPage';
-import { GoogleDeliveryAddressPicker, type GoogleDeliveryAddress } from '../components/GoogleDeliveryAddressPicker';
+import { GoogleDeliveryLocationPicker } from '../components/GoogleDeliveryLocationPicker';
+import type { GoogleDeliveryAddress } from '../components/GoogleDeliveryAddressPicker';
 import '../styles/checkout-mobile.css';
 
 type CartItem = { product: RestaurantProduct; quantity: number };
@@ -527,8 +528,8 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             {deliveryZonesError && <p className="checkout-error" role="alert">{deliveryZonesError}</p>}
             {!thirdPartyCourierDelivery && !hasDefaultAddress && <p className="checkout-address-note">{user ? 'Please enter your delivery address. We’ll save it as your default address for future orders.' : 'Please enter your delivery address.'}</p>}
             {!thirdPartyCourierDelivery && <div className="google-delivery-address-section">
-              <label><span>Search delivery address with Google</span></label>
-              <GoogleDeliveryAddressPicker
+              <label><span>Delivery location</span></label>
+              <GoogleDeliveryLocationPicker
                 disabled={loadingDeliveryZones}
                 onSelect={(selected: GoogleDeliveryAddress) => {
                   setDeliveryCity(selected.city);
