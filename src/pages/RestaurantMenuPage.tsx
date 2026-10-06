@@ -160,10 +160,17 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
     if (!deletingId) setDeleteProductTarget(null);
   }
 
+  function openDeleteConfirmation(product: RestaurantProduct) {
+    if (deletingId) return;
+    setDeleteProductTarget(product);
+  }
+
+  function closeDeleteConfirmation() {
+    if (!deletingId) setDeleteProductTarget(null);
+  }
+
   async function removeProduct(product: RestaurantProduct) {
     setDeletingId(product.id);
-    setError('');
-    try {
     setError('');
     try {
       await deleteProduct(product.id);
@@ -172,7 +179,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
       setError(err instanceof Error ? err.message : 'Unable to delete product.');
     } finally {
       setDeletingId(null);
-    setDeleteProductTarget(null);
+      setDeleteProductTarget(null);
     }
   }
 
