@@ -87,7 +87,6 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         ...(customStorefront ?? {}),
         hero: { ...defaultRestaurant.storefront.hero, ...(customStorefront?.hero ?? {}) },
         sections: { ...defaultRestaurant.storefront.sections, ...(customStorefront?.sections ?? {}) },
-        footer: { ...defaultRestaurant.storefront.footer, ...(customStorefront?.footer ?? {}) }
       });
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load website customization.');
@@ -400,15 +399,13 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
                 {storefront.sections.social ? <div><strong>Social</strong><span style={{ color: websiteTheme.colors.muted }}>Social links</span></div> : null}
               </div>
 
-              {storefront.footer.enabled ? (
-                <div className="website-customization-live-footer" style={{ borderTopColor: websiteTheme.colors.border, color: websiteTheme.colors.muted }}>
-                  <div>{storefront.footer.text || `© ${new Date().getFullYear()} ${restaurantName}. All rights reserved.`}</div>
-                  <a className="website-customization-live-footer-powered-by" href="https://web2table.com" target="_blank" rel="noreferrer" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
-                    <span>Powered by</span>
-                    <img src="https://raw.githubusercontent.com/Jrnotjunior/restaurant-ordering-platform/main/web2table.png" alt="Web2Table" className="website-customization-live-footer-powered-logo" />
-                  </a>
-                </div>
-              ) : null}
+              <div className="website-customization-live-footer" style={{ borderTopColor: websiteTheme.colors.border, color: websiteTheme.colors.muted }}>
+                <div>{`© ${new Date().getFullYear()} All rights reserved.`}</div>
+                <a className="website-customization-live-footer-powered-by" href="https://web2table.com" target="_blank" rel="noreferrer" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
+                  <span>Powered by</span>
+                  <img src="https://raw.githubusercontent.com/Jrnotjunior/restaurant-ordering-platform/main/web2table.png" alt="Web2Table" className="website-customization-live-footer-powered-logo" />
+                </a>
+              </div>
             </div>
           </div>
         ) : null}
@@ -515,12 +512,6 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
                 <input type="url" placeholder="https://tiktok.com/@yourrestaurant" value={storefront.socialLinks?.tiktok ?? ''} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, socialLinks: { ...current.socialLinks, tiktok: event.target.value } }))} />
               </label>
             </div>
-          </div>
-
-          <div className="website-customization-homepage-group">
-            <h3>Footer</h3>
-            <label className="website-customization-field"><span>Footer text</span><input type="text" placeholder="Optional custom footer message" value={storefront.footer.text ?? ''} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, footer: { ...current.footer, text: event.target.value } }))} /></label>
-            <label className="website-customization-switch-row"><span>Show footer</span><span className="website-customization-switch"><input type="checkbox" checked={storefront.footer.enabled} disabled={loading || saving} onChange={(event) => setStorefront((current) => ({ ...current, footer: { ...current.footer, enabled: event.target.checked } }))} /><span className="website-customization-switch-track"><span className="website-customization-switch-thumb" /></span></span></label>
           </div>
         </div>
 
