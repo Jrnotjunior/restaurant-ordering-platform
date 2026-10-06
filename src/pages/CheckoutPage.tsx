@@ -9,6 +9,7 @@ import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvide
 import { useRestaurant } from '../components/RestaurantProvider';
 import { supabase } from '../services/supabaseClient';
 import { OrderConfirmationPage } from './OrderConfirmationPage';
+import { GoogleDeliveryAddressPicker, type GoogleDeliveryAddress } from '../components/GoogleDeliveryAddressPicker';
 import '../styles/checkout-mobile.css';
 
 type CartItem = { product: RestaurantProduct; quantity: number };
@@ -525,6 +526,22 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
           {isDelivery && <fieldset className="checkout-section"><legend>{thirdPartyCourierDelivery ? 'Pickup with Your Own Courier' : 'Delivery address'}</legend>
             {deliveryZonesError && <p className="checkout-error" role="alert">{deliveryZonesError}</p>}
             {!thirdPartyCourierDelivery && !hasDefaultAddress && <p className="checkout-address-note">{user ? 'Please enter your delivery address. We’ll save it as your default address for future orders.' : 'Please enter your delivery address.'}</p>}
+            {!thirdPartyCourierDelivery && <div className="google-delivery-address-section">
+              <label><span>Search delivery address with Google</span></label>
+              <GoogleDeliveryAddressPicker
+                disabled={loadingDeliveryZones}
+                onSelect={(selected: GoogleDeliveryAddress) => {
+                  setDeliveryCity(selected.city);
+                  setDeliveryBarangay(selected.barangay);
+                  setAddress(selected.address || selected.formattedAddress);
+                  setHasDefaultAddress(false);
+                  setThirdPartyCourierDelivery(false);
+                  setThirdPartyCourierTermsAccepted(false);
+                  setShowDeliveryTerms(false);
+                  resetPayment();
+                }}
+              />
+            </div>}
             {thirdPartyCourierDelivery ? <div className="third-party-courier-card">
               <strong>Restaurant pickup point</strong><p className="pickup-label">Your order will be prepared here for pickup by you or your courier.</p><p className="pickup-address">{restaurantPickupPoint || 'Restaurant pickup address is not configured.'}</p>
               <div className="pickup-callout">Your destination address is handled by your courier. Provide the destination directly to Lalamove, Grab Express, or your chosen courier.</div><p><strong>Important:</strong> After payment, your order will be sent to the kitchen for preparation. Please arrange your courier to be available when the order is ready. If your courier is unavailable or arrives late, this alone does not make the order eligible for a refund.</p><p>You are responsible for booking and paying the courier and for the trip from the restaurant to your destination.</p>
