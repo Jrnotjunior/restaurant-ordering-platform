@@ -127,6 +127,19 @@ main { flex: 1; }
   opacity: .72;
   transform: translateY(-1px);
 }
+.site-footer-social-icon {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+}
+.site-footer-social-icon.is-disabled {
+  opacity: .42;
+}
 .site-footer-socials svg {
   width: 19px;
   height: 19px;
@@ -143,10 +156,23 @@ main { flex: 1; }
   line-height: 1.45;
 }
 .site-footer-web2table-logo {
-  display: block;
-  width: 72px;
-  height: 28px;
-  object-fit: contain;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-text);
+  font-weight: 800;
+}
+.site-footer-web2table-mark {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: var(--color-text);
+  color: var(--color-background);
+  font-size: 10px;
+  font-weight: 900;
 }
 .menu-page, .cart-page, .checkout-page { width: min(900px, calc(100% - 2rem)); margin: 0 auto; padding: var(--space-12) 0 var(--space-16); }
 .menu-intro { max-width: 720px; }
