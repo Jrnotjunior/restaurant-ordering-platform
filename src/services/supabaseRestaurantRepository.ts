@@ -24,9 +24,7 @@ function mergeStorefront(customization: WebsiteCustomizationRow | null): Restaur
     ...(custom ?? {}),
     hero: { ...base.hero, ...(custom?.hero ?? {}) },
     socialLinks: { ...base.socialLinks, ...(custom?.socialLinks ?? {}) },
-    sections: { ...base.sections, ...(custom?.sections ?? {}) },
-    footer: { ...base.footer, ...(custom?.footer ?? {}) }
-  };
+    sections: { ...base.sections, ...(custom?.sections ?? {}) }  };
 }
 
 function mergeTheme(customization: WebsiteCustomizationRow | null): RestaurantTheme {
