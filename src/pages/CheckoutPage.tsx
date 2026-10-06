@@ -168,8 +168,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             setConfirmedOrder({
                 orderNumber: result.orderNumber,
                 paymentMethod: 'online',
-                orderType: pickupMethod === 'third_party_courier' ? 'pickup' : orderType,
-                pickupMethod: pickupMethod === 'third_party_courier' ? 'third_party_courier' : undefined,
+                orderType,
                 total: result.total,
               });
             }
