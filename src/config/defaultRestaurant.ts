@@ -20,8 +20,6 @@ export const defaultRestaurant: RestaurantConfig = {
     hero: {
       enabled: true,
       eyebrow: 'Our menu',
-      title: 'Choose what you’re craving.',
-      description: 'Browse available items and add your favorites to your order.',
       imageUrl: '',
       primaryButtonLabel: 'Order now',
       primaryButtonHref: '#menu',
