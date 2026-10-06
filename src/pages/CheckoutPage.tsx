@@ -332,8 +332,13 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     if (!thirdPartyCourierTermsAccepted) return;
     const destination = [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ');
     setThirdPartyDestination(destination);
-    setShowDeliveryTerms(false); setThirdPartyCourierDelivery(true); setThirdPartyCourierTermsAccepted(false); setPaymentMethod(''); setSubmitError(''); setShowPayment(true);
-    window.requestAnimationFrame(() => document.getElementById('payment-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    setShowDeliveryTerms(false);
+    setThirdPartyCourierDelivery(true);
+    setThirdPartyCourierTermsAccepted(false);
+    setPaymentMethod('');
+    setSubmitError('');
+    setShowPayment(false);
+    window.requestAnimationFrame(() => document.getElementById('order-type-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
   }
 
   async function saveDefaultAddressIfNeeded() {
@@ -348,33 +353,32 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
   async function createPendingOrder(method: PaymentMethod) {
     if (new Set(items.map((item) => item.product.restaurantId)).size !== 1) throw new Error('Your cart contains items from different restaurants. Please clear your cart and try again.');
-    if (isDelivery && thirdPartyCourierDelivery && !restaurantPickupPoint) throw new Error('The restaurant pickup address is not configured yet. Please contact the restaurant.');
+    const isOwnCourierPickup = thirdPartyCourierDelivery && orderType === 'pickup';
+    if (isOwnCourierPickup && !restaurantPickupPoint) throw new Error('The restaurant pickup address is not configured yet. Please contact the restaurant.');
     if (isDelivery && !thirdPartyCourierDelivery && (!deliveryRouteQuote || !deliveryRouteQuote.inRange)) throw new Error(outsideDeliveryAreaMessage);
 
-    const finalNotes = [notes.trim(), isDelivery && thirdPartyCourierDelivery ? `${thirdPartyCourierNote}\nDestination: ${thirdPartyDestination || [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')}` : ''].filter(Boolean).join('\n\n');
+    const finalNotes = [notes.trim(), isOwnCourierPickup ? thirdPartyCourierNote + '\\nDestination: ' + (thirdPartyDestination || [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')) : ''].filter(Boolean).join('\\n\\n');
     return createOrder({
       restaurantId: items[0].product.restaurantId,
       customerName: customerName.trim(),
       mobileNumber: orderType === 'dine_in' ? '' : mobileNumber.trim(),
-      orderType: isDelivery && thirdPartyCourierDelivery ? 'pickup' : orderType,
+      orderType: isOwnCourierPickup ? 'pickup' : orderType,
       deliveryCity: isDelivery && !thirdPartyCourierDelivery ? deliveryCity.trim() : '',
       deliveryBarangay: isDelivery && !thirdPartyCourierDelivery ? deliveryBarangay.trim() : '',
-      deliveryAddress: isDelivery ? (thirdPartyCourierDelivery ? restaurantPickupPoint : [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')) : address.trim(),
+      deliveryAddress: isOwnCourierPickup ? restaurantPickupPoint : isDelivery ? [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ') : address.trim(),
       notes: finalNotes,
-      // Keep the existing database payment value while the customer-facing method is "Online Payment".
       paymentMethod: method === 'online' ? 'gcash' : 'cash',
-      isThirdPartyCourier: isDelivery && thirdPartyCourierDelivery,
-      customerDeliveryAddress: isDelivery ? [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ') : '',
-      customerDeliveryCity: isDelivery ? deliveryCity.trim() : '',
-      customerDeliveryBarangay: isDelivery ? deliveryBarangay.trim() : '',
-      customerDeliveryLatitude: isDelivery ? (selectedDeliveryLocation?.latitude ?? undefined) : undefined,
-      customerDeliveryLongitude: isDelivery ? (selectedDeliveryLocation?.longitude ?? undefined) : undefined,
-      customerDeliveryPlaceId: isDelivery ? selectedDeliveryLocation?.placeId : undefined,
+      isThirdPartyCourier: isOwnCourierPickup,
+      customerDeliveryAddress: isOwnCourierPickup || isDelivery ? [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ') : '',
+      customerDeliveryCity: isOwnCourierPickup || isDelivery ? deliveryCity.trim() : '',
+      customerDeliveryBarangay: isOwnCourierPickup || isDelivery ? deliveryBarangay.trim() : '',
+      customerDeliveryLatitude: isOwnCourierPickup || isDelivery ? (selectedDeliveryLocation?.latitude ?? undefined) : undefined,
+      customerDeliveryLongitude: isOwnCourierPickup || isDelivery ? (selectedDeliveryLocation?.longitude ?? undefined) : undefined,
+      customerDeliveryPlaceId: isOwnCourierPickup || isDelivery ? selectedDeliveryLocation?.placeId : undefined,
       deliveryQuoteId: isDelivery && !thirdPartyCourierDelivery ? deliveryRouteQuote?.quoteId : undefined,
       items: items.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
     });
   }
-
   async function handleOnlinePayment() {
     if (!canContinue || items.length === 0 || isSubmitting) return;
     setIsSubmitting(true);
@@ -382,6 +386,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     setPaymentMethod('online');
 
     try {
+      const isOwnCourierPickup = thirdPartyCourierDelivery && orderType === 'pickup';
       await saveDefaultAddressIfNeeded();
       const savedCheckoutUrl = paymentNotCompleted ? window.localStorage.getItem(PENDING_PAYMENT_CHECKOUT_URL_KEY) : null;
       if (savedCheckoutUrl) {
@@ -394,18 +399,18 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         restaurantId: items[0].product.restaurantId,
         customerName: customerName.trim(),
         mobileNumber: orderType === 'dine_in' ? '' : mobileNumber.trim(),
-        orderType: isDelivery && thirdPartyCourierDelivery ? 'pickup' : orderType,
+        orderType: isOwnCourierPickup ? 'pickup' : orderType,
         deliveryCity: isDelivery && !thirdPartyCourierDelivery ? deliveryCity.trim() : '',
         deliveryBarangay: isDelivery && !thirdPartyCourierDelivery ? deliveryBarangay.trim() : '',
-        deliveryAddress: isDelivery ? (thirdPartyCourierDelivery ? restaurantPickupPoint : [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')) : address.trim(),
-        notes: [notes.trim(), isDelivery && thirdPartyCourierDelivery ? `${thirdPartyCourierNote}\\\nDestination: ${thirdPartyDestination || [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')}` : ''].filter(Boolean).join('\\n\\n'),
-        isThirdPartyCourier: isDelivery && thirdPartyCourierDelivery,
-        customerDeliveryAddress: isDelivery ? [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ') : '',
-        customerDeliveryCity: isDelivery ? deliveryCity.trim() : '',
-        customerDeliveryBarangay: isDelivery ? deliveryBarangay.trim() : '',
-        customerDeliveryLatitude: isDelivery ? (selectedDeliveryLocation?.latitude ?? undefined) : undefined,
-        customerDeliveryLongitude: isDelivery ? (selectedDeliveryLocation?.longitude ?? undefined) : undefined,
-        customerDeliveryPlaceId: isDelivery ? selectedDeliveryLocation?.placeId : undefined,
+        deliveryAddress: isOwnCourierPickup ? restaurantPickupPoint : isDelivery ? [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ') : address.trim(),
+        notes: [notes.trim(), isOwnCourierPickup ? thirdPartyCourierNote + '\\nDestination: ' + (thirdPartyDestination || [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')) : ''].filter(Boolean).join('\\n\\n'),
+        isThirdPartyCourier: isOwnCourierPickup,
+        customerDeliveryAddress: isOwnCourierPickup || isDelivery ? [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ') : '',
+        customerDeliveryCity: isOwnCourierPickup || isDelivery ? deliveryCity.trim() : '',
+        customerDeliveryBarangay: isOwnCourierPickup || isDelivery ? deliveryBarangay.trim() : '',
+        customerDeliveryLatitude: isOwnCourierPickup || isDelivery ? (selectedDeliveryLocation?.latitude ?? undefined) : undefined,
+        customerDeliveryLongitude: isOwnCourierPickup || isDelivery ? (selectedDeliveryLocation?.longitude ?? undefined) : undefined,
+        customerDeliveryPlaceId: isOwnCourierPickup || isDelivery ? selectedDeliveryLocation?.placeId : undefined,
         deliveryQuoteId: isDelivery && !thirdPartyCourierDelivery ? deliveryRouteQuote?.quoteId : undefined,
         items: items.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
         redeemLoyalty: redeemPoints,
@@ -415,7 +420,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         throw new Error('The loyalty reward covers the entire order. Please choose cash payment or contact the restaurant for a free-order arrangement.');
       }
       window.localStorage.setItem(PENDING_PAYMENT_REFERENCE_KEY, pendingPayment.referenceNumber);
-      if (isDelivery && thirdPartyCourierDelivery) {
+      if (isOwnCourierPickup) {
         window.localStorage.setItem(PENDING_PAYMENT_PICKUP_METHOD_KEY, 'third_party_courier');
       } else {
         window.localStorage.removeItem(PENDING_PAYMENT_PICKUP_METHOD_KEY);
@@ -454,7 +459,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       window.localStorage.setItem(ACTIVE_ORDER_KEY, createdOrder.orderNumber);
       window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
       window.dispatchEvent(new Event(CART_CLEAR_EVENT));
-      setConfirmedOrder({ orderNumber: createdOrder.orderNumber, paymentMethod: 'cash', orderType: thirdPartyCourierDelivery ? 'pickup' : orderType, pickupMethod: thirdPartyCourierDelivery ? 'third_party_courier' : undefined, total: confirmedTotal });
+      setConfirmedOrder({ orderNumber: createdOrder.orderNumber, paymentMethod: 'cash', orderType: isOwnCourierPickup ? 'pickup' : orderType, pickupMethod: isOwnCourierPickup ? 'third_party_courier' : undefined, total: confirmedTotal });
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'We could not create your order. Please try again.');
     } finally {
@@ -476,8 +481,16 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       <div className="menu-intro"><p className="eyebrow">Checkout</p><h1>How would you like your order?</h1><p>Choose how you will receive your food, then provide the details we need.</p></div>
       <div className="checkout-layout">
         <form className="checkout-form" onSubmit={(event) => event.preventDefault()}>
-          <fieldset className="checkout-section"><legend>Order type</legend><div className="order-type-grid">
-            {orderTypes.map((type) => <label className={`order-type-card ${orderType === type.value ? 'is-selected' : ''}`} key={type.value}><input type="radio" name="orderType" checked={orderType === type.value} onChange={() => { setOrderType(type.value); if (type.value !== 'delivery') setSelectedDeliveryLocation(null); resetPayment(); }} /><span className="order-type-content"><strong>{type.label}</strong></span></label>)}
+          <fieldset id="order-type-section" className="checkout-section"><legend>Order type</legend><div className="order-type-grid">
+            {orderTypes.map((type) => <label className={`order-type-card ${orderType === type.value ? 'is-selected' : ''}`} key={type.value}><input type="radio" name="orderType" checked={orderType === type.value} onChange={() => {
+              setOrderType(type.value);
+              if (type.value !== 'delivery') setSelectedDeliveryLocation(null);
+              if (type.value !== 'pickup') {
+                setThirdPartyCourierDelivery(false);
+                setThirdPartyDestination('');
+              }
+              resetPayment();
+            }} /><span className="order-type-content"><strong>{type.label}</strong></span></label>)}
           </div></fieldset>
 
           <fieldset className="checkout-section"><legend>Customer information</legend>{customerProfileError && <p className="checkout-error" role="alert">{customerProfileError}</p>}<div className="checkout-fields">
