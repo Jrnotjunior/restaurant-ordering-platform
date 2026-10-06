@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { supabase } from '../services/supabaseClient';
+import { GoogleDeliveryLocationPicker, type GoogleDeliveryAddress } from '../components/GoogleDeliveryLocationPicker';
 
 type Props = {
   restaurantId: string;
@@ -194,6 +195,12 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [vatRate, setVatRate] = useState('12');
   const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
   const [automaticRiderAssignmentEnabled, setAutomaticRiderAssignmentEnabled] = useState(false);
+  const [deliveryBaseFee, setDeliveryBaseFee] = useState('0');
+  const [deliveryDistanceIncrementMeters, setDeliveryDistanceIncrementMeters] = useState('500');
+  const [deliveryFeePerIncrement, setDeliveryFeePerIncrement] = useState('10');
+  const [deliveryMaxDistanceMeters, setDeliveryMaxDistanceMeters] = useState('10000');
+  const [deliveryLocationLatitude, setDeliveryLocationLatitude] = useState<number | null>(null);
+  const [deliveryLocationLongitude, setDeliveryLocationLongitude] = useState<number | null>(null);
   const [orderingEnabled, setOrderingEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -213,7 +220,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     try {
       const { data, error: loadError } = await supabase
         .from('restaurants')
-        .select('store_address,location_text,ordering_enabled,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate,cash_on_delivery_enabled,automatic_rider_assignment_enabled')
+        .select('store_address,location_text,ordering_enabled,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate,cash_on_delivery_enabled,automatic_rider_assignment_enabled,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,delivery_location_latitude,delivery_location_longitude')
          .eq('id', restaurantId)
         .single();
 
@@ -226,6 +233,12 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       setVatRate(String(data?.tax_vat_rate ?? 12));
       setCashOnDeliveryEnabled(data?.cash_on_delivery_enabled !== false);
       setAutomaticRiderAssignmentEnabled(data?.automatic_rider_assignment_enabled === true);
+      setDeliveryBaseFee(String(data?.delivery_base_fee ?? 0));
+      setDeliveryDistanceIncrementMeters(String(data?.delivery_distance_increment_meters ?? 500));
+      setDeliveryFeePerIncrement(String(data?.delivery_fee_per_increment ?? 10));
+      setDeliveryMaxDistanceMeters(String(data?.delivery_max_distance_meters ?? 10000));
+      setDeliveryLocationLatitude(data?.delivery_location_latitude ?? null);
+      setDeliveryLocationLongitude(data?.delivery_location_longitude ?? null);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load store settings.');
     } finally {
@@ -258,6 +271,18 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     }
 
     const parsedVatRate = Number(vatRate);
+    const parsedBaseFee = Number(deliveryBaseFee);
+    const parsedDistanceIncrement = Number(deliveryDistanceIncrementMeters);
+    const parsedFeePerIncrement = Number(deliveryFeePerIncrement);
+    const parsedMaxDistance = Number(deliveryMaxDistanceMeters);
+    if (!Number.isFinite(parsedBaseFee) || parsedBaseFee < 0 || !Number.isFinite(parsedDistanceIncrement) || parsedDistanceIncrement <= 0 || !Number.isFinite(parsedFeePerIncrement) || parsedFeePerIncrement < 0 || !Number.isFinite(parsedMaxDistance) || parsedMaxDistance <= 0) {
+      setError('Enter valid distance-based delivery pricing values.');
+      return;
+    }
+    if ((deliveryLocationLatitude === null) !== (deliveryLocationLongitude === null)) {
+      setError('Confirm the restaurant location on Google Maps before saving delivery settings.');
+      return;
+    }
     if (vatRegistered && (!Number.isFinite(parsedVatRate) || parsedVatRate < 0 || parsedVatRate > 100)) {
       setError('Enter a valid VAT rate between 0 and 100.');
       return;
@@ -286,6 +311,12 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           tax_vat_registered: vatRegistered,
           tax_prices_vat_inclusive: vatRegistered ? pricesVatInclusive : false,
           tax_vat_rate: vatRegistered ? parsedVatRate : 0,
+          delivery_base_fee: parsedBaseFee,
+          delivery_distance_increment_meters: Math.round(parsedDistanceIncrement),
+          delivery_fee_per_increment: parsedFeePerIncrement,
+          delivery_max_distance_meters: Math.round(parsedMaxDistance),
+          delivery_location_latitude: deliveryLocationLatitude,
+          delivery_location_longitude: deliveryLocationLongitude,
         })
         .eq('id', restaurantId);
 
@@ -386,6 +417,9 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .restaurant-settings-day .restaurant-settings-switch{justify-content:center}
         .restaurant-settings-toggle input{margin:0}
         .restaurant-settings-tax-grid{display:grid;grid-template-columns:1fr;gap:16px}
+        .restaurant-delivery-pricing-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}
+        .restaurant-delivery-pricing-grid input[type=number]{width:100%;box-sizing:border-box}
+        @media(max-width:700px){.restaurant-delivery-pricing-grid{grid-template-columns:1fr}}
         .restaurant-settings-tax-grid .restaurant-settings-switch-row{width:100%}
         .restaurant-settings-tax-grid .restaurant-settings-field{width:100%}
         .restaurant-settings-tax-grid .restaurant-settings-toggle{min-height:44px;justify-content:flex-start}
@@ -417,6 +451,35 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
               required
             />
           </label>
+        </div>
+
+        <div className="restaurant-settings-card">
+          <h2>Delivery pricing</h2>
+          <p className="restaurant-settings-help">Delivery fees are calculated automatically from the restaurant to the customer's confirmed Google Maps location. You no longer need to configure Barangays and individual shipping fees.</p>
+          <div className="restaurant-delivery-pricing-grid">
+            <label className="restaurant-settings-field"><span>Base delivery fee (₱)</span><input type="number" min="0" step="0.01" value={deliveryBaseFee} onChange={(event) => setDeliveryBaseFee(event.target.value)} disabled={loading || saving} /></label>
+            <label className="restaurant-settings-field"><span>Distance increment (meters)</span><input type="number" min="1" step="1" value={deliveryDistanceIncrementMeters} onChange={(event) => setDeliveryDistanceIncrementMeters(event.target.value)} disabled={loading || saving} /></label>
+            <label className="restaurant-settings-field"><span>Fee per increment (₱)</span><input type="number" min="0" step="0.01" value={deliveryFeePerIncrement} onChange={(event) => setDeliveryFeePerIncrement(event.target.value)} disabled={loading || saving} /></label>
+            <label className="restaurant-settings-field"><span>Maximum driving distance (km)</span><input type="number" min="0.1" step="0.1" value={(Number(deliveryMaxDistanceMeters) / 1000).toString()} onChange={(event) => setDeliveryMaxDistanceMeters(String(Number(event.target.value) * 1000))} disabled={loading || saving} /></label>
+          </div>
+          <p className="restaurant-settings-help" style={{ marginTop: 12 }}>Example: ₱10 per 500 meters means 1.2 km = 3 distance increments. A base fee, if configured, is added on top.</p>
+          <div style={{ marginTop: 18 }}>
+            <p className="restaurant-settings-help" style={{ marginBottom: 10 }}><strong>Restaurant delivery location</strong><br />This is the origin Google Routes uses for driving-distance calculations.</p>
+            <GoogleDeliveryLocationPicker
+              variant="restaurant"
+              disabled={loading || saving}
+              initialLatitude={deliveryLocationLatitude}
+              initialLongitude={deliveryLocationLongitude}
+              onSelect={(selected: GoogleDeliveryAddress) => {
+                if (selected.latitude === null || selected.longitude === null) throw new Error('Google did not return an exact restaurant location.');
+                setDeliveryLocationLatitude(selected.latitude);
+                setDeliveryLocationLongitude(selected.longitude);
+                setMessage('');
+                setError('');
+              }}
+            />
+            {deliveryLocationLatitude !== null && deliveryLocationLongitude !== null && <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Confirmed coordinates: {deliveryLocationLatitude.toFixed(6)}, {deliveryLocationLongitude.toFixed(6)}</p>}
+          </div>
         </div>
 
         <div className="restaurant-settings-card">
