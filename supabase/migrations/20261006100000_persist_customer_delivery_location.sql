@@ -70,7 +70,11 @@ security definer
 set search_path = public
 as $$
 declare
-  v_order public.orders%rowtype;
+  v_order_id uuid;
+  v_order_number text;
+  v_subtotal numeric;
+  v_delivery_fee numeric;
+  v_total numeric;
 begin
   if p_order_type = 'delivery' then
     if p_customer_delivery_latitude is null or p_customer_delivery_longitude is null then
@@ -89,7 +93,8 @@ begin
     end if;
   end if;
 
-  select * into v_order
+  select order_id, order_number, subtotal, delivery_fee, total
+    into v_order_id, v_order_number, v_subtotal, v_delivery_fee, v_total
   from public.create_order(
     p_restaurant_id,
     p_customer_name,
@@ -112,11 +117,10 @@ begin
       customer_delivery_longitude = case when p_order_type = 'delivery' then p_customer_delivery_longitude else null end,
       customer_delivery_place_id = case when p_order_type = 'delivery' then nullif(trim(p_customer_delivery_place_id), '') else null end,
       updated_at = now()
-  where id = v_order.order_id
-  returning * into v_order;
+  where id = v_order_id;
 
   return query
-  select v_order.id, v_order.order_number, v_order.subtotal, v_order.delivery_fee, v_order.total;
+  select v_order_id, v_order_number, v_subtotal, v_delivery_fee, v_total;
 end;
 $$;
 
@@ -151,7 +155,11 @@ security definer
 set search_path = public
 as $$
 declare
-  v_payment public.pending_online_payments%rowtype;
+  v_payment_id uuid;
+  v_reference_number text;
+  v_subtotal numeric;
+  v_delivery_fee numeric;
+  v_total numeric;
 begin
   if p_order_type = 'delivery' then
     if p_customer_delivery_latitude is null or p_customer_delivery_longitude is null then
@@ -170,7 +178,8 @@ begin
     end if;
   end if;
 
-  select * into v_payment
+  select payment_id, reference_number, subtotal, delivery_fee, total
+    into v_payment_id, v_reference_number, v_subtotal, v_delivery_fee, v_total
   from public.create_pending_online_payment(
     p_restaurant_id,
     p_customer_name,
@@ -193,11 +202,10 @@ begin
       customer_delivery_longitude = case when p_order_type = 'delivery' then p_customer_delivery_longitude else null end,
       customer_delivery_place_id = case when p_order_type = 'delivery' then nullif(trim(p_customer_delivery_place_id), '') else null end,
       updated_at = now()
-  where id = v_payment.payment_id
-  returning * into v_payment;
+  where id = v_payment_id;
 
   return query
-  select v_payment.id, v_payment.reference_number, v_payment.subtotal, v_payment.delivery_fee, v_payment.total;
+  select v_payment_id, v_reference_number, v_subtotal, v_delivery_fee, v_total;
 end;
 $$;
 
