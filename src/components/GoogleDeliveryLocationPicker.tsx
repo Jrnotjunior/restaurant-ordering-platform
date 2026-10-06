@@ -145,11 +145,18 @@ export function GoogleDeliveryLocationPicker({
     }
 
     const requestId = ++reverseGeocodeRequestRef.current;
-    geocoder.geocode({ location }, (results, status) => {
+    geocoder.geocode({ location, region: 'PH' }, (results, status) => {
       if (requestId !== reverseGeocodeRequestRef.current) return;
 
       if (status !== 'OK' || !results.length) {
-        setError('We could not find a street address for that location. You can still move the pin and enter the address manually.');
+        console.error('Google reverse geocoding failed.', { status, location });
+        setError(
+          status === 'REQUEST_DENIED'
+            ? 'Google address lookup was denied for this map key. The map pin still works; you can enter the address manually.'
+            : status === 'ZERO_RESULTS'
+              ? 'Google could not match this pin to a street address. You can still move the pin and enter the address manually.'
+              : `Google address lookup failed (${status}). You can still move the pin and enter the address manually.`,
+        );
         return;
       }
 
@@ -244,7 +251,7 @@ export function GoogleDeliveryLocationPicker({
           const location = event.latLng
             ? { lat: event.latLng.lat(), lng: event.latLng.lng() }
             : null;
-          if (location) placePin(location);
+          if (location) movePinAndReverseGeocode(location);
         });
 
         const picker = document.createElement('gmp-place-autocomplete');
