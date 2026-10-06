@@ -313,9 +313,14 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       && Number.isFinite(selectedDeliveryLocation.latitude)
       && Number.isFinite(selectedDeliveryLocation.longitude)
   );
-  const canContinue = items.length > 0 && !customerProfileLoading && !customerProfileError && Boolean(customerName.trim()) && !/[0-9]/.test(customerName) && (orderType === 'dine_in' || /^09\d{9}$/.test(mobileNumber)) && (!isDelivery || (thirdPartyCourierDelivery
-    ? Boolean(restaurantPickupPoint) && hasExactDeliveryLocation && deliveryCity.trim() && deliveryBarangay.trim() && address.trim()
-    : hasExactDeliveryLocation && Boolean(deliveryRouteQuote?.inRange) && deliveryCity.trim() && deliveryBarangay.trim() && address.trim() && !deliveryRouteLoading));
+  const isOwnCourierPickup = thirdPartyCourierDelivery && orderType === 'pickup';
+  const canContinue = items.length > 0 && !customerProfileLoading && !customerProfileError && Boolean(customerName.trim()) && !/[0-9]/.test(customerName) && (orderType === 'dine_in' || /^09\d{9}$/.test(mobileNumber)) && (
+    isOwnCourierPickup
+      ? Boolean(restaurantPickupPoint) && hasExactDeliveryLocation && deliveryCity.trim() && deliveryBarangay.trim() && address.trim()
+      : isDelivery
+        ? hasExactDeliveryLocation && Boolean(deliveryRouteQuote?.inRange) && deliveryCity.trim() && deliveryBarangay.trim() && address.trim() && !deliveryRouteLoading
+        : true
+  );
 
   function resetPayment() { setShowPayment(false); setShowPaymentModal(false); setPaymentMethod(''); setSubmitError(''); }
 
@@ -485,7 +490,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
           <fieldset id="order-type-section" className="checkout-section"><legend>Order type</legend><div className="order-type-grid">
             {orderTypes.map((type) => <label className={`order-type-card ${orderType === type.value ? 'is-selected' : ''}`} key={type.value}><input type="radio" name="orderType" checked={orderType === type.value} onChange={() => {
               setOrderType(type.value);
-              if (type.value !== 'delivery') setSelectedDeliveryLocation(null);
+              if (type.value !== 'delivery' && !(thirdPartyCourierDelivery && type.value === 'pickup')) setSelectedDeliveryLocation(null);
               if (type.value !== 'pickup') {
                 setThirdPartyCourierDelivery(false);
                 setThirdPartyDestination('');
