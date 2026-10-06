@@ -39,23 +39,6 @@ type MarkerLibrary = {
   }) => GoogleMarker;
 };
 
-type GoogleGeocoder = {
-  geocode: (
-    request: { location: LatLng; region?: string },
-    callback: (results: GoogleGeocodeResult[], status: string) => void,
-  ) => void;
-};
-
-type GoogleGeocodeResult = {
-  formatted_address?: string;
-  place_id?: string;
-  address_components?: GoogleGeocodeComponent[];
-};
-
-type GeocoderLibrary = {
-  Geocoder: new () => GoogleGeocoder;
-};
-
 type GoogleMap = {
   setCenter: (position: LatLng) => void;
   setZoom: (zoom: number) => void;
@@ -110,11 +93,37 @@ export function GoogleDeliveryLocationPicker({
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<GoogleMap | null>(null);
   const markerRef = useRef<GoogleMarker | null>(null);
-  const [searchPicker, setSearchPicker] = useState<HTMLElement | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Array<{
+    id: string;
+    text: string;
+    placePrediction: {
+      toPlace: () => {
+        id?: string;
+        formattedAddress?: string;
+        location?: { lat: () => number; lng: () => number };
+        addressComponents?: GoogleGeocodeComponent[];
+        fetchFields: (options: { fields: string[] }) => Promise<void>;
+      };
+    };
+  }>>([]);
+  const [searching, setSearching] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<GoogleDeliveryAddress | null>(null);
   const [locationConfirmed, setLocationConfirmed] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(true);
+  const placesLibraryRef = useRef<{
+    AutocompleteSuggestion: {
+      fetchAutocompleteSuggestions: (request: {
+        input: string;
+        includedRegionCodes?: string[];
+        language?: string;
+        sessionToken?: unknown;
+      }) => Promise<{ suggestions: Array<{ placePrediction?: typeof searchResults[number]['placePrediction'] }> }>;
+    };
+    AutocompleteSessionToken: new () => unknown;
+  } | null>(null);
+  const searchSessionTokenRef = useRef<unknown>(null);
   const [locating, setLocating] = useState(false);
   const [error, setError] = useState('');
 
@@ -153,7 +162,6 @@ export function GoogleDeliveryLocationPicker({
 
   useEffect(() => {
     let cancelled = false;
-    let searchElement: HTMLElement | null = null;
     let mapClickListener: { remove: () => void } | null = null;
 
     async function setup() {
@@ -207,91 +215,7 @@ export function GoogleDeliveryLocationPicker({
           if (location) placePin(location);
         });
 
-        const picker = document.createElement('gmp-place-autocomplete');
-        picker.setAttribute('placeholder', variant === 'restaurant' ? 'Search the restaurant address' : 'Search your delivery address');
-        picker.setAttribute('included-region-codes', 'ph');
-        picker.setAttribute('requested-language', 'en');
-        picker.style.display = 'block';
-        picker.style.width = '100%';
 
-        const handleSearchSelect = async (event: Event) => {
-          const placePrediction = (event as Event & {
-            placePrediction?: {
-              toPlace: () => {
-                id?: string;
-                formattedAddress?: string;
-                location?: { lat: () => number; lng: () => number };
-                addressComponents?: GoogleGeocodeComponent[];
-                fetchFields: (options: { fields: string[] }) => Promise<void>;
-              };
-            };
-          }).placePrediction;
-
-          if (!placePrediction) {
-            setError('We could not read that address. Please select an address from the Google suggestions.');
-            return;
-          }
-
-          try {
-            const place = placePrediction.toPlace();
-            await place.fetchFields({
-              fields: ['id', 'formattedAddress', 'location', 'addressComponents'],
-            });
-
-            const location = place.location
-              ? { lat: place.location.lat(), lng: place.location.lng() }
-              : null;
-            if (!location) {
-              setError('Google did not return a map location for that address.');
-              return;
-            }
-
-            const components = place.addressComponents ?? [];
-            const city = componentText(components, ['locality', 'administrative_area_level_2']);
-            const barangay = componentText(components, [
-              'sublocality_level_1',
-              'sublocality_level_2',
-              'sublocality',
-              'neighborhood',
-            ]);
-            const street = componentText(components, ['route']);
-            const streetNumber = componentText(components, ['street_number']);
-            const premise = componentText(components, ['premise', 'subpremise']);
-            const address = [streetNumber, street, premise].filter(Boolean).join(' ').trim()
-              || place.formattedAddress?.trim()
-              || '';
-
-            const nextAddress: GoogleDeliveryAddress = {
-              formattedAddress: place.formattedAddress?.trim() || '',
-              city,
-              barangay,
-              address,
-              placeId: place.id?.trim() || '',
-              latitude: location.lat,
-              longitude: location.lng,
-            };
-
-            if (mapRef.current) {
-              mapRef.current.setCenter(location);
-              mapRef.current.setZoom(17);
-            }
-            if (markerRef.current) {
-              markerRef.current.position = location;
-            }
-
-            setSelectedAddress(nextAddress);
-            setLocationConfirmed(false);
-            setError('');
-          } catch (selectionError) {
-            console.error('Unable to read the selected Google address.', selectionError);
-            setError('We could not read that address. Please select another result.');
-          }
-        };
-
-        picker.addEventListener('gmp-select', handleSearchSelect as EventListener);
-        mapContainerRef.current.parentElement?.insertBefore(picker, mapContainerRef.current);
-        searchElement = picker;
-        setSearchPicker(picker);
       } catch (setupError) {
         console.error('Unable to initialize Google delivery map.', setupError);
         setError(setupError instanceof Error ? setupError.message : 'Google Maps is unavailable.');
@@ -305,16 +229,121 @@ export function GoogleDeliveryLocationPicker({
     return () => {
       cancelled = true;
       mapClickListener?.remove();
-      if (searchElement) searchElement.remove();
       mapRef.current = null;
       markerRef.current = null;
     };
   }, []);
 
-  useEffect(() => {
-    const picker = searchPicker;
-    if (picker) picker.toggleAttribute('disabled', disabled);
-  }, [disabled, searchPicker]);
+
+  async function searchAddresses() {
+    const query = searchQuery.trim();
+    if (!query || searching || disabled) return;
+
+    setSearching(true);
+    setError('');
+    setSearchResults([]);
+
+    try {
+      await loadGoogleMaps();
+      const googleMaps = (window as Window & { google?: GoogleMapsApi }).google;
+      if (!googleMaps?.maps?.importLibrary) throw new Error('Google Maps is unavailable.');
+
+      if (!placesLibraryRef.current) {
+        const places = await googleMaps.maps.importLibrary('places') as {
+          AutocompleteSuggestion: typeof placesLibraryRef.current extends null ? never : {
+            fetchAutocompleteSuggestions: (request: {
+              input: string;
+              includedRegionCodes?: string[];
+              language?: string;
+              sessionToken?: unknown;
+            }) => Promise<{ suggestions: Array<{ placePrediction?: typeof searchResults[number]['placePrediction'] }> }>;
+          };
+          AutocompleteSessionToken: new () => unknown;
+        };
+        placesLibraryRef.current = places;
+      }
+
+      const token = new placesLibraryRef.current.AutocompleteSessionToken();
+      searchSessionTokenRef.current = token;
+      const { suggestions } = await placesLibraryRef.current.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+        input: query,
+        includedRegionCodes: ['ph'],
+        language: 'en',
+        sessionToken: token,
+      });
+
+      setSearchResults(suggestions
+        .filter((suggestion) => suggestion.placePrediction)
+        .slice(0, 5)
+        .map((suggestion, index) => ({
+          id: suggestion.placePrediction?.toPlace ? `${index}-${query}` : `${index}`,
+          text: suggestion.placePrediction!.text?.text ?? String(suggestion.placePrediction!.text ?? 'Google place'),
+          placePrediction: suggestion.placePrediction!,
+        })));
+    } catch (searchError) {
+      console.error('Unable to search Google addresses.', searchError);
+      setError('We could not search that address right now. Please try again or move the pin manually.');
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  async function selectSearchResult(result: typeof searchResults[number]) {
+    try {
+      setError('');
+      const place = result.placePrediction.toPlace();
+      await place.fetchFields({
+        fields: ['id', 'formattedAddress', 'location', 'addressComponents'],
+      });
+
+      const location = place.location
+        ? { lat: place.location.lat(), lng: place.location.lng() }
+        : null;
+      if (!location) {
+        setError('Google did not return a map location for that address.');
+        return;
+      }
+
+      const components = place.addressComponents ?? [];
+      const city = componentText(components, ['locality', 'administrative_area_level_2']);
+      const barangay = componentText(components, [
+        'sublocality_level_1',
+        'sublocality_level_2',
+        'sublocality',
+        'neighborhood',
+      ]);
+      const street = componentText(components, ['route']);
+      const streetNumber = componentText(components, ['street_number']);
+      const premise = componentText(components, ['premise', 'subpremise']);
+      const address = [streetNumber, street, premise].filter(Boolean).join(' ').trim()
+        || place.formattedAddress?.trim()
+        || '';
+
+      const nextAddress: GoogleDeliveryAddress = {
+        formattedAddress: place.formattedAddress?.trim() || '',
+        city,
+        barangay,
+        address,
+        placeId: place.id?.trim() || '',
+        latitude: location.lat,
+        longitude: location.lng,
+      };
+
+      if (mapRef.current) {
+        mapRef.current.setCenter(location);
+        mapRef.current.setZoom(17);
+      }
+      if (markerRef.current) markerRef.current.position = location;
+
+      setSelectedAddress(nextAddress);
+      setLocationConfirmed(false);
+      setSearchResults([]);
+      setSearchQuery(nextAddress.formattedAddress || result.text);
+    } catch (selectionError) {
+      console.error('Unable to read the selected Google address.', selectionError);
+      setError('We could not read that address. Please select another result.');
+    }
+  }
 
   function useCurrentLocation() {
     if (!navigator.geolocation) {
@@ -342,6 +371,37 @@ export function GoogleDeliveryLocationPicker({
   return (
     <div className="google-delivery-location-picker">
       <p className="checkout-hint">{variant === 'restaurant' ? 'Search the restaurant address or move the pin to the exact restaurant location.' : 'Search your address, use your current location, or move the pin to the exact place where you want the order delivered.'}</p>
+      <div className="google-delivery-search">
+        <div className="google-delivery-search-row">
+          <input
+            className="google-delivery-search-input"
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                void searchAddresses();
+              }
+            }}
+            placeholder={variant === 'restaurant' ? 'Search the restaurant address' : 'Search your delivery address'}
+            disabled={disabled || loading || searching}
+            aria-label={variant === 'restaurant' ? 'Search the restaurant address' : 'Search your delivery address'}
+          />
+          <button className="button button-secondary" type="button" onClick={() => void searchAddresses()} disabled={disabled || loading || searching || !searchQuery.trim()}>
+            {searching ? 'Searching…' : 'Search'}
+          </button>
+        </div>
+        {searchResults.length > 0 ? (
+          <div className="google-delivery-search-results" role="listbox" aria-label="Google address results">
+            {searchResults.map((result) => (
+              <button key={result.id} className="google-delivery-search-result" type="button" onClick={() => void selectSearchResult(result)}>
+                {result.text}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
       <div className="google-delivery-map" ref={mapContainerRef} aria-label="Delivery location map" />
       <div className="google-delivery-map-actions">
         <button className="button button-secondary" type="button" onClick={useCurrentLocation} disabled={disabled || loading || locating}>
