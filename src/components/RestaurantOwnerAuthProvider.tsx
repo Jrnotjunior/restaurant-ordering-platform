@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import type { User } from '@supabase/supabase-js';
 import { supabase, supabaseGet } from '../services/supabaseClient';
 
+export type AccountType = 'owner' | 'staff' | 'customer';
+
 export type OwnerRestaurant = {
   id: string;
   slug: string;
@@ -17,6 +19,8 @@ export type OwnerRestaurant = {
 type RestaurantOwnerAuthValue = {
   user: User | null;
   restaurant: OwnerRestaurant | null;
+  accountType: AccountType | null;
+  staffRole: string | null;
   loading: boolean;
   error: string;
   signIn: (email: string, password: string) => Promise<void>;
@@ -29,23 +33,50 @@ const RestaurantOwnerAuthContext = createContext<RestaurantOwnerAuthValue | null
 export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [restaurant, setRestaurant] = useState<OwnerRestaurant | null>(null);
+  const [accountType, setAccountType] = useState<AccountType | null>(null);
+  const [staffRole, setStaffRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   async function loadRestaurant(currentUser: User | null) {
     if (!currentUser) {
       setRestaurant(null);
+      setAccountType(null);
+      setStaffRole(null);
       return;
     }
 
-    const rows = await supabaseGet<OwnerRestaurant>('restaurants', {
+    const ownerRows = await supabaseGet<OwnerRestaurant>('restaurants', {
       select: 'id,slug,name,tagline,logo_url,location_text,contact_number,email,is_active',
       owner_id: `eq.${currentUser.id}`,
       is_active: 'eq.true',
       limit: '1',
     });
 
-    setRestaurant(rows[0] ?? null);
+    const ownerRestaurant = ownerRows[0] ?? null;
+    if (ownerRestaurant) {
+      setRestaurant(ownerRestaurant);
+      setAccountType('owner');
+      setStaffRole(null);
+      return;
+    }
+
+    const staffRows = await supabaseGet<{ restaurant_id: string; role: string }>('restaurant_staff', {
+      select: 'restaurant_id,role',
+      auth_user_id: `eq.${currentUser.id}`,
+      is_active: 'eq.true',
+      limit: '1',
+    });
+
+    setRestaurant(null);
+    if (staffRows[0]) {
+      setAccountType('staff');
+      setStaffRole(staffRows[0].role);
+      return;
+    }
+
+    setAccountType('customer');
+    setStaffRole(null);
   }
 
   useEffect(() => {
@@ -104,6 +135,8 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
           // A missing/expired session is a normal signed-out state.
           setUser(null);
           setRestaurant(null);
+          setAccountType(null);
+          setStaffRole(null);
           if (userError.name !== 'AuthSessionMissingError') {
             setError(userError.message);
           }
@@ -116,6 +149,8 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
         if (mounted) {
           setUser(null);
           setRestaurant(null);
+          setAccountType(null);
+          setStaffRole(null);
           setError(authError instanceof Error ? authError.message : 'Unable to restore your session.');
         }
       } finally {
@@ -130,6 +165,8 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
 
         if (!currentUser) {
           setRestaurant(null);
+          setAccountType(null);
+          setStaffRole(null);
           setError('');
           return;
         }
@@ -171,13 +208,15 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
     if (signOutError) throw signOutError;
     setUser(null);
     setRestaurant(null);
+    setAccountType(null);
+    setStaffRole(null);
   }
 
   async function refreshRestaurant() {
     await loadRestaurant(user);
   }
 
-  const value = useMemo(() => ({ user, restaurant, loading, error, signIn, signOut, refreshRestaurant }), [user, restaurant, loading, error]);
+  const value = useMemo(() => ({ user, restaurant, accountType, staffRole, loading, error, signIn, signOut, refreshRestaurant }), [user, restaurant, accountType, staffRole, loading, error]);
 
   return <RestaurantOwnerAuthContext.Provider value={value}>{children}</RestaurantOwnerAuthContext.Provider>;
 }
