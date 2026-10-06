@@ -381,7 +381,7 @@ function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen' | 'dis
 }
 
 function PublicCustomerRouteGuard({ children, restaurantId }: { children: ReactNode; restaurantId: string | null | undefined }) {
-  const { user, loading: authLoading } = useRestaurantOwnerAuth();
+  const { user, accountType, loading: authLoading } = useRestaurantOwnerAuth();
   const [checking, setChecking] = useState(true);
   const [staffRole, setStaffRole] = useState<'cashier' | 'kitchen' | 'dispatcher' | 'rider' | null>(null);
   const [orderingEnabled, setOrderingEnabled] = useState(true);
