@@ -31,6 +31,23 @@ type MarkerLibrary = {
   }) => GoogleMarker;
 };
 
+type GoogleGeocoder = {
+  geocode: (
+    request: { location: LatLng },
+    callback: (results: GoogleGeocodeResult[], status: string) => void,
+  ) => void;
+};
+
+type GoogleGeocodeResult = {
+  formatted_address?: string;
+  place_id?: string;
+  address_components?: GoogleGeocodeComponent[];
+};
+
+type GeocoderLibrary = {
+  Geocoder: new () => GoogleGeocoder;
+};
+
 type GoogleMap = {
   setCenter: (position: LatLng) => void;
   setZoom: (zoom: number) => void;
@@ -79,6 +96,8 @@ export function GoogleDeliveryLocationPicker({
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<GoogleMap | null>(null);
   const markerRef = useRef<GoogleMarker | null>(null);
+  const geocoderRef = useRef<GoogleGeocoder | null>(null);
+  const reverseGeocodeRequestRef = useRef(0);
   const [searchPicker, setSearchPicker] = useState<HTMLElement | null>(null);
   const [selectedAddress, setSelectedAddress] = useState<GoogleDeliveryAddress | null>(null);
   const [loading, setLoading] = useState(true);
@@ -116,6 +135,59 @@ export function GoogleDeliveryLocationPicker({
       onSelectRef.current(updatedAddress);
       return updatedAddress;
     });
+  }
+
+  function reverseGeocode(location: LatLng) {
+    const geocoder = geocoderRef.current;
+    if (!geocoder) {
+      setError('Google address lookup is still loading. Please try again in a moment.');
+      return;
+    }
+
+    const requestId = ++reverseGeocodeRequestRef.current;
+    geocoder.geocode({ location }, (results, status) => {
+      if (requestId !== reverseGeocodeRequestRef.current) return;
+
+      if (status !== 'OK' || !results.length) {
+        setError('We could not find a street address for that location. You can still move the pin and enter the address manually.');
+        return;
+      }
+
+      const result = results[0];
+      const components = result.address_components ?? [];
+      const city = componentText(components, ['locality', 'administrative_area_level_2']);
+      const barangay = componentText(components, [
+        'sublocality_level_1',
+        'sublocality_level_2',
+        'sublocality',
+        'neighborhood',
+      ]);
+      const street = componentText(components, ['route']);
+      const streetNumber = componentText(components, ['street_number']);
+      const premise = componentText(components, ['premise', 'subpremise']);
+      const address = [streetNumber, street, premise].filter(Boolean).join(' ').trim()
+        || result.formatted_address?.trim()
+        || '';
+
+      const nextAddress: GoogleDeliveryAddress = {
+        formattedAddress: result.formatted_address?.trim() || '',
+        city,
+        barangay,
+        address,
+        placeId: result.place_id?.trim() || '',
+        latitude: location.lat,
+        longitude: location.lng,
+      };
+
+      setSelectedAddress(nextAddress);
+      onSelectRef.current(nextAddress);
+      setError('');
+    });
+  }
+
+  function movePinAndReverseGeocode(location: LatLng) {
+    placePin(location);
+    reverseGeocode(location);
   }
 
   useEffect(() => {
@@ -157,12 +229,15 @@ export function GoogleDeliveryLocationPicker({
           title: 'Drag this pin to your exact delivery location',
         });
 
+        const { Geocoder } = await googleMaps.maps.importLibrary('geocoding') as GeocoderLibrary;
+        geocoderRef.current = new Geocoder();
+
         mapRef.current = map;
         markerRef.current = marker;
 
         marker.addEventListener('gmp-dragend', () => {
           const location = getLatLng(marker);
-          if (location) placePin(location);
+          if (location) movePinAndReverseGeocode(location);
         });
 
         mapClickListener = map.addListener('click', (event) => {
@@ -256,6 +331,7 @@ export function GoogleDeliveryLocationPicker({
       if (searchElement) searchElement.remove();
       mapRef.current = null;
       markerRef.current = null;
+      geocoderRef.current = null;
     };
   }, []);
 
@@ -275,7 +351,7 @@ export function GoogleDeliveryLocationPicker({
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const location = { lat: position.coords.latitude, lng: position.coords.longitude };
-        placePin(location);
+        movePinAndReverseGeocode(location);
         setLocating(false);
       },
       (locationError) => {
