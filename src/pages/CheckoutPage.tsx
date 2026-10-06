@@ -343,7 +343,14 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
 
   if (confirmedOrder) return <OrderConfirmationPage orderNumber={confirmedOrder.orderNumber} paymentMethod={confirmedOrder.paymentMethod} orderType={confirmedOrder.orderType} pickupMethod={confirmedOrder.pickupMethod} total={confirmedOrder.total} onReturnHome={() => { window.location.hash = ''; }} />;
 
-  const canContinue = items.length > 0 && !customerProfileLoading && !customerProfileError && Boolean(customerName.trim()) && !/[0-9]/.test(customerName) && (orderType === 'dine_in' || /^09\d{9}$/.test(mobileNumber)) && (!isDelivery || (thirdPartyCourierDelivery ? Boolean(restaurantPickupPoint) : cityIsSupported && deliveryBarangay.trim() && address.trim() && Boolean(selectedDeliveryZone?.isSupported) && !loadingDeliveryZones));
+  const hasExactDeliveryLocation = Boolean(
+    selectedDeliveryLocation
+      && Number.isFinite(selectedDeliveryLocation.latitude)
+      && Number.isFinite(selectedDeliveryLocation.longitude)
+  );
+  const canContinue = items.length > 0 && !customerProfileLoading && !customerProfileError && Boolean(customerName.trim()) && !/[0-9]/.test(customerName) && (orderType === 'dine_in' || /^09\d{9}$/.test(mobileNumber)) && (!isDelivery || (thirdPartyCourierDelivery
+    ? Boolean(restaurantPickupPoint) && hasExactDeliveryLocation && deliveryCity.trim() && deliveryBarangay.trim() && address.trim()
+    : cityIsSupported && deliveryBarangay.trim() && address.trim() && Boolean(selectedDeliveryZone?.isSupported) && hasExactDeliveryLocation && !loadingDeliveryZones));
 
   function resetPayment() { setShowPayment(false); setShowPaymentModal(false); setPaymentMethod(''); setSubmitError(''); }
 
@@ -374,14 +381,14 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   }
 
   function handleCancelThirdPartyDelivery() {
-    setShowDeliveryTerms(false); setThirdPartyCourierDelivery(false); setThirdPartyCourier(''); setThirdPartyCourierName(''); setThirdPartyDestination(''); setThirdPartyCourierTermsAccepted(false); setDeliveryCity(''); setDeliveryBarangay(''); setAddress(''); resetPayment();
+    setShowDeliveryTerms(false); setThirdPartyCourierDelivery(false); setThirdPartyCourier(''); setThirdPartyCourierName(''); setThirdPartyDestination(''); setThirdPartyCourierTermsAccepted(false); setDeliveryCity(''); setDeliveryBarangay(''); setAddress(''); setSelectedDeliveryLocation(null); resetPayment();
   }
 
   function handleProceedWithThirdPartyCourier() {
     if (!thirdPartyCourierTermsAccepted) return;
     const destination = [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ');
     setThirdPartyDestination(destination);
-    setShowDeliveryTerms(false); setThirdPartyCourierDelivery(true); setThirdPartyCourierTermsAccepted(false); setDeliveryBarangay(''); setAddress(''); setPaymentMethod(''); setSubmitError(''); setShowPayment(true);
+    setShowDeliveryTerms(false); setThirdPartyCourierDelivery(true); setThirdPartyCourierTermsAccepted(false); setPaymentMethod(''); setSubmitError(''); setShowPayment(true);
     window.requestAnimationFrame(() => document.getElementById('payment-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
@@ -413,6 +420,12 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       // Keep the existing database payment value while the customer-facing method is "Online Payment".
       paymentMethod: method === 'online' ? 'gcash' : 'cash',
       isThirdPartyCourier: isDelivery && thirdPartyCourierDelivery,
+      customerDeliveryAddress: isDelivery ? [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ') : '',
+      customerDeliveryCity: isDelivery ? deliveryCity.trim() : '',
+      customerDeliveryBarangay: isDelivery ? deliveryBarangay.trim() : '',
+      customerDeliveryLatitude: isDelivery ? selectedDeliveryLocation?.latitude : undefined,
+      customerDeliveryLongitude: isDelivery ? selectedDeliveryLocation?.longitude : undefined,
+      customerDeliveryPlaceId: isDelivery ? selectedDeliveryLocation?.placeId : undefined,
       items: items.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
     });
   }
@@ -446,6 +459,12 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         deliveryAddress: isDelivery ? (thirdPartyCourierDelivery ? restaurantPickupPoint : [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')) : address.trim(),
         notes: [notes.trim(), isDelivery && thirdPartyCourierDelivery ? `${thirdPartyCourierNote}\\nCourier: ${thirdPartyCourier === 'Other' ? (thirdPartyCourierName || 'Other courier') : thirdPartyCourier}\\nDestination: ${thirdPartyDestination || [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ')}` : ''].filter(Boolean).join('\\n\\n'),
         isThirdPartyCourier: isDelivery && thirdPartyCourierDelivery,
+        customerDeliveryAddress: isDelivery ? [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ') : '',
+        customerDeliveryCity: isDelivery ? deliveryCity.trim() : '',
+        customerDeliveryBarangay: isDelivery ? deliveryBarangay.trim() : '',
+        customerDeliveryLatitude: isDelivery ? selectedDeliveryLocation?.latitude : undefined,
+        customerDeliveryLongitude: isDelivery ? selectedDeliveryLocation?.longitude : undefined,
+        customerDeliveryPlaceId: isDelivery ? selectedDeliveryLocation?.placeId : undefined,
         items: items.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
         redeemLoyalty: redeemPoints,
       });
