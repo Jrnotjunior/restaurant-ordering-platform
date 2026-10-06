@@ -22,6 +22,7 @@ export type CreateOrderInput = {
   customerDeliveryLatitude?: number;
   customerDeliveryLongitude?: number;
   customerDeliveryPlaceId?: string;
+  deliveryQuoteId?: string;
   items: CreateOrderItem[];
 };
 
@@ -83,25 +84,50 @@ type TrackedOrderRow = {
 };
 
 export async function createOrder(input: CreateOrderInput): Promise<CreatedOrder> {
-  const rows = await supabaseRpc<CreatedOrderRow>('create_order', {
-    p_restaurant_id: input.restaurantId,
-    p_customer_name: input.customerName,
-    p_mobile_number: input.mobileNumber,
-    p_order_type: input.orderType,
-    p_delivery_city: input.deliveryCity || null,
-    p_delivery_barangay: input.deliveryBarangay || null,
-    p_delivery_address: input.deliveryAddress || null,
-    p_notes: input.notes,
-    p_payment_method: input.paymentMethod,
-    p_is_third_party_courier: input.isThirdPartyCourier ?? false,
-    p_items: input.items.map((item) => ({ product_id: item.productId, quantity: item.quantity })),
-    p_customer_delivery_address: input.customerDeliveryAddress || null,
-    p_customer_delivery_city: input.customerDeliveryCity || null,
-    p_customer_delivery_barangay: input.customerDeliveryBarangay || null,
-    p_customer_delivery_latitude: input.customerDeliveryLatitude ?? null,
-    p_customer_delivery_longitude: input.customerDeliveryLongitude ?? null,
-    p_customer_delivery_place_id: input.customerDeliveryPlaceId || null,
-  });
+  const rpcName = input.orderType === 'delivery' && !input.isThirdPartyCourier
+    ? 'create_order_from_delivery_quote'
+    : 'create_order';
+
+  const rpcParams = input.orderType === 'delivery' && !input.isThirdPartyCourier
+    ? {
+        p_restaurant_id: input.restaurantId,
+        p_customer_name: input.customerName,
+        p_mobile_number: input.mobileNumber,
+        p_delivery_city: input.deliveryCity || null,
+        p_delivery_barangay: input.deliveryBarangay || null,
+        p_delivery_address: input.deliveryAddress || null,
+        p_notes: input.notes,
+        p_payment_method: input.paymentMethod,
+        p_items: input.items.map((item) => ({ product_id: item.productId, quantity: item.quantity })),
+        p_customer_delivery_address: input.customerDeliveryAddress || null,
+        p_customer_delivery_city: input.customerDeliveryCity || null,
+        p_customer_delivery_barangay: input.customerDeliveryBarangay || null,
+        p_customer_delivery_latitude: input.customerDeliveryLatitude ?? null,
+        p_customer_delivery_longitude: input.customerDeliveryLongitude ?? null,
+        p_customer_delivery_place_id: input.customerDeliveryPlaceId || null,
+        p_delivery_quote_id: input.deliveryQuoteId || null,
+      }
+    : {
+        p_restaurant_id: input.restaurantId,
+        p_customer_name: input.customerName,
+        p_mobile_number: input.mobileNumber,
+        p_order_type: input.orderType,
+        p_delivery_city: input.deliveryCity || null,
+        p_delivery_barangay: input.deliveryBarangay || null,
+        p_delivery_address: input.deliveryAddress || null,
+        p_notes: input.notes,
+        p_payment_method: input.paymentMethod,
+        p_is_third_party_courier: input.isThirdPartyCourier ?? false,
+        p_items: input.items.map((item) => ({ product_id: item.productId, quantity: item.quantity })),
+        p_customer_delivery_address: input.customerDeliveryAddress || null,
+        p_customer_delivery_city: input.customerDeliveryCity || null,
+        p_customer_delivery_barangay: input.customerDeliveryBarangay || null,
+        p_customer_delivery_latitude: input.customerDeliveryLatitude ?? null,
+        p_customer_delivery_longitude: input.customerDeliveryLongitude ?? null,
+        p_customer_delivery_place_id: input.customerDeliveryPlaceId || null,
+      };
+
+  const rows = await supabaseRpc<CreatedOrderRow>(rpcName, rpcParams);
 
   const row = rows[0];
   if (!row) throw new Error('The order could not be created. Please try again.');
