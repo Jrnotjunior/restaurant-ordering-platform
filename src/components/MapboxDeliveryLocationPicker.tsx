@@ -35,12 +35,14 @@ function toAddress(feature: MapboxLocationFeature): MapboxDeliveryAddress | null
 export function MapboxDeliveryLocationPicker({
   disabled = false,
   onSelect,
+  onLocationChange,
   variant = 'delivery',
   initialLatitude = null,
   initialLongitude = null,
 }: {
   disabled?: boolean;
   onSelect: (address: MapboxDeliveryAddress) => void | Promise<void>;
+  onLocationChange?: () => void;
   variant?: 'delivery' | 'restaurant';
   initialLatitude?: number | null;
   initialLongitude?: number | null;
@@ -78,6 +80,7 @@ export function MapboxDeliveryLocationPicker({
 
     setSelectedAddress(nextAddress);
     setLocationConfirmed(false);
+    onLocationChange?.();
   }
 
   useEffect(() => {
