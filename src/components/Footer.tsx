@@ -9,17 +9,6 @@ export function Footer() {
 
   return (
     <footer className="site-footer">
-      <div>
-        <strong>{restaurant.name}</strong>
-        <p>{restaurant.tagline}</p>
-      </div>
-
-      <div>
-        {storefront.sections.location && restaurant.locationText ? <p>{restaurant.locationText}</p> : null}
-        {storefront.sections.contact && restaurant.contactNumber ? <p>{restaurant.contactNumber}</p> : null}
-        {storefront.sections.contact && restaurant.email ? <p>{restaurant.email}</p> : null}
-      </div>
-
       <nav className="site-footer-socials" aria-label="Social media links">
         {storefront.socialLinks?.facebook ? (
           <a href={storefront.socialLinks.facebook} target="_blank" rel="noreferrer" aria-label="Facebook">
@@ -50,7 +39,7 @@ export function Footer() {
         )}
       </nav>
 
-      <small>{storefront.footer.text || `© ${new Date().getFullYear()} ${restaurant.name}. All rights reserved.`}</small>
+      <small>{storefront.footer.text || `© ${new Date().getFullYear()} All rights reserved.`}</small>
 
       <a className="site-footer-powered-by" href="https://web2table.com" target="_blank" rel="noreferrer" aria-label="Powered by Web2Table">
         <span>Powered by</span>
