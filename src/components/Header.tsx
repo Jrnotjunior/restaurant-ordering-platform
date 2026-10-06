@@ -24,7 +24,8 @@ type HeaderProps = {
 
 export function Header({ cartCount = 0 }: HeaderProps) {
   const restaurant = useRestaurant();
-  const { user, signOut } = useRestaurantOwnerAuth();
+  const { user, restaurant: ownerRestaurant, signOut } = useRestaurantOwnerAuth();
+  const isRestaurantOwner = Boolean(user && ownerRestaurant?.id === restaurant.id);
   const [accountOpen, setAccountOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [newPassword, setNewPassword] = useState('');
@@ -52,7 +53,7 @@ export function Header({ cartCount = 0 }: HeaderProps) {
     let mounted = true;
 
     async function loadLoyaltyPoints() {
-      if (!supabase || !user || !restaurant.id) {
+      if (!supabase || !user || isRestaurantOwner || !restaurant.id) {
         setLoyaltyPoints(null);
         return;
       }
@@ -78,7 +79,7 @@ export function Header({ cartCount = 0 }: HeaderProps) {
     return () => {
       mounted = false;
     };
-  }, [restaurant.id, user?.id]);
+  }, [isRestaurantOwner, restaurant.id, user?.id]);
 
   useEffect(() => {
     const refreshActiveOrder = () => setActiveOrderNumber(window.localStorage.getItem(ACTIVE_ORDER_KEY));
@@ -132,13 +133,14 @@ export function Header({ cartCount = 0 }: HeaderProps) {
           {accountOpen ? (
             <div className="header-account-dropdown" role="menu">
               <div className="header-account-identity">
-                <strong>{typeof user?.user_metadata?.name === 'string' && user.user_metadata.name.trim() ? user.user_metadata.name.trim() : 'Customer'}</strong>
+                <strong>{isRestaurantOwner ? 'Restaurant Owner' : (typeof user?.user_metadata?.name === 'string' && user.user_metadata.name.trim() ? user.user_metadata.name.trim() : 'Customer')}</strong>
                 <span>{user?.email}</span>
-                <span className="header-account-points">Loyalty points: {loyaltyLoading ? '…' : loyaltyPoints ?? '—'}</span>
+                {!isRestaurantOwner ? <span className="header-account-points">Loyalty points: {loyaltyLoading ? '…' : loyaltyPoints ?? '—'}</span> : null}
               </div>
-              {user ? <>
+              {user ? <>{!isRestaurantOwner ? <>
                 <a className="header-account-menu-item" href={withBasePath('/order-history')} onClick={() => setAccountOpen(false)}>Order history</a>
                 <a className="header-account-menu-item" href={withBasePath('/saved-address')} onClick={() => setAccountOpen(false)}>Saved address</a>
+              </> : null}
                                 <button className="header-account-menu-item" type="button" onClick={() => { setChangePasswordOpen((open) => !open); setPasswordMessage(''); }}>Change password</button>
                 {changePasswordOpen ? (
                   <form className="header-account-password-form" onSubmit={async (event) => {
