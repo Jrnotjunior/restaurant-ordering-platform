@@ -141,11 +141,10 @@ main { flex: 1; }
   opacity: .42;
 }
 .site-footer-socials svg {
-  width: 19px;
-  height: 19px;
-  fill: currentColor;
-  stroke: currentColor;
-  stroke-width: 1.6;
+  width: 28px;
+  height: 28px;
+  display: block;
+  flex: 0 0 auto;
 }
 .site-footer-powered-by {
   display: inline-flex;
