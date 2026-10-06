@@ -173,6 +173,12 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
     }
   }
 
+  function openEmployeeEditor(employee: StaffAccount) {
+    setEditingStaff(employee);
+    setError('');
+    setConfirmation('');
+  }
+
   async function handleEdit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!supabase || !editingStaff) return;
