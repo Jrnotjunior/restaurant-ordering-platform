@@ -33,7 +33,7 @@ type MarkerLibrary = {
 
 type GoogleGeocoder = {
   geocode: (
-    request: { location: LatLng },
+    request: { location: LatLng; region?: string },
     callback: (results: GoogleGeocodeResult[], status: string) => void,
   ) => void;
 };
