@@ -110,10 +110,11 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
             {hero.eyebrow ? <p className="eyebrow">{hero.eyebrow}</p> : null}
             <h1>{hero.title}</h1>
             {hero.description ? <p>{hero.description}</p> : null}
-            <div className="storefront-hero-actions">
-              {hero.primaryButtonLabel ? <a className="button button-primary" href={storefrontHref(hero.primaryButtonHref)}>{hero.primaryButtonLabel}</a> : null}
-              {hero.secondaryButtonLabel ? <a className="button button-secondary" href={storefrontHref(hero.secondaryButtonHref ?? '#menu')}>{hero.secondaryButtonLabel}</a> : null}
-            </div>
+            {hero.secondaryButtonLabel ? (
+              <div className="storefront-hero-actions">
+                <a className="button button-secondary" href={storefrontHref(hero.secondaryButtonHref ?? '#menu')}>{hero.secondaryButtonLabel}</a>
+              </div>
+            ) : null}
           </div>
         </section>
       ) : null}
