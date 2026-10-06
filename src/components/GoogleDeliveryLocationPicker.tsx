@@ -97,9 +97,15 @@ function getLatLng(marker: GoogleMarker): LatLng | null {
 export function GoogleDeliveryLocationPicker({
   disabled = false,
   onSelect,
+  variant = 'delivery',
+  initialLatitude = null,
+  initialLongitude = null,
 }: {
   disabled?: boolean;
   onSelect: (address: GoogleDeliveryAddress) => void | Promise<void>;
+  variant?: 'delivery' | 'restaurant';
+  initialLatitude?: number | null;
+  initialLongitude?: number | null;
 }) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<GoogleMap | null>(null);
@@ -228,7 +234,9 @@ export function GoogleDeliveryLocationPicker({
 
         if (cancelled || !mapContainerRef.current) return;
 
-        const defaultCenter = { lat: 14.6760, lng: 120.9780 };
+        const defaultCenter = Number.isFinite(initialLatitude) && Number.isFinite(initialLongitude)
+          ? { lat: Number(initialLatitude), lng: Number(initialLongitude) }
+          : { lat: 14.6760, lng: 120.9780 };
         const map = new Map(mapContainerRef.current, {
           center: defaultCenter,
           zoom: 13,
@@ -243,7 +251,7 @@ export function GoogleDeliveryLocationPicker({
           map,
           position: defaultCenter,
           gmpDraggable: true,
-          title: 'Drag this pin to your exact delivery location',
+          title: variant === 'restaurant' ? 'Restaurant location' : 'Drag this pin to your exact delivery location',
         });
 
         const { Geocoder } = await googleMaps.maps.importLibrary('geocoding') as GeocoderLibrary;
@@ -265,7 +273,7 @@ export function GoogleDeliveryLocationPicker({
         });
 
         const picker = document.createElement('gmp-place-autocomplete');
-        picker.setAttribute('placeholder', 'Search your delivery address');
+        picker.setAttribute('placeholder', variant === 'restaurant' ? 'Search the restaurant address' : 'Search your delivery address');
         picker.setAttribute('included-region-codes', 'ph');
         picker.setAttribute('requested-language', 'en');
         picker.style.display = 'block';
@@ -399,17 +407,17 @@ export function GoogleDeliveryLocationPicker({
 
   return (
     <div className="google-delivery-location-picker">
-      <p className="checkout-hint">Search your address, use your current location, or move the pin to the exact place where you want the order delivered.</p>
+      <p className="checkout-hint">{variant === 'restaurant' ? 'Search the restaurant address or move the pin to the exact restaurant location.' : 'Search your address, use your current location, or move the pin to the exact place where you want the order delivered.'}</p>
       <div className="google-delivery-map" ref={mapContainerRef} aria-label="Delivery location map" />
       <div className="google-delivery-map-actions">
         <button className="button button-secondary" type="button" onClick={useCurrentLocation} disabled={disabled || loading || locating}>
-          {locating ? 'Finding your location…' : 'Use my current location'}
+          {locating ? 'Finding your location…' : variant === 'restaurant' ? 'Use my current location' : 'Use my current location'}
         </button>
-        <span>Drag the pin or tap the map to adjust it.</span>
+        <span>{variant === 'restaurant' ? 'Move the pin or tap the map to set the restaurant location.' : 'Drag the pin or tap the map to adjust it.'}</span>
       </div>
       {selectedAddress && (
         <div className="google-delivery-location-confirmation">
-          <strong>{locationConfirmed ? 'Delivery location confirmed' : 'Confirm your delivery location'}</strong>
+          <strong>{locationConfirmed ? (variant === 'restaurant' ? 'Restaurant location confirmed' : 'Delivery location confirmed') : (variant === 'restaurant' ? 'Confirm restaurant location' : 'Confirm your delivery location')}</strong>
           <span>{selectedAddress.formattedAddress || selectedAddress.address || 'Exact map location selected. Complete the address details below.'}</span>
           {(selectedAddress.city || selectedAddress.barangay) && <small>{selectedAddress.city}{selectedAddress.barangay ? `, ${selectedAddress.barangay}` : ''}</small>}
           <button
@@ -431,7 +439,7 @@ export function GoogleDeliveryLocationPicker({
             }}
             disabled={disabled || locationConfirmed || confirming}
           >
-            {locationConfirmed ? 'Location Confirmed' : confirming ? 'Confirming Location…' : 'Confirm Location'}
+            {locationConfirmed ? (variant === 'restaurant' ? 'Restaurant Location Confirmed' : 'Location Confirmed') : confirming ? 'Confirming Location…' : (variant === 'restaurant' ? 'Confirm Restaurant Location' : 'Confirm Location')}
           </button>
         </div>
       )}
