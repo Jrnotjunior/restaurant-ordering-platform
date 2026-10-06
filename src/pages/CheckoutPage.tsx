@@ -514,6 +514,15 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
               <label><span>Delivery location</span></label>
               <MapboxDeliveryLocationPicker
                 disabled={deliveryRouteLoading}
+                onLocationChange={() => {
+                  setSelectedDeliveryLocation(null);
+                  setDeliveryCity('');
+                  setDeliveryBarangay('');
+                  setAddress('');
+                  setDeliveryRouteQuote(null);
+                  setHasDefaultAddress(false);
+                  resetPayment();
+                }}
                 onSelect={async (selected: MapboxDeliveryAddress) => {
                   setSelectedDeliveryLocation(selected);
                   setDeliveryCity(selected.city);
