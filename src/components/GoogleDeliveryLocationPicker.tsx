@@ -208,11 +208,6 @@ export function GoogleDeliveryLocationPicker({
     });
   }
 
-  function movePinAndReverseGeocode(location: LatLng) {
-    placePin(location);
-    reverseGeocode(location);
-  }
-
   useEffect(() => {
     let cancelled = false;
     let searchElement: HTMLElement | null = null;
@@ -262,14 +257,14 @@ export function GoogleDeliveryLocationPicker({
 
         marker.addEventListener('gmp-dragend', () => {
           const location = getLatLng(marker);
-          if (location) movePinAndReverseGeocode(location);
+          if (location) placePin(location);
         });
 
         mapClickListener = map.addListener('click', (event) => {
           const location = event.latLng
             ? { lat: event.latLng.lat(), lng: event.latLng.lng() }
             : null;
-          if (location) movePinAndReverseGeocode(location);
+          if (location) placePin(location);
         });
 
         const picker = document.createElement('gmp-place-autocomplete');
