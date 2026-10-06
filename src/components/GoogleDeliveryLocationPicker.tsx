@@ -97,13 +97,22 @@ export function GoogleDeliveryLocationPicker({
     map.setCenter(location);
 
     setSelectedAddress((current) => {
-      if (!current) return current;
+      const updatedAddress: GoogleDeliveryAddress = current
+        ? {
+            ...current,
+            latitude: location.lat,
+            longitude: location.lng,
+          }
+        : {
+            formattedAddress: '',
+            city: '',
+            barangay: '',
+            address: '',
+            placeId: '',
+            latitude: location.lat,
+            longitude: location.lng,
+          };
 
-      const updatedAddress: GoogleDeliveryAddress = {
-        ...current,
-        latitude: location.lat,
-        longitude: location.lng,
-      };
       onSelectRef.current(updatedAddress);
       return updatedAddress;
     });
@@ -291,8 +300,8 @@ export function GoogleDeliveryLocationPicker({
       {selectedAddress && (
         <div className="google-delivery-location-confirmation">
           <strong>Delivery pin</strong>
-          <span>{selectedAddress.formattedAddress || selectedAddress.address}</span>
-          <small>{selectedAddress.city}{selectedAddress.barangay ? `, ${selectedAddress.barangay}` : ''}</small>
+          <span>{selectedAddress.formattedAddress || selectedAddress.address || 'Exact map location selected. Complete the address details below.'}</span>
+          {(selectedAddress.city || selectedAddress.barangay) && <small>{selectedAddress.city}{selectedAddress.barangay ? `, ${selectedAddress.barangay}` : ''}</small>}
         </div>
       )}
       {error && <p className="checkout-error" role="alert">{error}</p>}
