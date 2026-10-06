@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, apikey, x-client-info, content-type, x-retry-count, traceparent, tracestate, baggage, x-supabase-api-version",
+  "Access-Control-Allow-Headers": "authorization, apikey, x-client-info, content-type, x-retry-count, traceparent, tracestate, baggage, x-supabase-api-version, x-restaurant-domain, x-restaurant-slug",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
