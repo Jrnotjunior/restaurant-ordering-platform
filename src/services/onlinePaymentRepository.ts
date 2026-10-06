@@ -10,6 +10,12 @@ export type PendingOnlinePaymentInput = {
   deliveryAddress: string;
   notes: string;
   isThirdPartyCourier?: boolean;
+  customerDeliveryAddress?: string;
+  customerDeliveryCity?: string;
+  customerDeliveryBarangay?: string;
+  customerDeliveryLatitude?: number;
+  customerDeliveryLongitude?: number;
+  customerDeliveryPlaceId?: string;
   items: Array<{ productId: string; quantity: number }>;
   redeemLoyalty?: boolean;
 };
@@ -43,6 +49,12 @@ export async function createPendingOnlinePayment(input: PendingOnlinePaymentInpu
     p_is_third_party_courier: input.isThirdPartyCourier ?? false,
     p_items: input.items.map((item) => ({ product_id: item.productId, quantity: item.quantity })),
     p_redeem_loyalty: input.redeemLoyalty ?? false,
+    p_customer_delivery_address: input.customerDeliveryAddress || null,
+    p_customer_delivery_city: input.customerDeliveryCity || null,
+    p_customer_delivery_barangay: input.customerDeliveryBarangay || null,
+    p_customer_delivery_latitude: input.customerDeliveryLatitude ?? null,
+    p_customer_delivery_longitude: input.customerDeliveryLongitude ?? null,
+    p_customer_delivery_place_id: input.customerDeliveryPlaceId || null,
   });
 
   if (error) throw new Error(error.message || 'Unable to prepare online payment.');
