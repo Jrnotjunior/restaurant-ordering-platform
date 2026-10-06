@@ -1094,3 +1094,30 @@
     width: 100%;
   }
 }
+
+/* Outside-scope courier action */
+.checkout-outside-scope-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.checkout-outside-scope-card .checkout-error {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.checkout-outside-scope-card .button {
+  width: auto;
+  min-width: 0;
+  align-self: center;
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+
+.checkout-outside-scope-card .button:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
