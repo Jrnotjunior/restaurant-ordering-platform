@@ -51,6 +51,11 @@ export type RestaurantStorefront = {
     secondaryButtonLabel?: string;
     secondaryButtonHref?: string;
   };
+  socialLinks?: {
+    facebook?: string;
+    instagram?: string;
+    tiktok?: string;
+  };
   sections: {
     categories: boolean;
     about: boolean;
