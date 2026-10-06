@@ -49,3 +49,12 @@
 .privacy-notice-footer{margin:22px 0 0!important;color:#64748b!important;font-size:12px!important}
 .customer-personal-info-consent a{color:#334155;font-weight:700;text-decoration:underline;text-underline-offset:3px}
 @media(max-width:640px){.privacy-notice-card{max-height:calc(100vh - 24px);padding:24px}.privacy-notice-section h2{font-size:17px}.privacy-notice-section p,.privacy-notice-section ul{font-size:13px}}
+
+.customer-signin-modal-backdrop{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px;background:rgba(15,23,42,.55);box-sizing:border-box}
+.customer-signin-modal{position:relative;width:min(420px,100%);max-height:calc(100vh - 40px);overflow:auto;box-sizing:border-box;padding:28px;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 24px 70px rgba(15,23,42,.24)}
+.customer-signin-modal h2{margin:6px 0 8px;color:#111827;font-size:30px;line-height:1.1}
+.customer-signin-modal-message{margin:0 0 22px!important;color:#64748b;line-height:1.6}
+.customer-signin-modal-close{position:absolute;top:12px;right:12px;width:34px;height:34px;display:grid;place-items:center;padding:0;border:1px solid #dbe2ea;border-radius:8px;background:#fff;color:#334155;font-size:22px;line-height:1;cursor:pointer}
+.customer-signin-modal-close:hover{background:#f8fafc}
+.customer-signin-modal-close:disabled{opacity:.55;cursor:not-allowed}
+@media(max-width:640px){.customer-signin-modal-backdrop{padding:12px}.customer-signin-modal{max-height:calc(100vh - 24px);padding:24px}.customer-signin-modal h2{font-size:27px}}
