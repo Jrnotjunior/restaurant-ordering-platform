@@ -328,25 +328,6 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     setShowDeliveryTerms(true);
   }
 
-  function commitCity() {
-    const city = deliveryCity.trim();
-    if (!city || thirdPartyCourierDelivery) return;
-    if (deliveryZones.some((zone) => normalize(zone.city) === normalize(city))) {
-      setShowDeliveryTerms(false);
-      return;
-    }
-    openThirdPartyCourierTerms();
-  }
-
-  function handleCityKeyboard(event: React.KeyboardEvent<HTMLInputElement>) {
-    const nativeEvent = event.nativeEvent as KeyboardEvent;
-    const isEnter = event.key === 'Enter' || event.code === 'Enter' || nativeEvent.keyCode === 13 || nativeEvent.which === 13;
-    if (!isEnter) return;
-    event.preventDefault();
-    event.stopPropagation();
-    commitCity();
-  }
-
   function handleCancelThirdPartyDelivery() {
     setShowDeliveryTerms(false); setThirdPartyCourierDelivery(false); setThirdPartyCourier(''); setThirdPartyCourierName(''); setThirdPartyDestination(''); setThirdPartyCourierTermsAccepted(false); setDeliveryCity(''); setDeliveryBarangay(''); setAddress(''); setSelectedDeliveryLocation(null); resetPayment();
   }
@@ -364,7 +345,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     const city = deliveryCity.trim();
     const barangay = deliveryBarangay.trim();
     const completeAddress = address.trim();
-    if (!city || !barangay || !completeAddress || !selectedDeliveryZone?.isSupported) return;
+    if (!city || !barangay || !completeAddress || !deliveryRouteQuote?.inRange) return;
     await saveMyDefaultDeliveryAddress(items[0].product.restaurantId, city, barangay, completeAddress);
     setHasDefaultAddress(true);
   }
