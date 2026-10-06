@@ -57,7 +57,6 @@ function withBasePath(path: string) {
   if (path === '/privacy') return `${base}/#privacy`;
   if (path === '/restaurant/orders') return `${base}/#restaurant/orders`;
   if (path === '/restaurant/menu') return `${base}/#restaurant/menu`;
-  if (path === '/restaurant/shipping-fee') return `${base}/#restaurant/shipping-fee`;
   if (path === '/restaurant/sales') return `${base}/#restaurant/sales`;
   if (path === '/restaurant/riders') return `${base}/#restaurant/riders`;
   if (path === '/restaurant/delivery-dispatch') return `${base}/#restaurant/delivery-dispatch`;
@@ -666,7 +665,6 @@ function AppContent() {
   const trackOrderNumber = searchParams.get('trackOrder');
   const isRestaurantOrdersPage = route === '#restaurant/orders';
   const isRestaurantMenuPage = route === '#restaurant/menu';
-  const isRestaurantShippingFeePage = route === '#restaurant/shipping-fee';
   const isRestaurantSalesPage = route === '#restaurant/sales';
   const isCashierSalesPage = route === '#restaurant/cashier-sales';
   const isCashierPosPage = route === '#restaurant/cashier-pos';
