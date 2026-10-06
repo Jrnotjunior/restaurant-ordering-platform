@@ -331,7 +331,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
   }
 
   function handleCancelThirdPartyDelivery() {
-    setShowDeliveryTerms(false); setThirdPartyCourierDelivery(false); setThirdPartyDestination(''); setThirdPartyCourierTermsAccepted(false); setDeliveryCity(''); setDeliveryBarangay(''); setAddress(''); setSelectedDeliveryLocation(null); resetPayment();
+    setShowDeliveryTerms(false); setThirdPartyCourierDelivery(false); setThirdPartyCourierTermsAccepted(false); setDeliveryCity(''); setDeliveryBarangay(''); setAddress(''); setSelectedDeliveryLocation(null); resetPayment();
   }
 
   function handleProceedWithThirdPartyCourier() {
