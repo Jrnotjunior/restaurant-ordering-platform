@@ -150,15 +150,16 @@ main { flex: 1; }
 .site-footer-powered-by {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0;
   grid-column: 1 / -1;
   color: var(--color-muted);
   line-height: 1.45;
 }
 .site-footer-web2table-logo {
   display: block;
-  width: 88px;
-  height: 28px;
+  width: 40px;
+  height: 24px;
+  margin-left: -2px;
   object-fit: contain;
 }
 .menu-page, .cart-page, .checkout-page { width: min(900px, calc(100% - 2rem)); margin: 0 auto; padding: var(--space-12) 0 var(--space-16); }
