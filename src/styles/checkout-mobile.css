@@ -925,8 +925,8 @@
 
 .google-delivery-map {
   width: 100%;
-  min-height: 320px;
-  height: min(46vw, 380px);
+  min-height: 240px;
+  height: 260px;
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: 0.9rem;
@@ -974,8 +974,8 @@
 
 @media (max-width: 560px) {
   .google-delivery-map {
-    min-height: 280px;
-    height: 280px;
+    min-height: 220px;
+    height: 220px;
     border-radius: 0.75rem;
   }
 
