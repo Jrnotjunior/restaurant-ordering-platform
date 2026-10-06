@@ -49,6 +49,30 @@ Deno.serve(async (req) => {
   const feePerIncrement = Number(restaurant.delivery_fee_per_increment);
   const baseFee = Number(restaurant.delivery_base_fee);
   const maxDistanceMeters = Number(restaurant.delivery_max_distance_meters);
+
+  const { data: cachedQuote } = await admin.from("delivery_quotes")
+    .select("id,expires_at,distance_meters,delivery_fee")
+    .eq("restaurant_id", restaurantId)
+    .eq("customer_latitude", latitude)
+    .eq("customer_longitude", longitude)
+    .is("consumed_at", null)
+    .gt("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (cachedQuote) {
+    const cachedDistance = Number(cachedQuote.distance_meters);
+    return json({
+      quoteId: cachedQuote.id,
+      expiresAt: cachedQuote.expires_at,
+      distanceMeters: cachedDistance,
+      deliveryFee: Number(cachedQuote.delivery_fee),
+      maxDistanceMeters,
+      inRange: cachedDistance <= maxDistanceMeters,
+      cached: true,
+    });
+  }
   if (!Number.isFinite(incrementMeters) || incrementMeters <= 0 || !Number.isFinite(feePerIncrement) || feePerIncrement < 0 || !Number.isFinite(baseFee) || baseFee < 0 || !Number.isFinite(maxDistanceMeters) || maxDistanceMeters <= 0) {
     return json({ error: "This restaurant has invalid delivery pricing settings." }, 409);
   }
@@ -91,7 +115,7 @@ Deno.serve(async (req) => {
   await admin.from("system_api_usage_events").insert({
     provider: "google_maps", service: "routes", operation: "compute_routes_distance", restaurant_id: restaurantId,
     request_count: 1, status: "success", estimated_cost_usd: 0,
-    metadata: { distance_meters: Math.round(distanceMeters), in_range: inRange, routing_preference: "TRAFFIC_UNAWARE" },
+    metadata: { distance_meters: Math.round(distanceMeters), in_range: inRange, routing_preference: "TRAFFIC_UNAWARE", cached: false },
   });
 
   if (quoteError || !quote) {
