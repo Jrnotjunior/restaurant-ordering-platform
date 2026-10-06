@@ -51,6 +51,9 @@ export function GoogleDeliveryAddressPicker({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const onSelectRef = useRef(onSelect);
+  onSelectRef.current = onSelect;
+
   useEffect(() => {
     let cancelled = false;
     let element: GoogleAutocompleteElement | null = null;
@@ -76,7 +79,7 @@ export function GoogleDeliveryAddressPicker({
         element.style.width = '100%';
 
         const handleSelect = async (event: Event) => {
-          const place = (event as CustomEvent<GooglePlaceSelectEvent>).detail?.place;
+          const place = (event as GooglePlaceSelectEvent & { place?: GooglePlace }).place;
           if (!place) return;
 
           try {
@@ -100,7 +103,7 @@ export function GoogleDeliveryAddressPicker({
               .join(' ')
               .trim() || place.formattedAddress?.trim() || '';
 
-            onSelect({
+            onSelectRef.current({
               formattedAddress: place.formattedAddress?.trim() || '',
               city,
               barangay,
@@ -130,7 +133,7 @@ export function GoogleDeliveryAddressPicker({
       cancelled = true;
       if (element) element.remove();
     };
-  }, [onSelect]);
+  }, []);
 
   useEffect(() => {
     if (!containerRef.current) return;
