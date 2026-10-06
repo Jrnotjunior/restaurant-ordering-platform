@@ -34,7 +34,7 @@ export function Footer() {
 
       <a className="site-footer-powered-by" href="https://web2table.com" target="_blank" rel="noreferrer" aria-label="Powered by Web2Table">
         <span>Powered by</span>
-        <span className="site-footer-web2table-logo" aria-hidden="true"><span className="site-footer-web2table-mark">W</span><strong>Web2Table</strong></span>
+        {restaurant.logoUrl ? <img src={restaurant.logoUrl} alt="Web2Table" className="site-footer-web2table-logo" /> : <strong>Web2Table</strong>}
       </a>
     </footer>
   );
