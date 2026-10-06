@@ -79,7 +79,7 @@ export function GoogleDeliveryAddressPicker({
         element.style.width = '100%';
 
         const handleSelect = async (event: Event) => {
-          const place = (event as GooglePlaceSelectEvent & { place?: GooglePlace }).place;
+          const place = (event as unknown as GooglePlaceSelectEvent).place;
           if (!place) return;
 
           try {
