@@ -974,7 +974,7 @@
 
 @media (max-width: 560px) {
   .google-delivery-map {
-    width: 100%;
+    width: calc(100% - 2rem);
     min-height: 220px;
     height: 220px;
     border-radius: 0.75rem;
