@@ -571,9 +571,15 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
               }
               {thirdPartyDestination && <p className="pickup-callout"><strong>Destination:</strong> {thirdPartyDestination}</p>}
             </div> : <div className="delivery-address-fields">
-              <label><span>City</span><input type="text" name="deliveryCity" value={deliveryCity} onChange={(e) => { setDeliveryCity(e.target.value); setDeliveryBarangay(''); setAddress(''); setSelectedDeliveryLocation(null); setThirdPartyCourierDelivery(false); setThirdPartyCourierTermsAccepted(false); setShowDeliveryTerms(false); resetPayment(); }} onKeyDownCapture={handleCityKeyboard} onKeyUpCapture={handleCityKeyboard} autoComplete="address-level2" placeholder="Enter your city, then press Enter" required /></label>
-              {!thirdPartyCourierDelivery && <div className="delivery-field-group"><label htmlFor="delivery-barangay">Barangay</label><div className="barangay-input-wrap"><input id="delivery-barangay" type="text" value={deliveryBarangay} onChange={(e) => { setDeliveryBarangay(e.target.value); setSelectedDeliveryLocation(null); resetPayment(); }} placeholder={loadingDeliveryZones ? 'Loading delivery areas…' : deliveryCity.trim() ? 'Enter your barangay' : 'Enter your city first'} disabled={!deliveryCity.trim()} required />{suggestions.length > 0 && <div className="barangay-suggestions" role="listbox">{suggestions.map((zone) => <button className="barangay-suggestion" key={zone.id} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { setDeliveryBarangay(zone.barangay); resetPayment(); }}><span>{zone.barangay}</span><small>{zone.isSupported ? `₱${zone.shippingFee.toFixed(2)} delivery fee` : 'Outside delivery area'}</small></button>)}</div>}</div></div>}
-              {cityIsSupported && deliveryBarangay.trim() && <label><span>Unit/Bldg./Street Address</span><textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Enter your unit, building, house number, and street" rows={4} required /></label>}
+              <div className="delivery-field-group">
+                <span className="checkout-field-label">City</span>
+                <div className="delivery-address-value">{deliveryCity || 'Select an address from Google Maps'}</div>
+              </div>
+              <div className="delivery-field-group">
+                <span className="checkout-field-label">Barangay</span>
+                <div className="delivery-address-value">{deliveryBarangay || 'Select an address from Google Maps'}</div>
+              </div>
+              {cityIsSupported && deliveryBarangay.trim() && <label><span>Unit/Bldg./Street Address</span><textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Add your unit, building, house number, or other delivery details" rows={3} required /></label>}
             </div>}
             {!thirdPartyCourierDelivery && !loadingDeliveryZones && !deliveryZonesError && deliveryCity.trim() && deliveryBarangay.trim() && suggestions.length === 0 && !selectedDeliveryZone && <p className="checkout-error" role="alert">{outsideDeliveryAreaMessage}</p>}
             {!thirdPartyCourierDelivery && loadingDeliveryZones && <p className="checkout-hint">Loading delivery areas…</p>}
