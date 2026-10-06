@@ -48,9 +48,6 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
   const [error, setError] = useState('');
   const [confirmation, setConfirmation] = useState('');
   const [searchEmployee, setSearchEmployee] = useState('');
-  const [deliveryZones, setDeliveryZones] = useState<Array<{ id: string; barangay: string; isSupported: boolean }>>([]);
-  const [riderScopeZoneIds, setRiderScopeZoneIds] = useState<string[]>([]);
-  const [loadingRiderScope, setLoadingRiderScope] = useState(false);
 
   async function loadStaff() {
     setLoading(true);
@@ -77,27 +74,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
     }
   }
 
-  useEffect(() => {
-    void loadStaff();
-    if (!supabase) return;
-    void supabase
-      .from('restaurant_delivery_zones')
-      .select('id,barangay,is_supported')
-      .eq('restaurant_id', restaurantId)
-      .eq('is_supported', true)
-      .order('barangay', { ascending: true })
-      .then(({ data, error: zoneError }) => {
-        if (zoneError) {
-          setError(zoneError.message);
-          return;
-        }
-        setDeliveryZones((data ?? []).map((zone) => ({
-          id: zone.id,
-          barangay: zone.barangay,
-          isSupported: Boolean(zone.is_supported),
-        })));
-      });
-  }, [restaurantId]);
+  useEffect(() => { void loadStaff(); }, [restaurantId]);
 
   const filteredStaff = useMemo(() => {
     const query = searchEmployee.trim().toLowerCase();
@@ -196,58 +173,6 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
     }
   }
 
-  async function loadRiderScope(employee: StaffAccount) {
-    if (!supabase || employee.role !== 'rider') {
-      setRiderScopeZoneIds([]);
-      return;
-    }
-    setLoadingRiderScope(true);
-    try {
-      const { data, error: scopeError } = await supabase
-        .from('rider_delivery_zones')
-        .select('delivery_zone_id')
-        .eq('restaurant_id', restaurantId)
-        .eq('rider_id', employee.id);
-      if (scopeError) throw scopeError;
-      setRiderScopeZoneIds((data ?? []).map((row) => row.delivery_zone_id));
-    } catch (scopeError) {
-      setRiderScopeZoneIds([]);
-      setError(scopeError instanceof Error ? scopeError.message : 'Unable to load rider delivery scope.');
-    } finally {
-      setLoadingRiderScope(false);
-    }
-  }
-
-  function openEmployeeEditor(employee: StaffAccount) {
-    setEditingStaff(employee);
-    setError('');
-    void loadRiderScope(employee);
-  }
-
-  async function saveRiderScope(employee: StaffAccount) {
-    if (!supabase || employee.role !== 'rider') return;
-    const selectedZoneIds = new Set(riderScopeZoneIds);
-
-    const { error: deleteError } = await supabase
-      .from('rider_delivery_zones')
-      .delete()
-      .eq('restaurant_id', restaurantId)
-      .eq('rider_id', employee.id);
-    if (deleteError) throw deleteError;
-
-    if (selectedZoneIds.size > 0) {
-      const rows = Array.from(selectedZoneIds).map((deliveryZoneId) => ({
-        restaurant_id: restaurantId,
-        rider_id: employee.id,
-        delivery_zone_id: deliveryZoneId,
-      }));
-      const { error: insertError } = await supabase
-        .from('rider_delivery_zones')
-        .insert(rows);
-      if (insertError) throw insertError;
-    }
-  }
-
   async function handleEdit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!supabase || !editingStaff) return;
@@ -268,9 +193,6 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
 
       if (updateError) throw updateError;
 
-      if (editingStaff.role === 'rider') {
-        await saveRiderScope(editingStaff);
-      }
 
       setEditingStaff(null);
       await loadStaff();
@@ -410,38 +332,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
                 <label>Mobile number<input name="mobileNumber" type="tel" defaultValue={editingStaff.mobileNumber} required /></label>
                 <label>Role<input value={roleLabels[editingStaff.role]} readOnly /></label>
                 <label>Login email<input value={editingStaff.email} readOnly /></label>
-                {editingStaff.role === 'rider' ? (
-                  <div className="restaurant-rider-scope-field">
-                    <div className="restaurant-rider-scope-heading">
-                      <span>Delivery scope</span>
-                      <small>Choose the restaurant delivery areas this rider is allowed to handle.</small>
-                    </div>
-                    {loadingRiderScope ? <p className="restaurant-rider-scope-empty">Loading delivery scope…</p> : deliveryZones.length === 0 ? (
-                      <p className="restaurant-rider-scope-empty">No supported delivery areas are configured yet. Add delivery areas first.</p>
-                    ) : (
-                      <div className="restaurant-rider-scope-list">
-                        {deliveryZones.map((zone) => (
-                          <label className="restaurant-rider-scope-option" key={zone.id}>
-                            <input
-                              type="checkbox"
-                              checked={riderScopeZoneIds.includes(zone.id)}
-                              onChange={(event) => {
-                                setRiderScopeZoneIds((current) =>
-                                  event.target.checked
-                                    ? [...current, zone.id]
-                                    : current.filter((id) => id !== zone.id),
-                                );
-                              }}
-                              disabled={saving}
-                            />
-                            <span>{zone.barangay}</span>
-                          </label>
-                        ))}
-                      </div>
-                    )}
-                    <small className="restaurant-rider-scope-note">A rider without a delivery scope will not be eligible for Automatic Rider Assignment.</small>
-                  </div>
-                ) : null}
+
               </div>
               <div className="restaurant-employee-modal-actions"><button className="button button-secondary" type="button" onClick={() => setEditingStaff(null)} disabled={saving}>Cancel</button><button className="button button-primary" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save Changes'}</button></div>
             </form>
