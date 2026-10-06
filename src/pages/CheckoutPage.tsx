@@ -514,7 +514,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
                   if (!selected.latitude || !selected.longitude) throw new Error('Google did not return an exact map location. Please choose the address again.');
                   setDeliveryRouteLoading(true);
                   try {
-                    const quote = await calculateDeliveryRoute(restaurantId, selected.latitude, selected.longitude);
+                    const quote = await calculateDeliveryRoute(restaurantId!, selected.latitude, selected.longitude);
                     setDeliveryRouteQuote(quote);
                   } finally {
                     setDeliveryRouteLoading(false);
