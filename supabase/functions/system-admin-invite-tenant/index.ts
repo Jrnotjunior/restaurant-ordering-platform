@@ -48,10 +48,6 @@ Deno.serve(async (request) => {
     const adminClient = createClient(supabaseUrl, secretKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const emailClient = createClient(supabaseUrl, publishableKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
-
     const { data: userData, error: userError } = await userClient.auth.getUser(token);
     if (userError || !userData.user) {
       return jsonResponse({ error: "Your session is no longer valid. Please sign in again." }, 401);
