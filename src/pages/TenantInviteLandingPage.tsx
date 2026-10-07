@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { supabase } from '../services/supabaseClient';
 
