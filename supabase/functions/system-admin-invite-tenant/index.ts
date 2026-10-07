@@ -34,7 +34,7 @@ Deno.serve(async (request) => {
     const publishableKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY") ?? "";
     if (!supabaseUrl || !secretKey || !publishableKey) return jsonResponse({ error: "Supabase server configuration is incomplete." }, 500);
 
-    const token = authorization.replace(/^Bearer\\s+/i, "");
+    const token = authorization.replace(/^Bearer\s+/i, "");
     const userClient = createClient(supabaseUrl, publishableKey, {
       global: { headers: { Authorization: authorization } },
       auth: { autoRefreshToken: false, persistSession: false },
