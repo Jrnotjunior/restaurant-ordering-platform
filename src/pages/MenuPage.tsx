@@ -19,6 +19,7 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [categoryOpen, setCategoryOpen] = useState(false);
   const categorySelectRef = useRef<HTMLDivElement>(null);
+  const productGridRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -71,6 +72,38 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
       void supabase?.removeChannel(channel);
     };
   }, [restaurant.id]);
+
+  useEffect(() => {
+    const grid = productGridRef.current;
+    if (!grid || visibleProducts.length === 0) return;
+
+    let frame = 0;
+
+    const syncProductCardHeight = () => {
+      grid.style.removeProperty('--product-card-height');
+      const heights = Array.from(grid.querySelectorAll<HTMLElement>('.product-card'))
+        .map((card) => card.scrollHeight);
+      const maxHeight = Math.max(...heights, 0);
+      if (maxHeight > 0) {
+        grid.style.setProperty('--product-card-height', `${maxHeight}px`);
+      }
+    };
+
+    const scheduleSync = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(syncProductCardHeight);
+    };
+
+    scheduleSync();
+
+    const observer = new ResizeObserver(scheduleSync);
+    observer.observe(grid);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, [visibleProducts]);
 
   useEffect(() => {
     function handleOutsideClick(event: MouseEvent) {
@@ -175,7 +208,7 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
       ) : null}
 
       {!loading && !error && visibleProducts.length > 0 ? (
-        <div className="menu-product-grid">
+        <div className="menu-product-grid" ref={productGridRef}>
           {visibleProducts.map((product) => (
             <ProductCard
               key={product.id}
