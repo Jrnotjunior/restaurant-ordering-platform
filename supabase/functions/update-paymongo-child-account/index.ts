@@ -83,13 +83,7 @@ Deno.serve(async (request) => {
     }
 
     const attrs = payload?.data?.attributes ?? {};
-    const savedData = {
-      ...((connection.onboarding_data && typeof connection.onboarding_data === "object") ? connection.onboarding_data : {}),
-      ...(person ? { person } : {}),
-      ...(business ? { business } : {}),
-    };
-    const { error: updateError } = await admin.from("restaurant_paymongo_accounts").update({
-      onboarding_data: savedData,
+        const { error: updateError } = await admin.from("restaurant_paymongo_accounts").update({
       activation_status: String(attrs.activation_status ?? connection.activation_status ?? "").trim() || null,
       identity_verification_status: String(attrs.person?.identity_verification_status ?? connection.identity_verification_status ?? "").trim() || null,
       onboarding_step: "activation",
