@@ -132,6 +132,22 @@ Deno.serve(async (request) => {
     }
 
     const invitedUserId = inviteData.user.id;
+
+    // Bind the pending tenant invitation to the Auth user created by generateLink().
+    // The onboarding RPC intentionally requires this exact user id so the invitation
+    // cannot be claimed by another account.
+    const { error: bindInvitationError } = await adminClient
+      .from("tenant_invitations")
+      .update({ auth_user_id: invitedUserId, updated_at: new Date().toISOString() })
+      .eq("id", invitation.id)
+      .eq("status", "pending");
+
+    if (bindInvitationError) {
+      await adminClient.auth.admin.deleteUser(invitedUserId, false);
+      await adminClient.from("tenant_invitations").delete().eq("id", invitation.id);
+      return jsonResponse({ error: bindInvitationError.message }, 400);
+    }
+
     const safeInvitationUrl =
       redirectTo + "&token_hash=" + encodeURIComponent(inviteData.properties.hashed_token) + "&type=invite";
 
