@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { MapboxDeliveryLocationPicker, type MapboxDeliveryAddress } from '../components/MapboxDeliveryLocationPicker';
+import { PayMongoLiveOnboardingCard } from '../components/PayMongoLiveOnboardingCard';
 
 type Props = {
   restaurantId: string;
@@ -805,35 +806,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
 
 
-        <div className="restaurant-settings-card restaurant-paymongo-card">
-          <h2>PayMongo Production Payments</h2>
-          <p className="restaurant-settings-help">This connects this restaurant to its own live PayMongo merchant account. Web2Table never asks the restaurant owner to paste a PayMongo secret key.</p>
-          <div className="restaurant-paymongo-status">
-            <div>
-              <strong>Live environment</strong>
-              <span className={`restaurant-paymongo-badge is-${paymongoLiveStatus}`}>{paymongoLiveStatus.replace('_', ' ')}</span>
-            </div>
-            {paymongoLiveAccountId && <small>Connected account: {paymongoLiveAccountId}</small>}
-            {paymongoLiveStep && <small>Onboarding step: {paymongoLiveStep.replace('_', ' ')}</small>}
-            {paymongoLiveIdentityStatus && <small>Identity verification: {paymongoLiveIdentityStatus.replaceAll('_', ' ')}</small>}
-          </div>
-          <div className="restaurant-paymongo-actions">
-            {(paymongoLiveStatus === 'not_connected' || paymongoLiveStatus === 'error' || paymongoLiveStatus === 'revoked') && (
-              <button type="button" className="button button-primary" disabled={paymongoBusy || loading || saving} onClick={() => void startPayMongoLiveConnection()}>
-                {paymongoBusy ? 'Starting…' : 'Start Live Onboarding'}
-              </button>
-            )}
-            {paymongoLiveVerificationUrl && paymongoLiveStep === 'identity_verification' && (
-              <a className="button button-secondary" href={paymongoLiveVerificationUrl} target="_blank" rel="noreferrer">Open PayMongo Verification</a>
-            )}
-            {paymongoLiveStatus !== 'active' && paymongoLiveStatus !== 'not_connected' && (
-              <button type="button" className="button button-primary" disabled={paymongoBusy} onClick={() => void syncPayMongoLiveConnection()}>
-                {paymongoBusy ? 'Checking…' : 'Refresh Live Status'}
-              </button>
-            )}
-          </div>
-          <p className="restaurant-settings-help" style={{ marginTop: 12 }}>Production activation is intentionally separate from the working test checkout. The owner must complete PayMongo identity verification and required merchant information before live payments can be enabled.</p>
-        </div>
+        <PayMongoLiveOnboardingCard restaurantId={restaurantId} />
 
         <div className="restaurant-settings-card">
           <h2>Cash on Delivery</h2>
