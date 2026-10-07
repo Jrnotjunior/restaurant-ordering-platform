@@ -13,6 +13,11 @@ export function TenantInviteLandingPage() {
   const tokenType = params.get('type') ?? '';
   const tenantFlow = params.get('flow') === 'tenant-owner' || params.get('tenant-owner-access') === '1';
 
+  function getAuthHashParams() {
+    if (typeof window === 'undefined') return new URLSearchParams();
+    return new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  }
+
   const [accepting, setAccepting] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
@@ -28,7 +33,7 @@ export function TenantInviteLandingPage() {
     let timer: ReturnType<typeof setTimeout> | null = null;
     let attempts = 0;
 
-    async function detectRecoverySession() {
+    async function detectAuthSession() {
       const { data, error: sessionError } = await supabase!.auth.getSession();
       if (cancelled) return;
 
@@ -39,18 +44,21 @@ export function TenantInviteLandingPage() {
       }
 
       attempts += 1;
-      if (attempts < 10) {
-        timer = setTimeout(() => void detectRecoverySession(), 200);
+      if (attempts < 20) {
+        timer = setTimeout(() => void detectAuthSession(), 200);
       } else {
+        const hash = getAuthHashParams();
+        const authError = hash.get('error_description') || hash.get('error');
+        if (authError) setError(decodeURIComponent(authError.replace(/\+/g, ' ')));
         setCheckingSession(false);
       }
     }
 
-    void detectRecoverySession();
+    void detectAuthSession();
 
     const { data: authState } = supabase.auth.onAuthStateChange((event, session) => {
       if (cancelled) return;
-      if ((event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') && session) {
+      if ((event === 'INITIAL_SESSION' || event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') && session) {
         setSessionReady(true);
         setCheckingSession(false);
       }
@@ -73,10 +81,23 @@ export function TenantInviteLandingPage() {
       return;
     }
 
+    const hash = getAuthHashParams();
+    const accessToken = hash.get('access_token');
+    const refreshToken = hash.get('refresh_token');
+    const hashType = hash.get('type');
+    const hashError = hash.get('error_description') || hash.get('error');
+
+    if (hashError) {
+      setError(decodeURIComponent(hashError.replace(/\+/g, ' ')));
+      setAccepting(false);
+      return;
+    }
+
     if (tokenHash) {
+      const verifyType = tokenType || 'recovery';
       const { error: verifyError } = await supabase.auth.verifyOtp({
         token_hash: tokenHash,
-        type: (tokenType || 'recovery') as EmailOtpType,
+        type: verifyType as EmailOtpType,
       });
 
       if (verifyError) {
@@ -90,12 +111,7 @@ export function TenantInviteLandingPage() {
       return;
     }
 
-    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-    const accessToken = hash.get('access_token');
-    const refreshToken = hash.get('refresh_token');
-    const hashType = hash.get('type');
-
-    if ((hashType === 'recovery' || hashType === 'invite') && accessToken && refreshToken) {
+    if (accessToken && refreshToken && (hashType === 'recovery' || hashType === 'invite' || hashType === 'magiclink')) {
       const { error: sessionError } = await supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken,
@@ -112,9 +128,8 @@ export function TenantInviteLandingPage() {
       return;
     }
 
-    // Backward-compatible path for the original scanner-safe landing page.
-    // New tenant access emails should use token_hash instead.
     if (sessionReady) {
+      window.history.replaceState({}, document.title, window.location.pathname);
       window.location.hash = '#restaurant/owner';
       return;
     }
@@ -124,7 +139,7 @@ export function TenantInviteLandingPage() {
       return;
     }
 
-    setError('This access link is incomplete. Please use the latest email from the Web2Table System Administrator.');
+    setError('The secure tenant access link did not create a session. Please open the newest access link directly, without refreshing the page.');
     setAccepting(false);
   }
 
@@ -139,17 +154,13 @@ export function TenantInviteLandingPage() {
 
         {error && <div className="error-banner">{error}</div>}
 
-        {confirmationUrl || tokenHash || sessionReady || checkingSession || (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) ? (
+        {confirmationUrl || tokenHash || sessionReady || checkingSession || tenantFlow || (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) ? (
           <div className="modal-actions">
             <button type="button" onClick={() => void acceptInvitation()} disabled={accepting || checkingSession}>
               {accepting ? 'Opening secure access…' : checkingSession ? 'Checking secure access…' : tenantFlow ? 'Continue to restaurant' : 'Accept invitation'}
             </button>
           </div>
-        ) : (
-          <div className="error-banner">
-            This access link is incomplete. Please use the latest email from the Web2Table System Administrator.
-          </div>
-        )}
+        ) : null}
       </div>
     </section>
   );
