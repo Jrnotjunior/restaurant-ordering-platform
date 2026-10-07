@@ -485,10 +485,10 @@ function PublicCustomerRouteGuard({ children, restaurantId }: { children: ReactN
     }
   }, [checking, staffRole]);
 
-  if (!restaurantId) {
-    return <section className="restaurant-owner-auth-loading">Loading restaurant…</section>;
-  }
-
+  // Public storefront content should render immediately while the background
+  // access check runs. Showing an auth/loading screen here causes the menu to
+  // visibly flicker whenever auth or restaurant state finishes initializing.
+  // Staff/owner redirects still happen in the effect once their account is known.
   if (staffRole) {
     return <section className="restaurant-owner-auth-loading">Redirecting to your workspace…</section>;
   }
