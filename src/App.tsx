@@ -663,63 +663,41 @@ function AppContent() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!isSupabaseConfigured || !supabase || !restaurant.id) return;
-
-    const channel = supabase
-      .channel(`public-restaurant-settings:${restaurant.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'restaurants',
-          filter: `id=eq.${restaurant.id}`,
-        },
-        (payload) => {
-          const next = payload.new as {
-            ordering_enabled?: boolean;
-            operating_hours?: RestaurantConfig['operatingHours'];
-          };
-
-          setRestaurant((current) => ({
-            ...current,
-            orderingEnabled: next.ordering_enabled !== false,
-            operatingHours: next.operating_hours ?? current.operatingHours,
-          }));
-        },
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [restaurant.id]);
-
-  const [restaurantOpen, setRestaurantOpen] = useState(() => (
-    restaurant.orderingEnabled !== false && isRestaurantCurrentlyOpen(restaurant.operatingHours)
-  ));
   const [showStoreClosedModal, setShowStoreClosedModal] = useState(false);
 
-  useEffect(() => {
-    const updateRestaurantOpen = () => {
-      const manuallyOpen = restaurant.orderingEnabled !== false;
-      const scheduleOpen = isRestaurantCurrentlyOpen(restaurant.operatingHours);
-      setRestaurantOpen(manuallyOpen && scheduleOpen);
-    };
-
-    updateRestaurantOpen();
-    const timer = window.setInterval(updateRestaurantOpen, 30_000);
-    return () => window.clearInterval(timer);
-  }, [restaurant.orderingEnabled, restaurant.operatingHours]);
-
   const cartCount = useMemo(() => cartItems.reduce((total, item) => total + item.quantity, 0), [cartItems]);
-  function addToCart(product: RestaurantProduct) {
-    if (!restaurantOpen) {
+  async function addToCart(product: RestaurantProduct) {
+    let storeOpen = true;
+
+    if (supabase && restaurant.id) {
+      const { data, error } = await supabase
+        .from('restaurants')
+        .select('ordering_enabled,operating_hours')
+        .eq('id', restaurant.id)
+        .single();
+
+      if (error) {
+        console.error('Unable to verify store status before adding to cart.', error);
+        storeOpen = false;
+      } else {
+        storeOpen = data?.ordering_enabled !== false && isRestaurantCurrentlyOpen(data?.operating_hours as RestaurantConfig['operatingHours'] | undefined);
+      }
+    } else {
+      storeOpen = isRestaurantCurrentlyOpen(restaurant.operatingHours);
+    }
+
+    if (!storeOpen) {
       setShowStoreClosedModal(true);
       return;
     }
-    setCartItems((current) => { const existing = current.find((item) => item.product.id === product.id); if (existing) return current.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item); return [...current, { product, quantity: 1 }]; }); setCartNotification(`${product.name} added to cart`); }
+
+    setCartItems((current) => {
+      const existing = current.find((item) => item.product.id === product.id);
+      if (existing) return current.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
+      return [...current, { product, quantity: 1 }];
+    });
+    setCartNotification(`${product.name} added to cart`);
+  }
   function changeQuantity(productId: string, delta: number) { setCartItems((current) => current.map((item) => item.product.id === productId ? { ...item, quantity: item.quantity + delta } : item).filter((item) => item.quantity > 0)); }
   function removeFromCart(productId: string) { setCartItems((current) => current.filter((item) => item.product.id !== productId)); }
 
