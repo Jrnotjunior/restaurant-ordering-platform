@@ -99,9 +99,6 @@ Deno.serve(async (request) => {
 
       if (existingAuth.user.email_confirmed_at || existingAuth.user.confirmed_at) {
         const redirectTo =
-          "https://jrnotjunior.github.io/restaurant-ordering-platform/#restaurant/owner";
-
-        const redirectTo =
           "https://jrnotjunior.github.io/restaurant-ordering-platform/?tenant-owner-access=1";
 
         const { error: recoveryError } = await emailClient.auth.resetPasswordForEmail(email, {
@@ -162,9 +159,6 @@ Deno.serve(async (request) => {
       }
 
       if (existingAuth.user.email_confirmed_at || existingAuth.user.confirmed_at) {
-        const redirectTo =
-          "https://jrnotjunior.github.io/restaurant-ordering-platform/?tenant-invite=1";
-
         const redirectTo =
           "https://jrnotjunior.github.io/restaurant-ordering-platform/?tenant-owner-access=1";
 
