@@ -113,15 +113,32 @@ Deno.serve(async (request) => {
 
     if (deleteRiderError) throw deleteRiderError;
 
-    // The database relation uses ON DELETE SET NULL, so removing the staff rider row
-    // does not remove the Supabase Auth account. Delete that account explicitly.
+    // Removing a staff role must not delete an Auth account that still has
+    // another application role (for example Customer or Restaurant Owner).
     if (rider.auth_user_id) {
-      const { error: deleteAuthError } = await adminClient.auth.admin.deleteUser(rider.auth_user_id);
-      if (deleteAuthError) {
-        console.error("delete-rider auth cleanup error", deleteAuthError);
+      const { data: hasOtherRole, error: roleCheckError } = await adminClient.rpc(
+        "auth_user_has_application_role",
+        { p_user_id: rider.auth_user_id },
+      );
+
+      if (roleCheckError) {
+        console.error("delete-rider role check error", roleCheckError);
         return jsonResponse({
-          error: `Rider record was deleted, but the Auth account could not be removed: ${deleteAuthError.message}`,
+          error: `Rider record was deleted, but the Auth account role could not be verified: ${roleCheckError.message}`,
         }, 500);
+      }
+
+      if (hasOtherRole !== true) {
+        const { error: deleteAuthError } = await adminClient.auth.admin.deleteUser(
+          rider.auth_user_id,
+        );
+
+        if (deleteAuthError) {
+          console.error("delete-rider auth cleanup error", deleteAuthError);
+          return jsonResponse({
+            error: `Rider record was deleted, but the Auth account could not be removed: ${deleteAuthError.message}`,
+          }, 500);
+        }
       }
     }
 
