@@ -524,16 +524,16 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
               <div>{printOrder.customerName}</div>
             </div>
             <hr className="pos-receipt-divider" />
+            {printOrder.notes && (
+              <>
+                <div className="pos-receipt-label">Special instructions</div>
+                <div>{printOrder.notes}</div>
+                <hr className="pos-receipt-divider" />
+              </>
+            )}
             <div>
               {printOrder.items.map((item) => (
-                {printOrder.notes && (
-               <>
-                 <div className="pos-receipt-label">Special instructions</div>
-                 <div>{printOrder.notes}</div>
-                 <hr className="pos-receipt-divider" />
-               </>
-             )}
-                 <div className="pos-receipt-kitchen-item" key={item.product.id}>
+                <div className="pos-receipt-kitchen-item" key={item.product.id}>
                   <strong>{item.quantity} ×</strong>
                   <span>{item.product.name}</span>
                 </div>
@@ -563,16 +563,16 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             </div>
             <div className="pos-receipt-row"><span>Cashier</span><span>{printOrder.cashierName}</span></div>
             <hr className="pos-receipt-divider" />
+            {printOrder.notes && (
+              <>
+                <div className="pos-receipt-label">Special instructions</div>
+                <div>{printOrder.notes}</div>
+                <hr className="pos-receipt-divider" />
+              </>
+            )}
             <div>
               {printOrder.items.map((item) => (
-                {printOrder.notes && (
-               <>
-                 <div className="pos-receipt-label">Special instructions</div>
-                 <div>{printOrder.notes}</div>
-                 <hr className="pos-receipt-divider" />
-               </>
-             )}
-                 <div className="pos-receipt-row" key={item.product.id}>
+                <div className="pos-receipt-row" key={item.product.id}>
                   <span>{item.quantity} × {item.product.name}</span>
                   <span>₱{(item.product.price * item.quantity).toFixed(2)}</span>
                 </div>
