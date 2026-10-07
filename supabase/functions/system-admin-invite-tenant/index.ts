@@ -83,8 +83,8 @@ Deno.serve(async (request) => {
     if (pendingLookupError) throw pendingLookupError;
 
     // Existing tenant invitation + existing confirmed Auth account:
-    // never delete/recreate the account. Use the same recovery-email flow
-    // already used by Store Owner -> Employee invitations.
+    // never delete/recreate the account. Generate a one-time magic link that
+    // signs the existing owner in and redirects back to the tenant callback.
     if (existingPending?.auth_user_id) {
       const { data: existingAuth, error: existingAuthError } =
         await adminClient.auth.admin.getUserById(existingPending.auth_user_id);
@@ -97,20 +97,20 @@ Deno.serve(async (request) => {
         const redirectTo =
           "https://jrnotjunior.github.io/restaurant-ordering-platform/?tenant-owner-access=1";
 
-        const { data: recoveryData, error: recoveryError } = await adminClient.auth.admin.generateLink({
-          type: "recovery",
+        const { data: accessData, error: accessError } = await adminClient.auth.admin.generateLink({
+          type: "magiclink",
           email,
           options: { redirectTo },
         });
 
-        if (recoveryError || !recoveryData?.properties?.action_link) {
-          return jsonResponse({ error: recoveryError?.message ?? "Unable to generate secure tenant access link." }, 400);
+        if (accessError || !accessData?.properties?.action_link) {
+          return jsonResponse({ error: accessError?.message ?? "Unable to generate secure tenant access link." }, 400);
         }
 
         return jsonResponse({
           success: true,
           resent: true,
-          manual_access_link: recoveryData.properties.action_link,
+          manual_access_link: accessData.properties.action_link,
           invitation_id: existingPending.id,
           email,
           restaurant_id: existingPending.restaurant_id,
@@ -120,8 +120,8 @@ Deno.serve(async (request) => {
     }
 
     // Existing accepted tenant invitation: the tenant already exists.
-    // Send a fresh recovery email instead of attempting to create another
-    // Auth account or restaurant.
+    // Generate a one-time magic link for the existing owner instead of
+    // attempting to create another Auth account or restaurant.
     const { data: existingAccepted, error: acceptedLookupError } = await adminClient
       .from("tenant_invitations")
       .select("id,restaurant_id,auth_user_id,expires_at,status")
@@ -161,21 +161,21 @@ Deno.serve(async (request) => {
         const redirectTo =
           "https://jrnotjunior.github.io/restaurant-ordering-platform/?tenant-owner-access=1";
 
-        const { data: recoveryData, error: recoveryError } = await adminClient.auth.admin.generateLink({
-          type: "recovery",
+        const { data: accessData, error: accessError } = await adminClient.auth.admin.generateLink({
+          type: "magiclink",
           email,
           options: { redirectTo },
         });
 
-        if (recoveryError || !recoveryData?.properties?.action_link) {
-          return jsonResponse({ error: recoveryError?.message ?? "Unable to generate secure tenant access link." }, 400);
+        if (accessError || !accessData?.properties?.action_link) {
+          return jsonResponse({ error: accessError?.message ?? "Unable to generate secure tenant access link." }, 400);
         }
 
         return jsonResponse({
           success: true,
           resent: true,
           existing_tenant: true,
-          manual_access_link: recoveryData.properties.action_link,
+          manual_access_link: accessData.properties.action_link,
           invitation_id: existingAccepted.id,
           email,
           restaurant_id: existingAccepted.restaurant_id,
