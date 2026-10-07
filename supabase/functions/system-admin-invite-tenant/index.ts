@@ -56,7 +56,7 @@ Deno.serve(async (request) => {
     const slug = typeof body.slug === "string" ? body.slug.trim().toLowerCase() : "";
     const packageId = Number(body.package_id);
 
-    if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return jsonResponse({ error: "Please enter a valid tenant owner email address." }, 400);
     }
 
