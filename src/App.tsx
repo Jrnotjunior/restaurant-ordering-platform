@@ -607,8 +607,9 @@ function AppContent() {
   const isTenantInviteLandingPage =
     searchParams.has('confirmation_url') ||
     searchParams.has('token_hash') ||
-    searchParams.get('tenant-owner-access') === '1';
-  const isTenantInvitePage = searchParams.get('tenant-invite') === '1' || hashParams.get('type') === 'invite' || (isInviteCallback && !isRiderInvitePath && searchParams.get('invite') !== '1' && !isEmployeeInvitePage);
+    searchParams.get('tenant-owner-access') === '1' ||
+    (searchParams.get('tenant-invite') === '1' && searchParams.get('tenant-onboarding') !== '1');
+  const isTenantInvitePage = (searchParams.get('tenant-invite') === '1' && searchParams.get('tenant-onboarding') === '1') || hashParams.get('type') === 'invite' || (isInviteCallback && !isRiderInvitePath && searchParams.get('invite') !== '1' && !isEmployeeInvitePage);
   const isRestaurantOperationsPage = isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantSalesPage || isRestaurantDeliveryDispatchPage || isRestaurantSettingsPage || isRestaurantWebsiteCustomizationPage || isRestaurantLoyaltyPage || isRestaurantEmployeesPage;
   const trackingMatch = route.match(/^#order\/(.+)$/);
 
@@ -787,5 +788,20 @@ function AppContent() {
   return <PublicCustomerRouteGuard>{publicPage}</PublicCustomerRouteGuard>;
 }
 
-export function App() { return <AppContent />; }
+export function App() {
+  const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+  const isTenantCallback =
+    searchParams.get('tenant-owner-access') === '1' ||
+    (searchParams.get('tenant-invite') === '1' && searchParams.get('tenant-onboarding') !== '1');
+
+  if (isTenantCallback) {
+    return <TenantInviteLandingPage />;
+  }
+
+  return (
+    <RestaurantOwnerAuthProvider>
+      <AppContent />
+    </RestaurantOwnerAuthProvider>
+  );
+}
 export { RestaurantOwnerAuthProvider };
