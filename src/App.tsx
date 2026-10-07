@@ -601,9 +601,9 @@ function AppContent() {
   const isRiderDashboardPage = route === '#rider/dashboard' || route === '#rider/delivery-preview';
   const riderDeliveryMatch = route.match(/^#rider\/delivery\/([^/]+)$/);
   const isRiderInvitePath = window.location.pathname.endsWith('/invite') || window.location.pathname.endsWith('/invite/');
-  const isRiderInvitePage = isRiderInvitePath || searchParams.get('invite') === '1' || isInviteCallback;
+  const isRiderInvitePage = isRiderInvitePath || searchParams.get('invite') === '1';
   const isEmployeeInvitePage = window.location.pathname.endsWith('/employee-invite') || window.location.pathname.endsWith('/employee-invite/') || searchParams.get('employee-invite') === '1';
-  const isTenantInvitePage = searchParams.get('tenant-invite') === '1' || hashParams.get('type') === 'invite';
+  const isTenantInvitePage = searchParams.get('tenant-invite') === '1' || hashParams.get('type') === 'invite' || (isInviteCallback && !isRiderInvitePath && searchParams.get('invite') !== '1' && !isEmployeeInvitePage);
   const isRestaurantOperationsPage = isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantSalesPage || isRestaurantDeliveryDispatchPage || isRestaurantSettingsPage || isRestaurantWebsiteCustomizationPage || isRestaurantLoyaltyPage || isRestaurantEmployeesPage;
   const trackingMatch = route.match(/^#order\/(.+)$/);
 
