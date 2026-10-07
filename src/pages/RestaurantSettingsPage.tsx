@@ -355,6 +355,24 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     setPaymongoBusy(true);
     setPaymongoError('');
     try {
+      const simulatedTestAccount = (() => {
+        try {
+          const raw = window.localStorage.getItem(paymongoTestStorageKey);
+          return raw ? JSON.parse(raw) as { accountId?: string; status?: string } : null;
+        } catch {
+          return null;
+        }
+      })();
+
+      if (simulatedTestAccount?.status === 'active' && simulatedTestAccount.accountId) {
+        setPaymongoTestStatus('active');
+        setPaymongoTestAccountId(simulatedTestAccount.accountId);
+        setPaymongoTestInvitationId('');
+        setPaymongoTestSignupUrl('');
+        setMessage('PayMongo test connection is ready. Test mode uses a simulated merchant account; no real identity verification is required.');
+        return;
+      }
+
       const { data, error: invokeError } = await supabase.functions.invoke('sync-paymongo-linking-invitation', {
         body: { restaurantId, environment: 'test' },
       });
