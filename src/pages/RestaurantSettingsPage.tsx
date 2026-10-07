@@ -208,6 +208,11 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [error, setError] = useState('');
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
   const [paymongoTestStatus, setPaymongoTestStatus] = useState("not_connected");
+  const [paymongoLiveStatus, setPaymongoLiveStatus] = useState("not_connected");
+  const [paymongoLiveAccountId, setPaymongoLiveAccountId] = useState("");
+  const [paymongoLiveVerificationUrl, setPaymongoLiveVerificationUrl] = useState("");
+  const [paymongoLiveStep, setPaymongoLiveStep] = useState("");
+  const [paymongoLiveIdentityStatus, setPaymongoLiveIdentityStatus] = useState("");
   const [paymongoTestAccountId, setPaymongoTestAccountId] = useState("");
   const [paymongoTestInvitationId, setPaymongoTestInvitationId] = useState("");
   const [paymongoTestSignupUrl, setPaymongoTestSignupUrl] = useState("");
@@ -362,6 +367,90 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       }
     } catch (syncError) {
       setPaymongoError(syncError instanceof Error ? syncError.message : 'Unable to check PayMongo onboarding.');
+    } finally {
+      setPaymongoBusy(false);
+    }
+  }
+
+
+
+  async function startPayMongoLiveConnection() {
+    if (!supabase) {
+      setPaymongoError('Supabase is not configured.');
+      return;
+    }
+
+    setPaymongoBusy(true);
+    setPaymongoError('');
+    setMessage('');
+    try {
+      const { data, error: invokeError } = await supabase.functions.invoke('create-paymongo-child-account', {
+        body: { restaurantId },
+      });
+      if (invokeError) {
+        const response = (invokeError as { context?: Response }).context;
+        if (response) {
+          const responseBody = await response.clone().json().catch(() => null);
+          if (typeof responseBody?.error === 'string' && responseBody.error.trim()) {
+            throw new Error(responseBody.error);
+          }
+        }
+        throw invokeError;
+      }
+
+      setPaymongoLiveStatus(data?.status ?? 'pending');
+      setPaymongoLiveAccountId(data?.paymongoAccountId ?? '');
+      setPaymongoLiveVerificationUrl(data?.verificationUrl ?? '');
+      setPaymongoLiveStep(data?.onboardingStep ?? 'identity_verification');
+      setPaymongoLiveIdentityStatus(data?.identityVerificationStatus ?? 'pending');
+
+      if (data?.verificationUrl) {
+        window.open(data.verificationUrl, '_blank', 'noopener,noreferrer');
+        setMessage('PayMongo merchant onboarding has started. Complete identity verification in the PayMongo window, then return here and refresh the status.');
+      } else if (data?.status === 'active') {
+        setMessage('PayMongo live account is already active.');
+      }
+    } catch (connectError) {
+      setPaymongoError(connectError instanceof Error ? connectError.message : 'Unable to start PayMongo live onboarding.');
+    } finally {
+      setPaymongoBusy(false);
+    }
+  }
+
+  async function syncPayMongoLiveConnection() {
+    if (!supabase) return;
+    setPaymongoBusy(true);
+    setPaymongoError('');
+    try {
+      const { data, error: invokeError } = await supabase.functions.invoke('sync-paymongo-child-account', {
+        body: { restaurantId },
+      });
+      if (invokeError) {
+        const response = (invokeError as { context?: Response }).context;
+        if (response) {
+          const responseBody = await response.clone().json().catch(() => null);
+          if (typeof responseBody?.error === 'string' && responseBody.error.trim()) {
+            throw new Error(responseBody.error);
+          }
+        }
+        throw invokeError;
+      }
+
+      setPaymongoLiveStatus(data?.status ?? 'pending');
+      setPaymongoLiveAccountId(data?.paymongoAccountId ?? '');
+      setPaymongoLiveVerificationUrl(data?.verificationUrl ?? '');
+      setPaymongoLiveStep(data?.onboardingStep ?? '');
+      setPaymongoLiveIdentityStatus(data?.identityVerificationStatus ?? '');
+
+      if (data?.status === 'active') {
+        setMessage('PayMongo live account is active and ready for online payments.');
+      } else if (data?.onboardingStep === 'business_information') {
+        setMessage('Identity verification passed. The PayMongo business information step is ready.');
+      } else {
+        setMessage(data?.activationStatus ? `PayMongo onboarding status: ${data.activationStatus}.` : 'PayMongo live onboarding is still in progress.');
+      }
+    } catch (syncError) {
+      setPaymongoError(syncError instanceof Error ? syncError.message : 'Unable to check PayMongo live onboarding.');
     } finally {
       setPaymongoBusy(false);
     }
@@ -712,6 +801,38 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
             )}
           </div>
           <p className="restaurant-settings-help" style={{ marginTop: 12 }}>Test mode uses a PayMongo simulated merchant account, so no real identity verification is required. Production live payments will use the same restaurant-specific architecture with real merchant onboarding after the platform is ready for launch.</p>
+        </div>
+
+
+
+        <div className="restaurant-settings-card restaurant-paymongo-card">
+          <h2>PayMongo Production Payments</h2>
+          <p className="restaurant-settings-help">This connects this restaurant to its own live PayMongo merchant account. Web2Table never asks the restaurant owner to paste a PayMongo secret key.</p>
+          <div className="restaurant-paymongo-status">
+            <div>
+              <strong>Live environment</strong>
+              <span className={`restaurant-paymongo-badge is-${paymongoLiveStatus}`}>{paymongoLiveStatus.replace('_', ' ')}</span>
+            </div>
+            {paymongoLiveAccountId && <small>Connected account: {paymongoLiveAccountId}</small>}
+            {paymongoLiveStep && <small>Onboarding step: {paymongoLiveStep.replace('_', ' ')}</small>}
+            {paymongoLiveIdentityStatus && <small>Identity verification: {paymongoLiveIdentityStatus.replaceAll('_', ' ')}</small>}
+          </div>
+          <div className="restaurant-paymongo-actions">
+            {(paymongoLiveStatus === 'not_connected' || paymongoLiveStatus === 'error' || paymongoLiveStatus === 'revoked') && (
+              <button type="button" className="button button-primary" disabled={paymongoBusy || loading || saving} onClick={() => void startPayMongoLiveConnection()}>
+                {paymongoBusy ? 'Starting…' : 'Start Live Onboarding'}
+              </button>
+            )}
+            {paymongoLiveVerificationUrl && paymongoLiveStep === 'identity_verification' && (
+              <a className="button button-secondary" href={paymongoLiveVerificationUrl} target="_blank" rel="noreferrer">Open PayMongo Verification</a>
+            )}
+            {paymongoLiveStatus !== 'active' && paymongoLiveStatus !== 'not_connected' && (
+              <button type="button" className="button button-primary" disabled={paymongoBusy} onClick={() => void syncPayMongoLiveConnection()}>
+                {paymongoBusy ? 'Checking…' : 'Refresh Live Status'}
+              </button>
+            )}
+          </div>
+          <p className="restaurant-settings-help" style={{ marginTop: 12 }}>Production activation is intentionally separate from the working test checkout. The owner must complete PayMongo identity verification and required merchant information before live payments can be enabled.</p>
         </div>
 
         <div className="restaurant-settings-card">
