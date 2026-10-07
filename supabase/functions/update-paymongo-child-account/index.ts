@@ -56,7 +56,7 @@ Deno.serve(async (request) => {
     if (!restaurant || restaurant.owner_id !== userId) return json({ error: "You do not have access to this restaurant." }, 403);
 
     const { data: connection, error: connectionError } = await admin.from("restaurant_paymongo_accounts")
-      .select("paymongo_account_id,connection_status,activation_status,identity_verification_status,onboarding_step,onboarding_data")
+      .select("paymongo_account_id,connection_status,activation_status,identity_verification_status,onboarding_step")
       .eq("restaurant_id", restaurantId).eq("environment", "live").maybeSingle();
     if (connectionError) throw connectionError;
     if (!connection?.paymongo_account_id) return json({ error: "PayMongo onboarding has not been started." }, 409);
