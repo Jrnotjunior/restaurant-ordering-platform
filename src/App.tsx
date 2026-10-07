@@ -778,7 +778,7 @@ function AppContent() {
   // Order tracking is a public customer page. It must not wait for employee
   // access checks, so navigating from the header never shows an account guard.
   if (trackOrderNumber || trackingMatch) return publicPage;
-  return <PublicCustomerRouteGuard restaurantId={restaurant.id!}>{publicPage}</PublicCustomerRouteGuard>;
+  return <PublicCustomerRouteGuard>{publicPage}</PublicCustomerRouteGuard>;
 }
 
 export function App() { return <AppContent />; }
