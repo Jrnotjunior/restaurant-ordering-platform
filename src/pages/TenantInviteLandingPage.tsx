@@ -11,7 +11,9 @@ export function TenantInviteLandingPage() {
   const confirmationUrl = params.get('confirmation_url') ?? '';
   const tokenHash = params.get('token_hash') ?? '';
   const tokenType = params.get('type') ?? '';
+  const tenantInviteFlow = params.get('tenant-invite') === '1';
   const tenantFlow = params.get('flow') === 'tenant-owner' || params.get('tenant-owner-access') === '1';
+  const authCode = params.get('code') ?? '';
 
   function getAuthHashParams() {
     if (typeof window === 'undefined') return new URLSearchParams();
@@ -93,6 +95,23 @@ export function TenantInviteLandingPage() {
       return;
     }
 
+    if (authCode) {
+      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(authCode);
+
+      if (exchangeError) {
+        setError(exchangeError.message);
+        setAccepting(false);
+        return;
+      }
+
+      if (tenantInviteFlow) {
+        window.location.replace(window.location.pathname + '?tenant-invite=1&tenant-onboarding=1');
+      } else {
+        window.location.replace(window.location.pathname + '#restaurant/owner');
+      }
+      return;
+    }
+
     if (tokenHash) {
       const verifyType = tokenType || 'recovery';
       const { error: verifyError } = await supabase.auth.verifyOtp({
@@ -106,8 +125,11 @@ export function TenantInviteLandingPage() {
         return;
       }
 
-      window.history.replaceState({}, document.title, window.location.pathname);
-      window.location.hash = '#restaurant/owner';
+      if (tenantInviteFlow) {
+        window.location.replace(window.location.pathname + '?tenant-invite=1&tenant-onboarding=1');
+      } else {
+        window.location.replace(window.location.pathname + '#restaurant/owner');
+      }
       return;
     }
 
@@ -123,14 +145,20 @@ export function TenantInviteLandingPage() {
         return;
       }
 
-      window.history.replaceState({}, document.title, window.location.pathname);
-      window.location.hash = '#restaurant/owner';
+      if (tenantInviteFlow) {
+        window.location.replace(window.location.pathname + '?tenant-invite=1&tenant-onboarding=1');
+      } else {
+        window.location.replace(window.location.pathname + '#restaurant/owner');
+      }
       return;
     }
 
     if (sessionReady) {
-      window.history.replaceState({}, document.title, window.location.pathname);
-      window.location.hash = '#restaurant/owner';
+      if (tenantInviteFlow) {
+        window.location.replace(window.location.pathname + '?tenant-invite=1&tenant-onboarding=1');
+      } else {
+        window.location.replace(window.location.pathname + '#restaurant/owner');
+      }
       return;
     }
 
@@ -147,9 +175,11 @@ export function TenantInviteLandingPage() {
     <section className="restaurant-owner-auth-no-restaurant">
       <div className="restaurant-owner-auth-no-restaurant-card" style={{ maxWidth: 620, width: '100%' }}>
         <p className="eyebrow">Tenant access</p>
-        <h1>{tenantFlow ? 'Continue to your restaurant.' : 'Accept your restaurant invitation.'}</h1>
+        <h1>{tenantFlow ? 'Continue to your restaurant.' : 'You’re invited to Web2Table.'}</h1>
         <p>
-          Your secure access link is ready. Click the button below to continue.
+          {tenantFlow
+            ? 'Your secure access link is ready. Click the button below to continue.'
+            : 'Your restaurant invitation is ready. Click below to accept it and finish setting up your owner account.'}
         </p>
 
         {error && <div className="error-banner">{error}</div>}
@@ -157,7 +187,7 @@ export function TenantInviteLandingPage() {
         {confirmationUrl || tokenHash || sessionReady || checkingSession || tenantFlow || (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) ? (
           <div className="modal-actions">
             <button type="button" onClick={() => void acceptInvitation()} disabled={accepting || checkingSession}>
-              {accepting ? 'Opening secure access…' : checkingSession ? 'Checking secure access…' : tenantFlow ? 'Continue to restaurant' : 'Accept invitation'}
+              {accepting ? 'Opening secure access…' : checkingSession ? 'Checking invitation…' : tenantFlow ? 'Continue to restaurant' : 'Accept invitation'}
             </button>
           </div>
         ) : null}
