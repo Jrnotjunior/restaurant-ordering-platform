@@ -101,17 +101,20 @@ Deno.serve(async (request) => {
         const redirectTo =
           "https://jrnotjunior.github.io/restaurant-ordering-platform/?tenant-owner-access=1";
 
-        const { error: recoveryError } = await emailClient.auth.resetPasswordForEmail(email, {
-          redirectTo,
+        const { data: recoveryData, error: recoveryError } = await adminClient.auth.admin.generateLink({
+          type: "recovery",
+          email,
+          options: { redirectTo },
         });
 
-        if (recoveryError) {
-          return jsonResponse({ error: recoveryError.message }, 400);
+        if (recoveryError || !recoveryData?.properties?.action_link) {
+          return jsonResponse({ error: recoveryError?.message ?? "Unable to generate secure tenant access link." }, 400);
         }
 
         return jsonResponse({
           success: true,
           resent: true,
+          manual_access_link: recoveryData.properties.action_link,
           invitation_id: existingPending.id,
           email,
           restaurant_id: existingPending.restaurant_id,
@@ -162,18 +165,21 @@ Deno.serve(async (request) => {
         const redirectTo =
           "https://jrnotjunior.github.io/restaurant-ordering-platform/?tenant-owner-access=1";
 
-        const { error: recoveryError } = await emailClient.auth.resetPasswordForEmail(email, {
-          redirectTo,
+        const { data: recoveryData, error: recoveryError } = await adminClient.auth.admin.generateLink({
+          type: "recovery",
+          email,
+          options: { redirectTo },
         });
 
-        if (recoveryError) {
-          return jsonResponse({ error: recoveryError.message }, 400);
+        if (recoveryError || !recoveryData?.properties?.action_link) {
+          return jsonResponse({ error: recoveryError?.message ?? "Unable to generate secure tenant access link." }, 400);
         }
 
         return jsonResponse({
           success: true,
           resent: true,
           existing_tenant: true,
+          manual_access_link: recoveryData.properties.action_link,
           invitation_id: existingAccepted.id,
           email,
           restaurant_id: existingAccepted.restaurant_id,
