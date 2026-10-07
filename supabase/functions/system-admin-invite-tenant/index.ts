@@ -31,16 +31,10 @@ Deno.serve(async (request) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const secretKey = getSecretKey();
-    const publishableKey =
-      Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ??
-      Deno.env.get("SUPABASE_ANON_KEY") ??
-      "";
+    const publishableKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+    if (!supabaseUrl || !secretKey || !publishableKey) return jsonResponse({ error: "Supabase server configuration is incomplete." }, 500);
 
-    if (!supabaseUrl || !secretKey || !publishableKey) {
-      return jsonResponse({ error: "Supabase server configuration is incomplete." }, 500);
-    }
-
-    const token = authorization.replace(/^Bearer\s+/i, "");
+    const token = authorization.replace(/^Bearer\\s+/i, "");
     const userClient = createClient(supabaseUrl, publishableKey, {
       global: { headers: { Authorization: authorization } },
       auth: { autoRefreshToken: false, persistSession: false },
@@ -48,16 +42,13 @@ Deno.serve(async (request) => {
     const adminClient = createClient(supabaseUrl, secretKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+
     const { data: userData, error: userError } = await userClient.auth.getUser(token);
-    if (userError || !userData.user) {
-      return jsonResponse({ error: "Your session is no longer valid. Please sign in again." }, 401);
-    }
+    if (userError || !userData.user) return jsonResponse({ error: "Your session is no longer valid. Please sign in again." }, 401);
 
     const { data: isOwner, error: ownerError } = await userClient.rpc("system_admin_is_owner");
     if (ownerError) return jsonResponse({ error: "Unable to verify System Administrator Owner access." }, 500);
-    if (isOwner !== true) {
-      return jsonResponse({ error: "Only the System Administrator Owner can invite a new tenant." }, 403);
-    }
+    if (isOwner !== true) return jsonResponse({ error: "Only the System Administrator Owner can invite a new tenant." }, 403);
 
     const body = await request.json();
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
@@ -65,7 +56,7 @@ Deno.serve(async (request) => {
     const slug = typeof body.slug === "string" ? body.slug.trim().toLowerCase() : "";
     const packageId = Number(body.package_id);
 
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
       return jsonResponse({ error: "Please enter a valid tenant owner email address." }, 400);
     }
 
@@ -81,50 +72,15 @@ Deno.serve(async (request) => {
       .maybeSingle();
 
     if (pendingLookupError) throw pendingLookupError;
-
-    // Existing tenant invitation + existing confirmed Auth account:
-    // never delete/recreate the account. Generate a one-time magic link that
-    // signs the existing owner in and redirects back to the tenant callback.
-    if (existingPending?.auth_user_id) {
-      const { data: existingAuth, error: existingAuthError } =
-        await adminClient.auth.admin.getUserById(existingPending.auth_user_id);
-
-      if (existingAuthError || !existingAuth.user) {
-        return jsonResponse({ error: "The tenant invitation is linked to an Auth account that could not be found." }, 409);
-      }
-
-      if (existingAuth.user.email_confirmed_at || existingAuth.user.confirmed_at) {
-        const redirectTo =
-          "https://jrnotjunior.github.io/restaurant-ordering-platform/?tenant-owner-access=1";
-
-        const { data: accessData, error: accessError } = await adminClient.auth.admin.generateLink({
-          type: "magiclink",
-          email,
-          options: { redirectTo },
-        });
-
-        if (accessError || !accessData?.properties?.action_link) {
-          return jsonResponse({ error: accessError?.message ?? "Unable to generate secure tenant access link." }, 400);
-        }
-
-        return jsonResponse({
-          success: true,
-          resent: true,
-          manual_access_link: accessData.properties.action_link,
-          invitation_id: existingPending.id,
-          email,
-          restaurant_id: existingPending.restaurant_id,
-          status: "pending",
-        });
-      }
+    if (existingPending) {
+      return jsonResponse({
+        error: "A tenant invitation already exists for this email address. This flow creates one invitation only; it does not resend or replace it.",
+      }, 409);
     }
 
-    // Existing accepted tenant invitation: the tenant already exists.
-    // Generate a one-time magic link for the existing owner instead of
-    // attempting to create another Auth account or restaurant.
     const { data: existingAccepted, error: acceptedLookupError } = await adminClient
       .from("tenant_invitations")
-      .select("id,restaurant_id,auth_user_id,expires_at,status")
+      .select("id,restaurant_id,auth_user_id,status")
       .eq("status", "accepted")
       .ilike("email", email)
       .order("created_at", { ascending: false })
@@ -132,81 +88,17 @@ Deno.serve(async (request) => {
       .maybeSingle();
 
     if (acceptedLookupError) throw acceptedLookupError;
-
-    if (existingAccepted?.auth_user_id && existingAccepted.restaurant_id) {
-      const { data: existingRestaurant, error: restaurantLookupError } = await adminClient
-        .from("restaurants")
-        .select("id,owner_id")
-        .eq("id", existingAccepted.restaurant_id)
-        .maybeSingle();
-
-      if (restaurantLookupError) throw restaurantLookupError;
-
-      if (existingRestaurant?.owner_id !== existingAccepted.auth_user_id) {
-        return jsonResponse({
-          error: "This email already has a tenant invitation, but the tenant owner assignment needs to be repaired before access can be resent.",
-        }, 409);
-      }
-
-      const { data: existingAuth, error: existingAuthError } =
-        await adminClient.auth.admin.getUserById(existingAccepted.auth_user_id);
-
-      if (existingAuthError || !existingAuth.user) {
-        return jsonResponse({
-          error: "This tenant owner account could not be found in Supabase Auth.",
-        }, 409);
-      }
-
-      if (existingAuth.user.email_confirmed_at || existingAuth.user.confirmed_at) {
-        const redirectTo =
-          "https://jrnotjunior.github.io/restaurant-ordering-platform/?tenant-owner-access=1";
-
-        const { data: accessData, error: accessError } = await adminClient.auth.admin.generateLink({
-          type: "magiclink",
-          email,
-          options: { redirectTo },
-        });
-
-        if (accessError || !accessData?.properties?.action_link) {
-          return jsonResponse({ error: accessError?.message ?? "Unable to generate secure tenant access link." }, 400);
-        }
-
-        return jsonResponse({
-          success: true,
-          resent: true,
-          existing_tenant: true,
-          manual_access_link: accessData.properties.action_link,
-          invitation_id: existingAccepted.id,
-          email,
-          restaurant_id: existingAccepted.restaurant_id,
-          status: "accepted",
-        });
-      }
-
+    if (existingAccepted) {
       return jsonResponse({
-        error: "This tenant owner account has not completed email confirmation. Send a new tenant invitation only if this account is no longer the intended owner.",
+        error: "This email address already owns an accepted tenant. Sign in to the existing Restaurant Owner account instead of creating another invitation.",
       }, 409);
     }
 
-    if (existingPending && existingPending.restaurant_id == null) {
-      await adminClient
-        .from("tenant_invitations")
-        .update({ status: "expired", updated_at: new Date().toISOString() })
-        .eq("id", existingPending.id)
-        .eq("status", "pending");
-    } else if (existingPending) {
-      return jsonResponse({ error: "A tenant invitation is already pending for this email address." }, 409);
-    }
-
-    // No existing tenant/invitation matched this email, so this is a new tenant.
-    // New tenant creation requires the restaurant details.
     if (name.length < 2) return jsonResponse({ error: "Restaurant name is required for a new tenant." }, 400);
     if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
       return jsonResponse({ error: "Slug must use lowercase letters, numbers, and single hyphens." }, 400);
     }
-    if (!Number.isInteger(packageId) || packageId < 1) {
-      return jsonResponse({ error: "A valid restaurant package is required for a new tenant." }, 400);
-    }
+    if (!Number.isInteger(packageId) || packageId < 1) return jsonResponse({ error: "A valid restaurant package is required for a new tenant." }, 400);
 
     const { data: invitation, error: invitationError } = await adminClient
       .from("tenant_invitations")
@@ -216,53 +108,32 @@ Deno.serve(async (request) => {
 
     if (invitationError) throw invitationError;
 
-    const redirectTo =
-      "https://jrnotjunior.github.io/restaurant-ordering-platform/?tenant-invite=1";
+    // Do not use inviteUserByEmail(). Its built-in email contains a one-time
+    // verification URL that security scanners can consume before the tenant.
+    // generateLink() creates the Auth user/token without sending an email.
+    // We return one safe Web2Table URL for the System Admin to deliver manually.
+    const redirectTo = "https://jrnotjunior.github.io/restaurant-ordering-platform/?tenant-invite=1";
 
-    const { data: inviteData, error: inviteError } =
-      await adminClient.auth.admin.inviteUserByEmail(email, {
+    const { data: inviteData, error: inviteError } = await adminClient.auth.admin.generateLink({
+      type: "invite",
+      email,
+      options: {
         redirectTo,
         data: {
           invitation_type: "tenant_owner",
           tenant_invitation_id: invitation.id,
         },
-      });
+      },
+    });
 
-    if (inviteError) {
+    if (inviteError || !inviteData?.user?.id || !inviteData?.properties?.hashed_token) {
       await adminClient.from("tenant_invitations").delete().eq("id", invitation.id);
-      return jsonResponse({ error: inviteError.message }, 400);
+      return jsonResponse({ error: inviteError?.message ?? "Unable to generate the tenant invitation token." }, 400);
     }
 
-    let invitedUserId = inviteData?.user?.id ?? null;
-
-    if (!invitedUserId) {
-      const { data: usersData, error: usersError } =
-        await adminClient.auth.admin.listUsers({ page: 1, perPage: 1000 });
-      if (!usersError) {
-        invitedUserId =
-          usersData.users.find(
-            (candidate) => candidate.email?.toLowerCase() === email,
-          )?.id ?? null;
-      }
-    }
-
-    if (!invitedUserId) {
-      await adminClient.from("tenant_invitations").delete().eq("id", invitation.id);
-      return jsonResponse({
-        error: "Invitation could not be linked to a Supabase Auth user. No restaurant was created.",
-      }, 500);
-    }
-
-    const { error: linkError } = await adminClient
-      .from("tenant_invitations")
-      .update({ auth_user_id: invitedUserId, updated_at: new Date().toISOString() })
-      .eq("id", invitation.id);
-
-    if (linkError) {
-      await adminClient.auth.admin.deleteUser(invitedUserId, false);
-      await adminClient.from("tenant_invitations").delete().eq("id", invitation.id);
-      throw linkError;
-    }
+    const invitedUserId = inviteData.user.id;
+    const safeInvitationUrl =
+      redirectTo + "&token_hash=" + encodeURIComponent(inviteData.properties.hashed_token) + "&type=invite";
 
     const { data: restaurantData, error: restaurantError } = await userClient.rpc(
       "system_admin_create_restaurant_from_invitation",
@@ -285,7 +156,7 @@ Deno.serve(async (request) => {
 
     await userClient.rpc("system_admin_write_audit_log", {
       p_event_type: "ADMIN_ACTION",
-      p_action: "TENANT_INVITATION_SENT",
+      p_action: "TENANT_INVITATION_CREATED",
       p_restaurant_id: null,
       p_entity_type: "TENANT_INVITATION",
       p_entity_id: invitation.id,
@@ -297,6 +168,7 @@ Deno.serve(async (request) => {
         package_id: packageId,
         invitation_id: invitation.id,
         auth_user_id: invitedUserId,
+        delivery: "manual_safe_link",
       },
     });
 
@@ -308,11 +180,11 @@ Deno.serve(async (request) => {
       restaurant_name: name,
       package_id: packageId,
       status: "pending",
+      manual_access_link: safeInvitationUrl,
+      delivery: "manual_safe_link",
     });
   } catch (error) {
     console.error("system-admin-invite-tenant error", error);
-    return jsonResponse({
-      error: error instanceof Error ? error.message : "Unable to invite tenant.",
-    }, 500);
+    return jsonResponse({ error: error instanceof Error ? error.message : "Unable to invite tenant." }, 500);
   }
 });
