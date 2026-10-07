@@ -100,9 +100,10 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
       try {
         if (typeof window !== 'undefined') {
           const url = new URL(window.location.href);
+          const hashParams = new URLSearchParams(url.hash.replace(/^#/, ''));
           const code = url.searchParams.get('code');
-          const tokenHash = url.searchParams.get('token_hash');
-          const type = url.searchParams.get('type');
+          const tokenHash = url.searchParams.get('token_hash') ?? hashParams.get('token_hash');
+          const type = url.searchParams.get('type') ?? hashParams.get('type');
 
           if (code) {
             const { error: exchangeError } = await client.auth.exchangeCodeForSession(code);
@@ -122,6 +123,10 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
             } else {
               url.searchParams.delete('token_hash');
               url.searchParams.delete('type');
+              const cleanedHash = new URLSearchParams(url.hash.replace(/^#/, ''));
+              cleanedHash.delete('token_hash');
+              cleanedHash.delete('type');
+              url.hash = cleanedHash.toString() ? `#${cleanedHash.toString()}` : '';
               window.history.replaceState({}, document.title, url.toString());
             }
           }
