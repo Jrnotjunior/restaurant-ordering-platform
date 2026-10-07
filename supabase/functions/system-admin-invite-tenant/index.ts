@@ -108,32 +108,30 @@ Deno.serve(async (request) => {
 
     if (invitationError) throw invitationError;
 
-    // Do not use inviteUserByEmail(). Its built-in email contains a one-time
-    // verification URL that security scanners can consume before the tenant.
-    // generateLink() creates the Auth user/token without sending an email.
-    // We return one safe Web2Table URL for the System Admin to deliver manually.
+    // Supabase sends the Invite User email automatically. The hosted Invite User
+    // template must use {{ .TokenHash }} in a Web2Table landing-page URL so
+    // security scanners cannot consume the one-time verification URL.
     const redirectTo = "https://jrnotjunior.github.io/restaurant-ordering-platform/?tenant-invite=1";
 
-    const { data: inviteData, error: inviteError } = await adminClient.auth.admin.generateLink({
-      type: "invite",
+    const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
       email,
-      options: {
+      {
         redirectTo,
         data: {
           invitation_type: "tenant_owner",
           tenant_invitation_id: invitation.id,
         },
       },
-    });
+    );
 
-    if (inviteError || !inviteData?.user?.id || !inviteData?.properties?.hashed_token) {
+    if (inviteError || !inviteData?.user?.id) {
       await adminClient.from("tenant_invitations").delete().eq("id", invitation.id);
-      return jsonResponse({ error: inviteError?.message ?? "Unable to generate the tenant invitation token." }, 400);
+      return jsonResponse({ error: inviteError?.message ?? "Unable to send the tenant invitation email." }, 400);
     }
 
     const invitedUserId = inviteData.user.id;
 
-    // Bind the pending tenant invitation to the Auth user created by generateLink().
+    // Bind the pending tenant invitation to the Auth user created by inviteUserByEmail().
     // The onboarding RPC intentionally requires this exact user id so the invitation
     // cannot be claimed by another account.
     const { error: bindInvitationError } = await adminClient
@@ -147,9 +145,6 @@ Deno.serve(async (request) => {
       await adminClient.from("tenant_invitations").delete().eq("id", invitation.id);
       return jsonResponse({ error: bindInvitationError.message }, 400);
     }
-
-    const safeInvitationUrl =
-      redirectTo + "&token_hash=" + encodeURIComponent(inviteData.properties.hashed_token) + "&type=invite";
 
     const { data: restaurantData, error: restaurantError } = await userClient.rpc(
       "system_admin_create_restaurant_from_invitation",
@@ -184,7 +179,7 @@ Deno.serve(async (request) => {
         package_id: packageId,
         invitation_id: invitation.id,
         auth_user_id: invitedUserId,
-        delivery: "manual_safe_link",
+        delivery: "supabase_invite_email",
       },
     });
 
@@ -196,8 +191,8 @@ Deno.serve(async (request) => {
       restaurant_name: name,
       package_id: packageId,
       status: "pending",
-      manual_access_link: safeInvitationUrl,
-      delivery: "manual_safe_link",
+      email_sent: true,
+      delivery: "supabase_invite_email",
     });
   } catch (error) {
     console.error("system-admin-invite-tenant error", error);
