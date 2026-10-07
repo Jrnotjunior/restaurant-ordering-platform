@@ -87,8 +87,8 @@ Deno.serve(async (request) => {
     if (pendingLookupError) throw pendingLookupError;
 
     // Existing tenant invitation + existing confirmed Auth account:
-    // never delete/recreate the account. Send a fresh one-time magic link
-    // that signs the existing account in and continues tenant onboarding.
+    // never delete/recreate the account. Use the same recovery-email flow
+    // already used by Store Owner -> Employee invitations.
     if (existingPending?.auth_user_id) {
       const { data: existingAuth, error: existingAuthError } =
         await adminClient.auth.admin.getUserById(existingPending.auth_user_id);
@@ -101,20 +101,15 @@ Deno.serve(async (request) => {
         const redirectTo =
           "https://jrnotjunior.github.io/restaurant-ordering-platform/#restaurant/owner";
 
-        const { error: magicLinkError } = await emailClient.auth.signInWithOtp({
-          email,
-          options: {
-            shouldCreateUser: false,
-            emailRedirectTo: redirectTo,
-            data: {
-              invitation_type: "tenant_owner",
-              tenant_invitation_id: existingPending.id,
-            },
-          },
+        const redirectTo =
+          "https://jrnotjunior.github.io/restaurant-ordering-platform/?tenant-owner-access=1";
+
+        const { error: recoveryError } = await emailClient.auth.resetPasswordForEmail(email, {
+          redirectTo,
         });
 
-        if (magicLinkError) {
-          return jsonResponse({ error: magicLinkError.message }, 400);
+        if (recoveryError) {
+          return jsonResponse({ error: recoveryError.message }, 400);
         }
 
         return jsonResponse({
@@ -128,7 +123,76 @@ Deno.serve(async (request) => {
       }
     }
 
-    // Existing accepted tenant invitation: the tenant already exists.\n    // Send a fresh one-time magic link instead of attempting to create another\n    // Auth account or restaurant.\n    const { data: existingAccepted, error: acceptedLookupError } = await adminClient\n      .from("tenant_invitations")\n      .select("id,restaurant_id,auth_user_id,expires_at,status")\n      .eq("status", "accepted")\n      .ilike("email", email)\n      .order("created_at", { ascending: false })\n      .limit(1)\n      .maybeSingle();\n\n    if (acceptedLookupError) throw acceptedLookupError;\n\n    if (existingAccepted?.auth_user_id && existingAccepted.restaurant_id) {\n      const { data: existingRestaurant, error: restaurantLookupError } = await adminClient\n        .from("restaurants")\n        .select("id,owner_id")\n        .eq("id", existingAccepted.restaurant_id)\n        .maybeSingle();\n\n      if (restaurantLookupError) throw restaurantLookupError;\n\n      if (existingRestaurant?.owner_id !== existingAccepted.auth_user_id) {\n        return jsonResponse({\n          error: "This email already has a tenant invitation, but the tenant owner assignment needs to be repaired before access can be resent.",\n        }, 409);\n      }\n\n      const { data: existingAuth, error: existingAuthError } =\n        await adminClient.auth.admin.getUserById(existingAccepted.auth_user_id);\n\n      if (existingAuthError || !existingAuth.user) {\n        return jsonResponse({\n          error: "This tenant owner account could not be found in Supabase Auth.",\n        }, 409);\n      }\n\n      if (existingAuth.user.email_confirmed_at || existingAuth.user.confirmed_at) {\n        const redirectTo =\n          "https://jrnotjunior.github.io/restaurant-ordering-platform/?tenant-invite=1";\n\n        const { error: magicLinkError } = await emailClient.auth.signInWithOtp({\n          email,\n          options: {\n            shouldCreateUser: false,\n            emailRedirectTo: redirectTo,\n            data: {\n              invitation_type: "tenant_owner",\n              tenant_invitation_id: existingAccepted.id,\n            },\n          },\n        });\n\n        if (magicLinkError) {\n          return jsonResponse({ error: magicLinkError.message }, 400);\n        }\n\n        return jsonResponse({\n          success: true,\n          resent: true,\n          existing_tenant: true,\n          invitation_id: existingAccepted.id,\n          email,\n          restaurant_id: existingAccepted.restaurant_id,\n          status: "accepted",\n        });\n      }\n\n      return jsonResponse({\n        error: "This tenant owner account has not completed email confirmation. Send a new tenant invitation only if this account is no longer the intended owner.",\n      }, 409);\n    }\n\n    if (existingPending && existingPending.restaurant_id == null) {
+    // Existing accepted tenant invitation: the tenant already exists.
+    // Send a fresh recovery email instead of attempting to create another
+    // Auth account or restaurant.
+    const { data: existingAccepted, error: acceptedLookupError } = await adminClient
+      .from("tenant_invitations")
+      .select("id,restaurant_id,auth_user_id,expires_at,status")
+      .eq("status", "accepted")
+      .ilike("email", email)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (acceptedLookupError) throw acceptedLookupError;
+
+    if (existingAccepted?.auth_user_id && existingAccepted.restaurant_id) {
+      const { data: existingRestaurant, error: restaurantLookupError } = await adminClient
+        .from("restaurants")
+        .select("id,owner_id")
+        .eq("id", existingAccepted.restaurant_id)
+        .maybeSingle();
+
+      if (restaurantLookupError) throw restaurantLookupError;
+
+      if (existingRestaurant?.owner_id !== existingAccepted.auth_user_id) {
+        return jsonResponse({
+          error: "This email already has a tenant invitation, but the tenant owner assignment needs to be repaired before access can be resent.",
+        }, 409);
+      }
+
+      const { data: existingAuth, error: existingAuthError } =
+        await adminClient.auth.admin.getUserById(existingAccepted.auth_user_id);
+
+      if (existingAuthError || !existingAuth.user) {
+        return jsonResponse({
+          error: "This tenant owner account could not be found in Supabase Auth.",
+        }, 409);
+      }
+
+      if (existingAuth.user.email_confirmed_at || existingAuth.user.confirmed_at) {
+        const redirectTo =
+          "https://jrnotjunior.github.io/restaurant-ordering-platform/?tenant-invite=1";
+
+        const redirectTo =
+          "https://jrnotjunior.github.io/restaurant-ordering-platform/?tenant-owner-access=1";
+
+        const { error: recoveryError } = await emailClient.auth.resetPasswordForEmail(email, {
+          redirectTo,
+        });
+
+        if (recoveryError) {
+          return jsonResponse({ error: recoveryError.message }, 400);
+        }
+
+        return jsonResponse({
+          success: true,
+          resent: true,
+          existing_tenant: true,
+          invitation_id: existingAccepted.id,
+          email,
+          restaurant_id: existingAccepted.restaurant_id,
+          status: "accepted",
+        });
+      }
+
+      return jsonResponse({
+        error: "This tenant owner account has not completed email confirmation. Send a new tenant invitation only if this account is no longer the intended owner.",
+      }, 409);
+    }
+
+    if (existingPending && existingPending.restaurant_id == null) {
       await adminClient
         .from("tenant_invitations")
         .update({ status: "expired", updated_at: new Date().toISOString() })

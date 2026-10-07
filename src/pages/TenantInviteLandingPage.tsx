@@ -11,7 +11,7 @@ export function TenantInviteLandingPage() {
   const confirmationUrl = params.get('confirmation_url') ?? '';
   const tokenHash = params.get('token_hash') ?? '';
   const tokenType = params.get('type') ?? '';
-  const tenantFlow = params.get('flow') === 'tenant-owner';
+  const tenantFlow = params.get('flow') === 'tenant-owner' || params.get('tenant-owner-access') === '1';
 
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState('');
@@ -20,16 +20,16 @@ export function TenantInviteLandingPage() {
     setError('');
     setAccepting(true);
 
-    if (tokenHash) {
-      if (!supabase) {
-        setError('Authentication is temporarily unavailable. Please try again.');
-        setAccepting(false);
-        return;
-      }
+    if (!supabase) {
+      setError('Authentication is temporarily unavailable. Please try again.');
+      setAccepting(false);
+      return;
+    }
 
+    if (tokenHash) {
       const { error: verifyError } = await supabase.auth.verifyOtp({
         token_hash: tokenHash,
-        type: (tokenType || 'magiclink') as EmailOtpType,
+        type: (tokenType || 'recovery') as EmailOtpType,
       });
 
       if (verifyError) {
@@ -39,7 +39,29 @@ export function TenantInviteLandingPage() {
       }
 
       window.history.replaceState({}, document.title, window.location.pathname);
-      window.location.hash = tenantFlow ? '#restaurant/owner' : '';
+      window.location.hash = '#restaurant/owner';
+      return;
+    }
+
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const accessToken = hash.get('access_token');
+    const refreshToken = hash.get('refresh_token');
+    const hashType = hash.get('type');
+
+    if ((hashType === 'recovery' || hashType === 'invite') && accessToken && refreshToken) {
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+
+      if (sessionError) {
+        setError(sessionError.message);
+        setAccepting(false);
+        return;
+      }
+
+      window.history.replaceState({}, document.title, window.location.pathname);
+      window.location.hash = '#restaurant/owner';
       return;
     }
 
@@ -65,7 +87,7 @@ export function TenantInviteLandingPage() {
 
         {error && <div className="error-banner">{error}</div>}
 
-        {confirmationUrl || tokenHash ? (
+        {confirmationUrl || tokenHash || (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) ? (
           <div className="modal-actions">
             <button type="button" onClick={() => void acceptInvitation()} disabled={accepting}>
               {accepting ? 'Opening secure access…' : tenantFlow ? 'Continue to restaurant' : 'Accept invitation'}

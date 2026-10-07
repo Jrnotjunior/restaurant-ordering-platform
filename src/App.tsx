@@ -604,7 +604,10 @@ function AppContent() {
   const isRiderInvitePath = window.location.pathname.endsWith('/invite') || window.location.pathname.endsWith('/invite/');
   const isRiderInvitePage = isRiderInvitePath || searchParams.get('invite') === '1';
   const isEmployeeInvitePage = window.location.pathname.endsWith('/employee-invite') || window.location.pathname.endsWith('/employee-invite/') || searchParams.get('employee-invite') === '1';
-  const isTenantInviteLandingPage = searchParams.has('confirmation_url');
+  const isTenantInviteLandingPage =
+    searchParams.has('confirmation_url') ||
+    searchParams.has('token_hash') ||
+    searchParams.get('tenant-owner-access') === '1';
   const isTenantInvitePage = searchParams.get('tenant-invite') === '1' || hashParams.get('type') === 'invite' || (isInviteCallback && !isRiderInvitePath && searchParams.get('invite') !== '1' && !isEmployeeInvitePage);
   const isRestaurantOperationsPage = isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantSalesPage || isRestaurantDeliveryDispatchPage || isRestaurantSettingsPage || isRestaurantWebsiteCustomizationPage || isRestaurantLoyaltyPage || isRestaurantEmployeesPage;
   const trackingMatch = route.match(/^#order\/(.+)$/);
