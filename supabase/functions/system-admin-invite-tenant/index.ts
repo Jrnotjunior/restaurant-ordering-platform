@@ -72,13 +72,6 @@ Deno.serve(async (request) => {
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return jsonResponse({ error: "Please enter a valid tenant owner email address." }, 400);
     }
-    if (name.length < 2) return jsonResponse({ error: "Restaurant name is required." }, 400);
-    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
-      return jsonResponse({ error: "Slug must use lowercase letters, numbers, and single hyphens." }, 400);
-    }
-    if (!Number.isInteger(packageId) || packageId < 1) {
-      return jsonResponse({ error: "A valid restaurant package is required." }, 400);
-    }
 
     await adminClient.rpc("expire_stale_tenant_invitations");
 
@@ -143,6 +136,16 @@ Deno.serve(async (request) => {
         .eq("status", "pending");
     } else if (existingPending) {
       return jsonResponse({ error: "A tenant invitation is already pending for this email address." }, 409);
+    }
+
+    // No existing tenant/invitation matched this email, so this is a new tenant.
+    // New tenant creation requires the restaurant details.
+    if (name.length < 2) return jsonResponse({ error: "Restaurant name is required for a new tenant." }, 400);
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+      return jsonResponse({ error: "Slug must use lowercase letters, numbers, and single hyphens." }, 400);
+    }
+    if (!Number.isInteger(packageId) || packageId < 1) {
+      return jsonResponse({ error: "A valid restaurant package is required for a new tenant." }, 400);
     }
 
     const { data: invitation, error: invitationError } = await adminClient
