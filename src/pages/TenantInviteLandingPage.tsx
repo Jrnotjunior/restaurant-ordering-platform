@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import type { EmailOtpType } from '@supabase/supabase-js';
 import { supabase } from '../services/supabaseClient';
 
 export function TenantInviteLandingPage() {
@@ -28,7 +29,7 @@ export function TenantInviteLandingPage() {
 
       const { error: verifyError } = await supabase.auth.verifyOtp({
         token_hash: tokenHash,
-        type: tokenType || 'magiclink',
+        type: (tokenType || 'magiclink') as EmailOtpType,
       });
 
       if (verifyError) {
