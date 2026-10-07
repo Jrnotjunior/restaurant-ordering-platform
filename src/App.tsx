@@ -643,15 +643,74 @@ function AppContent() {
     return () => window.removeEventListener(CART_CLEAR_EVENT, handleSuccessfulOrder);
   }, [user?.id]);
   useEffect(() => { if (!cartNotification) return; const timer = window.setTimeout(() => setCartNotification(''), 3000); return () => window.clearTimeout(timer); }, [cartNotification]);
-  useEffect(() => { if (!isSupabaseConfigured) return; let cancelled = false; const hostname = window.location.hostname.trim().toLowerCase(); const configuredSlug = currentRestaurantLookup.slug; const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1'; const lookup = !isLocalHost && hostname ? { domain: hostname } : { slug: configuredSlug }; restaurantRepository.getRestaurant(lookup).then((loadedRestaurant) => { if (!cancelled && loadedRestaurant) setRestaurant(loadedRestaurant); }).catch((error: unknown) => console.error('Unable to load restaurant from Supabase.', error)); return () => { cancelled = true; }; }, []);
-
-  const [restaurantOpen, setRestaurantOpen] = useState(() => restaurant.orderingEnabled !== false && isRestaurantCurrentlyOpen(restaurant.operatingHours));
   useEffect(() => {
-    const updateRestaurantOpen = () => setRestaurantOpen(restaurant.orderingEnabled !== false && isRestaurantCurrentlyOpen(restaurant.operatingHours));
+    if (!isSupabaseConfigured) return;
+
+    let cancelled = false;
+    const hostname = window.location.hostname.trim().toLowerCase();
+    const configuredSlug = currentRestaurantLookup.slug;
+    const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+    const lookup = !isLocalHost && hostname ? { domain: hostname } : { slug: configuredSlug };
+
+    restaurantRepository.getRestaurant(lookup)
+      .then((loadedRestaurant) => {
+        if (!cancelled && loadedRestaurant) setRestaurant(loadedRestaurant);
+      })
+      .catch((error: unknown) => console.error('Unable to load restaurant from Supabase.', error));
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase || !restaurant.id) return;
+
+    const channel = supabase
+      .channel(`public-restaurant-settings:${restaurant.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'restaurants',
+          filter: `id=eq.${restaurant.id}`,
+        },
+        (payload) => {
+          const next = payload.new as {
+            ordering_enabled?: boolean;
+            operating_hours?: RestaurantConfig['operatingHours'];
+          };
+
+          setRestaurant((current) => ({
+            ...current,
+            orderingEnabled: next.ordering_enabled !== false,
+            operatingHours: next.operating_hours ?? current.operatingHours,
+          }));
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [restaurant.id]);
+
+  const [restaurantOpen, setRestaurantOpen] = useState(() => (
+    restaurant.orderingEnabled !== false && isRestaurantCurrentlyOpen(restaurant.operatingHours)
+  ));
+
+  useEffect(() => {
+    const updateRestaurantOpen = () => {
+      const manuallyOpen = restaurant.orderingEnabled !== false;
+      const scheduleOpen = isRestaurantCurrentlyOpen(restaurant.operatingHours);
+      setRestaurantOpen(manuallyOpen && scheduleOpen);
+    };
+
     updateRestaurantOpen();
     const timer = window.setInterval(updateRestaurantOpen, 30_000);
     return () => window.clearInterval(timer);
-  }, [restaurant.operatingHours]);
+  }, [restaurant.orderingEnabled, restaurant.operatingHours]);
 
   const cartCount = useMemo(() => cartItems.reduce((total, item) => total + item.quantity, 0), [cartItems]);
   function addToCart(product: RestaurantProduct) {
