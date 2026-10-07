@@ -11,7 +11,7 @@ type Invitation = {
 };
 
 export function TenantOnboardingPage() {
-  const { user, loading: authLoading } = useRestaurantOwnerAuth();
+  const { user, loading: authLoading, error: authError } = useRestaurantOwnerAuth();
   const [invitation, setInvitation] = useState<Invitation | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -23,6 +23,7 @@ export function TenantOnboardingPage() {
   useEffect(() => {
     if (authLoading) return;
     if (!user || !supabase) {
+      if (authError) setError(authError);
       setLoading(false);
       return;
     }
@@ -54,7 +55,7 @@ export function TenantOnboardingPage() {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, user?.id]);
+  }, [authLoading, user?.id, authError]);
 
   async function setOwnerPassword(event: FormEvent) {
     event.preventDefault();
@@ -111,8 +112,9 @@ export function TenantOnboardingPage() {
       <section className="restaurant-owner-auth-no-restaurant">
         <div className="restaurant-owner-auth-no-restaurant-card">
           <p className="eyebrow">Tenant invitation</p>
-          <h1>Sign in to continue.</h1>
-          <p>Open the invitation email again to complete your tenant setup.</p>
+          <h1>{authError ? 'Invitation link problem' : 'Sign in to continue.'}</h1>
+          <p>{authError || 'Open the invitation email again to complete your tenant setup.'}</p>
+          {authError ? <p>Ask the System Administrator to send a new tenant invitation if this link has expired or was already used.</p> : null}
         </div>
       </section>
     );
