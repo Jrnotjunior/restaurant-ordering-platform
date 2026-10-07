@@ -272,6 +272,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
       setPrintOrder({
         orderNumber: created.orderNumber,
         customerName: customerName.trim() || 'Walk-in Customer',
+         notes: notes.trim(),
         cashierName,
         orderType,
         createdAt: new Date().toISOString(),
