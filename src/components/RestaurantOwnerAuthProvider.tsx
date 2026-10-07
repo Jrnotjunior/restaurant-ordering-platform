@@ -104,8 +104,14 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
           const code = url.searchParams.get('code');
           const tokenHash = url.searchParams.get('token_hash') ?? hashParams.get('token_hash');
           const type = url.searchParams.get('type') ?? hashParams.get('type');
+          const isTenantCallback =
+            url.searchParams.get('tenant-invite') === '1' ||
+            url.searchParams.get('tenant-owner-access') === '1';
 
-          if (code) {
+          if (isTenantCallback) {
+            // Tenant callback URLs are handled by TenantInviteLandingPage only
+            // after the user explicitly clicks the invitation/access button.
+          } else if (code) {
             const { error: exchangeError } = await client.auth.exchangeCodeForSession(code);
             if (exchangeError) {
               console.error('Tenant invitation code exchange failed', exchangeError);
