@@ -118,18 +118,34 @@ Deno.serve(async (request) => {
     }
 
     if (staff.auth_user_id) {
-      const { error: deleteAuthError } = await adminClient.auth.admin.deleteUser(
-        staff.auth_user_id,
-        false,
+      const { data: hasOtherRole, error: roleCheckError } = await adminClient.rpc(
+        "auth_user_has_application_role",
+        { p_user_id: staff.auth_user_id },
       );
 
-      if (deleteAuthError) {
-        console.error("system-admin-delete-staff auth cleanup error", deleteAuthError);
+      if (roleCheckError) {
+        console.error("system-admin-delete-staff role check error", roleCheckError);
         return jsonResponse({
-          error: `Staff record was permanently deleted, but the Auth account could not be removed: ${deleteAuthError.message}`,
+          error: `Staff record was permanently deleted, but the Auth account role could not be verified: ${roleCheckError.message}`,
           staffDeleted: true,
           authDeleted: false,
         }, 500);
+      }
+
+      if (hasOtherRole !== true) {
+        const { error: deleteAuthError } = await adminClient.auth.admin.deleteUser(
+          staff.auth_user_id,
+          false,
+        );
+
+        if (deleteAuthError) {
+          console.error("system-admin-delete-staff auth cleanup error", deleteAuthError);
+          return jsonResponse({
+            error: `Staff record was permanently deleted, but the Auth account could not be removed: ${deleteAuthError.message}`,
+            staffDeleted: true,
+            authDeleted: false,
+          }, 500);
+        }
       }
     }
 
