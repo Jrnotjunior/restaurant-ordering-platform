@@ -85,42 +85,25 @@ Deno.serve(async (req: Request) => {
 
     // Only delete the Auth account if the owner is now completely unused.
     // This check is server-side and cannot be forged by the browser.
-    const { data: ownerRestaurants, error: ownerRestaurantsError } =
-      await adminClient
-        .from("restaurants")
-        .select("id")
-        .eq("owner_id", ownerId)
-        .limit(1);
+    const { data: ownerHasRole, error: ownerRoleError } = await adminClient.rpc(
+      "auth_user_has_application_role",
+      { p_user_id: ownerId },
+    );
 
-    if (ownerRestaurantsError) {
+    if (ownerRoleError) {
       return json({
-        error: `Restaurant was deleted, but owner account cleanup could not be verified: ${ownerRestaurantsError.message}`,
+        error: `Restaurant was deleted, but owner account role cleanup could not be verified: ${ownerRoleError.message}`,
         restaurant_deleted: true,
         owner_deleted: false,
       }, 500);
     }
 
-    const { data: ownerInvitations, error: ownerInvitationsError } =
-      await adminClient
-        .from("tenant_invitations")
-        .select("id")
-        .eq("auth_user_id", ownerId)
-        .limit(1);
-
-    if (ownerInvitationsError) {
-      return json({
-        error: `Restaurant was deleted, but owner invitation cleanup could not be verified: ${ownerInvitationsError.message}`,
-        restaurant_deleted: true,
-        owner_deleted: false,
-      }, 500);
-    }
-
-    if ((ownerRestaurants?.length ?? 0) > 0 || (ownerInvitations?.length ?? 0) > 0) {
+    if (ownerHasRole === true) {
       return json({
         success: true,
         restaurant_deleted: true,
         owner_deleted: false,
-        reason: "Owner account is still used by another restaurant or invitation",
+        reason: "Owner account is still used by another application role or pending invitation",
       });
     }
 
