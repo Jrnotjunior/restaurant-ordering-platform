@@ -48,6 +48,9 @@ Deno.serve(async (request) => {
     const adminClient = createClient(supabaseUrl, secretKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+    const emailClient = createClient(supabaseUrl, publishableKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
 
     const { data: userData, error: userError } = await userClient.auth.getUser(token);
     if (userError || !userData.user) {
@@ -105,7 +108,7 @@ Deno.serve(async (request) => {
         const redirectTo =
           "https://jrnotjunior.github.io/restaurant-ordering-platform/?tenant-invite=1";
 
-        const { error: magicLinkError } = await adminClient.auth.signInWithOtp({
+        const { error: magicLinkError } = await emailClient.auth.signInWithOtp({
           email,
           options: {
             shouldCreateUser: false,
