@@ -55,6 +55,8 @@ export const supabase = isSupabaseConfigured
         // from broadcasting their sign-in state to one another.
         storageKey: getRestaurantAuthStorageKey(),
         storage: window.sessionStorage,
+        // Tenant invitation callbacks are explicitly handled after a user click.
+        detectSessionInUrl: false,
       },
       global: {
         headers: getRestaurantContextHeaders(),
