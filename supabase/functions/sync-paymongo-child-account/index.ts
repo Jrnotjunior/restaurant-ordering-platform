@@ -44,10 +44,72 @@ Deno.serve(async (request) => {
     if (activationStatus === "activated") onboardingStep = "active";
     else if (identityStatus === "passed" || identityStatus === "passed_attestation_form") onboardingStep = "business_information";
     else if (identityStatus === "failed") onboardingStep = "identity_verification";
-    const connectionStatus = activationStatus === "activated" ? "active" : "pending";
-    const { error: updateError } = await admin.from("restaurant_paymongo_accounts").update({ connection_status: connectionStatus, activation_status: activationStatus, identity_verification_status: identityStatus, onboarding_step: onboardingStep, last_error: null }).eq("restaurant_id", restaurantId).eq("environment", "live");
+    if (activationStatus === "activated") {
+      let webhookId = String(connection.webhook_id ?? "").trim();
+      if (!webhookId) {
+        const webhookResponse = await fetch("https://api.paymongo.com/v1/webhooks", {
+          method: "POST",
+          headers: {
+            Authorization: `Basic ${btoa(`${key}:`)}`,
+            "Content-Type": "application/json",
+            "Account-ID": connection.paymongo_account_id,
+            "Idempotency-Key": `restaurant-paymongo-webhook-${restaurantId}-live`,
+          },
+          body: JSON.stringify({
+            data: {
+              attributes: {
+                url: `${supabaseUrl}/functions/v1/paymongo-webhook`,
+                events: ["checkout_session.payment.paid", "payment.failed"],
+              },
+            },
+          }),
+        });
+        const webhookPayload = await webhookResponse.json().catch(() => null);
+        if (!webhookResponse.ok) {
+          const detail = webhookPayload?.errors?.[0]?.detail;
+          const webhookError = typeof detail === "string" ? detail : "PayMongo is active, but the payment webhook could not be configured yet.";
+          await admin.from("restaurant_paymongo_accounts").update({
+            connection_status: "pending",
+            activation_status: activationStatus,
+            identity_verification_status: identityStatus,
+            onboarding_step: "webhook_configuration",
+            last_error: webhookError,
+          }).eq("restaurant_id", restaurantId).eq("environment", "live");
+          return json({ status: "pending", paymongoAccountId: connection.paymongo_account_id, activationStatus, identityVerificationStatus: identityStatus, onboardingStep: "webhook_configuration", verificationUrl: connection.verification_url, error: webhookError });
+        }
+        webhookId = String(webhookPayload?.data?.id ?? "").trim();
+        const webhookSecret = String(webhookPayload?.data?.attributes?.secret_key ?? "").trim();
+        if (!webhookId || !webhookSecret) {
+          return json({ status: "pending", paymongoAccountId: connection.paymongo_account_id, activationStatus, onboardingStep: "webhook_configuration", error: "PayMongo did not return the child webhook credentials." }, 502);
+        }
+        const { error: secretError } = await admin.rpc("set_paymongo_webhook_secret", {
+          p_restaurant_id: restaurantId,
+          p_secret: webhookSecret,
+          p_environment: "live",
+        });
+        if (secretError) throw secretError;
+      }
+      const { error: updateError } = await admin.from("restaurant_paymongo_accounts").update({
+        connection_status: "active",
+        activation_status: activationStatus,
+        identity_verification_status: identityStatus,
+        onboarding_step: "active",
+        webhook_id: webhookId,
+        last_error: null,
+      }).eq("restaurant_id", restaurantId).eq("environment", "live");
+      if (updateError) throw updateError;
+      return json({ status: "active", paymongoAccountId: connection.paymongo_account_id, activationStatus, identityVerificationStatus: identityStatus, onboardingStep: "active", verificationUrl: connection.verification_url, account: { person: attrs.person ?? null, business: attrs.business ?? null } });
+    }
+
+    const { error: updateError } = await admin.from("restaurant_paymongo_accounts").update({
+      connection_status: "pending",
+      activation_status: activationStatus,
+      identity_verification_status: identityStatus,
+      onboarding_step: onboardingStep,
+      last_error: null,
+    }).eq("restaurant_id", restaurantId).eq("environment", "live");
     if (updateError) throw updateError;
-    return json({ status: connectionStatus, paymongoAccountId: connection.paymongo_account_id, activationStatus, identityVerificationStatus: identityStatus, onboardingStep, verificationUrl: connection.verification_url, account: { person: attrs.person ?? null, business: attrs.business ?? null } });
+    return json({ status: "pending", paymongoAccountId: connection.paymongo_account_id, activationStatus, identityVerificationStatus: identityStatus, onboardingStep, verificationUrl: connection.verification_url, account: { person: attrs.person ?? null, business: attrs.business ?? null } });
   } catch (error) {
     console.error("sync-paymongo-child-account error", error);
     return json({ error: "Unable to synchronize PayMongo merchant onboarding." }, 500);
