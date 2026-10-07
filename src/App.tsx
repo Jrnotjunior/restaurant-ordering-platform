@@ -790,11 +790,29 @@ function AppContent() {
 
 export function App() {
   const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
-  const isTenantCallback =
-    searchParams.get('tenant-owner-access') === '1' ||
-    (searchParams.get('tenant-invite') === '1' && searchParams.get('tenant-onboarding') !== '1');
+  const hashParams = new URLSearchParams(
+    typeof window !== 'undefined' ? window.location.hash.replace(/^#/, '') : '',
+  );
 
-  if (isTenantCallback) {
+  // Tenant invitation callbacks must stay outside the normal owner auth
+  // provider until the tenant explicitly accepts the invitation. This is
+  // critical because Supabase invitation tokens are one-time credentials.
+  // The landing page owns the token exchange and only then enters onboarding.
+  const isTenantInvitationCallback =
+    searchParams.get('tenant-invite') === '1' &&
+    searchParams.get('tenant-onboarding') !== '1';
+
+  const isExistingTenantAccessCallback =
+    searchParams.get('tenant-owner-access') === '1' &&
+    !searchParams.has('tenant-onboarding');
+
+  const hasInviteAuthPayload =
+    searchParams.has('token_hash') ||
+    searchParams.has('code') ||
+    hashParams.has('access_token') ||
+    hashParams.has('token_hash');
+
+  if (isTenantInvitationCallback || isExistingTenantAccessCallback || hasInviteAuthPayload) {
     return <TenantInviteLandingPage />;
   }
 
