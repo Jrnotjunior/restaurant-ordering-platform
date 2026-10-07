@@ -106,7 +106,7 @@ Deno.serve(async (request) => {
 
       if (existingAuth.user.email_confirmed_at || existingAuth.user.confirmed_at) {
         const redirectTo =
-          "https://jrnotjunior.github.io/restaurant-ordering-platform/?tenant-invite=1";
+          "https://jrnotjunior.github.io/restaurant-ordering-platform/#restaurant/owner";
 
         const { error: magicLinkError } = await emailClient.auth.signInWithOtp({
           email,
