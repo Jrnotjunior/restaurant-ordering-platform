@@ -14,7 +14,54 @@ export function TenantInviteLandingPage() {
   const tenantFlow = params.get('flow') === 'tenant-owner' || params.get('tenant-owner-access') === '1';
 
   const [accepting, setAccepting] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!supabase) {
+      setCheckingSession(false);
+      return;
+    }
+
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let attempts = 0;
+
+    async function detectRecoverySession() {
+      const { data, error: sessionError } = await supabase!.auth.getSession();
+      if (cancelled) return;
+
+      if (!sessionError && data.session) {
+        setSessionReady(true);
+        setCheckingSession(false);
+        return;
+      }
+
+      attempts += 1;
+      if (attempts < 10) {
+        timer = setTimeout(() => void detectRecoverySession(), 200);
+      } else {
+        setCheckingSession(false);
+      }
+    }
+
+    void detectRecoverySession();
+
+    const { data: authState } = supabase.auth.onAuthStateChange((event, session) => {
+      if (cancelled) return;
+      if ((event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') && session) {
+        setSessionReady(true);
+        setCheckingSession(false);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      authState.subscription.unsubscribe();
+    };
+  }, []);
 
   async function acceptInvitation() {
     setError('');
@@ -67,6 +114,11 @@ export function TenantInviteLandingPage() {
 
     // Backward-compatible path for the original scanner-safe landing page.
     // New tenant access emails should use token_hash instead.
+    if (sessionReady) {
+      window.location.hash = '#restaurant/owner';
+      return;
+    }
+
     if (confirmationUrl) {
       window.location.assign(confirmationUrl);
       return;
@@ -87,10 +139,10 @@ export function TenantInviteLandingPage() {
 
         {error && <div className="error-banner">{error}</div>}
 
-        {confirmationUrl || tokenHash || (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) ? (
+        {confirmationUrl || tokenHash || sessionReady || checkingSession || (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) ? (
           <div className="modal-actions">
-            <button type="button" onClick={() => void acceptInvitation()} disabled={accepting}>
-              {accepting ? 'Opening secure access…' : tenantFlow ? 'Continue to restaurant' : 'Accept invitation'}
+            <button type="button" onClick={() => void acceptInvitation()} disabled={accepting || checkingSession}>
+              {accepting ? 'Opening secure access…' : checkingSession ? 'Checking secure access…' : tenantFlow ? 'Continue to restaurant' : 'Accept invitation'}
             </button>
           </div>
         ) : (
