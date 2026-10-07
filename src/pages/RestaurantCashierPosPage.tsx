@@ -12,6 +12,7 @@ type DraftBeneficiary = { discountType: PosDiscountType; idType: PosDiscountIdTy
 type PosPrintOrder = {
   orderNumber: string;
   customerName: string;
+  notes: string;
   cashierName: string;
   orderType: 'dine_in' | 'pickup';
   createdAt: string;
@@ -54,6 +55,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orderType, setOrderType] = useState<'dine_in' | 'pickup'>('dine_in');
   const [customerName, setCustomerName] = useState('Walk-in Customer');
+  const [notes, setNotes] = useState('');
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [selectedCustomerPoints, setSelectedCustomerPoints] = useState<number | null>(null);
   const [loyaltyRedemption, setLoyaltyRedemption] = useState<LoyaltyRedemptionSettings | null>(null);
@@ -247,7 +249,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
         deliveryCity: '',
         deliveryBarangay: '',
         deliveryAddress: '',
-        notes: 'POS ORDER — cash collected by cashier.',
+        notes: notes.trim() || 'POS ORDER — cash collected by cashier.',
         paymentMethod: 'cash',
         items: cart.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
       });
@@ -435,7 +437,19 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             {beneficiaries.length > 0 && <p className="restaurant-pos-discount-note">Each eligible customer receives 20% of their equal share of the group subtotal. One person may use either Senior Citizen or PWD discount, not both. Verify every ID before applying the discounts.</p>}
           </div>
 
-          <div className="restaurant-pos-cart-items">
+          <label className="restaurant-pos-field restaurant-pos-notes-field">
+             <span>Notes / Special instructions</span>
+             <textarea
+               value={notes}
+               onChange={(event) => setNotes(event.target.value)}
+               placeholder="e.g. No onions, less ice, pack separately"
+               rows={3}
+               maxLength={500}
+               disabled={saving}
+             />
+           </label>
+
+           <div className="restaurant-pos-cart-items">
             {cart.length === 0 ? <p>No items added yet.</p> : cart.map((item) => (
               <div className="restaurant-pos-cart-item" key={item.product.id}>
                 <div><strong>{item.product.name}</strong><span>₱{item.product.price.toFixed(2)}</span></div>
@@ -512,7 +526,14 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             <hr className="pos-receipt-divider" />
             <div>
               {printOrder.items.map((item) => (
-                <div className="pos-receipt-kitchen-item" key={item.product.id}>
+                {printOrder.notes && (
+               <>
+                 <div className="pos-receipt-label">Special instructions</div>
+                 <div>{printOrder.notes}</div>
+                 <hr className="pos-receipt-divider" />
+               </>
+             )}
+                 <div className="pos-receipt-kitchen-item" key={item.product.id}>
                   <strong>{item.quantity} ×</strong>
                   <span>{item.product.name}</span>
                 </div>
@@ -544,7 +565,14 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             <hr className="pos-receipt-divider" />
             <div>
               {printOrder.items.map((item) => (
-                <div className="pos-receipt-row" key={item.product.id}>
+                {printOrder.notes && (
+               <>
+                 <div className="pos-receipt-label">Special instructions</div>
+                 <div>{printOrder.notes}</div>
+                 <hr className="pos-receipt-divider" />
+               </>
+             )}
+                 <div className="pos-receipt-row" key={item.product.id}>
                   <span>{item.quantity} × {item.product.name}</span>
                   <span>₱{(item.product.price * item.quantity).toFixed(2)}</span>
                 </div>
