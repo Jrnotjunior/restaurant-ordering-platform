@@ -11,3 +11,5 @@ verify_jwt = false
 
 [functions.calculate-delivery-route]
 verify_jwt = false
+[functions.system-admin-delete-restaurant]
+verify_jwt = true
