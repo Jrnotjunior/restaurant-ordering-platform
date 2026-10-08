@@ -1,8 +1,9 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { getRiderDashboardData } from '../modules/dispatch/dispatchService';
+import type { RiderDeliveryStatus, RiderDelivery, RiderHistoryItem } from '../modules/dispatch/dispatchService';
 
-function statusLabel(status: DeliveryStatus) {
+function statusLabel(status: RiderDeliveryStatus) {
   return status === 'delivering' ? 'Out for delivery' : 'Assigned';
 }
 
