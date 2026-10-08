@@ -216,6 +216,40 @@ export async function getOrderStatus(orderNumber: string): Promise<TrackedOrder>
   };
 }
 
+type Row = {
+  order_id: string;
+  order_number: string;
+  customer_name?: string | null;
+  notes?: string | null;
+  order_type: RestaurantOrder['orderType'];
+  payment_method: RestaurantOrder['paymentMethod'];
+  pickup_method?: 'customer' | 'third_party_courier' | null;
+  payment_status?: RestaurantPaymentStatus | null;
+  paymongo_payment_id?: string | null;
+  paymongo_checkout_session_id?: string | null;
+  paymongo_payment_method?: string | null;
+  paymongo_fee?: number | string | null;
+  paymongo_net_amount?: number | string | null;
+  status: RestaurantOrderStatus;
+  total: number | string;
+  shipping_fee?: number | string | null;
+  created_at: string;
+  items?: RawOrderItem[] | null;
+  tax_vat_registered?: boolean | null;
+  tax_prices_vat_inclusive?: boolean | null;
+  tax_vat_rate?: number | string | null;
+  tax_gross_sales?: number | string | null;
+  tax_vatable_sales?: number | string | null;
+  tax_vat_amount?: number | string | null;
+  tax_vat_exempt_sales?: number | string | null;
+  tax_net_sales?: number | string | null;
+  discount_amount?: number | string | null;
+  loyalty_discount_amount?: number | string | null;
+  discount_beneficiary_count?: number | null;
+  discount_group_size?: number | null;
+  discount_beneficiaries?: { discountType?: string; discount_type?: string; idType?: string; discount_id_type?: string; idNumber?: string; discount_id_number?: string; eligibleAmount?: number | string; eligible_amount?: number | string; discountAmount?: number | string; discount_amount?: number | string }[] | null;
+};
+
 export async function getRestaurantOrders(restaurantId: string): Promise<RestaurantOrder[]> {
   const rows = await supabaseRpc<Row>('get_restaurant_orders', { p_restaurant_id: restaurantId });
 
