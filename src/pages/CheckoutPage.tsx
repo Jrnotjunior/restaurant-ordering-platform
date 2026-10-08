@@ -35,7 +35,6 @@ const paymentMethods: Array<{ value: PaymentMethod; label: string; description: 
 
 const outsideDeliveryAreaMessage = 'This address is outside the store delivery area. You can still order by choosing your own courier to pick up the order from the restaurant.';
 const PENDING_PAYMENT_ORDER_KEY = 'restaurant-ordering-pending-payment-order';
-const CART_CLEAR_EVENT = 'restaurant-ordering-cart-clear';
 const thirdPartyCourierNote = 'THIRD-PARTY COURIER: Customer is responsible for booking and paying the delivery courier (such as Lalamove or Grab Express). The restaurant will prepare the food for courier pickup at the listed restaurant pickup point.';
 
 export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
