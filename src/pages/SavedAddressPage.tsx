@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { deleteMyCustomerAddress, getMyCustomerAddresses, saveMyCustomerAddress, setMyCustomerAddressDefault, updateMyCustomerAddress, type CustomerSavedAddress } from '../services/loyaltyRepository';
+import { deleteMyCustomerAddress, getMyCustomerAddresses, saveMyCustomerAddress, setMyCustomerAddressDefault, updateMyCustomerAddress, type CustomerSavedAddress } from '../modules/customer/customerAccountService';
 import { useRestaurant } from '../components/RestaurantProvider';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
 import '../styles/saved-address.css';
