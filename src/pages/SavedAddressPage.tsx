@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { MapboxDeliveryLocationPicker, type MapboxDeliveryAddress } from '../components/MapboxDeliveryLocationPicker';
 import { deleteMyCustomerAddress, getMyCustomerAddresses, saveMyCustomerAddress, setMyCustomerAddressDefault, updateMyCustomerAddress, type CustomerSavedAddress } from '../modules/customer/customerAccountService';
 import { useRestaurant } from '../components/RestaurantProvider';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
@@ -14,6 +15,7 @@ export function SavedAddressPage() {
   const [city, setCity] = useState('');
   const [barangay, setBarangay] = useState('');
   const [address, setAddress] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState<MapboxDeliveryAddress | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [busyAddressId, setBusyAddressId] = useState<string | null>(null);
@@ -25,6 +27,7 @@ export function SavedAddressPage() {
     setShowForm(false);
     setEditingAddressId(null);
     setError('');
+    setSelectedLocation(null);
   }
 
   async function loadAddresses() {
@@ -55,6 +58,19 @@ export function SavedAddressPage() {
     setCity(item.city);
     setBarangay(item.barangay);
     setAddress(item.address);
+    setSelectedLocation(
+      item.latitude !== null && item.longitude !== null
+        ? {
+            formattedAddress: item.address,
+            city: item.city,
+            barangay: item.barangay,
+            address: item.address,
+            placeId: item.placeId ?? '',
+            latitude: item.latitude,
+            longitude: item.longitude,
+          }
+        : null,
+    );
     setMessage('');
     setError('');
     setShowForm(true);
@@ -66,6 +82,7 @@ export function SavedAddressPage() {
     setCity('');
     setBarangay('');
     setAddress('');
+    setSelectedLocation(null);
     setMessage('');
     setError('');
     setShowForm(true);
@@ -84,15 +101,40 @@ export function SavedAddressPage() {
       setError('Please complete your city, barangay, and unit/building/street address.');
       return;
     }
+    if (!selectedLocation || !Number.isFinite(selectedLocation.latitude) || !Number.isFinite(selectedLocation.longitude)) {
+      setError('Please choose and confirm the exact delivery location on the map before saving this address.');
+      return;
+    }
     setSaving(true);
     try {
       if (editingAddressId) {
-        await updateMyCustomerAddress(restaurant.id!, editingAddressId, trimmedLabel, trimmedCity, trimmedBarangay, trimmedAddress);
+        await updateMyCustomerAddress(
+          restaurant.id!,
+          editingAddressId,
+          trimmedLabel,
+          trimmedCity,
+          trimmedBarangay,
+          trimmedAddress,
+          selectedLocation.latitude,
+          selectedLocation.longitude,
+          selectedLocation.placeId,
+        );
       } else {
-        await saveMyCustomerAddress(restaurant.id!, trimmedLabel, trimmedCity, trimmedBarangay, trimmedAddress, addresses.length === 0);
+        await saveMyCustomerAddress(
+          restaurant.id!,
+          trimmedLabel,
+          trimmedCity,
+          trimmedBarangay,
+          trimmedAddress,
+          addresses.length === 0,
+          selectedLocation.latitude,
+          selectedLocation.longitude,
+          selectedLocation.placeId,
+        );
       }
       setShowForm(false);
       setEditingAddressId(null);
+      setSelectedLocation(null);
       setMessage(editingAddressId ? 'Address updated.' : (addresses.length === 0 ? 'Address saved and set as your default.' : 'Address saved.'));
       await loadAddresses();
     } catch (saveError) {
@@ -172,9 +214,31 @@ export function SavedAddressPage() {
             <div className="saved-address-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeForm(); }}><form className="saved-address-form saved-address-modal" onSubmit={handleSave}>
               <div className="saved-address-form-heading"><h2>{editingAddressId ? 'Edit address' : 'Add address'}</h2><button type="button" className="saved-address-cancel" onClick={closeForm}>Cancel</button></div>
               <label><span>Address name</span><input type="text" value={label} onChange={(event) => setLabel(event.target.value)} placeholder="e.g. Home, Work, School" /></label>
-              <label><span>City</span><input type="text" value={city} onChange={(event) => { setCity(event.target.value); setBarangay(''); setMessage(''); setError(''); }} autoComplete="address-level2" required /></label>
-              <label><span>Barangay</span><input type="text" value={barangay} onChange={(event) => { setBarangay(event.target.value); setMessage(''); setError(''); }} autoComplete="address-level3" required /></label>
-              <label><span>Unit/Bldg./Street Address</span><textarea value={address} onChange={(event) => { setAddress(event.target.value); setMessage(''); setError(''); }} placeholder="Enter your unit, building, house number, and street" rows={4} required /></label>
+              <div className="saved-address-map-section">
+                <p className="saved-address-map-title">Exact delivery location</p>
+                <p className="saved-address-map-help">Choose the exact place where the rider should deliver. You can search, use your current location, or move the pin.</p>
+                <MapboxDeliveryLocationPicker
+                  variant="delivery"
+                  initialLatitude={selectedLocation?.latitude ?? null}
+                  initialLongitude={selectedLocation?.longitude ?? null}
+                  onLocationChange={() => {
+                    setSelectedLocation(null);
+                    setMessage('');
+                    setError('');
+                  }}
+                  onSelect={async (selected: MapboxDeliveryAddress) => {
+                    setSelectedLocation(selected);
+                    setCity(selected.city);
+                    setBarangay(selected.barangay);
+                    if (selected.address) setAddress(selected.address);
+                    setMessage('');
+                    setError('');
+                  }}
+                />
+              </div>
+              <label><span>City</span><input type="text" value={city} readOnly required /></label>
+              <label><span>Barangay</span><input type="text" value={barangay} readOnly required /></label>
+              <label><span>Unit/Bldg./Street Address</span><textarea value={address} onChange={(event) => { setAddress(event.target.value); setMessage(''); setError(''); }} placeholder="Add your unit, building, house number, or other delivery details" rows={4} required /></label>
               <button className="button button-primary" type="submit" disabled={saving}>{saving ? 'Saving…' : editingAddressId ? 'Save Changes' : 'Save Address'}</button>
             </form></div>
           )}
