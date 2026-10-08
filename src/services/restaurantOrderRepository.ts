@@ -207,6 +207,71 @@ export async function updateOrderStatus(orderId: string, status: RestaurantOrder
   await supabaseRpc('update_order_status', { p_order_id: orderId, p_status: status });
 }
 
-
+export async function confirmDineInPayment(orderId: string) {
+  await supabaseRpc('confirm_dine_in_payment', { p_order_id: orderId });
 }
 
+export type PosDiscountType = 'senior' | 'pwd';
+
+export type PosDiscountIdType =
+  | 'osca_id'
+  | 'national_senior_id'
+  | 'pwd_id'
+  | 'passport'
+  | 'other_government_id';
+
+export type PosDiscountBeneficiary = {
+  discountType: PosDiscountType;
+  idType: PosDiscountIdType;
+  idNumber: string;
+  eligibleAmount: number;
+  discountAmount: number;
+};
+
+export async function applyPosGroupDiscounts(
+  orderId: string,
+  groupSize: number,
+  beneficiaries: Omit<PosDiscountBeneficiary, 'eligibleAmount' | 'discountAmount'>[],
+) {
+  const rows = await supabaseRpc<{
+    order_id: string;
+    group_size: number;
+    beneficiary_count: number;
+    discount_amount: number | string;
+    gross_sales: number | string;
+    vatable_sales: number | string;
+    vat_amount: number | string;
+    vat_exempt_sales: number | string;
+    net_sales: number | string;
+    total: number | string;
+  }>('apply_pos_group_discounts', {
+    p_order_id: orderId,
+    p_group_size: groupSize,
+    p_beneficiaries: beneficiaries.map((beneficiary) => ({
+      discount_type: beneficiary.discountType,
+      discount_id_type: beneficiary.idType,
+      discount_id_number: beneficiary.idNumber.trim(),
+    })),
+  });
+
+  const row = rows[0];
+  if (!row) throw new Error('POS financials could not be finalized.');
+
+  const discountAmount = Number(row.discount_amount);
+  const beneficiaryCount = Number(row.beneficiary_count);
+  const groupSizeResult = Number(row.group_size);
+
+  return {
+    orderId: row.order_id,
+    groupSize: groupSizeResult,
+    beneficiaryCount,
+    discountAmount,
+    grossSales: Number(row.gross_sales),
+    vatableSales: Number(row.vatable_sales),
+    vatAmount: Number(row.vat_amount),
+    vatExemptSales: Number(row.vat_exempt_sales),
+    netSales: Number(row.net_sales),
+    total: Number(row.total),
+    eligibleShare: beneficiaryCount > 0 ? Number(((discountAmount / 0.20) / beneficiaryCount).toFixed(2)) : 0,
+  };
+}
