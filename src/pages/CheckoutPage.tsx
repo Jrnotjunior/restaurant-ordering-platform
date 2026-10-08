@@ -15,11 +15,12 @@ import '../styles/checkout-mobile.css';
 type CartItem = { product: RestaurantProduct; quantity: number };
 type OrderType = 'delivery' | 'pickup' | 'dine_in';
 type PaymentMethod = 'cash' | 'online';
-type CheckoutPageProps = { items: CartItem[]; onClearCart: () => void };
+type CheckoutPageProps = { items: CartItem[]; onClearCart: (targetUserId?: string) => void };
 type ConfirmedOrder = { orderNumber: string; paymentMethod: PaymentMethod; orderType: OrderType; pickupMethod?: 'customer' | 'third_party_courier'; pickupAddress?: string; total: number };
 const PENDING_PAYMENT_CHECKOUT_URL_KEY = 'restaurant-ordering-pending-payment-checkout-url';
 const ACTIVE_ORDER_KEY = 'restaurant-ordering-active-order';
 const PENDING_PAYMENT_REFERENCE_KEY = 'restaurant-ordering-pending-payment-reference';
+const PENDING_PAYMENT_CART_USER_KEY = 'restaurant-ordering-pending-payment-cart-user';
 const PENDING_PAYMENT_PICKUP_METHOD_KEY = 'restaurant-ordering-pending-payment-pickup-method';
 
 const orderTypes: Array<{ value: OrderType; label: string; description: string }> = [
@@ -110,6 +111,8 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
           } else if (result.status === 'paid' && result.orderNumber) {
             window.history.replaceState({}, '', window.location.pathname + window.location.hash);
             setPaymentNotCompleted(false);
+            const pendingCartUserId = window.localStorage.getItem(PENDING_PAYMENT_CART_USER_KEY) || undefined;
+            window.localStorage.removeItem(PENDING_PAYMENT_CART_USER_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_REFERENCE_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_CHECKOUT_URL_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_ORDER_KEY);
@@ -117,7 +120,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
             window.localStorage.removeItem(PENDING_PAYMENT_PICKUP_METHOD_KEY);
             window.localStorage.setItem(ACTIVE_ORDER_KEY, result.orderNumber);
             window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
-            onClearCart();
+            onClearCart(pendingCartUserId);
             setConfirmedOrder({
               orderNumber: result.orderNumber,
               paymentMethod: 'online',
@@ -148,6 +151,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
             window.localStorage.removeItem(PENDING_PAYMENT_REFERENCE_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_CHECKOUT_URL_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_ORDER_KEY);
+            window.localStorage.removeItem(PENDING_PAYMENT_CART_USER_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_PICKUP_METHOD_KEY);
             window.history.replaceState({}, '', window.location.pathname + window.location.hash);
             if (!cancelled) {
@@ -165,13 +169,15 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
           }
 
           if (result.status === 'paid' && result.orderNumber) {
+            const pendingCartUserId = window.localStorage.getItem(PENDING_PAYMENT_CART_USER_KEY) || undefined;
+            window.localStorage.removeItem(PENDING_PAYMENT_CART_USER_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_REFERENCE_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_CHECKOUT_URL_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_ORDER_KEY);
             const pickupMethod = window.localStorage.getItem(PENDING_PAYMENT_PICKUP_METHOD_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_PICKUP_METHOD_KEY);
             window.history.replaceState({}, '', window.location.pathname + window.location.hash);
-            onClearCart();
+            onClearCart(pendingCartUserId);
             if (!cancelled) {
               setPaymentProcessing(false);
               window.localStorage.setItem(ACTIVE_ORDER_KEY, result.orderNumber);
@@ -469,6 +475,11 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
         throw new Error('The loyalty reward covers the entire order. Please choose cash payment or contact the restaurant for a free-order arrangement.');
       }
       window.localStorage.setItem(PENDING_PAYMENT_REFERENCE_KEY, pendingPayment.referenceNumber);
+      if (user?.id) {
+        window.localStorage.setItem(PENDING_PAYMENT_CART_USER_KEY, user.id);
+      } else {
+        window.localStorage.removeItem(PENDING_PAYMENT_CART_USER_KEY);
+      }
       if (isOwnCourierPickup) {
         window.localStorage.setItem(PENDING_PAYMENT_PICKUP_METHOD_KEY, 'third_party_courier');
       } else {
