@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { RestaurantProvider } from './components/RestaurantProvider';
 import { RestaurantOwnerAuthProvider, useRestaurantOwnerAuth } from './components/RestaurantOwnerAuthProvider';
 import { ThemeProvider } from './components/ThemeProvider';
@@ -40,13 +40,9 @@ import './styles/cart-empty.css';
 import './styles/cart-notification.css';
 import { resolveAuthEntry } from './app/auth/authEntry';
 import { normalizeHashRoute, resolveAppRoute } from './app/routing/routeResolver';
+import { useCart } from './modules/ordering/useCart';
 
 const restaurantRepository = new SupabaseRestaurantRepository();
-const CART_STORAGE_KEY = 'restaurant-ordering-cart';
-const LEGACY_CART_STORAGE_KEY = CART_STORAGE_KEY;
-const PENDING_PAYMENT_ORDER_KEY = 'restaurant-ordering-pending-payment-order';
-const PENDING_PAYMENT_REFERENCE_KEY = 'restaurant-ordering-pending-payment-reference';
-const PENDING_PAYMENT_CHECKOUT_URL_KEY = 'restaurant-ordering-pending-payment-checkout-url';
 const CART_CLEAR_EVENT = 'restaurant-ordering-cart-clear';
 type CartItem = { product: RestaurantProduct; quantity: number };
 
@@ -391,20 +387,19 @@ function PublicCustomerRouteGuard({ children }: { children: ReactNode }) {
 function AppContent() {
   const [restaurant, setRestaurant] = useState<RestaurantConfig>(defaultRestaurant);
   const [route, setRoute] = useState(() => normalizeHashRoute(window.location.hash || ''));
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [cartNotification, setCartNotification] = useState('');
   const { user, loading: authLoading, error: authError } = useRestaurantOwnerAuth();
-  const hydratedCartUserIdRef = useRef<string | null>(null);
-  const cartPersistenceReadyRef = useRef(false);
-  const cartItemsRef = useRef<CartItem[]>([]);
 
-  useEffect(() => {
-    cartItemsRef.current = cartItems;
-  }, [cartItems]);
+  const {
+    items: cartItems,
+    count: cartCount,
+    notification: cartNotification,
+    addItem: addCartItem,
+    increase: increaseCartItem,
+    decrease: decreaseCartItem,
+    remove: removeCartItem,
+    dismissNotification: dismissCartNotification,
+  } = useCart(user?.id, authLoading);
 
-  // Guest carts exist only in memory. Once a customer is authenticated,
-  // their cart is persisted to a user-scoped browser key so it survives
-  // navigation and refreshes without being shared with another account.
   useEffect(() => {
     if (authLoading || !user || !supabase) return;
 
@@ -444,48 +439,6 @@ function AppContent() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [authLoading, user?.id]);
-
-  useEffect(() => {
-    if (authLoading) return;
-
-    cartPersistenceReadyRef.current = false;
-
-    if (!user) {
-      hydratedCartUserIdRef.current = null;
-      setCartItems([]);
-      window.localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
-      return;
-    }
-
-    const storageKey = CART_STORAGE_KEY + ':' + user.id;
-    let storedItems: CartItem[] = [];
-
-    try {
-      const stored = window.localStorage.getItem(storageKey);
-      if (stored) storedItems = JSON.parse(stored) as CartItem[];
-    } catch {
-      storedItems = [];
-    }
-
-    hydratedCartUserIdRef.current = user.id;
-
-    if (storedItems.length > 0) {
-      setCartItems(storedItems);
-    } else if (cartItemsRef.current.length > 0) {
-      window.localStorage.setItem(storageKey, JSON.stringify(cartItemsRef.current));
-    } else {
-      setCartItems([]);
-    }
-
-    cartPersistenceReadyRef.current = true;
-    window.localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
-  }, [authLoading, user?.id]);
-
-  useEffect(() => {
-    if (authLoading || !user || hydratedCartUserIdRef.current !== user.id || !cartPersistenceReadyRef.current) return;
-    const storageKey = CART_STORAGE_KEY + ':' + user.id;
-    window.localStorage.setItem(storageKey, JSON.stringify(cartItems));
-  }, [authLoading, user?.id, cartItems]);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -537,7 +490,6 @@ function AppContent() {
 
   const [showStoreClosedModal, setShowStoreClosedModal] = useState(false);
 
-  const cartCount = useMemo(() => cartItems.reduce((total, item) => total + item.quantity, 0), [cartItems]);
   async function addToCart(product: RestaurantProduct) {
     let storeOpen = true;
 
@@ -563,15 +515,8 @@ function AppContent() {
       return;
     }
 
-    setCartItems((current) => {
-      const existing = current.find((item) => item.product.id === product.id);
-      if (existing) return current.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
-      return [...current, { product, quantity: 1 }];
-    });
-    setCartNotification(`${product.name} added to cart`);
+    addCartItem(product);
   }
-  function changeQuantity(productId: string, delta: number) { setCartItems((current) => current.map((item) => item.product.id === productId ? { ...item, quantity: item.quantity + delta } : item).filter((item) => item.quantity > 0)); }
-  function removeFromCart(productId: string) { setCartItems((current) => current.filter((item) => item.product.id !== productId)); }
 
   const routeContext = resolveAppRoute(window.location, route);
   const {
@@ -621,7 +566,7 @@ function AppContent() {
   if (isRiderDashboardPage) return <RiderRouteGuard><RiderDashboardPage /></RiderRouteGuard>;
   if (riderDeliveryMatch) return <RiderRouteGuard><RiderDeliveryPage orderId={decodeURIComponent(riderDeliveryMatch[1])} /></RiderRouteGuard>;
 
-  const publicContent = trackOrderNumber ? <OrderTrackingPage orderNumber={trackOrderNumber} /> : isMenuPage || (!isCartPage && !isCheckoutPage && !trackingMatch) ? <MenuPage onAddToCart={addToCart} cartCount={cartCount} /> : isCartPage ? <CartPage items={cartItems} onIncrease={(id) => changeQuantity(id, 1)} onDecrease={(id) => changeQuantity(id, -1)} onRemove={(id) => removeFromCart(id)} /> : isCheckoutPage ? <CheckoutPage items={cartItems} /> : <OrderTrackingPage orderNumber={decodeURIComponent(trackingMatch![1])} />;
+  const publicContent = trackOrderNumber ? <OrderTrackingPage orderNumber={trackOrderNumber} /> : isMenuPage || (!isCartPage && !isCheckoutPage && !trackingMatch) ? <MenuPage onAddToCart={addToCart} cartCount={cartCount} /> : isCartPage ? <CartPage items={cartItems} onIncrease={increaseCartItem} onDecrease={decreaseCartItem} onRemove={removeCartItem} /> : isCheckoutPage ? <CheckoutPage items={cartItems} /> : <OrderTrackingPage orderNumber={decodeURIComponent(trackingMatch![1])} />;
 
   if (isCashierPosPage) {
     return <StaffRoleGuard role="cashier">{(staffRestaurant) => (
@@ -777,7 +722,7 @@ function AppContent() {
         <button className="button button-primary restaurant-closed-modal-button" type="button" onClick={() => setShowStoreClosedModal(false)}>Okay</button>
       </div>
     </div>
-  ) : null}{cartNotification ? <div className="cart-notification" role="status" aria-live="polite"><div className="cart-notification-icon" aria-hidden="true">✓</div><div className="cart-notification-content"><strong>Added to cart</strong><span>{cartNotification}</span></div><a className="cart-notification-link" href={withBasePath('/cart')}>View cart</a><button className="cart-notification-close" type="button" aria-label="Dismiss notification" onClick={() => setCartNotification('')}>×</button></div> : null}</RestaurantLayout></ThemeProvider></RestaurantProvider>;
+  ) : null}{cartNotification ? <div className="cart-notification" role="status" aria-live="polite"><div className="cart-notification-icon" aria-hidden="true">✓</div><div className="cart-notification-content"><strong>Added to cart</strong><span>{cartNotification}</span></div><a className="cart-notification-link" href={withBasePath('/cart')}>View cart</a><button className="cart-notification-close" type="button" aria-label="Dismiss notification" onClick={dismissCartNotification}>×</button></div> : null}</RestaurantLayout></ThemeProvider></RestaurantProvider>;
   // Order tracking is a public customer page. It must not wait for employee
   // access checks, so navigating from the header never shows an account guard.
   if (trackOrderNumber || trackingMatch) return publicPage;
