@@ -37,6 +37,8 @@ import { isRestaurantCurrentlyOpen } from './utils/restaurantHours';
 import type { RestaurantProduct } from './types/menu';
 import './styles/cart-empty.css';
 import './styles/cart-notification.css';
+import { resolveAuthEntry } from './app/auth/authEntry';
+import { normalizeHashRoute, resolveAppRoute } from './app/routing/routeResolver';
 
 const restaurantRepository = new SupabaseRestaurantRepository();
 const CART_STORAGE_KEY = 'restaurant-ordering-cart';
@@ -70,10 +72,6 @@ function withBasePath(path: string) {
   return `${base}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
-function normalizeHashRoute(hash: string) {
-  const normalized = hash.replace(/^#\//, '#');
-  return normalized === '#menu' ? '' : normalized;
-}
 
 function RestaurantModuleGuard({
   restaurantId,
@@ -574,62 +572,39 @@ function AppContent() {
   function changeQuantity(productId: string, delta: number) { setCartItems((current) => current.map((item) => item.product.id === productId ? { ...item, quantity: item.quantity + delta } : item).filter((item) => item.quantity > 0)); }
   function removeFromCart(productId: string) { setCartItems((current) => current.filter((item) => item.product.id !== productId)); }
 
-  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-  const searchParams = new URLSearchParams(window.location.search);
-  // Only tenant invitation callbacks may enter the tenant onboarding flow.
-  // Customer email-confirmation links also contain token_hash/error parameters,
-  // so those must never be treated as tenant invitations.
-  const isInviteCallback =
-    hashParams.get('type') === 'invite' ||
-    searchParams.get('type') === 'invite' ||
-    (searchParams.get('tenant-invite') === '1' && (
-      Boolean(searchParams.get('token_hash')) ||
-      Boolean(searchParams.get('error_code')) ||
-      Boolean(searchParams.get('error'))
-    )) ||
-    (hashParams.get('tenant-invite') === '1' && (
-      Boolean(hashParams.get('token_hash')) ||
-      Boolean(hashParams.get('error_code')) ||
-      Boolean(hashParams.get('error'))
-    ));
-  const isMenuPage = route === '#menu' || window.location.pathname.endsWith('/menu') || window.location.pathname.endsWith('/menu/');
-  const isCartPage = route === '#cart';
-  const isAccountPage = route === '#account';
-  const isSignUpPage = route === '#signup';
-  const isPrivacyPage = route === '#privacy';
-  const isCheckoutPage = route === '#checkout';
-  const trackOrderNumber = searchParams.get('trackOrder');
-  const isRestaurantOrdersPage = route === '#restaurant/orders';
-  const isRestaurantMenuPage = route === '#restaurant/menu';
-  const isRestaurantSalesPage = route === '#restaurant/sales';
-  const isCashierSalesPage = route === '#restaurant/cashier-sales';
-  const isCashierPosPage = route === '#restaurant/cashier-pos';
-  const isRestaurantDeliveryDispatchPage = route === '#restaurant/delivery-dispatch';
-  const isRestaurantSettingsPage = route === '#restaurant/settings';
-  const isRestaurantWebsiteCustomizationPage = route === '#restaurant/website-customization';
-  const isRestaurantLoyaltyPage = route === '#restaurant/loyalty';
-  const isRestaurantEmployeesPage = route === '#restaurant/employees';
-  const isCashierPage = route === '#restaurant/cashier';
-  const isKitchenPage = route === '#restaurant/kitchen';
-  const isKitchenMenuPage = route === '#restaurant/kitchen-menu';
-  const isDispatcherPage = route === '#restaurant/dispatcher';
-  const restaurantRoleRoute = route.match(/^#restaurant\/(owner|cashier|kitchen|dispatcher)$/)?.[1] as 'owner' | 'cashier' | 'kitchen' | 'dispatcher' | undefined;
-  const isRiderDashboardPage = route === '#rider/dashboard' || route === '#rider/delivery-preview';
-  const riderDeliveryMatch = route.match(/^#rider\/delivery\/([^/]+)$/);
-  const isRiderInvitePath = window.location.pathname.endsWith('/invite') || window.location.pathname.endsWith('/invite/');
-  const isRiderInvitePage = isRiderInvitePath || searchParams.get('invite') === '1';
-  const isEmployeeInvitePage = window.location.pathname.endsWith('/employee-invite') || window.location.pathname.endsWith('/employee-invite/') || searchParams.get('employee-invite') === '1';
-  const isTenantInviteLandingPage =
-    searchParams.has('confirmation_url') ||
-    searchParams.has('token_hash') ||
-    searchParams.get('tenant-owner-access') === '1' ||
-    (searchParams.get('tenant-invite') === '1' && searchParams.get('tenant-onboarding') !== '1');
-  const isTenantInvitePage =
-    (searchParams.get('tenant-invite') === '1' && searchParams.get('tenant-onboarding') === '1') ||
-    hashParams.get('type') === 'invite' ||
-    (isInviteCallback && !isRiderInvitePath && searchParams.get('invite') !== '1' && !isEmployeeInvitePage);
-  const isRestaurantOperationsPage = isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantSalesPage || isRestaurantDeliveryDispatchPage || isRestaurantSettingsPage || isRestaurantWebsiteCustomizationPage || isRestaurantLoyaltyPage || isRestaurantEmployeesPage;
-  const trackingMatch = route.match(/^#order\/(.+)$/);
+  const routeContext = resolveAppRoute(window.location, route);
+  const {
+    isMenuPage,
+    isCartPage,
+    isAccountPage,
+    isSignUpPage,
+    isPrivacyPage,
+    isCheckoutPage,
+    trackOrderNumber,
+    isRestaurantOrdersPage,
+    isRestaurantMenuPage,
+    isRestaurantSalesPage,
+    isCashierSalesPage,
+    isCashierPosPage,
+    isRestaurantDeliveryDispatchPage,
+    isRestaurantSettingsPage,
+    isRestaurantWebsiteCustomizationPage,
+    isRestaurantLoyaltyPage,
+    isRestaurantEmployeesPage,
+    isCashierPage,
+    isKitchenPage,
+    isKitchenMenuPage,
+    isDispatcherPage,
+    restaurantRoleRoute,
+    isRiderDashboardPage,
+    riderDeliveryMatch,
+    isRiderInvitePage,
+    isEmployeeInvitePage,
+    isTenantInviteLandingPage,
+    isTenantInvitePage,
+    isRestaurantOperationsPage,
+    trackingMatch,
+  } = routeContext;
 
   if (isTenantInviteLandingPage) return <TenantInviteLandingPage />;
   if (isTenantInvitePage) return <TenantOnboardingPage />;
@@ -807,31 +782,19 @@ function AppContent() {
 }
 
 export function App() {
-  const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
-  const hashParams = new URLSearchParams(
-    typeof window !== 'undefined' ? window.location.hash.replace(/^#/, '') : '',
-  );
+  const authEntry = resolveAuthEntry(window.location);
 
-  // Tenant invitation callbacks must stay outside the normal owner auth
-  // provider until the tenant explicitly accepts the invitation. This is
-  // critical because Supabase invitation tokens are one-time credentials.
-  // The landing page owns the token exchange and only then enters onboarding.
-  const isTenantInvitationCallback =
-    searchParams.get('tenant-invite') === '1' &&
-    searchParams.get('tenant-onboarding') !== '1';
-
-  const isExistingTenantAccessCallback =
-    searchParams.get('tenant-owner-access') === '1' &&
-    !searchParams.has('tenant-onboarding');
-
-  const hasInviteAuthPayload =
-    searchParams.has('token_hash') ||
-    searchParams.has('code') ||
-    hashParams.has('access_token') ||
-    hashParams.has('token_hash');
-
-  if (isTenantInvitationCallback || isExistingTenantAccessCallback || hasInviteAuthPayload) {
+  // Invitation callbacks are resolved before the normal application auth
+  // provider. Customer confirmation callbacks intentionally resolve to the
+  // normal app and therefore cannot enter tenant onboarding.
+  if (authEntry === 'tenant-invitation') {
     return <TenantInviteLandingPage />;
+  }
+  if (authEntry === 'employee-invitation') {
+    return <RestaurantEmployeeInvitePage />;
+  }
+  if (authEntry === 'rider-invitation') {
+    return <RiderInvitePage />;
   }
 
   return (
