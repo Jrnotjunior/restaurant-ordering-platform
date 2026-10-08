@@ -1176,3 +1176,6 @@ textarea {
   }
   .restaurant-dispatch-rider-select{width:100%}
 }
+
+.restaurant-employee-email-field { grid-column: 1 / -1; }
+.restaurant-employee-email-field input { max-width: 100%; }
