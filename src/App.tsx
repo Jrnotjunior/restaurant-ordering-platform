@@ -98,6 +98,7 @@ function AppContent() {
     increase: increaseCartItem,
     decrease: decreaseCartItem,
     remove: removeCartItem,
+    clear: clearCart,
     dismissNotification: dismissCartNotification,
   } = useCart(user?.id, authLoading);
 
@@ -252,7 +253,7 @@ function AppContent() {
   if (isRiderDashboardPage) return <RiderRouteGuard><RiderDashboardPage /></RiderRouteGuard>;
   if (riderDeliveryMatch) return <RiderRouteGuard><RiderDeliveryPage orderId={decodeURIComponent(riderDeliveryMatch[1])} /></RiderRouteGuard>;
 
-  const publicContent = trackOrderNumber ? <OrderTrackingPage orderNumber={trackOrderNumber} /> : isMenuPage || (!isCartPage && !isCheckoutPage && !trackingMatch) ? <MenuPage onAddToCart={addToCart} cartCount={cartCount} /> : isCartPage ? <CartPage items={cartItems} onIncrease={increaseCartItem} onDecrease={decreaseCartItem} onRemove={removeCartItem} /> : isCheckoutPage ? <CheckoutPage items={cartItems} /> : <OrderTrackingPage orderNumber={decodeURIComponent(trackingMatch![1])} />;
+  const publicContent = trackOrderNumber ? <OrderTrackingPage orderNumber={trackOrderNumber} /> : isMenuPage || (!isCartPage && !isCheckoutPage && !trackingMatch) ? <MenuPage onAddToCart={addToCart} cartCount={cartCount} /> : isCartPage ? <CartPage items={cartItems} onIncrease={increaseCartItem} onDecrease={decreaseCartItem} onRemove={removeCartItem} /> : isCheckoutPage ? <CheckoutPage items={cartItems} onClearCart={clearCart} /> : <OrderTrackingPage orderNumber={decodeURIComponent(trackingMatch![1])} />;
 
   if (isCashierPosPage) {
     return <StaffRoleGuard role="cashier">{(staffRestaurant) => (
