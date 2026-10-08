@@ -576,7 +576,22 @@ function AppContent() {
 
   const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
   const searchParams = new URLSearchParams(window.location.search);
-  const isInviteCallback = hashParams.get('type') === 'invite' || searchParams.get('type') === 'invite' || Boolean(hashParams.get('token_hash') || searchParams.get('token_hash')) || Boolean(hashParams.get('error_code') || searchParams.get('error_code') || hashParams.get('error') || searchParams.get('error'));
+  // Only tenant invitation callbacks may enter the tenant onboarding flow.
+  // Customer email-confirmation links also contain token_hash/error parameters,
+  // so those must never be treated as tenant invitations.
+  const isInviteCallback =
+    hashParams.get('type') === 'invite' ||
+    searchParams.get('type') === 'invite' ||
+    (searchParams.get('tenant-invite') === '1' && (
+      Boolean(searchParams.get('token_hash')) ||
+      Boolean(searchParams.get('error_code')) ||
+      Boolean(searchParams.get('error'))
+    )) ||
+    (hashParams.get('tenant-invite') === '1' && (
+      Boolean(hashParams.get('token_hash')) ||
+      Boolean(hashParams.get('error_code')) ||
+      Boolean(hashParams.get('error'))
+    ));
   const isMenuPage = route === '#menu' || window.location.pathname.endsWith('/menu') || window.location.pathname.endsWith('/menu/');
   const isCartPage = route === '#cart';
   const isAccountPage = route === '#account';
@@ -609,7 +624,10 @@ function AppContent() {
     searchParams.has('token_hash') ||
     searchParams.get('tenant-owner-access') === '1' ||
     (searchParams.get('tenant-invite') === '1' && searchParams.get('tenant-onboarding') !== '1');
-  const isTenantInvitePage = (searchParams.get('tenant-invite') === '1' && searchParams.get('tenant-onboarding') === '1') || hashParams.get('type') === 'invite' || (isInviteCallback && !isRiderInvitePath && searchParams.get('invite') !== '1' && !isEmployeeInvitePage);
+  const isTenantInvitePage =
+    (searchParams.get('tenant-invite') === '1' && searchParams.get('tenant-onboarding') === '1') ||
+    hashParams.get('type') === 'invite' ||
+    (isInviteCallback && !isRiderInvitePath && searchParams.get('invite') !== '1' && !isEmployeeInvitePage);
   const isRestaurantOperationsPage = isRestaurantOrdersPage || isRestaurantMenuPage || isRestaurantSalesPage || isRestaurantDeliveryDispatchPage || isRestaurantSettingsPage || isRestaurantWebsiteCustomizationPage || isRestaurantLoyaltyPage || isRestaurantEmployeesPage;
   const trackingMatch = route.match(/^#order\/(.+)$/);
 
