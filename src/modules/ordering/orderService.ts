@@ -1,6 +1,8 @@
 export {
   createOrder,
   getOrderStatus,
+  getRestaurantOrders,
+  updateOrderStatus,
 } from './orderRepository';
 
 export type {
@@ -9,4 +11,6 @@ export type {
   OrderStatus,
   DeliveryStatus,
   TrackedOrder,
+  RestaurantOrder,
+  RestaurantOrderStatus,
 } from './orderRepository';
