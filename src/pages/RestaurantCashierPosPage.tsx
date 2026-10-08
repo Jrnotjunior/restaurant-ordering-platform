@@ -54,7 +54,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orderType, setOrderType] = useState<'dine_in' | 'pickup'>('dine_in');
-  const [customerName, setCustomerName] = useState('Walk-in Customer');
+  const [customerName, setCustomerName] = useState('');
   const [notes, setNotes] = useState('');
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [selectedCustomerPoints, setSelectedCustomerPoints] = useState<number | null>(null);
@@ -228,13 +228,16 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
 
   async function placeOrder() {
     if (!cart.length || saving || !cashPaymentReady) return;
+    const enteredCustomerName = customerName.trim();
+    if (!enteredCustomerName) {
+      setError('Enter the customer name before placing the order.');
+      return;
+    }
     setSaving(true);
     setError('');
     setSuccess('');
 
     try {
-      const enteredCustomerName = customerName.trim() || 'Walk-in Customer';
-
       // Only a selected registered customer account can earn loyalty points.
       // If no registered account is selected, the order remains a guest order.
       const loyaltyCustomer = selectedCustomerId
@@ -271,7 +274,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
 
       setPrintOrder({
         orderNumber: created.orderNumber,
-        customerName: customerName.trim() || 'Walk-in Customer',
+        customerName: enteredCustomerName,
          notes: notes.trim(),
         cashierName,
         orderType,
@@ -289,7 +292,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
 
       setCart([]);
       clearDiscounts();
-      setCustomerName('Walk-in Customer');
+      setCustomerName('');
       setSelectedCustomerId(null);
       setSelectedCustomerPoints(null);
       setRedeemPoints(false);
@@ -349,6 +352,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
               <span>Customer name</span>
               <input
                 value={customerName}
+                placeholder="Enter customer name"
                 onFocus={() => setShowCustomerSuggestions(customerName.trim().length >= 2)}
                 onChange={(event) => {
                   setCustomerName(event.target.value);
