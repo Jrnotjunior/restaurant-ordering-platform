@@ -47,7 +47,7 @@ export async function signUpCustomer(input: CustomerSignUpInput): Promise<Custom
   }
 
   const restaurant = await getCurrentCustomerRestaurant();
-  const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}#signup-confirmation`;
+  const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}?customer-confirmation=1`;
 
   const { data, error } = await supabase.auth.signUp({
     email: input.email,
