@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { loadOwnerStats, type OwnerStats } from '../modules/sales/salesService';
+import { supabase } from '../services/supabaseClient';
 
 export type RestaurantRole = 'owner' | 'cashier' | 'kitchen' | 'dispatcher';
 
