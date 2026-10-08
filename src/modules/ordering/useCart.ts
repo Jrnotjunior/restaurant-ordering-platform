@@ -21,6 +21,7 @@ export type UseCartResult = {
   increase: (productId: string) => void;
   decrease: (productId: string) => void;
   remove: (productId: string) => void;
+  clear: () => void;
   dismissNotification: () => void;
 };
 
@@ -110,6 +111,11 @@ export function useCart(userId: string | undefined, authLoading: boolean): UseCa
     setItems((current) => removeCartItem(current, productId));
   }
 
+  function clear() {
+    setItems([]);
+    clearCartPersistence(userId);
+  }
+
   function dismissNotification() {
     setNotification('');
   }
@@ -124,6 +130,7 @@ export function useCart(userId: string | undefined, authLoading: boolean): UseCa
     increase,
     decrease,
     remove,
+    clear,
     dismissNotification,
   };
 }
