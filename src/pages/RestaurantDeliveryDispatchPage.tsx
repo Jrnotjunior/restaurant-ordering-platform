@@ -249,6 +249,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
             </div>
 
             <div className="restaurant-dispatch-modal-riders">
+              {assigning && <p className="restaurant-dispatch-assignment-progress" role="status">Assigning this order to {riders.find((rider) => rider.id === assigningRiderId)?.name ?? "the selected rider"}… Other riders have not been assigned this order.</p>}
               {riders.map((rider) => {
                 const canAssign = true;
 
@@ -264,7 +265,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
                         <span>{rider.deliveredToday} delivered today</span>
                       </div>
                     </div>
-                    <button className="restaurant-dispatch-rider-select" type="button" disabled={!canAssign || assigning} onClick={() => void assignOrder(rider)}>
+                    <button className={`restaurant-dispatch-rider-select${assigning && assigningRiderId !== rider.id ? " is-waiting" : ""}`} type="button" disabled={!canAssign || assigning} onClick={() => void assignOrder(rider)}>
                       {assigningRiderId === rider.id ? 'Assigning…' : rider.status === 'busy' ? 'Assign Another Order' : 'Assign'}
                     </button>
                   </article>
