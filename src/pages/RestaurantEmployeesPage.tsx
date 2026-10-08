@@ -195,8 +195,8 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
               <label>Full name<input name="name" type="text" placeholder="e.g. Juan Dela Cruz" required /></label>
               <label>Preferred name<input name="preferredName" type="text" placeholder="e.g. Juan" required /></label>
               <label>Mobile number<input name="mobileNumber" type="tel" inputMode="numeric" placeholder="09XXXXXXXXX" maxLength={11} pattern="^09[0-9]{9}$" onInput={(event) => { event.currentTarget.value = normalizeMobileNumber(event.currentTarget.value); }} required /><span className="restaurant-employee-form-help">Must start with 09 and contain exactly 11 digits.</span></label>
-              <label>Login email<input name="email" type="email" placeholder="employee@example.com" required /></label>
               <label>Role<select name="role" defaultValue="cashier"><option value="cashier">Cashier</option><option value="kitchen">Kitchen</option><option value="dispatcher">Dispatcher</option><option value="rider">Rider</option></select></label>
+              <label className="restaurant-employee-email-field">Login email<input name="email" type="email" placeholder="employee@example.com" required /></label>
             </div>
             <p className="restaurant-employee-form-help">A Supabase Auth account is created automatically and an invitation email is sent so the employee can set a password.</p>
             <div className="restaurant-employee-form-actions">
