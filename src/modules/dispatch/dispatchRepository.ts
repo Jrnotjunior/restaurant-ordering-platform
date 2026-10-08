@@ -10,6 +10,15 @@ export type Rider = {
   id: string; name: string; mobileNumber: string; status: 'available' | 'delivering';
   activeDeliveries: number; deliveredToday: number;
 };
+export type RiderDeliveryStatus = 'assigned' | 'delivering';
+export type RiderDelivery = {
+  id: string; orderNumber: string; customerName: string; address: string; total: number;
+  status: RiderDeliveryStatus;
+};
+export type RiderHistoryItem = {
+  id: string; orderNumber: string; customerName: string; total: number; createdAt: string;
+  status: 'delivered' | 'failed'; failureReason: string | null;
+};
 type OrderRow = {
   id:string; order_number:string; customer_name:string; delivery_address:string|null;
   delivery_barangay:string|null; total:number|string; created_at:string;
@@ -53,6 +62,27 @@ export async function getDispatchData(restaurantId:string):Promise<{orders:Ready
   return {orders,riders};
 }
 
+export async function getRiderDashboardData(userId:string):Promise<{riderName:string;deliveries:RiderDelivery[];history:RiderHistoryItem[]}> {
+  if(!supabase) throw new Error('Supabase is not configured.');
+  const {data:rider,error:riderError}=await supabase.from('restaurant_staff').select('id,name').eq('role','rider').eq('is_active',true).eq('auth_user_id',userId).maybeSingle();
+  if(riderError) throw riderError;
+  if(!rider) throw new Error('Your account is not linked to a rider profile. Please contact the restaurant.');
+
+  const [activeResult,historyResult]=await Promise.all([
+    supabase.from('orders').select('id,order_number,customer_name,delivery_address,delivery_barangay,total,delivery_status').eq('rider_id',rider.id).eq('order_type','delivery').in('delivery_status',['assigned','delivering']).order('created_at',{ascending:true}),
+    supabase.from('orders').select('id,order_number,customer_name,total,created_at,delivery_status,delivery_failure_reason').eq('rider_id',rider.id).eq('order_type','delivery').in('delivery_status',['delivered','failed']).order('created_at',{ascending:false}),
+  ]);
+  if(activeResult.error) throw activeResult.error;
+  if(historyResult.error) throw historyResult.error;
+  const activeRows=(activeResult.data??[]) as Array<{id:string;order_number:string;customer_name:string;delivery_address:string|null;delivery_barangay:string|null;total:number|string;delivery_status:RiderDeliveryStatus}>;
+  const historyRows=(historyResult.data??[]) as Array<{id:string;order_number:string;customer_name:string;total:number|string;created_at:string;delivery_status:'delivered'|'failed';delivery_failure_reason:string|null}>;
+  return {
+    riderName:rider.name||'Rider',
+    deliveries:activeRows.map(order=>({id:order.id,orderNumber:order.order_number,customerName:order.customer_name,address:order.delivery_address??order.delivery_barangay??'Delivery address not provided',total:Number(order.total),status:order.delivery_status})),
+    history:historyRows.map(order=>({id:order.id,orderNumber:order.order_number,customerName:order.customer_name,total:Number(order.total),createdAt:order.created_at,status:order.delivery_status,failureReason:order.delivery_failure_reason??null}))
+  };
+}
+
 export async function assignDelivery(restaurantId:string,orderId:string,riderId:string){
   if(!supabase) throw new Error('Supabase is not configured.');
   const {error:assignmentError}=await supabase.from('delivery_assignments').insert({order_id:orderId,rider_id:riderId,restaurant_id:restaurantId,status:'assigned'});
@@ -66,15 +96,7 @@ export async function assignDelivery(restaurantId:string,orderId:string,riderId:
 
 export async function completeDispatchHandoff(restaurantId:string,orderId:string,orderType:'pickup'|'dine_in'){
   if(!supabase) throw new Error('Supabase is not configured.');
-  const {data,error}=await supabase
-    .from('orders')
-    .update({status:'completed'})
-    .eq('id',orderId)
-    .eq('restaurant_id',restaurantId)
-    .eq('order_type',orderType)
-    .eq('status','ready')
-    .select('id')
-    .maybeSingle();
+  const {data,error}=await supabase.from('orders').update({status:'completed'}).eq('id',orderId).eq('restaurant_id',restaurantId).eq('order_type',orderType).eq('status','ready').select('id').maybeSingle();
   if(error) throw error;
   if(!data) throw new Error('This order is no longer ready for handoff. Please refresh the Dispatch page.');
 }
