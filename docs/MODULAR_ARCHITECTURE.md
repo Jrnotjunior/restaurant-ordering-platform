@@ -33,24 +33,32 @@ Protected access is enforced both by route guards and by backend/RLS policies.
 
 ## Current migration
 
-The first extracted boundary is src/modules/auth/authService.ts.
+The extracted boundaries now include:
 
-It owns:
+- auth — account context, invitation callback resolution, and protected route guards
+- customer — customer authentication, profile, saved addresses, and exact delivery locations
+- location — Mapbox search/reverse geocoding and delivery location mapping
+- ordering — cart state, persistence, and cart lifecycle
+- sales — owner sales statistics and business-date calculations
+- products — product/category CRUD, availability, and product images
+- employees — employee CRUD, staff roles, invitation creation, and rider-as-employee behavior
+- invitations — tenant-owner and employee invitation type resolution
 
-1. account-context resolution (owner/staff/customer)
-2. invitation callback initialization
-3. the distinction between invitation callbacks and customer confirmation callbacks
+The following compatibility adapters remain intentionally where legacy consumers still depend on them:
 
-RestaurantOwnerAuthProvider remains the compatibility adapter for existing consumers during migration.
+- RestaurantOwnerAuthProvider
+- existing order repository for order creation/tracking
+
+Feature migrations are being completed one module at a time with build and user regression testing after each boundary.
 
 ## Next migrations
 
-1. Replace page-level authentication checks with the auth module.
-2. Separate customer authentication UI from restaurant owner/staff authentication UI.
-3. Complete customer account/address boundary, including exact map locations.
-4. Extract ordering/cart state from App.tsx.
-5. Extract route guards from App.tsx.
-6. Move feature pages behind module services.
+1. Complete the payments boundary for online payment staging and PayMongo checkout.
+2. Extract order creation/tracking into the ordering module without changing order behavior.
+3. Extract loyalty points, redemption, and ledger access into the loyalty module.
+4. Extract POS discounts, tax calculations, cash handling, and receipt workflows.
+5. Extract kitchen queue and sold-out behavior.
+6. Extract dispatch, delivery zones, and shipping-fee workflows.
 7. Add build/test checks before each migration is merged.
 
 ## Safety rule
@@ -82,4 +90,4 @@ Authentication invitations are treated as a dedicated module boundary. The appli
 
 Invitation type resolution lives in `src/modules/invitations/`. Individual invitation flows must not infer their type from generic Supabase callback parameters such as `token_hash` or `confirmation_url`.
 
-The hosted Supabase Invite User email template must preserve the `redirectTo` supplied by the calling Edge Function rather than hard-code a tenant-specific URL. This is required because both tenant and employee invitations use the same Supabase Invite User template.
+The hosted Supabase Invite User email template uses a generic callback based on `{{ .SiteURL }}` and `?invitation=1`. The application resolves the authenticated user's `invitation_type` metadata to route either to tenant onboarding or employee invitation setup. The email template must not hard-code a tenant-specific URL.
