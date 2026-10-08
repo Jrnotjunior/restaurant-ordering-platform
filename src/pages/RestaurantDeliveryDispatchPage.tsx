@@ -86,7 +86,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
 
   const statusLabel = (status: Rider['status']) => ({
     available: 'Available',
-    delivering: 'Out delivering',
+    busy: 'Has active delivery',
   }[status]);
 
   async function assignOrder(rider: Rider) {
@@ -262,7 +262,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
                       </div>
                     </div>
                     <button className="restaurant-dispatch-rider-select" type="button" disabled={!canAssign || assigning} onClick={() => void assignOrder(rider)}>
-                      {assigning ? 'Assigning…' : canAssign ? 'Assign' : rider.status === 'delivering' ? 'Currently delivering' : 'Unavailable'}
+                      {assigning ? 'Assigning…' : canAssign ? 'Assign' : rider.status === 'busy' ? 'Has active delivery' : 'Unavailable'}
                     </button>
                   </article>
                 );
