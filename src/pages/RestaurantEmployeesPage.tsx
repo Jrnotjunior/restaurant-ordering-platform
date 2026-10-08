@@ -47,15 +47,28 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
     );
   }, [staff, searchEmployee]);
 
+  function normalizeMobileNumber(value: string) {
+    return value.replace(/\D/g, '').slice(0, 11);
+  }
+
+  function validateMobileNumber(value: string) {
+    return /^09\d{9}$/.test(value);
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
     const name = String(form.get('name') || '').trim();
     const preferredName = String(form.get('preferredName') || '').trim();
-    const mobileNumber = String(form.get('mobileNumber') || '').trim();
+    const mobileNumber = normalizeMobileNumber(String(form.get('mobileNumber') || ''));
     const email = String(form.get('email') || '').trim();
     const role = String(form.get('role') || 'cashier') as StaffRole;
+
+    if (!validateMobileNumber(mobileNumber)) {
+      setError('Mobile number must start with 09 and contain exactly 11 digits.');
+      return;
+    }
 
     setSaving(true);
     setError('');
@@ -181,7 +194,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
             <div className="restaurant-employee-form-grid">
               <label>Full name<input name="name" type="text" placeholder="e.g. Juan Dela Cruz" required /></label>
               <label>Preferred name<input name="preferredName" type="text" placeholder="e.g. Juan" required /></label>
-              <label>Mobile number<input name="mobileNumber" type="tel" placeholder="09XX XXX XXXX" required /></label>
+              <label>Mobile number<input name="mobileNumber" type="tel" inputMode="numeric" placeholder="09XXXXXXXXX" maxLength={11} pattern="^09[0-9]{9}$" onInput={(event) => { event.currentTarget.value = normalizeMobileNumber(event.currentTarget.value); }} required /><span className="restaurant-employee-form-help">Must start with 09 and contain exactly 11 digits.</span></label>
               <label>Login email<input name="email" type="email" placeholder="employee@example.com" required /></label>
               <label>Role<select name="role" defaultValue="cashier"><option value="cashier">Cashier</option><option value="kitchen">Kitchen</option><option value="dispatcher">Dispatcher</option><option value="rider">Rider</option></select></label>
             </div>
@@ -225,7 +238,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
               <div className="restaurant-employee-form-grid">
                 <label>Full name<input name="name" type="text" defaultValue={editingStaff.name} required /></label>
                 <label>Preferred name<input name="preferredName" type="text" defaultValue={editingStaff.preferredName} required /></label>
-                <label>Mobile number<input name="mobileNumber" type="tel" defaultValue={editingStaff.mobileNumber} required /></label>
+                <label>Mobile number<input name="mobileNumber" type="tel" inputMode="numeric" defaultValue={editingStaff.mobileNumber} maxLength={11} pattern="^09[0-9]{9}$" onInput={(event) => { event.currentTarget.value = normalizeMobileNumber(event.currentTarget.value); }} required /><span className="restaurant-employee-form-help">Must start with 09 and contain exactly 11 digits.</span></label>
                 <label>Role<input value={roleLabels[editingStaff.role]} readOnly /></label>
                 <label>Login email<input value={editingStaff.email} readOnly /></label>
 
