@@ -84,6 +84,16 @@ export function MapboxDeliveryLocationPicker({
   }
 
   useEffect(() => {
+    if (!mapRef.current || !Number.isFinite(initialLatitude) || !Number.isFinite(initialLongitude)) return;
+    const map = mapRef.current;
+    const marker = markerRef.current;
+    const coordinates: [number, number] = [Number(initialLongitude), Number(initialLatitude)];
+    marker?.setLngLat(coordinates);
+    map.setCenter(coordinates);
+    map.setZoom(16);
+  }, [initialLatitude, initialLongitude]);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function setup() {
