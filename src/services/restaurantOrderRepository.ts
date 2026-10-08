@@ -1,6 +1,7 @@
 import { supabaseRpc } from './supabaseClient';
 
 export type RestaurantOrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'completed' | 'cancelled';
+type RestaurantOrderDiscountType = 'senior' | 'pwd';
 export type RestaurantPaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 
 export async function getRestaurantSales(restaurantId: string): Promise<RestaurantOrder[]> {
@@ -36,7 +37,7 @@ export async function getRestaurantSales(restaurantId: string): Promise<Restaura
     discountBeneficiaryCount: Number(row.discount_beneficiary_count ?? 0),
     discountGroupSize: Number(row.discount_group_size ?? 1),
     discountBeneficiaries: (row.discount_beneficiaries ?? []).map((item) => ({
-      discountType: (item.discountType ?? item.discount_type ?? 'senior') as PosDiscountType,
+      discountType: (item.discountType ?? item.discount_type ?? 'senior') as RestaurantOrderDiscountType,
       idType: item.idType ?? item.discount_id_type ?? '',
       idNumber: item.idNumber ?? item.discount_id_number ?? '',
       eligibleAmount: Number(item.eligibleAmount ?? item.eligible_amount ?? 0),
