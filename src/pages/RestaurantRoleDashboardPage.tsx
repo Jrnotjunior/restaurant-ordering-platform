@@ -4,6 +4,13 @@ import { supabase } from '../services/supabaseClient';
 
 export type RestaurantRole = 'owner' | 'cashier' | 'kitchen' | 'dispatcher';
 
+const roleInfo = {
+  owner: { eyebrow: 'Restaurant owner', title: 'Owner Dashboard', description: 'Manage your restaurant, team, products, orders, and operations.' },
+  cashier: { eyebrow: 'Cashier', title: 'Cashier Dashboard', description: 'Handle customer orders, payments, receipts, and cashier tasks.' },
+  kitchen: { eyebrow: 'Kitchen', title: 'Kitchen Dashboard', description: 'View confirmed orders and update the kitchen preparation status.' },
+  dispatcher: { eyebrow: 'Dispatch', title: 'Dispatcher Dashboard', description: 'Manage ready orders, rider assignments, pickups, and courier handoffs.' },
+} as const;
+
 type Props = {
   role: RestaurantRole;
   restaurantName?: string;
