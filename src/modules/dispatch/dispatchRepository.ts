@@ -47,7 +47,7 @@ export async function getDispatchData(restaurantId:string):Promise<{orders:Ready
   }));
   const riders=((riderResult.data??[]) as RiderRow[]).map(r=>({
     id:r.id,name:r.name,mobileNumber:r.mobile_number,
-    status:(deliveringByRider.get(r.id)??0)>0?'delivering':'available',
+    status:((deliveringByRider.get(r.id)??0)>0?'delivering':'available') as Rider['status'],
     activeDeliveries:activeByRider.get(r.id)??0,deliveredToday:deliveredTodayByRider.get(r.id)??0
   }));
   return {orders,riders};
