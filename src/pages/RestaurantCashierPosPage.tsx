@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getMenu } from '../modules/products/productService';
 import { createOrder } from '../modules/ordering/orderService';
-import { applyPosGroupDiscounts, confirmDineInPayment, getRestaurantTaxSettings, type PosDiscountIdType, type PosDiscountType, type RestaurantTaxSettings } from '../services/restaurantOrderRepository';
+import { applyPosGroupDiscounts, confirmPosCashPayment, getRestaurantTaxSettings, type PosDiscountIdType, type PosDiscountType, type RestaurantTaxSettings } from '../modules/pos/posService';
 import type { RestaurantProduct } from '../types/menu';
 import { supabase } from '../services/supabaseClient';
 import { attachCustomerToOrder, findCustomersByName, getLoyaltyRedemptionSettings, redeemLoyaltyReward, type LoyaltyCustomerSuggestion, type LoyaltyRedemptionSettings } from '../modules/loyalty/loyaltyService';
@@ -269,7 +269,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
         loyaltyDiscountAmount = redemption.discountAmount;
       }
 
-      await confirmDineInPayment(created.orderId);
+      await confirmPosCashPayment(created.orderId);
       window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
 
       setPrintOrder({
