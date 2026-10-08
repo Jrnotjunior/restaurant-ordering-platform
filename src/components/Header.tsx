@@ -63,12 +63,8 @@ export function Header({ cartCount = 0 }: HeaderProps) {
 
       setLoyaltyLoading(true);
       try {
-        const rows = await supabaseRpc<number | string>('get_my_loyalty_points', {
-          p_restaurant_id: restaurant.id,
-        });
-
-        const points = rows[0];
-        if (mounted) setLoyaltyPoints(Number(points ?? 0));
+        const points = await getMyLoyaltyPoints(restaurant.id);
+        if (mounted) setLoyaltyPoints(points);
       } catch (error) {
         console.error('Unable to load customer loyalty points.', error);
         if (mounted) setLoyaltyPoints(null);
