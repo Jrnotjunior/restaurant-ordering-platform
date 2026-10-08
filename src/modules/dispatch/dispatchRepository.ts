@@ -7,7 +7,7 @@ export type ReadyOrder = {
   orderType: 'delivery' | 'pickup' | 'dine_in'; riderId: string | null;
 };
 export type Rider = {
-  id: string; name: string; mobileNumber: string; status: 'available' | 'delivering';
+  id: string; name: string; mobileNumber: string; status: 'available' | 'busy';
   activeDeliveries: number; deliveredToday: number;
 };
 export type RiderDeliveryStatus = 'assigned' | 'delivering';
@@ -56,7 +56,7 @@ export async function getDispatchData(restaurantId:string):Promise<{orders:Ready
   }));
   const riders=((riderResult.data??[]) as RiderRow[]).map(r=>({
     id:r.id,name:r.name,mobileNumber:r.mobile_number,
-    status:((deliveringByRider.get(r.id)??0)>0?'delivering':'available') as Rider['status'],
+    status:((activeByRider.get(r.id)??0)>0?'busy':'available') as Rider['status'],
     activeDeliveries:activeByRider.get(r.id)??0,deliveredToday:deliveredTodayByRider.get(r.id)??0
   }));
   return {orders,riders};
