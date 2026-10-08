@@ -2,7 +2,6 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   createEmployee,
   getEmployees,
-  resendEmployeeInvitation,
   roleLabels,
   setEmployeeActive,
   updateEmployee,
@@ -16,7 +15,6 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
   const [editingStaff, setEditingStaff] = useState<StaffAccount | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [resendingInvitationId, setResendingInvitationId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [confirmation, setConfirmation] = useState('');
   const [searchEmployee, setSearchEmployee] = useState('');
@@ -82,22 +80,6 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
       setError(saveError instanceof Error ? saveError.message : 'Unable to add employee.');
     } finally {
       setSaving(false);
-    }
-  }
-
-  async function resendInvitation(employee: StaffAccount) {
-    setResendingInvitationId(employee.id);
-    setError('');
-    setConfirmation('');
-    try {
-      const result = await resendEmployeeInvitation(restaurantId, employee);
-      setConfirmation(result.mode === 'password_setup'
-        ? `A password setup email was sent to ${employee.email}.`
-        : `A new invitation was sent to ${employee.email}.`);
-    } catch (resendError) {
-      setError(resendError instanceof Error ? resendError.message : 'Unable to resend employee invitation.');
-    } finally {
-      setResendingInvitationId(null);
     }
   }
 
@@ -218,9 +200,8 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
                   {!employee.isActive ? <p className="restaurant-employee-status">Inactive</p> : null}
                 </div>
                 <div className="restaurant-employee-actions">
-                  <button className="button button-secondary" type="button" onClick={() => openEmployeeEditor(employee)} disabled={saving || resendingInvitationId === employee.id}>Edit</button>
-                  {!employee.isActive ? null : <button className="button button-secondary" type="button" onClick={() => void resendInvitation(employee)} disabled={saving || resendingInvitationId !== null}>{resendingInvitationId === employee.id ? 'Sending…' : 'Resend Invitation'}</button>}
-                  <button className="button button-secondary" type="button" onClick={() => void toggleActive(employee)} disabled={saving || resendingInvitationId === employee.id}>
+                  <button className="button button-secondary" type="button" onClick={() => openEmployeeEditor(employee)} disabled={saving}>Edit</button>
+                  <button className="button button-secondary" type="button" onClick={() => void toggleActive(employee)} disabled={saving}>
                     {employee.isActive ? 'Deactivate' : 'Activate'}
                   </button>
                 </div>
