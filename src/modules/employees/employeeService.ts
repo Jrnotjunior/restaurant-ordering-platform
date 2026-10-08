@@ -78,39 +78,6 @@ export async function createEmployee(
   }
 }
 
-export async function resendEmployeeInvitation(restaurantId: string, employee: StaffAccount) {
-  if (!supabase) throw new Error('Supabase is not configured.');
-
-  const { data, error: functionError } = await supabase.functions.invoke('resend-staff-invitation', {
-    body: { restaurantId, staffId: employee.id },
-  });
-
-  if (functionError) {
-    let message = functionError.message || 'Unable to resend employee invitation.';
-    let alreadyConfirmed = false;
-    if (functionError.context instanceof Response) {
-      try {
-        const payload = await functionError.context.clone().json();
-        if (payload?.error) {
-          message = payload.error;
-          alreadyConfirmed = String(payload.error).toLowerCase().includes('already completed the invitation');
-        }
-      } catch {}
-    }
-
-    if (!alreadyConfirmed) throw new Error(message);
-
-    const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}?employee-invite=1`;
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(employee.email, { redirectTo });
-    if (resetError) throw resetError;
-
-    return { mode: 'password_setup' as const };
-  }
-
-  if (!data?.invitationSent) throw new Error('The invitation was not sent.');
-  return { mode: 'invitation' as const };
-}
-
 export async function updateEmployee(
   restaurantId: string,
   employeeId: string,
