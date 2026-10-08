@@ -1,14 +1,24 @@
 import { useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { getCurrentCustomerUser } from '../modules/customer/customerAuthService';
+import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
 
 export function CustomerEmailConfirmationPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { loading: authLoading, user: authUser } = useRestaurantOwnerAuth();
 
   useEffect(() => {
     let mounted = true;
+
+    if (authLoading) return () => { mounted = false; };
+
+    if (authUser) {
+      setUser(authUser);
+      setLoading(false);
+      return () => { mounted = false; };
+    }
 
     getCurrentCustomerUser()
       .then((currentUser) => {
@@ -26,7 +36,7 @@ export function CustomerEmailConfirmationPage() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [authLoading, authUser]);
 
   if (loading) {
     return (
