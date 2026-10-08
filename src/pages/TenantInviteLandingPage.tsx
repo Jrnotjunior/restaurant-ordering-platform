@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { supabase } from '../services/supabaseClient';
+import { getInvitationEntryUrl, resolveInvitationTypeFromMetadata } from '../modules/invitations/invitationResolver';
 
 export function TenantInviteLandingPage() {
   const params = useMemo(() => {
@@ -18,12 +19,13 @@ export function TenantInviteLandingPage() {
   async function redirectAfterAuthentication() {
     if (!supabase) return;
     const { data } = await supabase.auth.getUser();
-    const invitationType = String(data.user?.user_metadata?.invitation_type ?? '');
-    if (invitationType === 'employee_staff') {
-      window.location.replace(window.location.pathname + '?employee-invite=1');
+    const invitationType = resolveInvitationTypeFromMetadata(data.user?.user_metadata);
+    if (invitationType) {
+      window.location.replace(getInvitationEntryUrl(invitationType));
       return;
     }
-    window.location.replace(window.location.pathname + '?tenant-invite=1&tenant-onboarding=1');
+    setError('This invitation is missing a valid invitation type. Please contact the sender.');
+    setAccepting(false);
   }
 
   function getAuthHashParams() {
