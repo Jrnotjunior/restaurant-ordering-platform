@@ -80,16 +80,30 @@ export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' |
   const isRiderInvitePath =
     location.pathname.endsWith('/invite') || location.pathname.endsWith('/invite/');
   const isRiderInvitePage = isRiderInvitePath || searchParams.get('invite') === '1';
+  const nestedConfirmationUrl = searchParams.get('confirmation_url') ?? '';
+  let nestedEmployeeInvite = false;
+  if (nestedConfirmationUrl) {
+    try {
+      const nested = new URL(nestedConfirmationUrl, 'https://invalid.local');
+      nestedEmployeeInvite = nested.searchParams.get('employee-invite') === '1'
+        || nested.pathname.endsWith('/employee-invite')
+        || nested.pathname.endsWith('/employee-invite/');
+    } catch {
+      nestedEmployeeInvite = nestedConfirmationUrl.includes('employee-invite=1');
+    }
+  }
+
   const isEmployeeInvitePage =
     location.pathname.endsWith('/employee-invite') ||
     location.pathname.endsWith('/employee-invite/') ||
-    searchParams.get('employee-invite') === '1';
+    searchParams.get('employee-invite') === '1' ||
+    nestedEmployeeInvite;
 
   // Only explicit tenant markers can enter the tenant flow. A bare
   // token_hash is deliberately excluded because customer confirmations use
   // the same Supabase Auth callback parameters.
   const isTenantInviteLandingPage =
-    searchParams.has('confirmation_url') ||
+    (searchParams.has('confirmation_url') && !nestedEmployeeInvite) ||
     searchParams.get('tenant-owner-access') === '1' ||
     (searchParams.get('tenant-invite') === '1' && searchParams.get('tenant-onboarding') !== '1');
 
