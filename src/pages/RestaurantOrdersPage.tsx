@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { confirmDineInPayment, getRestaurantOrders, updateOrderStatus, type RestaurantOrder, type RestaurantOrderStatus } from '../services/restaurantOrderRepository';
+import { getRestaurantOrders, updateOrderStatus, type RestaurantOrder, type RestaurantOrderStatus } from '../services/restaurantOrderRepository';
+import { confirmPosCashPayment } from '../modules/pos/posService';
 import { supabase } from '../services/supabaseClient';
 
 type Props = { restaurantId: string; role?: 'owner' | 'cashier' | 'kitchen' };
@@ -169,7 +170,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
     if (role !== 'cashier') return;
     try {
       setError(''); setUpdating(order.orderId);
-      await confirmDineInPayment(order.orderId);
+      await confirmPosCashPayment(order.orderId);
       setOrders((current) => current.map((item) => item.orderId === order.orderId ? { ...item, paymentStatus: 'paid', status: 'confirmed' } : item));
       setSelectedOrder(null); setOpenColumn(null);
     } catch (err) {
