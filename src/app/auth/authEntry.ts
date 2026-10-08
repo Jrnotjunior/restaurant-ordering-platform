@@ -9,6 +9,20 @@ function pathEndsWith(pathname: string, value: string) {
   return pathname.endsWith(value) || pathname.endsWith(`${value}/`);
 }
 
+function hasNestedFlowMarker(search: URLSearchParams, marker: string) {
+  const confirmationUrl = search.get('confirmation_url');
+  if (!confirmationUrl) return false;
+
+  try {
+    const nested = new URL(confirmationUrl, 'https://invalid.local');
+    return nested.searchParams.get(marker) === '1'
+      || nested.pathname.endsWith(`/${marker}`)
+      || nested.pathname.endsWith(`/${marker}/`);
+  } catch {
+    return confirmationUrl.includes(`${marker}=1`);
+  }
+}
+
 /**
  * Resolves the purpose of an incoming Auth callback.
  *
@@ -23,7 +37,8 @@ export function resolveAuthEntry(location: Pick<Location, 'pathname' | 'search' 
   const pathname = location.pathname;
   const isEmployeeInvitation =
     pathEndsWith(pathname, '/employee-invite') ||
-    search.get('employee-invite') === '1';
+    search.get('employee-invite') === '1' ||
+    hasNestedFlowMarker(search, 'employee-invite');
 
   if (isEmployeeInvitation) return 'employee-invitation';
 
@@ -36,14 +51,11 @@ export function resolveAuthEntry(location: Pick<Location, 'pathname' | 'search' 
   const isTenantInvitation =
     search.get('tenant-invite') === '1' ||
     search.get('tenant-owner-access') === '1' ||
-    search.has('confirmation_url') ||
+    (search.has('confirmation_url') && !hasNestedFlowMarker(search, 'employee-invite')) ||
     search.get('flow') === 'tenant-owner';
 
   if (isTenantInvitation) return 'tenant-invitation';
 
-  // Customer confirmation/password-recovery callbacks intentionally fall
-  // through to the normal application. Their token is handled by Supabase
-  // Auth, not by the tenant invitation screen.
   void hash;
 
   return 'normal-app';
