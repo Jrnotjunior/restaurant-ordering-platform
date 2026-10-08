@@ -575,6 +575,18 @@ main { flex: 1; }
 
 .restaurant-employee-form-grid label {
   min-width: 0;
+  display: grid;
+  grid-template-rows: auto 44px auto;
+  align-content: start;
+  gap: 7px;
+}
+.restaurant-employee-form-grid label > input,
+.restaurant-employee-form-grid label > select {
+  grid-row: 2;
+  align-self: start;
+}
+.restaurant-employee-form-grid label > .restaurant-employee-form-help {
+  grid-row: 3;
 }
 .restaurant-employee-form-grid label > .restaurant-employee-form-help {
   margin-top: 0;
