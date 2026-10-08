@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
+import { RestaurantOwnerLoginPage } from '../../pages/RestaurantOwnerLoginPage';
 import { useRestaurantOwnerAuth } from '../../components/RestaurantOwnerAuthProvider';
 import { defaultRestaurant } from '../../config/defaultRestaurant';
 import { supabase } from '../../services/supabaseClient';
@@ -154,9 +155,9 @@ export function OwnerRestaurantGuard({ children }: { children: (restaurant: Rest
     return () => { mounted = false; };
   }, [user]);
 
-  if (!user) return <div />;
+  if (!user) return <RestaurantOwnerLoginPage />;
   if (checkingRole) return <section className="restaurant-owner-auth-loading">Checking account access…</section>;
-  if (!restaurant) return <section className="restaurant-owner-auth-no-restaurant"><div className="restaurant-owner-auth-no-restaurant-card"><p className="eyebrow">Restaurant operations</p><h1>No restaurant assigned</h1><p>Your owner account is signed in, but it is not linked to an active restaurant yet.</p></div></section>;
+  if (!restaurant) return <section className="restaurant-owner-auth-no-restaurant"><div className="restaurant-owner-auth-no-restaurant-card"><p className="eyebrow">Restaurant operations</p><h1>No restaurant assigned</h1><p>Your owner account is signed in, but it is not linked to an active restaurant yet. Set the restaurant's <code>owner_id</code> to your Supabase Auth user ID, then reload this page.</p><p><strong>Signed in as:</strong> {user.email ?? user.id}</p></div></section>;
   return children(ownerRestaurantConfig(restaurant));
 }
 
@@ -192,7 +193,7 @@ export function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen'
     return () => { mounted = false; };
   }, [role, user, authLoading]);
 
-  if (!user) return <div />;
+  if (!user) return <RestaurantOwnerLoginPage />;
   if (checking) return <section className="restaurant-owner-auth-loading">Checking employee access…</section>;
   if (!allowed || !restaurantId) {
     window.location.hash = '#account';
