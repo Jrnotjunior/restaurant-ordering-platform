@@ -31,6 +31,7 @@ export function useCart(userId: string | undefined, authLoading: boolean): UseCa
   const hydratedUserIdRef = useRef<string | null>(null);
   const persistenceReadyRef = useRef(false);
   const itemsRef = useRef<CartItem[]>([]);
+  const clearedUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     itemsRef.current = items;
@@ -48,9 +49,20 @@ export function useCart(userId: string | undefined, authLoading: boolean): UseCa
       return;
     }
 
-    const storedItems = loadCustomerCart(userId);
-
     hydratedUserIdRef.current = userId;
+
+    // A successful order explicitly empties the active cart. Do not let a
+    // later auth/hydration pass restore the pre-order snapshot from storage.
+    if (clearedUserIdRef.current === userId) {
+      itemsRef.current = [];
+      setItems([]);
+      clearCartPersistence(userId);
+      persistenceReadyRef.current = true;
+      window.localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
+      return;
+    }
+
+    const storedItems = loadCustomerCart(userId);
 
     if (storedItems.length > 0) {
       setItems(storedItems);
@@ -95,6 +107,7 @@ export function useCart(userId: string | undefined, authLoading: boolean): UseCa
   }, [notification]);
 
   function addItem(product: RestaurantProduct) {
+    clearedUserIdRef.current = null;
     setItems((current) => addCartItem(current, product));
     setNotification(`${product.name} added to cart`);
   }
@@ -112,6 +125,8 @@ export function useCart(userId: string | undefined, authLoading: boolean): UseCa
   }
 
   function clear() {
+    clearedUserIdRef.current = userId ?? null;
+    itemsRef.current = [];
     setItems([]);
     clearCartPersistence(userId);
   }
