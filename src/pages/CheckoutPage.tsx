@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { RestaurantProduct } from '../types/menu';
-import { createOrder } from '../services/orderRepository';
+import { createOrder } from '../modules/ordering/orderService';
 import { createPayMongoCheckout, createPendingOnlinePayment, getOnlinePaymentStatus } from '../modules/payments/paymentService';
 import { calculateDeliveryRoute, type DeliveryRouteQuote } from '../services/deliveryRouteRepository';
 import { attachCustomerToOrder, getLoyaltyRedemptionSettings, getMyLoyaltyPoints, redeemLoyaltyReward } from '../services/loyaltyRepository';
