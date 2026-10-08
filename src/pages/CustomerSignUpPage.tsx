@@ -1,7 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { currentRestaurantLookup } from '../config/restaurant';
-import { SupabaseRestaurantRepository } from '../services/supabaseRestaurantRepository';
-import { supabase } from '../services/supabaseClient';
+import { signUpCustomer } from '../modules/customer/customerAuthService';
 
 export function CustomerSignUpPage() {
   const [name, setName] = useState('');
@@ -48,52 +46,16 @@ export function CustomerSignUpPage() {
       return;
     }
 
-    if (!supabase) {
-      setError('Supabase is not configured.');
-      return;
-    }
-
     setSubmitting(true);
     try {
-      const hostname = window.location.hostname.trim().toLowerCase();
-      const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
-      const repository = new SupabaseRestaurantRepository();
-      const restaurant = await repository.getRestaurant(
-        !isLocalHost && hostname
-          ? { domain: hostname }
-          : { slug: currentRestaurantLookup.slug },
-      );
-
-      if (!restaurant?.id) {
-        throw new Error('This restaurant could not be identified from the current website.');
-      }
-
-      const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}#signup-confirmation`;
-      const { data, error: signUpError } = await supabase.auth.signUp({
+      const result = await signUpCustomer({
+        name: trimmedName,
+        phone: trimmedPhone,
         email: trimmedEmail,
         password,
-        options: {
-          data: {
-            role: 'customer',
-            name: trimmedName,
-            phone: trimmedPhone || null,
-            restaurant_id: restaurant.id,
-          },
-          emailRedirectTo: redirectTo,
-        },
       });
 
-      if (signUpError) throw signUpError;
-
-      if (data.session) {
-        const { error: profileError } = await supabase.rpc('upsert_customer_profile', {
-          p_restaurant_id: restaurant.id,
-          p_name: trimmedName,
-          p_phone: trimmedPhone || null,
-        });
-
-        if (profileError) throw profileError;
-
+      if (result.session) {
         window.location.hash = '';
         return;
       }
