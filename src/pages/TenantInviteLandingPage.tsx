@@ -15,6 +15,17 @@ export function TenantInviteLandingPage() {
   const tenantFlow = params.get('flow') === 'tenant-owner' || params.get('tenant-owner-access') === '1';
   const authCode = params.get('code') ?? '';
 
+  async function redirectAfterAuthentication() {
+    if (!supabase) return;
+    const { data } = await supabase.auth.getUser();
+    const invitationType = String(data.user?.user_metadata?.invitation_type ?? '');
+    if (invitationType === 'employee_staff') {
+      window.location.replace(window.location.pathname + '?employee-invite=1');
+      return;
+    }
+    window.location.replace(window.location.pathname + '?tenant-invite=1&tenant-onboarding=1');
+  }
+
   function getAuthHashParams() {
     if (typeof window === 'undefined') return new URLSearchParams();
     return new URLSearchParams(window.location.hash.replace(/^#/, ''));
@@ -104,11 +115,7 @@ export function TenantInviteLandingPage() {
         return;
       }
 
-      if (tenantInviteFlow) {
-        window.location.replace(window.location.pathname + '?tenant-invite=1&tenant-onboarding=1');
-      } else {
-        window.location.replace(window.location.pathname + '#restaurant/owner');
-      }
+      await redirectAfterAuthentication();
       return;
     }
 
@@ -125,11 +132,7 @@ export function TenantInviteLandingPage() {
         return;
       }
 
-      if (tenantInviteFlow) {
-        window.location.replace(window.location.pathname + '?tenant-invite=1&tenant-onboarding=1');
-      } else {
-        window.location.replace(window.location.pathname + '#restaurant/owner');
-      }
+      await redirectAfterAuthentication();
       return;
     }
 
@@ -145,20 +148,12 @@ export function TenantInviteLandingPage() {
         return;
       }
 
-      if (tenantInviteFlow) {
-        window.location.replace(window.location.pathname + '?tenant-invite=1&tenant-onboarding=1');
-      } else {
-        window.location.replace(window.location.pathname + '#restaurant/owner');
-      }
+      await redirectAfterAuthentication();
       return;
     }
 
     if (sessionReady) {
-      if (tenantInviteFlow) {
-        window.location.replace(window.location.pathname + '?tenant-invite=1&tenant-onboarding=1');
-      } else {
-        window.location.replace(window.location.pathname + '#restaurant/owner');
-      }
+      await redirectAfterAuthentication();
       return;
     }
 
