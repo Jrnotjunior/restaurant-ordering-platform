@@ -55,7 +55,7 @@ export function CustomerSignUpPage() {
         password,
       });
 
-      if (result.session) {
+      if (result.hasSession) {
         window.location.hash = '';
         return;
       }
