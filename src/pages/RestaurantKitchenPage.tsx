@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { RestaurantOrdersPage } from './RestaurantOrdersPage';
-import { getMenu, setProductAvailability } from '../services/menuRepository';
+import { getMenu, setProductAvailability } from '../modules/products/productService';
 import { supabase } from '../services/supabaseClient';
 import type { RestaurantCategory, RestaurantProduct } from '../types/menu';
 
