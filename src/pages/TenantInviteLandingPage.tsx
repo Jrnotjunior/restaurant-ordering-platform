@@ -15,15 +15,15 @@ export function TenantInviteLandingPage() {
   const tenantFlow = params.get('flow') === 'tenant-owner' || params.get('tenant-owner-access') === '1';
   const authCode = params.get('code') ?? '';
 
-  const [accepting, setAccepting] = useState(false);
-  const [sessionReady, setSessionReady] = useState(false);
-  const [checkingSession, setCheckingSession] = useState(true);
-  const [error, setError] = useState('');
-
   function getAuthHashParams() {
     if (typeof window === 'undefined') return new URLSearchParams();
     return new URLSearchParams(window.location.hash.replace(/^#/, ''));
   }
+
+  const [accepting, setAccepting] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!supabase) {
@@ -66,12 +66,116 @@ export function TenantInviteLandingPage() {
       }
     });
 
-    return (
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      authState.subscription.unsubscribe();
+    };
+  }, []);
+
+  async function acceptInvitation() {
+    setError('');
+    setAccepting(true);
+
+    if (!supabase) {
+      setError('Authentication is temporarily unavailable. Please try again.');
+      setAccepting(false);
+      return;
+    }
+
+    const hash = getAuthHashParams();
+    const accessToken = hash.get('access_token');
+    const refreshToken = hash.get('refresh_token');
+    const hashType = hash.get('type');
+    const hashError = hash.get('error_description') || hash.get('error');
+
+    if (hashError) {
+      setError(decodeURIComponent(hashError.replace(/\+/g, ' ')));
+      setAccepting(false);
+      return;
+    }
+
+    if (authCode) {
+      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(authCode);
+
+      if (exchangeError) {
+        setError(exchangeError.message);
+        setAccepting(false);
+        return;
+      }
+
+      if (tenantInviteFlow) {
+        window.location.replace(window.location.pathname + '?tenant-invite=1&tenant-onboarding=1');
+      } else {
+        window.location.replace(window.location.pathname + '#restaurant/owner');
+      }
+      return;
+    }
+
+    if (tokenHash) {
+      const verifyType = tokenType || 'recovery';
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: verifyType as EmailOtpType,
+      });
+
+      if (verifyError) {
+        setError(verifyError.message);
+        setAccepting(false);
+        return;
+      }
+
+      if (tenantInviteFlow) {
+        window.location.replace(window.location.pathname + '?tenant-invite=1&tenant-onboarding=1');
+      } else {
+        window.location.replace(window.location.pathname + '#restaurant/owner');
+      }
+      return;
+    }
+
+    if (accessToken && refreshToken && (hashType === 'recovery' || hashType === 'invite' || hashType === 'magiclink')) {
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+
+      if (sessionError) {
+        setError(sessionError.message);
+        setAccepting(false);
+        return;
+      }
+
+      if (tenantInviteFlow) {
+        window.location.replace(window.location.pathname + '?tenant-invite=1&tenant-onboarding=1');
+      } else {
+        window.location.replace(window.location.pathname + '#restaurant/owner');
+      }
+      return;
+    }
+
+    if (sessionReady) {
+      if (tenantInviteFlow) {
+        window.location.replace(window.location.pathname + '?tenant-invite=1&tenant-onboarding=1');
+      } else {
+        window.location.replace(window.location.pathname + '#restaurant/owner');
+      }
+      return;
+    }
+
+    if (confirmationUrl) {
+      window.location.assign(confirmationUrl);
+      return;
+    }
+
+    setError('The secure tenant access link did not create a session. Please open the newest access link directly, without refreshing the page.');
+    setAccepting(false);
+  }
+
+  return (
     <section className="restaurant-owner-auth-no-restaurant">
       <div className="restaurant-owner-auth-no-restaurant-card" style={{ maxWidth: 620, width: '100%' }}>
         <p className="eyebrow">Tenant access</p>
-
-        <h1>{tenantFlow ? 'Continue to your restaurant.' : 'Accept your restaurant invitation.'}</h1>
+        <h1>{tenantFlow ? 'Continue to your restaurant.' : 'You’re invited to Web2Table.'}</h1>
         <p>
           {tenantFlow
             ? 'Your secure access link is ready. Click the button below to continue.'
