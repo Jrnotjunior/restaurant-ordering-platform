@@ -476,7 +476,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
       }
       window.localStorage.setItem(ACTIVE_ORDER_KEY, createdOrder.orderNumber);
       window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
-      window.dispatchEvent(new Event(CART_CLEAR_EVENT));
+      onClearCart();
       setConfirmedOrder({ orderNumber: createdOrder.orderNumber, paymentMethod: 'cash', orderType: isOwnCourierPickup ? 'pickup' : orderType, pickupMethod: isOwnCourierPickup ? 'third_party_courier' : undefined, pickupAddress: isOwnCourierPickup ? restaurantPickupPoint : undefined, total: confirmedTotal });
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'We could not create your order. Please try again.');
