@@ -13,10 +13,6 @@ export function CustomerSignUpPage() {
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [personalInfoConsent, setPersonalInfoConsent] = useState(false);
-  const [showSignInModal, setShowSignInModal] = useState(false);
-  const [signInPassword, setSignInPassword] = useState('');
-  const [signInError, setSignInError] = useState('');
-  const [signingIn, setSigningIn] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -102,54 +98,17 @@ export function CustomerSignUpPage() {
         return;
       }
 
-      setMessage('Account created. Check your email to confirm your account, then sign in.');
+      setMessage('Account created. Please confirm your email, then sign in.');
       setPassword('');
       setConfirmPassword('');
-      setSignInPassword('');
-      setSignInError('');
-      setShowSignInModal(true);
+      // The sign-in screen is a separate route. Do not open it as a modal
+      // over the account-creation screen.
+      window.location.hash = '#account';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to create your account.');
     } finally {
       setSubmitting(false);
     }
-  }
-
-  async function handleCustomerSignIn(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSignInError('');
-
-    if (!trimmedEmailForSignIn() || !signInPassword) {
-      setSignInError('Enter your email and password.');
-      return;
-    }
-
-    if (!supabase) {
-      setSignInError('Supabase is not configured.');
-      return;
-    }
-
-    setSigningIn(true);
-    try {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: trimmedEmailForSignIn(),
-        password: signInPassword,
-      });
-
-      if (signInError) throw signInError;
-
-      setShowSignInModal(false);
-      setSignInPassword('');
-      window.location.hash = '';
-    } catch (err) {
-      setSignInError(err instanceof Error ? err.message : 'Unable to sign in.');
-    } finally {
-      setSigningIn(false);
-    }
-  }
-
-  function trimmedEmailForSignIn() {
-    return email.trim().toLowerCase();
   }
 
   return (
@@ -207,54 +166,7 @@ export function CustomerSignUpPage() {
           </button>
         </form>
 
-        {showSignInModal && (
-          <div className="customer-signin-modal-backdrop" role="presentation">
-            <section className="customer-signin-modal" role="dialog" aria-modal="true" aria-labelledby="customer-signin-modal-title">
-              <button
-                className="customer-signin-modal-close"
-                type="button"
-                aria-label="Close sign in"
-                onClick={() => setShowSignInModal(false)}
-                disabled={signingIn}
-              >
-                ×
-              </button>
-              <p className="eyebrow">Account ready</p>
-              <h2 id="customer-signin-modal-title">Sign in</h2>
-              <p className="customer-signin-modal-message">
-                Your account was created. Confirm your email first, then sign in below.
-              </p>
-
-              {signInError && <div className="restaurant-dashboard-error" role="alert">{signInError}</div>}
-
-              <form className="restaurant-owner-auth-form" onSubmit={(event) => void handleCustomerSignIn(event)}>
-                <label>
-                  Email
-                  <input
-                    type="email"
-                    autoComplete="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    disabled={signingIn}
-                  />
-                </label>
-                <label>
-                  Password
-                  <input
-                    type="password"
-                    autoComplete="current-password"
-                    value={signInPassword}
-                    onChange={(event) => setSignInPassword(event.target.value)}
-                    disabled={signingIn}
-                  />
-                </label>
-                <button className="button button-primary" type="submit" disabled={signingIn}>
-                  {signingIn ? 'Signing in…' : 'Sign in'}
-                </button>
-              </form>
-            </section>
-          </div>
-        )}
+}
         <p className="restaurant-auth-switch">
           Already have an account? <a href="#account">Sign in</a>
         </p>
