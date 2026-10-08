@@ -1,7 +1,32 @@
-import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
+import { useEffect, useState } from 'react';
+import type { User } from '@supabase/supabase-js';
+import { getCurrentCustomerUser } from '../modules/customer/customerAuthService';
 
 export function CustomerEmailConfirmationPage() {
-  const { user, loading, error } = useRestaurantOwnerAuth();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let mounted = true;
+
+    getCurrentCustomerUser()
+      .then((currentUser) => {
+        if (mounted) setUser(currentUser);
+      })
+      .catch((authError) => {
+        if (mounted) {
+          setError(authError instanceof Error ? authError.message : 'Unable to confirm your email.');
+        }
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   if (loading) {
     return (
