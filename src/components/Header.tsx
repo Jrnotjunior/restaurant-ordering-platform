@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useRestaurant } from './RestaurantProvider';
 import { useRestaurantOwnerAuth } from './RestaurantOwnerAuthProvider';
-import { supabase, supabaseRpc } from '../services/supabaseClient';
+import { supabase } from '../services/supabaseClient';
+import { getMyLoyaltyPoints } from '../modules/loyalty/loyaltyService';
 import '../styles/cart-badge.css';
 import '../styles/header-actions.css';
 
