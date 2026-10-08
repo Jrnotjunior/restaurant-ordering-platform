@@ -91,7 +91,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
   }[status]);
 
   async function assignOrder(rider: Rider) {
-    if (role !== 'dispatcher' || !selectedOrder || assigning || rider.status !== 'available') return;
+    if (role !== 'dispatcher' || !selectedOrder || assigning) return;
     setAssigning(true);
     setAssigningRiderId(rider.id);
     setError('');
@@ -250,7 +250,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
 
             <div className="restaurant-dispatch-modal-riders">
               {riders.map((rider) => {
-                const canAssign = rider.status === 'available';
+                const canAssign = true;
 
                 return (
                   <article className="restaurant-dispatch-modal-rider" key={rider.id}>
@@ -265,7 +265,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
                       </div>
                     </div>
                     <button className="restaurant-dispatch-rider-select" type="button" disabled={!canAssign || assigning} onClick={() => void assignOrder(rider)}>
-                      {assigningRiderId === rider.id ? 'Assigning…' : canAssign ? 'Assign' : rider.status === 'busy' ? 'Has active delivery' : 'Unavailable'}
+                      {assigningRiderId === rider.id ? 'Assigning…' : rider.status === 'busy' ? 'Assign Another Order' : 'Assign'}
                     </button>
                   </article>
                 );
