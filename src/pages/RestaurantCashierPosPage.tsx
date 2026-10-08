@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getMenu } from '../modules/products/productService';
-import { createOrder } from '../services/orderRepository';
+import { createOrder } from '../modules/ordering/orderService';
 import { applyPosGroupDiscounts, confirmDineInPayment, getRestaurantTaxSettings, type PosDiscountIdType, type PosDiscountType, type RestaurantTaxSettings } from '../services/restaurantOrderRepository';
 import type { RestaurantProduct } from '../types/menu';
 import { supabase } from '../services/supabaseClient';
