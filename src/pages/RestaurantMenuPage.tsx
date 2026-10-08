@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
-import { createProduct, deleteProduct, getMenu, getOrCreateCategory, setProductAvailability, updateProduct } from '../services/menuRepository';
-import { saveProductImage, uploadProductImage } from '../services/productImageRepository';
+import { createProduct, deleteProduct, getMenu, getOrCreateCategory, saveProductImage, setProductAvailability, updateProduct, uploadProductImage } from '../modules/products/productService';
 import type { RestaurantCategory, RestaurantProduct } from '../types/menu';
 
 type Props = { restaurantId: string };
