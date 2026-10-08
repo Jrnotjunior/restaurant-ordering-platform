@@ -6,11 +6,10 @@ import {
   changeCartItemQuantity,
   clearCartPersistence,
   getCartCount,
-  getCustomerCartStorageKey,
   LEGACY_CART_STORAGE_KEY,
   loadCustomerCart,
   persistCustomerCart,
-  removeCustomerCart,
+  removeCartItem,
 } from './cartService';
 import type { CartItem } from './cartTypes';
 
@@ -108,7 +107,7 @@ export function useCart(userId: string | undefined, authLoading: boolean): UseCa
   }
 
   function remove(productId: string) {
-    setItems((current) => removeCustomerCartItem(current, productId));
+    setItems((current) => removeCartItem(current, productId));
   }
 
   function dismissNotification() {
@@ -127,8 +126,4 @@ export function useCart(userId: string | undefined, authLoading: boolean): UseCa
     remove,
     dismissNotification,
   };
-}
-
-function removeCustomerCartItem(items: CartItem[], productId: string) {
-  return items.filter((item) => item.product.id !== productId);
 }
