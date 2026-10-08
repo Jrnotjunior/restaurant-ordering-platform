@@ -12,8 +12,9 @@ export function TenantInviteLandingPage() {
   const confirmationUrl = params.get('confirmation_url') ?? '';
   const tokenHash = params.get('token_hash') ?? '';
   const tokenType = params.get('type') ?? '';
+  const genericInvitationFlow = params.get('invitation') === '1';
   const tenantInviteFlow = params.get('tenant-invite') === '1';
-  const tenantFlow = params.get('flow') === 'tenant-owner' || params.get('tenant-owner-access') === '1';
+  const tenantFlow = params.get('flow') === 'tenant-owner' || params.get('tenant-owner-access') === '1' || params.get('tenant-invite') === '1';
   const authCode = params.get('code') ?? '';
 
   async function redirectAfterAuthentication() {
@@ -171,7 +172,7 @@ export function TenantInviteLandingPage() {
   return (
     <section className="restaurant-owner-auth-no-restaurant">
       <div className="restaurant-owner-auth-no-restaurant-card" style={{ maxWidth: 620, width: '100%' }}>
-        <p className="eyebrow">Tenant access</p>
+        <p className="eyebrow">{genericInvitationFlow ? 'Invitation access' : 'Tenant access'}</p>
         <h1>{tenantFlow ? 'Continue to your restaurant.' : 'You’re invited to Web2Table.'}</h1>
         <p>
           {tenantFlow
@@ -181,7 +182,7 @@ export function TenantInviteLandingPage() {
 
         {error && <div className="error-banner">{error}</div>}
 
-        {confirmationUrl || tokenHash || sessionReady || checkingSession || tenantFlow || (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) ? (
+        {confirmationUrl || tokenHash || sessionReady || checkingSession || tenantFlow || genericInvitationFlow || (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) ? (
           <div className="modal-actions">
             <button type="button" onClick={() => void acceptInvitation()} disabled={accepting || checkingSession}>
               {accepting ? 'Opening secure access…' : checkingSession ? 'Checking invitation…' : tenantFlow ? 'Continue to restaurant' : 'Accept invitation'}
