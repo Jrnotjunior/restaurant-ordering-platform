@@ -21,7 +21,10 @@ create index if not exists customer_addresses_location_idx
   where latitude is not null and longitude is not null;
 
 -- Return exact location data with saved addresses.
-create or replace function public.get_my_customer_addresses(
+-- Drop the previous return shape before recreating it with location columns.
+drop function if exists public.get_my_customer_addresses(uuid);
+
+create function public.get_my_customer_addresses(
   p_restaurant_id uuid
 )
 returns table (
@@ -375,7 +378,10 @@ end;
 $$;
 
 -- Profile lookup now returns the exact default map location too.
-create or replace function public.get_my_customer_profile(
+-- Drop the previous return shape before recreating it with location columns.
+drop function if exists public.get_my_customer_profile(uuid);
+
+create function public.get_my_customer_profile(
   p_restaurant_id uuid
 )
 returns table (
