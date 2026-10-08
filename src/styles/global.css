@@ -563,10 +563,16 @@ main { flex: 1; }
 }
 .restaurant-employee-form-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
   margin-top: 20px;
 }
+.restaurant-employee-form-grid select {
+  height: 44px;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
 .restaurant-employee-form-grid label {
   min-width: 0;
 }
@@ -660,6 +666,10 @@ main { flex: 1; }
 }
 .restaurant-employees-error { color: #991b1b; background: #fef2f2; border: 1px solid #fecaca; }
 .restaurant-employees-success { color: #166534; background: #f0fdf4; border: 1px solid #bbf7d0; }
+
+@media (max-width: 900px) {
+  .restaurant-employee-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 
 @media (max-width: 760px) {
   .restaurant-employees-card { padding: 18px; }
