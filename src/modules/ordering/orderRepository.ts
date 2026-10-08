@@ -216,6 +216,17 @@ export async function getOrderStatus(orderNumber: string): Promise<TrackedOrder>
   };
 }
 
+type RawOrderItem = {
+  id: string;
+  productName?: string;
+  product_name?: string;
+  quantity: number;
+  unitPrice?: number | string;
+  unit_price?: number | string;
+  lineTotal?: number | string;
+  line_total?: number | string;
+};
+
 type Row = {
   order_id: string;
   order_number: string;
