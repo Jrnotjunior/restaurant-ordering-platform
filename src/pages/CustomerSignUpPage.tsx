@@ -166,7 +166,6 @@ export function CustomerSignUpPage() {
           </button>
         </form>
 
-}
         <p className="restaurant-auth-switch">
           Already have an account? <a href="#account">Sign in</a>
         </p>
