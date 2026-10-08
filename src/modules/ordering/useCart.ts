@@ -91,8 +91,11 @@ export function useCart(userId: string | undefined, authLoading: boolean): UseCa
 
   useEffect(() => {
     function handleSuccessfulOrder() {
+      clearedUserIdRef.current = userId ?? null;
+      itemsRef.current = [];
       setItems([]);
       clearCartPersistence(userId);
+      window.localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
     }
 
     window.addEventListener(CART_CLEAR_EVENT, handleSuccessfulOrder);
@@ -129,6 +132,7 @@ export function useCart(userId: string | undefined, authLoading: boolean): UseCa
     itemsRef.current = [];
     setItems([]);
     clearCartPersistence(userId);
+    window.localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
   }
 
   function dismissNotification() {
