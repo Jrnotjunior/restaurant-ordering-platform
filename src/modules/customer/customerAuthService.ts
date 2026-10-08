@@ -12,7 +12,6 @@ export type CustomerSignUpInput = {
 
 export type CustomerSignUpResult = {
   user: User | null;
-  user: User | null;
   hasSession: boolean;
   emailConfirmationRequired: boolean;
 };
