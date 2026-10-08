@@ -72,6 +72,25 @@ export async function initializeAuthSession(client: SupabaseClient) {
       url.searchParams.get('tenant-invite') === '1' ||
       url.searchParams.get('tenant-owner-access') === '1';
 
+    const isCustomerConfirmation = url.searchParams.get('customer-confirmation') === '1';
+    const accessToken = hashParams.get('access_token');
+    const refreshToken = hashParams.get('refresh_token');
+
+    if (isCustomerConfirmation && accessToken && refreshToken) {
+      const { error } = await client.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+
+      if (error) {
+        console.error('Customer confirmation session restoration failed', error);
+      } else {
+        url.hash = '';
+        window.history.replaceState({}, document.title, url.toString());
+      }
+      return;
+    }
+
     if (isTenantCallback) {
       // Tenant callback URLs are owned by the tenant invitation flow.
       // Do not consume their auth parameters from the global provider.
