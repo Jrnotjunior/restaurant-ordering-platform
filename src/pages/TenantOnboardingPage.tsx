@@ -109,9 +109,9 @@ export function TenantOnboardingPage() {
 
   if (!user) {
     return (
-      <section className="restaurant-owner-auth-no-restaurant">
-        <div className="restaurant-owner-auth-no-restaurant-card">
-          <p className="eyebrow">Tenant invitation</p>
+      <section className="tenant-onboarding-page">
+        <div className="tenant-onboarding-card">
+          <p className="eyebrow">Tenant access</p>
           <h1>{authError ? 'Invitation link problem' : 'Sign in to continue.'}</h1>
           <p>{authError || 'Open the invitation email again to complete your tenant setup.'}</p>
           {authError ? <p>Ask the System Administrator to send a new tenant invitation if this link has expired or was already used.</p> : null}
@@ -122,9 +122,9 @@ export function TenantOnboardingPage() {
 
   if (!invitation) {
     return (
-      <section className="restaurant-owner-auth-no-restaurant">
-        <div className="restaurant-owner-auth-no-restaurant-card">
-          <p className="eyebrow">Tenant invitation</p>
+      <section className="tenant-onboarding-page">
+        <div className="tenant-onboarding-card">
+          <p className="eyebrow">Tenant access</p>
           <h1>Invitation not available.</h1>
           <p>This invitation may have expired, already been used, or been revoked.</p>
           <p><strong>Signed in as:</strong> {user.email ?? user.id}</p>
@@ -134,27 +134,35 @@ export function TenantOnboardingPage() {
   }
 
   return (
-    <section className="restaurant-owner-auth-no-restaurant">
-      <div className="restaurant-owner-auth-no-restaurant-card" style={{ maxWidth: 760, width: '100%' }}>
-        <p className="eyebrow">Tenant onboarding</p>
-        <h1>Finish your restaurant setup.</h1>
-        <p>
-          <strong>{restaurantName || 'Your restaurant'}</strong> has already been created by the
-          Web2Table System Administrator, and its package access is already configured.
+    <section className="tenant-onboarding-page">
+      <div className="tenant-onboarding-card" aria-labelledby="tenant-onboarding-title">
+        <p className="eyebrow">Tenant access</p>
+        <h1 id="tenant-onboarding-title">Set up your owner account.</h1>
+        <p className="tenant-onboarding-intro">
+          {restaurantName || 'Your restaurant'} is ready. Create your password to finish setup and enter your restaurant dashboard.
         </p>
 
-        <form className="restaurant-form" onSubmit={setOwnerPassword}>
-          <h2>Set your password</h2>
-          <p>Secure your owner account, then you will be taken directly to your restaurant dashboard.</p>
+        <form className="tenant-onboarding-form" onSubmit={(event) => void setOwnerPassword(event)}>
+          <label>
+            Email
+            <input
+              type="email"
+              value={user.email ?? invitation.email}
+              readOnly
+              autoComplete="email"
+            />
+          </label>
 
           <label>
-            New password
+            Password
             <input
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               minLength={8}
               autoComplete="new-password"
+              placeholder="Create your password"
+              disabled={saving}
               required
             />
           </label>
@@ -167,17 +175,19 @@ export function TenantOnboardingPage() {
               onChange={(event) => setConfirmPassword(event.target.value)}
               minLength={8}
               autoComplete="new-password"
+              placeholder="Re-enter your password"
+              disabled={saving}
               required
             />
           </label>
 
-          {error && <div className="error-banner">{error}</div>}
+          <p className="tenant-onboarding-password-hint">Use at least 8 characters.</p>
 
-          <div className="modal-actions">
-            <button type="submit" disabled={saving}>
-              {saving ? 'Finishing setup…' : 'Set password and enter restaurant'}
-            </button>
-          </div>
+          {error && <div className="tenant-onboarding-error" role="alert">{error}</div>}
+
+          <button className="tenant-onboarding-submit" type="submit" disabled={saving}>
+            {saving ? 'Setting up account…' : 'Create account'}
+          </button>
         </form>
       </div>
     </section>
