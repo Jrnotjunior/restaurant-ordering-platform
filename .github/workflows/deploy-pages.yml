@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [modular-architecture-foundation]
   workflow_dispatch:
 
 permissions:
