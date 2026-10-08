@@ -29,6 +29,10 @@ export const roleLabels: Record<StaffRole, string> = {
   rider: 'Rider',
 };
 
+export function validatePhilippineMobileNumber(value: string) {
+  return /^09\d{9}$/.test(value);
+}
+
 export async function getEmployees(restaurantId: string): Promise<StaffAccount[]> {
   const rows = await supabaseGet<StaffRow>('restaurant_staff', {
     select: 'id,name,preferred_name,mobile_number,email,role,is_active',
@@ -51,6 +55,7 @@ export async function createEmployee(
   restaurantId: string,
   values: { name: string; preferredName: string; mobileNumber: string; email: string; role: StaffRole },
 ) {
+  if (!validatePhilippineMobileNumber(values.mobileNumber)) throw new Error('Mobile number must start with 09 and contain exactly 11 digits.');
   if (!supabase) throw new Error('Supabase is not configured.');
 
   const { data, error: functionError } = await supabase.functions.invoke('create-staff', {
@@ -111,6 +116,7 @@ export async function updateEmployee(
   employeeId: string,
   values: { name: string; preferredName: string; mobileNumber: string },
 ) {
+  if (!validatePhilippineMobileNumber(values.mobileNumber)) throw new Error('Mobile number must start with 09 and contain exactly 11 digits.');
   if (!supabase) throw new Error('Supabase is not configured.');
 
   const { error } = await supabase
