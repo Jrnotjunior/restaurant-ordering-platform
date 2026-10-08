@@ -1,4 +1,3 @@
-import type { RestaurantProduct } from '../../types/menu';
 import {
   createProduct as createProductRepository,
   deleteProduct as deleteProductRepository,
@@ -6,11 +5,12 @@ import {
   getOrCreateCategory as getOrCreateCategoryRepository,
   setProductAvailability as setProductAvailabilityRepository,
   updateProduct as updateProductRepository,
-} from '../../services/menuRepository';
+} from './productRepository';
 import {
   saveProductImage as saveProductImageRepository,
   uploadProductImage as uploadProductImageRepository,
-} from '../../services/productImageRepository';
+} from './productImageRepository';
+import type { RestaurantProduct } from '../../types/menu';
 
 export const getMenu = getMenuRepository;
 export const getOrCreateCategory = getOrCreateCategoryRepository;
