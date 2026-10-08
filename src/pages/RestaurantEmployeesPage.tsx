@@ -1,42 +1,14 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { supabase, supabaseGet } from '../services/supabaseClient';
-
-type StaffRole = 'cashier' | 'kitchen' | 'dispatcher' | 'rider';
-
-type RiderAccount = {
-  id: string;
-  name: string;
-  mobileNumber: string;
-  email: string;
-  isActive: boolean;
-};
-
-type StaffAccount = {
-  id: string;
-  name: string;
-  preferredName: string;
-  mobileNumber: string;
-  email: string;
-  role: StaffRole;
-  isActive: boolean;
-};
-
-type StaffRow = {
-  id: string;
-  name: string;
-  preferred_name: string | null;
-  mobile_number: string;
-  email: string;
-  role: StaffRole;
-  is_active: boolean;
-};
-
-const roleLabels: Record<StaffRole, string> = {
-  cashier: 'Cashier',
-  kitchen: 'Kitchen',
-  dispatcher: 'Dispatcher',
-  rider: 'Rider',
-};
+import {
+  createEmployee,
+  getEmployees,
+  resendEmployeeInvitation,
+  roleLabels,
+  setEmployeeActive,
+  updateEmployee,
+  type StaffAccount,
+  type StaffRole,
+} from '../modules/employees/employeeService';
 
 export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string }) {
   const [staff, setStaff] = useState<StaffAccount[]>([]);
@@ -53,20 +25,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
     setLoading(true);
     setError('');
     try {
-      const rows = await supabaseGet<StaffRow>('restaurant_staff', {
-        select: 'id,name,preferred_name,mobile_number,email,role,is_active',
-        restaurant_id: `eq.${restaurantId}`,
-        order: 'created_at.asc',
-      });
-      setStaff(rows.map((row) => ({
-        id: row.id,
-        name: row.name,
-        preferredName: row.preferred_name || row.name,
-        mobileNumber: row.mobile_number,
-        email: row.email,
-        role: row.role,
-        isActive: row.is_active,
-      })));
+      setStaff(await getEmployees(restaurantId));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load employees.');
     } finally {
@@ -90,11 +49,6 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!supabase) {
-      setError('Supabase is not configured.');
-      return;
-    }
-
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
     const name = String(form.get('name') || '').trim();
@@ -107,23 +61,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
     setError('');
 
     try {
-      const { data, error: functionError } = await supabase.functions.invoke('create-staff', {
-        body: { restaurantId, name, preferredName, mobileNumber, email, role },
-      });
-
-      if (functionError) {
-        let message = functionError.message || 'Unable to create employee account.';
-        if (functionError.context instanceof Response) {
-          try {
-            const payload = await functionError.context.clone().json();
-            if (payload?.error) message = payload.error;
-          } catch {}
-        }
-        throw new Error(message);
-      }
-
-      if (!data?.staff?.auth_user_id) throw new Error('Employee was created, but the Auth account was not linked.');
-
+      await createEmployee(restaurantId, { name, preferredName, mobileNumber, email, role });
       formElement.reset();
       setShowForm(false);
       await loadStaff();
@@ -135,37 +73,14 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
   }
 
   async function resendInvitation(employee: StaffAccount) {
-    if (!supabase) return;
     setResendingInvitationId(employee.id);
     setError('');
     setConfirmation('');
     try {
-      const { data, error: functionError } = await supabase.functions.invoke('resend-staff-invitation', {
-        body: { restaurantId, staffId: employee.id },
-      });
-      if (functionError) {
-        let message = functionError.message || 'Unable to resend employee invitation.';
-        let alreadyConfirmed = false;
-        if (functionError.context instanceof Response) {
-          try {
-            const payload = await functionError.context.clone().json();
-            if (payload?.error) {
-              message = payload.error;
-              alreadyConfirmed = String(payload.error).toLowerCase().includes('already completed the invitation');
-            }
-          } catch {}
-        }
-        if (!alreadyConfirmed) throw new Error(message);
-
-        const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}?employee-invite=1`;
-        const { error: resetError } = await supabase.auth.resetPasswordForEmail(employee.email, { redirectTo });
-        if (resetError) throw resetError;
-        setConfirmation(`A password setup email was sent to ${employee.email}.`);
-        return;
-      }
-      if (!data?.invitationSent) throw new Error('The invitation was not sent.');
-      setError('');
-      setConfirmation(`A new invitation was sent to ${employee.email}.`);
+      const result = await resendEmployeeInvitation(restaurantId, employee);
+      setConfirmation(result.mode === 'password_setup'
+        ? `A password setup email was sent to ${employee.email}.`
+        : `A new invitation was sent to ${employee.email}.`);
     } catch (resendError) {
       setError(resendError instanceof Error ? resendError.message : 'Unable to resend employee invitation.');
     } finally {
@@ -181,7 +96,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
 
   async function handleEdit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!supabase || !editingStaff) return;
+    if (!editingStaff) return;
 
     const form = new FormData(event.currentTarget);
     const name = String(form.get('name') || '').trim();
@@ -191,15 +106,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
     setSaving(true);
     setError('');
     try {
-      const { error: updateError } = await supabase
-        .from('restaurant_staff')
-        .update({ name, preferred_name: preferredName, mobile_number: mobileNumber })
-        .eq('id', editingStaff.id)
-        .eq('restaurant_id', restaurantId);
-
-      if (updateError) throw updateError;
-
-
+      await updateEmployee(restaurantId, editingStaff.id, { name, preferredName, mobileNumber });
       setEditingStaff(null);
       await loadStaff();
     } catch (updateError) {
@@ -210,27 +117,10 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
   }
 
   async function toggleActive(employee: StaffAccount) {
-    if (!supabase) return;
     setSaving(true);
     setError('');
     try {
-      const { error: updateError } = await supabase
-        .from('restaurant_staff')
-        .update({ is_active: !employee.isActive })
-        .eq('id', employee.id)
-        .eq('restaurant_id', restaurantId);
-
-      if (updateError) throw updateError;
-
-      if (employee.role === 'rider') {
-        const { error: riderUpdateError } = await supabase
-          .from('restaurant_riders')
-          .update({ is_active: !employee.isActive })
-          .eq('restaurant_id', restaurantId)
-          .ilike('email', employee.email);
-        if (riderUpdateError) throw riderUpdateError;
-      }
-
+      await setEmployeeActive(restaurantId, employee, !employee.isActive);
       await loadStaff();
     } catch (updateError) {
       setError(updateError instanceof Error ? updateError.message : 'Unable to update employee status.');
