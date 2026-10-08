@@ -7,7 +7,8 @@ The restaurant ordering platform is being migrated from page-centered orchestrat
 ## Module boundaries
 
 - auth — Supabase session restoration, account classification, sign-in/sign-out, auth callback handling.
-- customer — customer profile, account UI, saved addresses, order history.
+- customer — customer authentication, customer profile, account state, saved addresses, customer order history.
+- location — map/geocoding infrastructure shared by customer delivery and restaurant location workflows.
 - ordering — menu, cart, order creation, order status.
 - payments — cash/online payment state and PayMongo integration.
 - loyalty — points configuration, earning, redemption, and ledger.
@@ -46,7 +47,7 @@ RestaurantOwnerAuthProvider remains the compatibility adapter for existing consu
 
 1. Replace page-level authentication checks with the auth module.
 2. Separate customer authentication UI from restaurant owner/staff authentication UI.
-3. Extract customer account state.
+3. Complete customer account/address boundary, including exact map locations.
 4. Extract ordering/cart state from App.tsx.
 5. Extract route guards from App.tsx.
 6. Move feature pages behind module services.
@@ -55,3 +56,18 @@ RestaurantOwnerAuthProvider remains the compatibility adapter for existing consu
 ## Safety rule
 
 Do not combine an architectural refactor with unrelated UI or business-rule changes in the same change. Each migration should preserve the current behavior and be independently testable.
+
+
+## Customer address location boundary
+
+Customer saved addresses store both human-readable address text and an exact map location:
+
+- latitude
+- longitude
+- Mapbox place ID when available
+
+The map location is the authoritative delivery point. Address text remains editable for unit, building, house number, landmark, and other delivery instructions.
+
+Map/geocoding code lives in `src/modules/location/locationService.ts`, while the reusable map UI remains in `MapboxDeliveryLocationPicker`.
+
+Legacy saved addresses without coordinates can still be viewed, but new/edited saved addresses require an exact confirmed map location.
