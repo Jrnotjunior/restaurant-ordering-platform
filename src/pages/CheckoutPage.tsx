@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { RestaurantProduct } from '../types/menu';
 import { createOrder } from '../modules/ordering/orderService';
 import { createPayMongoCheckout, createPendingOnlinePayment, getOnlinePaymentStatus } from '../modules/payments/paymentService';
-import { calculateDeliveryRoute, type DeliveryRouteQuote } from '../services/deliveryRouteRepository';
+import { calculateDeliveryRoute, type DeliveryRouteQuote } from '../modules/location/deliveryRouteRepository';
 import { attachCustomerToOrder, getLoyaltyRedemptionSettings, getMyLoyaltyPoints, redeemLoyaltyReward } from '../modules/loyalty/loyaltyService';
 import { getMyCustomerProfile, getMyCustomerProfileId, saveMyDefaultDeliveryAddress } from '../modules/customer/customerAccountService';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
