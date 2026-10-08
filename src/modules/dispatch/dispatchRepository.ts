@@ -34,20 +34,24 @@ function todayStartIso(){ const now=new Date(); return new Date(now.getFullYear(
 
 export async function getDispatchData(restaurantId:string):Promise<{orders:ReadyOrder[]; riders:Rider[]}> {
   if(!supabase) throw new Error('Supabase is not configured.');
-  const [orderResult,riderResult,assignmentResult]=await Promise.all([
+  const [orderResult,riderResult,activeOrderResult,assignmentResult]=await Promise.all([
     supabase.from('orders').select('id,order_number,customer_name,delivery_address,delivery_barangay,total,created_at,pickup_method,order_type,rider_id').eq('restaurant_id',restaurantId).in('order_type',['delivery','pickup','dine_in']).eq('status','ready').order('created_at',{ascending:true}),
     supabase.from('restaurant_staff').select('id,name,mobile_number').eq('restaurant_id',restaurantId).eq('role','rider').eq('is_active',true).order('name',{ascending:true}),
-    supabase.from('delivery_assignments').select('rider_id,status,assigned_at,delivered_at').eq('restaurant_id',restaurantId),
+    supabase.from('orders').select('rider_id,delivery_status').eq('restaurant_id',restaurantId).not('rider_id','is',null).in('delivery_status',['assigned','delivering']),
+    supabase.from('delivery_assignments').select('rider_id,status,delivered_at').eq('restaurant_id',restaurantId),
   ]);
   if(orderResult.error) throw orderResult.error;
   if(riderResult.error) throw riderResult.error;
+  if(activeOrderResult.error) throw activeOrderResult.error;
   if(assignmentResult.error) throw assignmentResult.error;
-  const assignments=(assignmentResult.data??[]) as AssignmentRow[];
-  const activeByRider=new Map<string,number>(), deliveringByRider=new Map<string,number>(), deliveredTodayByRider=new Map<string,number>();
+  const activeOrders=(activeOrderResult.data??[]) as Array<{rider_id:string;delivery_status:'assigned'|'delivering'}>;
+  const assignments=(assignmentResult.data??[]) as Array<Pick<AssignmentRow,'rider_id'|'status'|'delivered_at'>>;
+  const activeByRider=new Map<string,number>(), deliveredTodayByRider=new Map<string,number>();
   const start=todayStartIso();
+  for(const order of activeOrders){
+    activeByRider.set(order.rider_id,(activeByRider.get(order.rider_id)??0)+1);
+  }
   for(const a of assignments){
-    if(a.status==='assigned'||a.status==='delivering') activeByRider.set(a.rider_id,(activeByRider.get(a.rider_id)??0)+1);
-    if(a.status==='delivering') deliveringByRider.set(a.rider_id,(deliveringByRider.get(a.rider_id)??0)+1);
     if(a.status==='delivered'&&a.delivered_at&&a.delivered_at>=start) deliveredTodayByRider.set(a.rider_id,(deliveredTodayByRider.get(a.rider_id)??0)+1);
   }
   const orders=((orderResult.data??[]) as OrderRow[]).map(o=>({
