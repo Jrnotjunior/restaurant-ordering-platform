@@ -358,7 +358,15 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     const barangay = deliveryBarangay.trim();
     const completeAddress = address.trim();
     if (!city || !barangay || !completeAddress || !deliveryRouteQuote?.inRange) return;
-    await saveMyDefaultDeliveryAddress(items[0].product.restaurantId, city, barangay, completeAddress);
+    await saveMyDefaultDeliveryAddress(
+      items[0].product.restaurantId,
+      city,
+      barangay,
+      completeAddress,
+      selectedDeliveryLocation?.latitude ?? null,
+      selectedDeliveryLocation?.longitude ?? null,
+      selectedDeliveryLocation?.placeId ?? null,
+    );
     setHasDefaultAddress(true);
   }
 
