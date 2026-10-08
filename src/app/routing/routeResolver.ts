@@ -4,6 +4,7 @@ export type AppRouteContext = {
   isCartPage: boolean;
   isAccountPage: boolean;
   isSignUpPage: boolean;
+  isCustomerEmailConfirmationPage: boolean;
   isPrivacyPage: boolean;
   isCheckoutPage: boolean;
   trackOrderNumber: string | null;
@@ -46,6 +47,7 @@ export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' |
   const isCartPage = route === '#cart';
   const isAccountPage = route === '#account';
   const isSignUpPage = route === '#signup';
+  const isCustomerEmailConfirmationPage = route === '#signup-confirmation';
   const isPrivacyPage = route === '#privacy';
   const isCheckoutPage = route === '#checkout';
   const trackOrderNumber = searchParams.get('trackOrder');
@@ -113,6 +115,7 @@ export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' |
     isCartPage,
     isAccountPage,
     isSignUpPage,
+    isCustomerEmailConfirmationPage,
     isPrivacyPage,
     isCheckoutPage,
     trackOrderNumber,
