@@ -21,7 +21,7 @@ export type UseCartResult = {
   increase: (productId: string) => void;
   decrease: (productId: string) => void;
   remove: (productId: string) => void;
-  clear: () => void;
+  clear: (targetUserId?: string) => void;
   dismissNotification: () => void;
 };
 
@@ -127,11 +127,12 @@ export function useCart(userId: string | undefined, authLoading: boolean): UseCa
     setItems((current) => removeCartItem(current, productId));
   }
 
-  function clear() {
-    clearedUserIdRef.current = userId ?? null;
+  function clear(targetUserId?: string) {
+    const cartOwnerId = targetUserId ?? userId;
+    clearedUserIdRef.current = cartOwnerId ?? null;
     itemsRef.current = [];
     setItems([]);
-    clearCartPersistence(userId);
+    clearCartPersistence(cartOwnerId);
     window.localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
   }
 
