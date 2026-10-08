@@ -20,6 +20,7 @@ import { RestaurantEmployeeInvitePage } from './pages/RestaurantEmployeeInvitePa
 import { RestaurantRoleDashboardPage } from './pages/RestaurantRoleDashboardPage';
 import { RestaurantKitchenPage } from './pages/RestaurantKitchenPage';
 import { CustomerSignUpPage } from './pages/CustomerSignUpPage';
+import { CustomerEmailConfirmationPage } from './pages/CustomerEmailConfirmationPage';
 import { PrivacyNoticePage } from './pages/PrivacyNoticePage';
 import { SavedAddressPage } from './pages/SavedAddressPage';
 import { CustomerOrderHistoryPage } from './pages/CustomerOrderHistoryPage';
@@ -578,6 +579,7 @@ function AppContent() {
     isCartPage,
     isAccountPage,
     isSignUpPage,
+    isCustomerEmailConfirmationPage,
     isPrivacyPage,
     isCheckoutPage,
     trackOrderNumber,
@@ -611,6 +613,7 @@ function AppContent() {
   if (isEmployeeInvitePage) return <RestaurantEmployeeInvitePage />;
   if (isRiderInvitePage) return <RiderInvitePage />;
   if (isSignUpPage) return <CustomerSignUpPage />;
+  if (isCustomerEmailConfirmationPage) return <CustomerEmailConfirmationPage />;
   if (isPrivacyPage) return <PrivacyNoticePage />;
   if (route === '#saved-address') return <PublicCustomerRouteGuard><RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}><SavedAddressPage /></RestaurantLayout></ThemeProvider></RestaurantProvider></PublicCustomerRouteGuard>;
   if (route === '#order-history') return <PublicCustomerRouteGuard><RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}><CustomerOrderHistoryPage /></RestaurantLayout></ThemeProvider></RestaurantProvider></PublicCustomerRouteGuard>;
