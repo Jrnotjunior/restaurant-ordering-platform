@@ -108,15 +108,9 @@ Deno.serve(async (request) => {
 
     if (invitationError) throw invitationError;
 
-    // Supabase sends the Invite User email automatically. The hosted Invite User
-    // template must use {{ .TokenHash }} in a Web2Table landing-page URL so
-    // security scanners cannot consume the one-time verification URL.
-    const redirectTo = "https://jrnotjunior.github.io/restaurant-ordering-platform/?tenant-invite=1";
-
     const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
       email,
       {
-        redirectTo,
         data: {
           invitation_type: "tenant_owner",
           tenant_invitation_id: invitation.id,
