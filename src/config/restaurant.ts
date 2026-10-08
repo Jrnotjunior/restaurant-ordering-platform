@@ -1,5 +1,5 @@
 import { defaultRestaurant } from './defaultRestaurant';
-import { ConfigRestaurantRepository } from '../services/restaurantService';
+import { ConfigRestaurantRepository } from '../modules/restaurant/restaurantService';
 
 export const restaurantRepository = new ConfigRestaurantRepository(defaultRestaurant);
 
