@@ -1,4 +1,4 @@
-import type { Session, User } from '@supabase/supabase-js';
+import type { User } from '@supabase/supabase-js';
 import { currentRestaurantLookup } from '../../config/restaurant';
 import { SupabaseRestaurantRepository } from '../../services/supabaseRestaurantRepository';
 import { supabase } from '../../services/supabaseClient';
@@ -12,8 +12,8 @@ export type CustomerSignUpInput = {
 
 export type CustomerSignUpResult = {
   user: User | null;
-  session: Session | null;
-  restaurantId: string;
+  user: User | null;
+  hasSession: boolean;
   emailConfirmationRequired: boolean;
 };
 
@@ -78,8 +78,7 @@ export async function signUpCustomer(input: CustomerSignUpInput): Promise<Custom
 
   return {
     user: data.user ?? null,
-    session: data.session ?? null,
-    restaurantId: restaurant.id,
+    hasSession: Boolean(data.session),
     emailConfirmationRequired: !data.session,
   };
 }
