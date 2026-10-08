@@ -1,3 +1,5 @@
+import { resolveInvitationTypeFromLocation } from '../../modules/invitations/invitationResolver';
+
 export type AuthEntry =
   | 'tenant-invitation'
   | 'employee-invitation'
@@ -35,10 +37,9 @@ export function resolveAuthEntry(location: Pick<Location, 'pathname' | 'search' 
   const hash = new URLSearchParams(location.hash.replace(/^#/, ''));
 
   const pathname = location.pathname;
+  const invitationType = resolveInvitationTypeFromLocation(location);
   const isEmployeeInvitation =
-    pathEndsWith(pathname, '/employee-invite') ||
-    search.get('employee-invite') === '1' ||
-    search.get('flow') === 'employee-invite' ||
+    invitationType === 'employee_staff' ||
     hasNestedFlowMarker(search, 'employee-invite');
 
   if (isEmployeeInvitation) return 'employee-invitation';
@@ -50,10 +51,8 @@ export function resolveAuthEntry(location: Pick<Location, 'pathname' | 'search' 
   if (isRiderInvitation) return 'rider-invitation';
 
   const isTenantInvitation =
-    search.get('tenant-invite') === '1' ||
-    search.get('tenant-owner-access') === '1' ||
-    (search.has('confirmation_url') && !hasNestedFlowMarker(search, 'employee-invite')) ||
-    search.get('flow') === 'tenant-owner';
+    invitationType === 'tenant_owner' ||
+    (search.has('confirmation_url') && !hasNestedFlowMarker(search, 'employee-invite'));
 
   if (isTenantInvitation) return 'tenant-invitation';
 
