@@ -66,6 +66,15 @@ export async function assignDelivery(restaurantId:string,orderId:string,riderId:
 
 export async function completeDispatchHandoff(restaurantId:string,orderId:string,orderType:'pickup'|'dine_in'){
   if(!supabase) throw new Error('Supabase is not configured.');
-  const {error}=await supabase.from('orders').update({status:'completed'}).eq('id',orderId).eq('restaurant_id',restaurantId).in('order_type',['pickup','dine_in']).eq('status','ready');
+  const {data,error}=await supabase
+    .from('orders')
+    .update({status:'completed'})
+    .eq('id',orderId)
+    .eq('restaurant_id',restaurantId)
+    .eq('order_type',orderType)
+    .eq('status','ready')
+    .select('id')
+    .maybeSingle();
   if(error) throw error;
+  if(!data) throw new Error('This order is no longer ready for handoff. Please refresh the Dispatch page.');
 }
