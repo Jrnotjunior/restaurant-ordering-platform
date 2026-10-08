@@ -168,3 +168,14 @@ export async function getOrderStatus(orderNumber: string): Promise<TrackedOrder>
     deliveryFailureReason: row.delivery_failure_reason ?? null,
   };
 }
+
+// Transitional compatibility adapter: order-board operations are exposed through
+// the ordering module while their legacy implementation is isolated for extraction.
+export {
+  getRestaurantOrders,
+  updateOrderStatus,
+} from '../../services/restaurantOrderRepository';
+export type {
+  RestaurantOrder,
+  RestaurantOrderStatus,
+} from '../../services/restaurantOrderRepository';
