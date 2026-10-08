@@ -71,3 +71,15 @@ The map location is the authoritative delivery point. Address text remains edita
 Map/geocoding code lives in `src/modules/location/locationService.ts`, while the reusable map UI remains in `MapboxDeliveryLocationPicker`.
 
 Legacy saved addresses without coordinates can still be viewed, but new/edited saved addresses require an exact confirmed map location.
+
+
+## Invitation boundary
+
+Authentication invitations are treated as a dedicated module boundary. The application distinguishes:
+
+- `tenant_owner`: System Admin → Tenant Owner
+- `employee_staff`: Restaurant Owner → Employee
+
+Invitation type resolution lives in `src/modules/invitations/`. Individual invitation flows must not infer their type from generic Supabase callback parameters such as `token_hash` or `confirmation_url`.
+
+The hosted Supabase Invite User email template must preserve the `redirectTo` supplied by the calling Edge Function rather than hard-code a tenant-specific URL. This is required because both tenant and employee invitations use the same Supabase Invite User template.
