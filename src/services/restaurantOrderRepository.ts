@@ -1,5 +1,6 @@
 import { supabaseRpc } from './supabaseClient';
-import type { RestaurantOrder } from '../modules/ordering/orderRepository';
+import type { RestaurantOrder, RestaurantOrderStatus } from '../modules/ordering/orderRepository';
+import type { RestaurantTaxSettings } from '../modules/pos/posRepository';
 import type { PosDiscountType } from '../modules/pos/posRepository';
 
 export { getRestaurantOrders, updateOrderStatus } from '../modules/ordering/orderRepository';
