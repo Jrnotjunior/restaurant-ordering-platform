@@ -5,6 +5,8 @@ export {
   redeemLoyaltyReward,
   getMyLoyaltyPoints,
   redeemLoyaltyRewardForPendingPayment,
+  getLoyaltyProgramSettings,
+  saveLoyaltyProgramSettings,
 } from './loyaltyRepository';
 
 export type {
