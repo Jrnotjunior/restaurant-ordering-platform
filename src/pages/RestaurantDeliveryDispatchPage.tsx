@@ -13,6 +13,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
   const [selectedOrder, setSelectedOrder] = useState<ReadyOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [assigning, setAssigning] = useState(false);
+  const [assigningRiderId, setAssigningRiderId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
   const [dispatchTabsSlot, setDispatchTabsSlot] = useState<HTMLElement | null>(null);
@@ -92,6 +93,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
   async function assignOrder(rider: Rider) {
     if (role !== 'dispatcher' || !selectedOrder || assigning || rider.status !== 'available') return;
     setAssigning(true);
+    setAssigningRiderId(rider.id);
     setError('');
     try {
       await assignDelivery(restaurantId, selectedOrder.id, rider.id);
@@ -100,6 +102,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
     } catch (assignError) {
       setError(assignError instanceof Error ? assignError.message : 'Unable to assign this delivery.');
     } finally {
+      setAssigningRiderId(null);
       setAssigning(false);
     }
   }
@@ -262,7 +265,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
                       </div>
                     </div>
                     <button className="restaurant-dispatch-rider-select" type="button" disabled={!canAssign || assigning} onClick={() => void assignOrder(rider)}>
-                      {assigning ? 'Assigning…' : canAssign ? 'Assign' : rider.status === 'busy' ? 'Has active delivery' : 'Unavailable'}
+                      {assigningRiderId === rider.id ? 'Assigning…' : canAssign ? 'Assign' : rider.status === 'busy' ? 'Has active delivery' : 'Unavailable'}
                     </button>
                   </article>
                 );
