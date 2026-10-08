@@ -68,7 +68,7 @@ export function CustomerSignUpPage() {
         throw new Error('This restaurant could not be identified from the current website.');
       }
 
-      const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}`;
+      const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}#signup-confirmation`;
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: trimmedEmail,
         password,
@@ -98,12 +98,9 @@ export function CustomerSignUpPage() {
         return;
       }
 
-      setMessage('Account created. Please confirm your email, then sign in.');
+      setMessage('Account created. Please confirm your email using the link we sent you. This page will remain open while you check your email.');
       setPassword('');
       setConfirmPassword('');
-      // The sign-in screen is a separate route. Do not open it as a modal
-      // over the account-creation screen.
-      window.location.hash = '#account';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to create your account.');
     } finally {
