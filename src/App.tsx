@@ -41,10 +41,10 @@ import './styles/cart-notification.css';
 import { resolveAuthEntry } from './app/auth/authEntry';
 import { normalizeHashRoute, resolveAppRoute } from './app/routing/routeResolver';
 import { useCart } from './modules/ordering/useCart';
+import type { CartItem } from './modules/ordering/cartTypes';
 
 const restaurantRepository = new SupabaseRestaurantRepository();
-const CART_CLEAR_EVENT = 'restaurant-ordering-cart-clear';
-type CartItem = { product: RestaurantProduct; quantity: number };
+
 
 function withBasePath(path: string) {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -453,21 +453,6 @@ function AppContent() {
 
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
-  useEffect(() => {
-    function handleSuccessfulOrder() {
-      setCartItems([]);
-      if (user) {
-        window.localStorage.removeItem(CART_STORAGE_KEY + ':' + user.id);
-      }
-      window.localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
-      window.localStorage.removeItem(PENDING_PAYMENT_ORDER_KEY);
-      window.localStorage.removeItem(PENDING_PAYMENT_REFERENCE_KEY);
-      window.localStorage.removeItem(PENDING_PAYMENT_CHECKOUT_URL_KEY);
-    }
-    window.addEventListener(CART_CLEAR_EVENT, handleSuccessfulOrder);
-    return () => window.removeEventListener(CART_CLEAR_EVENT, handleSuccessfulOrder);
-  }, [user?.id]);
-  useEffect(() => { if (!cartNotification) return; const timer = window.setTimeout(() => setCartNotification(''), 3000); return () => window.clearTimeout(timer); }, [cartNotification]);
   useEffect(() => {
     if (!isSupabaseConfigured) return;
 
