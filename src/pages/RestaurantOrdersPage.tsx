@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { getRestaurantOrders, updateOrderStatus, type RestaurantOrder, type RestaurantOrderStatus } from '../services/restaurantOrderRepository';
+import { getKitchenOrders, updateKitchenOrderStatus } from '../modules/kitchen/kitchenService';
 import { confirmPosCashPayment } from '../modules/pos/posService';
 import { supabase } from '../services/supabaseClient';
 
@@ -85,7 +86,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
   async function loadOrders() {
     try {
       setError('');
-      const data = await getRestaurantOrders(restaurantId);
+      const data = isKitchen ? await getKitchenOrders(restaurantId) : await getRestaurantOrders(restaurantId);
       setOrders(data);
 
     } catch (err) {
@@ -155,7 +156,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
     try {
       setError('');
       setUpdating(order.orderId);
-      await updateOrderStatus(order.orderId, status);
+      await updateKitchenOrderStatus(order.orderId, status);
       const updated = { ...order, status };
       setOrders((current) => current.map((item) => (item.orderId === order.orderId ? updated : item)));
       closeOrderList();
