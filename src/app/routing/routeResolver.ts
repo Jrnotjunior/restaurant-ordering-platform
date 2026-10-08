@@ -103,6 +103,7 @@ export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' |
   // token_hash is deliberately excluded because customer confirmations use
   // the same Supabase Auth callback parameters.
   const isTenantInviteLandingPage =
+    searchParams.get('invitation') === '1' ||
     (searchParams.has('confirmation_url') && !nestedEmployeeInvite) ||
     searchParams.get('tenant-owner-access') === '1' ||
     (searchParams.get('tenant-invite') === '1' && searchParams.get('tenant-onboarding') !== '1');
