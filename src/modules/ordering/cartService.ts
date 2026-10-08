@@ -34,17 +34,6 @@ export function removeCustomerCart(userId: string) {
 export function clearCartPersistence(userId?: string | null) {
   if (userId) {
     removeCustomerCart(userId);
-  } else {
-    // A payment return can confirm before Supabase has restored the customer
-    // session. In that case the user-specific key is not known yet, so remove
-    // persisted customer cart snapshots to prevent auth hydration restoring
-    // the cart for the order that has just completed.
-    for (let index = window.localStorage.length - 1; index >= 0; index -= 1) {
-      const key = window.localStorage.key(index);
-      if (key?.startsWith(`${CART_STORAGE_KEY}:`)) {
-        window.localStorage.removeItem(key);
-      }
-    }
   }
   window.localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
   window.localStorage.removeItem(PENDING_PAYMENT_ORDER_KEY);
