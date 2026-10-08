@@ -231,11 +231,43 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
         setCustomerName(profile.name ?? '');
         setMobileNumber(profile.phone ?? '');
         const hasAddress = Boolean(profile.defaultDeliveryCity?.trim() && profile.defaultDeliveryBarangay?.trim() && profile.defaultDeliveryAddress?.trim());
+        const hasSavedCoordinates = Number.isFinite(profile.defaultDeliveryLatitude) && profile.defaultDeliveryLatitude !== null
+          && Number.isFinite(profile.defaultDeliveryLongitude) && profile.defaultDeliveryLongitude !== null;
         setHasDefaultAddress(hasAddress);
         if (hasAddress) {
           setDeliveryCity(profile.defaultDeliveryCity ?? '');
           setDeliveryBarangay(profile.defaultDeliveryBarangay ?? '');
           setAddress(profile.defaultDeliveryAddress ?? '');
+        }
+        if (hasAddress && hasSavedCoordinates) {
+          const savedLocation: MapboxDeliveryAddress = {
+            formattedAddress: [profile.defaultDeliveryAddress, profile.defaultDeliveryBarangay, profile.defaultDeliveryCity].filter(Boolean).join(', '),
+            city: profile.defaultDeliveryCity ?? '',
+            barangay: profile.defaultDeliveryBarangay ?? '',
+            address: profile.defaultDeliveryAddress ?? '',
+            placeId: profile.defaultDeliveryPlaceId ?? '',
+            latitude: profile.defaultDeliveryLatitude,
+            longitude: profile.defaultDeliveryLongitude,
+          };
+          setSelectedDeliveryLocation(savedLocation);
+          setDeliveryRouteLoading(true);
+          void calculateDeliveryRoute(restaurantId, profile.defaultDeliveryLatitude!, profile.defaultDeliveryLongitude!)
+            .then((quote) => {
+              if (!cancelled) setDeliveryRouteQuote(quote);
+            })
+            .catch((error) => {
+              if (!cancelled) {
+                console.error('Unable to calculate delivery for saved address.', error);
+                setDeliveryRouteQuote(null);
+              }
+            })
+            .finally(() => {
+              if (!cancelled) setDeliveryRouteLoading(false);
+            });
+        } else if (hasAddress) {
+          // Legacy saved addresses without coordinates need one-time map confirmation.
+          setSelectedDeliveryLocation(null);
+          setDeliveryRouteQuote(null);
         }
       })
       .catch((error) => {
