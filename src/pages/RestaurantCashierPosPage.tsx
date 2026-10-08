@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getMenu } from '../services/menuRepository';
+import { getMenu } from '../modules/products/productService';
 import { createOrder } from '../services/orderRepository';
 import { applyPosGroupDiscounts, confirmDineInPayment, getRestaurantTaxSettings, type PosDiscountIdType, type PosDiscountType, type RestaurantTaxSettings } from '../services/restaurantOrderRepository';
 import type { RestaurantProduct } from '../types/menu';
