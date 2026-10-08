@@ -38,11 +38,14 @@ export function resolveAuthEntry(location: Pick<Location, 'pathname' | 'search' 
 
   const pathname = location.pathname;
   const invitationType = resolveInvitationTypeFromLocation(location);
+  const isGenericInvitation = search.get('invitation') === '1';
   const isEmployeeInvitation =
     invitationType === 'employee_staff' ||
     hasNestedFlowMarker(search, 'employee-invite');
 
   if (isEmployeeInvitation) return 'employee-invitation';
+
+  if (isGenericInvitation) return 'tenant-invitation';
 
   const isRiderInvitation =
     pathEndsWith(pathname, '/invite') ||
