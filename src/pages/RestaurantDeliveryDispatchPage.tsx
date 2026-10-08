@@ -265,7 +265,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
                         <span>{rider.deliveredToday} delivered today</span>
                       </div>
                     </div>
-                    <button className={`restaurant-dispatch-rider-select${assigning && assigningRiderId !== rider.id ? " is-waiting" : ""}`} type="button" disabled={!canAssign || assigning} onClick={() => void assignOrder(rider)}>
+                    <button className={`restaurant-dispatch-rider-select${assigning && assigningRiderId !== rider.id ? " is-waiting" : ""}${assigning && assigningRiderId === rider.id ? " is-assigning" : ""}`} type="button" disabled={!canAssign || assigning} onClick={() => void assignOrder(rider)}>
                       {assigningRiderId === rider.id ? 'Assigning…' : rider.status === 'busy' ? 'Assign Another Order' : 'Assign'}
                     </button>
                   </article>
