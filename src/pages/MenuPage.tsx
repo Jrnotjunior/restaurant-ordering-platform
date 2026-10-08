@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ProductCard } from '../components/ProductCard';
 import { useRestaurant } from '../components/RestaurantProvider';
 import { isSupabaseConfigured, supabase } from '../services/supabaseClient';
-import { getMenu } from '../services/menuRepository';
+import { getMenu } from '../modules/products/productService';
 import type { RestaurantCategory, RestaurantProduct } from '../types/menu';
 import '../styles/menu-category.css';
 import '../styles/storefront-customization.css';
