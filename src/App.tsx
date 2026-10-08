@@ -34,6 +34,7 @@ import { currentRestaurantLookup } from './config/restaurant';
 import { SupabaseRestaurantRepository } from './services/supabaseRestaurantRepository';
 import { isSupabaseConfigured, supabase } from './services/supabaseClient';
 import type { RestaurantConfig } from './types/restaurant';
+import type { RestaurantProduct } from './types/menu';
 import { isRestaurantCurrentlyOpen } from './utils/restaurantHours';
 import './styles/cart-empty.css';
 import './styles/cart-notification.css';
@@ -43,6 +44,7 @@ import { useCart } from './modules/ordering/useCart';
 import { OwnerRestaurantGuard, RestaurantModuleGuard, RiderRouteGuard, StaffRoleGuard } from './modules/auth/authGuards';
 import type { CartItem } from './modules/ordering/cartTypes';
 
+const restaurantRepository = new SupabaseRestaurantRepository();
 
 
 
