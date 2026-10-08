@@ -16,7 +16,7 @@ const {data:restaurant,error:restaurantError}=await admin.from("restaurants").se
 const {data:existing,error:existingError}=await admin.from("restaurant_staff").select("id,role,is_active").eq("restaurant_id",restaurantId).ilike("email",email).maybeSingle();if(existingError)throw existingError;if(existing)return json({error:"An employee with this email already exists for this restaurant."},409);
 if(role==="kitchen"||role==="dispatcher"){const {data:shared,error:sharedError}=await admin.from("restaurant_staff").select("id").eq("restaurant_id",restaurantId).eq("role",role).eq("is_active",true).maybeSingle();if(sharedError)throw sharedError;if(shared)return json({error:`This restaurant already has an active ${role} account.`},409);}
 
-const {data:inviteData,error:inviteError}=await admin.auth.admin.inviteUserByEmail(email,{data:{role,restaurant_id:restaurantId,name,mobile_number:mobileNumber},redirectTo});
+const {data:inviteData,error:inviteError}=await admin.auth.admin.inviteUserByEmail(email,{data:{invitation_type:"employee_staff",role,restaurant_id:restaurantId,name,mobile_number:mobileNumber},redirectTo});
 if(inviteError) return json({error:inviteError.message},400);
 if(!inviteData.user) return json({error:"Supabase did not return the invited Auth user."},500);
 const authUserId=inviteData.user.id;
