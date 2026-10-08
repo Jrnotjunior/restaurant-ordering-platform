@@ -122,3 +122,55 @@ export async function redeemLoyaltyRewardForPendingPayment(
     total: Number(row.total),
   };
 }
+
+
+export type LoyaltyProgramSettings = {
+  enabled: boolean;
+  amountThreshold: number;
+  pointsAwarded: number;
+  redemptionEnabled: boolean;
+  redemptionPoints: number;
+  redemptionAmount: number;
+};
+
+export async function getLoyaltyProgramSettings(restaurantId: string): Promise<LoyaltyProgramSettings> {
+  if (!supabase) throw new Error('Supabase is not configured.');
+
+  const { data, error } = await supabase
+    .from('restaurants')
+    .select('loyalty_enabled,loyalty_amount_threshold,loyalty_points_awarded,loyalty_redemption_enabled,loyalty_redemption_points,loyalty_redemption_amount')
+    .eq('id', restaurantId)
+    .single();
+
+  if (error) throw error;
+
+  return {
+    enabled: Boolean(data?.loyalty_enabled),
+    amountThreshold: Number(data?.loyalty_amount_threshold ?? 500),
+    pointsAwarded: Number(data?.loyalty_points_awarded ?? 5),
+    redemptionEnabled: data?.loyalty_redemption_enabled ?? true,
+    redemptionPoints: Number(data?.loyalty_redemption_points ?? 50),
+    redemptionAmount: Number(data?.loyalty_redemption_amount ?? 50),
+  };
+}
+
+export async function saveLoyaltyProgramSettings(
+  restaurantId: string,
+  settings: LoyaltyProgramSettings,
+): Promise<void> {
+  if (!supabase) throw new Error('Supabase is not configured.');
+
+  const { error } = await supabase
+    .from('restaurants')
+    .update({
+      loyalty_enabled: settings.enabled,
+      loyalty_amount_threshold: settings.amountThreshold,
+      loyalty_points_awarded: settings.pointsAwarded,
+      loyalty_redemption_enabled: settings.redemptionEnabled,
+      loyalty_redemption_points: settings.redemptionPoints,
+      loyalty_redemption_amount: settings.redemptionAmount,
+    })
+    .eq('id', restaurantId);
+
+  if (error) throw error;
+}
