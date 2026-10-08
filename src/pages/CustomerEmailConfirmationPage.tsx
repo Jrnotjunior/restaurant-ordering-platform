@@ -59,7 +59,7 @@ export function CustomerEmailConfirmationPage() {
         {user ? (
           <>
             <p>Your customer account is now confirmed. You can continue to the restaurant menu.</p>
-            <a className="button button-primary" href="#">
+            <a className="button button-primary" href={`${import.meta.env.BASE_URL}`}>
               Continue to menu
             </a>
           </>
