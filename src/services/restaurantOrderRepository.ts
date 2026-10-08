@@ -1,6 +1,6 @@
 import { supabaseRpc } from './supabaseClient';
 import type { RestaurantOrder, RestaurantOrderStatus, RestaurantPaymentStatus } from '../modules/ordering/orderRepository';
-import type { RestaurantTaxSettings } from '../modules/pos/posRepository';
+import type { PosDiscountType as PosDiscountTypeInternal } from '../modules/pos/posRepository';
 
 export { getRestaurantOrders, updateOrderStatus } from '../modules/ordering/orderRepository';
 export type { RestaurantOrder, RestaurantOrderStatus } from '../modules/ordering/orderRepository';
@@ -83,7 +83,7 @@ export async function getRestaurantSales(restaurantId: string): Promise<Restaura
     discountBeneficiaryCount: Number(row.discount_beneficiary_count ?? 0),
     discountGroupSize: Number(row.discount_group_size ?? 1),
     discountBeneficiaries: (row.discount_beneficiaries ?? []).map((item) => ({
-      discountType: (item.discountType ?? item.discount_type ?? 'senior') as PosDiscountType,
+      discountType: (item.discountType ?? item.discount_type ?? 'senior') as PosDiscountTypeInternal,
       idType: item.idType ?? item.discount_id_type ?? '',
       idNumber: item.idNumber ?? item.discount_id_number ?? '',
       eligibleAmount: Number(item.eligibleAmount ?? item.eligible_amount ?? 0),
@@ -100,86 +100,16 @@ export async function getRestaurantSales(restaurantId: string): Promise<Restaura
   }));
 }
 
-export async function getRestaurantTaxSettings(restaurantId: string): Promise<RestaurantTaxSettings> {
-  const rows = await supabaseRpc<{
-    vat_registered: boolean;
-    prices_vat_inclusive: boolean;
-    vat_rate: number | string;
-  }>('get_restaurant_tax_settings', { p_restaurant_id: restaurantId });
-  const row = rows[0];
-  if (!row) throw new Error('Restaurant tax settings were not found.');
-  return {
-    vatRegistered: Boolean(row.vat_registered),
-    pricesVatInclusive: Boolean(row.prices_vat_inclusive),
-    vatRate: Number(row.vat_rate ?? 0),
-  };
-}
 
-export async function confirmDineInPayment(orderId: string) {
-  await supabaseRpc('confirm_dine_in_payment', { p_order_id: orderId });
-}
-
-export type PosDiscountType = 'senior' | 'pwd';
-
-export type PosDiscountIdType =
-  | 'osca_id'
-  | 'national_senior_id'
-  | 'pwd_id'
-  | 'passport'
-  | 'other_government_id';
-
-export type PosDiscountBeneficiary = {
-  discountType: PosDiscountType;
-  idType: PosDiscountIdType;
-  idNumber: string;
-  eligibleAmount: number;
-  discountAmount: number;
-};
-
-export async function applyPosGroupDiscounts(
-  orderId: string,
-  groupSize: number,
-  beneficiaries: Omit<PosDiscountBeneficiary, 'eligibleAmount' | 'discountAmount'>[],
-) {
-  const rows = await supabaseRpc<{
-    order_id: string;
-    group_size: number;
-    beneficiary_count: number;
-    discount_amount: number | string;
-    gross_sales: number | string;
-    vatable_sales: number | string;
-    vat_amount: number | string;
-    vat_exempt_sales: number | string;
-    net_sales: number | string;
-    total: number | string;
-  }>('apply_pos_group_discounts', {
-    p_order_id: orderId,
-    p_group_size: groupSize,
-    p_beneficiaries: beneficiaries.map((beneficiary) => ({
-      discount_type: beneficiary.discountType,
-      discount_id_type: beneficiary.idType,
-      discount_id_number: beneficiary.idNumber.trim(),
-    })),
-  });
-
-  const row = rows[0];
-  if (!row) throw new Error('POS financials could not be finalized.');
-
-  const discountAmount = Number(row.discount_amount);
-  const beneficiaryCount = Number(row.beneficiary_count);
-  const groupSizeResult = Number(row.group_size);
-
-  return {
-    orderId: row.order_id,
-    groupSize: groupSizeResult,
-    beneficiaryCount,
-    discountAmount,
-    grossSales: Number(row.gross_sales),
-    vatableSales: Number(row.vatable_sales),
-    vatAmount: Number(row.vat_amount),
-    vatExemptSales: Number(row.vat_exempt_sales),
-    netSales: Number(row.net_sales),
-    total: Number(row.total),
-    eligibleShare: beneficiaryCount > 0 ? Number(((discountAmount / 0.20) / beneficiaryCount).toFixed(2)) : 0,
-  };
-}
+// Compatibility exports: POS operations now live in the POS module.
+export {
+  applyPosGroupDiscounts,
+  getRestaurantTaxSettings,
+  confirmPosCashPayment as confirmDineInPayment,
+} from '../modules/pos/posRepository';
+export type {
+  PosDiscountBeneficiary,
+  PosDiscountIdType,
+  PosDiscountType,
+  RestaurantTaxSettings,
+} from '../modules/pos/posRepository';
