@@ -3,7 +3,7 @@ import type { RestaurantProduct } from '../types/menu';
 import { createOrder } from '../modules/ordering/orderService';
 import { createPayMongoCheckout, createPendingOnlinePayment, getOnlinePaymentStatus } from '../modules/payments/paymentService';
 import { calculateDeliveryRoute, type DeliveryRouteQuote } from '../services/deliveryRouteRepository';
-import { attachCustomerToOrder, getLoyaltyRedemptionSettings, getMyLoyaltyPoints, redeemLoyaltyReward } from '../services/loyaltyRepository';
+import { attachCustomerToOrder, getLoyaltyRedemptionSettings, getMyLoyaltyPoints, redeemLoyaltyReward } from '../modules/loyalty/loyaltyService';
 import { getMyCustomerProfile, getMyCustomerProfileId, saveMyDefaultDeliveryAddress } from '../modules/customer/customerAccountService';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
 import { useRestaurant } from '../components/RestaurantProvider';
