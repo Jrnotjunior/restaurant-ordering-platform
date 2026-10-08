@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { RestaurantProduct } from '../types/menu';
 import { createOrder } from '../services/orderRepository';
-import { createPendingOnlinePayment, getOnlinePaymentStatus } from '../services/onlinePaymentRepository';
-import { createPayMongoCheckout } from '../services/paymongoRepository';
+import { createPayMongoCheckout, createPendingOnlinePayment, getOnlinePaymentStatus } from '../modules/payments/paymentService';
 import { calculateDeliveryRoute, type DeliveryRouteQuote } from '../services/deliveryRouteRepository';
 import { attachCustomerToOrder, getLoyaltyRedemptionSettings, getMyLoyaltyPoints, redeemLoyaltyReward } from '../services/loyaltyRepository';
 import { getMyCustomerProfile, getMyCustomerProfileId, saveMyDefaultDeliveryAddress } from '../modules/customer/customerAccountService';
