@@ -15,7 +15,7 @@ import '../styles/checkout-mobile.css';
 type CartItem = { product: RestaurantProduct; quantity: number };
 type OrderType = 'delivery' | 'pickup' | 'dine_in';
 type PaymentMethod = 'cash' | 'online';
-type CheckoutPageProps = { items: CartItem[] };
+type CheckoutPageProps = { items: CartItem[]; onClearCart: () => void };
 type ConfirmedOrder = { orderNumber: string; paymentMethod: PaymentMethod; orderType: OrderType; pickupMethod?: 'customer' | 'third_party_courier'; pickupAddress?: string; total: number };
 const PENDING_PAYMENT_CHECKOUT_URL_KEY = 'restaurant-ordering-pending-payment-checkout-url';
 const ACTIVE_ORDER_KEY = 'restaurant-ordering-active-order';
@@ -38,7 +38,7 @@ const PENDING_PAYMENT_ORDER_KEY = 'restaurant-ordering-pending-payment-order';
 const CART_CLEAR_EVENT = 'restaurant-ordering-cart-clear';
 const thirdPartyCourierNote = 'THIRD-PARTY COURIER: Customer is responsible for booking and paying the delivery courier (such as Lalamove or Grab Express). The restaurant will prepare the food for courier pickup at the listed restaurant pickup point.';
 
-export function CheckoutPage({ items }: CheckoutPageProps) {
+export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
   const restaurant = useRestaurant();
   const { user } = useRestaurantOwnerAuth();
   const [orderType, setOrderType] = useState<OrderType>('delivery');
@@ -118,7 +118,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             window.localStorage.removeItem(PENDING_PAYMENT_PICKUP_METHOD_KEY);
             window.localStorage.setItem(ACTIVE_ORDER_KEY, result.orderNumber);
             window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
-            window.dispatchEvent(new Event(CART_CLEAR_EVENT));
+            onClearCart();
             setConfirmedOrder({
               orderNumber: result.orderNumber,
               paymentMethod: 'online',
@@ -172,7 +172,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             const pickupMethod = window.localStorage.getItem(PENDING_PAYMENT_PICKUP_METHOD_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_PICKUP_METHOD_KEY);
             window.history.replaceState({}, '', window.location.pathname + window.location.hash);
-            window.dispatchEvent(new Event(CART_CLEAR_EVENT));
+            onClearCart();
             if (!cancelled) {
               setPaymentProcessing(false);
               window.localStorage.setItem(ACTIVE_ORDER_KEY, result.orderNumber);
