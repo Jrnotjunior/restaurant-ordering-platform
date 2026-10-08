@@ -352,7 +352,6 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
               <span>Customer name</span>
               <input
                 value={customerName}
-                placeholder="Enter customer name"
                 onFocus={() => setShowCustomerSuggestions(customerName.trim().length >= 2)}
                 onChange={(event) => {
                   setCustomerName(event.target.value);
@@ -361,7 +360,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
                   setShowCustomerSuggestions(true);
                 }}
                 onBlur={() => window.setTimeout(() => setShowCustomerSuggestions(false), 150)}
-                placeholder="Walk-in Customer"
+                placeholder="Enter customer name"
                 autoComplete="off"
                 disabled={saving}
               />
