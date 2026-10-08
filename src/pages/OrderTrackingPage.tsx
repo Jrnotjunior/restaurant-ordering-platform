@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getOrderStatus, type OrderStatus } from '../services/orderRepository';
+import { getOrderStatus, type OrderStatus } from '../modules/ordering/orderService';
 import { supabase } from '../services/supabaseClient';
 import '../styles/order-tracking.css';
 
