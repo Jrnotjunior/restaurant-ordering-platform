@@ -38,6 +38,7 @@ export function resolveAuthEntry(location: Pick<Location, 'pathname' | 'search' 
   const isEmployeeInvitation =
     pathEndsWith(pathname, '/employee-invite') ||
     search.get('employee-invite') === '1' ||
+    search.get('flow') === 'employee-invite' ||
     hasNestedFlowMarker(search, 'employee-invite');
 
   if (isEmployeeInvitation) return 'employee-invitation';
