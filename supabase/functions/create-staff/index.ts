@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 const corsHeaders={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type, x-restaurant-domain, x-restaurant-slug","Access-Control-Allow-Methods":"POST, OPTIONS"};
-const redirectTo="https://jrnotjunior.github.io/restaurant-ordering-platform/?employee-invite=1";
+const redirectTo="https://jrnotjunior.github.io/restaurant-ordering-platform/?employee-invite=1&flow=employee-invite";
 function json(body,status=200){return new Response(JSON.stringify(body),{status,headers:{...corsHeaders,"Content-Type":"application/json"}})}
 function secret(){const keys=JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")??"{}");return keys.default??Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??""}
 function publishable(){const keys=JSON.parse(Deno.env.get("SUPABASE_PUBLISHABLE_KEYS")??"{}");return keys.default??Deno.env.get("SUPABASE_ANON_KEY")??""}
