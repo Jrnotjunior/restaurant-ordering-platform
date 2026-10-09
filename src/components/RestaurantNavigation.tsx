@@ -293,7 +293,8 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
             <div className="restaurant-account-dropdown">
               <div className="restaurant-account-email">{email || 'Restaurant account'}</div>
               <button type="button" onClick={openPasswordChange}>Change password</button>
-              <button type="button" onClick={() => void handleLogout()} disabled={logoutSaving}>{logoutSaving ? 'Logging out…' : 'Log out'}</button>
+              <button type="button" onClick={() => void handleLogout()} disabled={logoutSaving} aria-busy={logoutSaving}>{logoutSaving ? 'Logging out…' : 'Log out'}</button>
+              {logoutMessage ? <p className="restaurant-logout-error" role="alert">{logoutMessage}</p> : null}
             </div>
           ) : null}
         </div>
