@@ -9,6 +9,7 @@ export function CustomerSignUpPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [emailAlreadyRegistered, setEmailAlreadyRegistered] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [personalInfoConsent, setPersonalInfoConsent] = useState(false);
 
@@ -16,6 +17,7 @@ export function CustomerSignUpPage() {
     event.preventDefault();
     setError('');
     setMessage('');
+    setEmailAlreadyRegistered(false);
 
     const trimmedName = name.trim();
     const trimmedPhone = phone.trim();
@@ -60,7 +62,12 @@ export function CustomerSignUpPage() {
         return;
       }
 
-      setMessage("Check your inbox for an account confirmation email. If you don't receive one, try signing in or select Forgot password to regain access to an existing account.");
+      if (result.emailAlreadyRegistered) {
+        setEmailAlreadyRegistered(true);
+        setMessage("This email already has an account. If you don't remember your password, please reset it.");
+      } else {
+        setMessage('Check your inbox for an account confirmation email to complete your registration.');
+      }
       setPassword('');
       setConfirmPassword('');
     } catch (err) {
@@ -78,7 +85,11 @@ export function CustomerSignUpPage() {
         <p>Create your customer account to sign in and place orders.</p>
 
         {error && <div className="restaurant-dashboard-error" role="alert">{error}</div>}
-        {message && <div className="restaurant-auth-success" role="status">{message}</div>}
+        {message && (
+          <div className="restaurant-auth-success" role="status">
+            {message}{emailAlreadyRegistered && <> <a href="#forgot-password">Reset your password</a>.</>}
+          </div>
+        )}
 
         <form className="restaurant-owner-auth-form" onSubmit={(event) => void handleSubmit(event)}>
           <label>
