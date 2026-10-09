@@ -118,6 +118,7 @@ export function RestaurantOwnerLoginPage() {
             Password
             <input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={1} placeholder="Enter your password" disabled={submitting} />
           </label>
+          <p className="customer-password-forgot-link"><a href="#forgot-password">Forgot password?</a></p>
           <button className="button button-primary" type="submit" disabled={submitting}>
             {submitting ? 'Signing in…' : 'Sign in'}
           </button>
