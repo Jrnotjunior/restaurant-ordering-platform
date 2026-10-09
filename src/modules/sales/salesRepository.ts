@@ -1,5 +1,5 @@
 import { supabaseRpc } from '../../services/supabaseClient';
-import type { PosDiscountType } from '../pos/posRepository';
+import type { PosDiscountType } from '../pos/posService';
 import type { RestaurantOrder, RestaurantPaymentStatus, RestaurantOrderStatus } from '../ordering/orderRepository';
 
 type RawOrderItem = {
