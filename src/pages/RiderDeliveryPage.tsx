@@ -160,60 +160,13 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
     setSavingStatus(true);
     setError('');
 
-    const previousStatus = delivery.status;
-    const previousAssignmentStatus = previousStatus === 'assigned' ? 'assigned' : previousStatus === 'delivering' ? 'delivering' : previousStatus === 'arrived' ? 'arrived' : 'failed';
-    const { data: authData, error: authError } = await supabase.auth.getUser();
-
     try {
-      if (authError) throw authError;
-      const user = authData.user;
-      if (!user) throw new Error('Please sign in again.');
-
-      const { data: rider, error: riderError } = await supabase
-        .from('restaurant_staff')
-        .select('id')
-        .eq('role', 'rider')
-        .eq('is_active', true)
-        .eq('auth_user_id', user.id)
-        .maybeSingle();
-      if (riderError) throw riderError;
-      if (!rider) throw new Error('Your account is not linked to a rider profile.');
-
-      const assignmentStatus = nextStatus === 'delivered' ? 'delivered' : nextStatus === 'arrived' ? 'arrived' : nextStatus === 'failed' ? 'failed' : 'delivering';
-      const assignmentUpdate = nextStatus === 'delivered'
-        ? { status: assignmentStatus, delivered_at: new Date().toISOString() }
-        : { status: assignmentStatus };
-
-      const { error: assignmentError } = await supabase
-        .from('delivery_assignments')
-        .update(assignmentUpdate)
-        .eq('order_id', delivery.id)
-        .eq('rider_id', rider.id)
-        .eq('status', previousAssignmentStatus);
-      if (assignmentError) throw assignmentError;
-
-      const orderUpdate = nextStatus === 'delivered'
-        ? { delivery_status: 'delivered', status: 'completed', ...(delivery.paymentMethod === 'cash' ? { payment_status: 'paid' } : {}) }
-        : nextStatus === 'failed'
-          ? { delivery_status: 'failed', status: 'cancelled', delivery_failure_reason: failedReason ?? null }
-          : { delivery_status: nextStatus === 'arrived' ? 'arrived' : 'delivering' };
-
-      const { error: orderError } = await supabase
-        .from('orders')
-        .update(orderUpdate)
-        .eq('id', delivery.id)
-        .eq('rider_id', rider.id)
-        .eq('delivery_status', previousStatus);
-
-      if (orderError) {
-        await supabase
-          .from('delivery_assignments')
-          .update(nextStatus === 'delivered' ? { status: 'arrived', delivered_at: null } : nextStatus === 'arrived' ? { status: 'delivering' } : { status: 'assigned' })
-          .eq('order_id', delivery.id)
-          .eq('rider_id', rider.id)
-          .eq('status', assignmentStatus);
-        throw orderError;
-      }
+      const { error: statusError } = await supabase.rpc('rider_update_delivery_status', {
+        p_order_id: delivery.id,
+        p_next_status: nextStatus,
+        p_failure_reason: nextStatus === 'failed' ? failedReason ?? null : null,
+      });
+      if (statusError) throw statusError;
 
       setDelivery((current) => current ? { ...current, status: nextStatus } : current);
       setStatusIndex(statusIndexFor(nextStatus));
