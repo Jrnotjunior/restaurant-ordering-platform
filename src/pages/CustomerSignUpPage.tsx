@@ -60,7 +60,7 @@ export function CustomerSignUpPage() {
         return;
       }
 
-      setMessage('Account created. Please confirm your email using the link we sent you. This page will remain open while you check your email.');
+      setMessage("If an account can be created with these details, you'll receive an email with the next steps. If you already have an account, please sign in.");
       setPassword('');
       setConfirmPassword('');
     } catch (err) {
