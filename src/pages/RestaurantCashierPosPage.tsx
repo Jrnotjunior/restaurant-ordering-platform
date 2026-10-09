@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getMenu } from '../modules/products/productService';
+import { getMenu, subscribeToCashierMenuChanges } from '../modules/products/productService';
 import { createOrder } from '../modules/ordering/orderService';
 import { applyPosGroupDiscounts, confirmPosCashPayment, getCurrentCashierName, getRestaurantTaxSettings, type PosDiscountIdType, type PosDiscountType, type RestaurantTaxSettings } from '../modules/pos/posService';
 import type { RestaurantProduct } from '../types/menu';
@@ -124,9 +124,12 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   }, [restaurantId, customerName]);
 
   useEffect(() => {
-    if (!supabase) return;
-    const channel = supabase.channel(`restaurant-menu-changes:${restaurantId}`).on('broadcast', { event: 'restaurant_menu_changed' }, () => { void loadMenu(); }).subscribe();
-    return () => { void supabase?.removeChannel(channel); };
+    const unsubscribe = subscribeToCashierMenuChanges(restaurantId, () => {
+      void loadMenu();
+    });
+    return () => {
+      unsubscribe?.();
+    };
   }, [restaurantId]);
 
   useEffect(() => {
