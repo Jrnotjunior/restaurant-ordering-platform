@@ -25,7 +25,15 @@ Deno.serve(async (req) => {
 
   const admin = createClient(supabaseUrl, serviceRoleKey);
   let payload: RouteRequest;
-  try { payload = await req.json(); } catch { return json({ error: "Invalid delivery location request." }, 400); }
+  try {
+    const rawBody = await req.text();
+    if (new TextEncoder().encode(rawBody).byteLength > 4096) {
+      return json({ error: "Delivery location request is too large." }, 413);
+    }
+    payload = JSON.parse(rawBody) as RouteRequest;
+  } catch {
+    return json({ error: "Invalid delivery location request." }, 400);
+  }
 
   const restaurantId = String(payload.restaurantId ?? "").trim();
   const latitude = Number(payload.latitude);
@@ -76,6 +84,31 @@ Deno.serve(async (req) => {
 
   if (!Number.isFinite(incrementMeters) || incrementMeters <= 0 || !Number.isFinite(feePerIncrement) || feePerIncrement < 0 || !Number.isFinite(baseFee) || baseFee < 0 || !Number.isFinite(maxDistanceMeters) || maxDistanceMeters <= 0) {
     return json({ error: "This restaurant has invalid delivery pricing settings." }, 409);
+  }
+
+  // Rate-limit only uncached route calculations; cached quotes remain reusable.
+  // Hash the client address before sending it to the database so raw IPs are not stored.
+  const clientAddress = (
+    req.headers.get("cf-connecting-ip") ??
+    req.headers.get("x-real-ip") ??
+    req.headers.get("x-forwarded-for")?.split(",")[0] ??
+    "unknown"
+  ).trim().slice(0, 128);
+  const rateLimitMaterial = new TextEncoder().encode(`${restaurantId}:${clientAddress}`);
+  const rateLimitDigest = await crypto.subtle.digest("SHA-256", rateLimitMaterial);
+  const rateLimitKey = Array.from(new Uint8Array(rateLimitDigest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+
+  const { data: allowed, error: rateLimitError } = await admin.rpc("consume_delivery_route_rate_limit", {
+    p_rate_limit_key: rateLimitKey,
+  });
+  if (rateLimitError) {
+    console.error("Delivery route rate limiter unavailable", rateLimitError);
+    return json({ error: "Delivery distance service is temporarily unavailable. Please try again." }, 503);
+  }
+  if (allowed !== true) {
+    return json({ error: "Too many delivery distance requests. Please wait a minute and try again." }, 429);
   }
 
   const coordinates = `${originLng},${originLat};${longitude},${latitude}`;
