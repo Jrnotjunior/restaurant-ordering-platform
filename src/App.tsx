@@ -31,7 +31,7 @@ import { TenantOnboardingPage } from './pages/TenantOnboardingPage';
 import { TenantInviteLandingPage } from './pages/TenantInviteLandingPage';
 import { defaultRestaurant } from './config/defaultRestaurant';
 import { currentRestaurantLookup } from './config/restaurant';
-import { SupabaseRestaurantRepository } from './services/supabaseRestaurantRepository';
+import { SupabaseRestaurantRepository } from './modules/restaurant/supabaseRestaurantRepository';
 import { isSupabaseConfigured, supabase } from './services/supabaseClient';
 import type { RestaurantConfig } from './types/restaurant';
 import type { RestaurantProduct } from './types/menu';
