@@ -1,4 +1,4 @@
-import { supabaseRpc } from '../../services/supabaseClient';
+import { supabase, supabaseRpc } from '../../services/supabaseClient';
 import type { PosDiscountType } from '../../types/discount';
 export type { PosDiscountType };
 
@@ -90,4 +90,29 @@ export async function applyPosGroupDiscounts(
     total: Number(row.total),
     eligibleShare: beneficiaryCount > 0 ? Number(((discountAmount / 0.20) / beneficiaryCount).toFixed(2)) : 0,
   };
+}
+
+
+export async function getCurrentCashierName(restaurantId: string): Promise<string> {
+  if (!supabase) return 'Cashier';
+
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData.user?.id;
+    if (!userId) return 'Cashier';
+
+    const { data, error } = await supabase
+      .from('restaurant_staff')
+      .select('preferred_name,name')
+      .eq('restaurant_id', restaurantId)
+      .eq('auth_user_id', userId)
+      .eq('role', 'cashier')
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data?.preferred_name?.trim() || data?.name?.trim() || 'Cashier';
+  } catch {
+    return 'Cashier';
+  }
 }
