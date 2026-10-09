@@ -34,9 +34,24 @@ export function Header({ cartCount = 0 }: HeaderProps) {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordMessage, setPasswordMessage] = useState('');
+  const [logoutMessage, setLogoutMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [loyaltyPoints, setLoyaltyPoints] = useState<number | null>(null);
   const [loyaltyLoading, setLoyaltyLoading] = useState(false);
   const [activeOrderNumber, setActiveOrderNumber] = useState(() => window.localStorage.getItem(ACTIVE_ORDER_KEY));
+
+  async function handleLogout() {
+    setLogoutMessage(null);
+    try {
+      await signOut();
+      setAccountOpen(false);
+      setChangePasswordOpen(false);
+      setLogoutMessage({ type: 'success', text: 'You have been logged out.' });
+      if (window.location.hash) window.location.hash = '';
+    } catch (error) {
+      console.error('Unable to log out.', error);
+      setLogoutMessage({ type: 'error', text: 'Unable to log out. Please try again.' });
+    }
+  }
 
   useEffect(() => {
     const closeAccount = (event: MouseEvent) => {
@@ -115,6 +130,7 @@ export function Header({ cartCount = 0 }: HeaderProps) {
         ) : null}
 
         <div className="header-account-menu">
+          {logoutMessage ? <span className={`header-logout-message is-${logoutMessage.type}`} role={logoutMessage.type === 'error' ? 'alert' : 'status'}>{logoutMessage.text}</span> : null}
           <button className="header-account" type="button" aria-label="Account" aria-expanded={user ? accountOpen : undefined} title="Account" onClick={() => {
             if (!user) {
               window.location.hash = '#account';
@@ -160,7 +176,7 @@ export function Header({ cartCount = 0 }: HeaderProps) {
                     {passwordMessage ? <span className="header-account-password-message" role="status">{passwordMessage}</span> : null}
                   </form>
                 ) : null}
-                <button className="header-account-menu-item" type="button" onClick={() => void signOut().then(() => { setAccountOpen(false); window.location.hash = ''; })}>Log out</button>
+                <button className="header-account-menu-item" type="button" onClick={() => void handleLogout()}>Log out</button>
               </> : null}
             </div>
           ) : null}
