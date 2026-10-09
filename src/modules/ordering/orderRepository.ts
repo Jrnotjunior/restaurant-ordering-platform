@@ -97,6 +97,19 @@ export type TrackedOrder = {
   status: OrderStatus;
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   total: number;
+  subtotal: number;
+  shippingFee: number;
+  taxVatRegistered: boolean;
+  taxPricesVatInclusive: boolean;
+  taxVatRate: number;
+  taxGrossSales: number;
+  taxVatableSales: number;
+  taxVatAmount: number;
+  taxVatExemptSales: number;
+  taxNetSales: number;
+  discountAmount: number;
+  loyaltyDiscountAmount: number;
+  items: { id: string; productName: string; quantity: number; unitPrice: number; lineTotal: number }[];
   deliveryStatus: DeliveryStatus | null;
   riderName: string | null;
   riderPhone: string | null;
@@ -124,6 +137,19 @@ type TrackedOrderRow = {
   status: OrderStatus;
   payment_status: TrackedOrder['paymentStatus'];
   total: number;
+  subtotal: number | string;
+  shipping_fee: number | string;
+  tax_vat_registered: boolean;
+  tax_prices_vat_inclusive: boolean;
+  tax_vat_rate: number | string;
+  tax_gross_sales: number | string;
+  tax_vatable_sales: number | string;
+  tax_vat_amount: number | string;
+  tax_vat_exempt_sales: number | string;
+  tax_net_sales: number | string;
+  discount_amount: number | string;
+  loyalty_discount_amount: number | string;
+  items: { id: string; productName: string; quantity: number; unitPrice: number | string; lineTotal: number | string }[] | null;
   delivery_status?: DeliveryStatus | null;
   rider_name?: string | null;
   rider_phone?: string | null;
@@ -209,6 +235,25 @@ export async function getOrderStatus(orderNumber: string): Promise<TrackedOrder>
     status: row.status,
     paymentStatus: row.payment_status,
     total: Number(row.total),
+    subtotal: Number(row.subtotal),
+    shippingFee: Number(row.shipping_fee),
+    taxVatRegistered: Boolean(row.tax_vat_registered),
+    taxPricesVatInclusive: Boolean(row.tax_prices_vat_inclusive),
+    taxVatRate: Number(row.tax_vat_rate),
+    taxGrossSales: Number(row.tax_gross_sales),
+    taxVatableSales: Number(row.tax_vatable_sales),
+    taxVatAmount: Number(row.tax_vat_amount),
+    taxVatExemptSales: Number(row.tax_vat_exempt_sales),
+    taxNetSales: Number(row.tax_net_sales),
+    discountAmount: Number(row.discount_amount),
+    loyaltyDiscountAmount: Number(row.loyalty_discount_amount),
+    items: (row.items ?? []).map((item) => ({
+      id: item.id,
+      productName: item.productName,
+      quantity: Number(item.quantity),
+      unitPrice: Number(item.unitPrice),
+      lineTotal: Number(item.lineTotal),
+    })),
     deliveryStatus: row.delivery_status ?? null,
     riderName: row.rider_name ?? null,
     riderPhone: row.rider_phone ?? null,
