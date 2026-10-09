@@ -105,3 +105,6 @@ export async function reverseMapboxLocation(latitude: number, longitude: number)
   const data = await requestJson(`https://api.mapbox.com/search/geocode/v6/reverse?${params.toString()}`);
   return data.features?.[0] ?? null;
 }
+
+export { calculateDeliveryRoute } from './deliveryRouteRepository';
+export type { DeliveryRouteQuote } from './deliveryRouteRepository';
