@@ -3,6 +3,7 @@ export {
   getOrderStatus,
   getRestaurantOrders,
   updateOrderStatus,
+  subscribeToOrderTrackingChanges,
 } from './orderRepository';
 
 export type {
