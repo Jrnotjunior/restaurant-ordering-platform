@@ -65,7 +65,7 @@ export function RiderRouteGuard({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
     async function check() {
-      if (!supabase) { if (mounted) setChecking(false); return; }
+      if (!supabase) { if (mounted) window.location.hash = '#account'; return; }
       const { data, error } = await supabase.auth.getUser();
       if (error) { window.location.hash = '#account'; return; }
 
@@ -75,7 +75,7 @@ export function RiderRouteGuard({ children }: { children: ReactNode }) {
 
       if (role === 'rider' || user) {
         if (user) {
-          const { data: riderProfile } = await supabase
+          const { data: riderProfile, error: riderProfileError } = await supabase
             .from('restaurant_staff')
             .select('id,restaurant_id')
             .eq('auth_user_id', user.id)
@@ -83,18 +83,29 @@ export function RiderRouteGuard({ children }: { children: ReactNode }) {
             .eq('is_active', true)
             .maybeSingle();
           if (!mounted) return;
-          if (riderProfile || role === 'rider') {
-            if (riderProfile?.restaurant_id) {
-              const { data: deliveryEnabled, error: moduleError } = await supabase.rpc('restaurant_has_module', {
-                p_restaurant_id: riderProfile.restaurant_id,
-                p_module_key: 'dispatch_delivery',
-              });
-              if (moduleError || deliveryEnabled !== true) {
-                window.location.hash = '#restaurant/owner';
-                return;
-              }
+          if (riderProfileError) {
+            console.error('Unable to verify rider access.', riderProfileError);
+            window.location.hash = '#account';
+            return;
+          }
+          if (riderProfile) {
+            if (!riderProfile.restaurant_id) {
+              window.location.hash = '#account';
+              return;
+            }
+            const { data: deliveryEnabled, error: moduleError } = await supabase.rpc('restaurant_has_module', {
+              p_restaurant_id: riderProfile.restaurant_id,
+              p_module_key: 'dispatch_delivery',
+            });
+            if (moduleError || deliveryEnabled !== true) {
+              window.location.hash = '#restaurant/owner';
+              return;
             }
             setChecking(false);
+            return;
+          }
+          if (role === 'rider') {
+            window.location.hash = '#account';
             return;
           }
         }
@@ -126,12 +137,18 @@ export function RiderRouteGuard({ children }: { children: ReactNode }) {
 export function OwnerRestaurantGuard({ children }: { children: (restaurant: RestaurantConfig) => ReactNode }) {
   const { restaurant, user, loading: authLoading } = useRestaurantOwnerAuth();
   const [checkingRole, setCheckingRole] = useState(true);
+  const [roleCheckError, setRoleCheckError] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     async function check() {
       if (authLoading) return;
-      if (!user || !supabase) { if (mounted) setCheckingRole(false); return; }
+      if (!user) { if (mounted) setCheckingRole(false); return; }
+      if (!supabase) {
+        if (mounted) { setRoleCheckError(true); setCheckingRole(false); }
+        return;
+      }
+      setRoleCheckError(false);
       const role = user.app_metadata?.role ?? user.user_metadata?.role;
       if (role === 'customer') { window.location.hash = ''; return; }
 
@@ -143,7 +160,12 @@ export function OwnerRestaurantGuard({ children }: { children: (restaurant: Rest
         .order('created_at', { ascending: true })
         .limit(1);
       if (!mounted) return;
-      if (error) { console.error('Unable to verify staff access.', error); setCheckingRole(false); return; }
+      if (error) {
+        console.error('Unable to verify staff access.', error);
+        setRoleCheckError(true);
+        setCheckingRole(false);
+        return;
+      }
 
       const staffRole = staffRows?.[0]?.role;
       if (staffRole === 'cashier') { window.location.hash = '#restaurant/cashier'; return; }
@@ -159,6 +181,7 @@ export function OwnerRestaurantGuard({ children }: { children: (restaurant: Rest
   if (authLoading) return <section className="restaurant-owner-auth-loading">Loading restaurant session…</section>;
   if (!user) return <RestaurantOwnerLoginPage />;
   if (checkingRole) return <section className="restaurant-owner-auth-loading">Checking account access…</section>;
+  if (roleCheckError) return <section className="restaurant-owner-auth-no-restaurant"><div className="restaurant-owner-auth-no-restaurant-card"><p className="eyebrow">Restaurant operations</p><h1>Unable to verify account access</h1><p>We couldn't verify your employee permissions. Please refresh the page or contact support. The owner dashboard is unavailable until access can be verified.</p></div></section>;
   if (!restaurant) return <section className="restaurant-owner-auth-no-restaurant"><div className="restaurant-owner-auth-no-restaurant-card"><p className="eyebrow">Restaurant operations</p><h1>No restaurant assigned</h1><p>Your owner account is signed in, but it is not linked to an active restaurant yet. Set the restaurant's <code>owner_id</code> to your Supabase Auth user ID, then reload this page.</p><p><strong>Signed in as:</strong> {user.email ?? user.id}</p></div></section>;
   return children(ownerRestaurantConfig(restaurant));
 }
