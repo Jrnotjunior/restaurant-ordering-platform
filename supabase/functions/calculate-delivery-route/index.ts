@@ -17,11 +17,6 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed." }, 405);
 
-  const contentLength = Number(req.headers.get("content-length") ?? "0");
-  if (Number.isFinite(contentLength) && contentLength > 4096) {
-    return json({ error: "Delivery location request is too large." }, 413);
-  }
-
   const directionsApiToken = Deno.env.get("MAPBOX_DIRECTIONS_API_TOKEN");
   if (!directionsApiToken) return json({ error: "Delivery distance service is not configured yet." }, 503);
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -30,7 +25,15 @@ Deno.serve(async (req) => {
 
   const admin = createClient(supabaseUrl, serviceRoleKey);
   let payload: RouteRequest;
-  try { payload = await req.json(); } catch { return json({ error: "Invalid delivery location request." }, 400); }
+  try {
+    const rawBody = await req.text();
+    if (new TextEncoder().encode(rawBody).byteLength > 4096) {
+      return json({ error: "Delivery location request is too large." }, 413);
+    }
+    payload = JSON.parse(rawBody) as RouteRequest;
+  } catch {
+    return json({ error: "Invalid delivery location request." }, 400);
+  }
 
   const restaurantId = String(payload.restaurantId ?? "").trim();
   const latitude = Number(payload.latitude);
