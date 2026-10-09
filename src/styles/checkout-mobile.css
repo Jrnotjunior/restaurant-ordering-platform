@@ -1121,3 +1121,54 @@
   background: #f3f4f6;
   border-color: #cbd5e1;
 }
+
+/* Clear, restrained validation notice for checkout requirements. */
+.checkout-validation-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  margin-top: 0.85rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid #e5c98b;
+  border-radius: 0.75rem;
+  background: #fffaf0;
+  color: #713f12;
+  text-align: left;
+}
+
+.checkout-validation-notice-icon {
+  display: inline-flex;
+  flex: 0 0 1.25rem;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.05rem;
+  border-radius: 50%;
+  background: #f5e3b8;
+  color: #713f12;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.checkout-validation-notice-content {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.checkout-validation-notice-content strong {
+  color: #713f12;
+  font-size: 0.82rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.checkout-validation-notice-content p {
+  margin: 0;
+  color: #854d0e;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
