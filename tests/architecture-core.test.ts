@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { normalizeHashRoute, resolveAppRoute } from '../src/app/routing/routeResolver';
 import { addCartItem, changeCartItemQuantity, getCartCount, removeCartItem } from '../src/modules/ordering/cartService';
 import { isInvitationType } from '../src/modules/invitations/invitationTypes';
+import { staffRouteForRole } from '../src/modules/auth/staffRoleRouting';
 import { resolveInvitationTypeFromMetadata } from '../src/modules/invitations/invitationResolver';
 import type { RestaurantProduct } from '../src/types/menu';
 
@@ -63,6 +64,24 @@ describe('route resolution contract', () => {
     expect(result.isEmployeeInvitePage).toBe(true);
     expect(result.isTenantInviteLandingPage).toBe(false);
   });
+});
+
+describe('staff role routing contract', () => {
+  it.each([
+    ['cashier', '#restaurant/cashier'],
+    ['kitchen', '#restaurant/kitchen'],
+    ['dispatcher', '#restaurant/dispatcher'],
+    ['rider', '#rider/dashboard'],
+  ])('routes a verified %s role to its own workspace', (role, route) => {
+    expect(staffRouteForRole(role)).toBe(route);
+  });
+
+  it.each([null, undefined, '', 'owner', 'customer', 'system_admin'])(
+    'fails closed for non-staff or unknown role %s',
+    (role) => {
+      expect(staffRouteForRole(role)).toBeNull();
+    },
+  );
 });
 
 describe('cart service contract', () => {
