@@ -1,6 +1,6 @@
 import type { User } from '@supabase/supabase-js';
 import { currentRestaurantLookup } from '../../config/restaurant';
-import { SupabaseRestaurantRepository } from '../../services/supabaseRestaurantRepository';
+import { SupabaseRestaurantRepository } from '../restaurant/supabaseRestaurantRepository';
 import { supabase } from '../../services/supabaseClient';
 
 export type CustomerSignUpInput = {
