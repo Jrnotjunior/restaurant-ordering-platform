@@ -1,4 +1,4 @@
-import { supabaseRpc } from '../../services/supabaseClient';
+import { supabase, supabaseRpc } from '../../services/supabaseClient';
 import type { PosDiscountType } from '../../types/discount';
 import type { RestaurantOrder, RestaurantPaymentStatus, RestaurantOrderStatus } from '../ordering/orderService';
 
@@ -95,4 +95,22 @@ export async function getRestaurantSales(restaurantId: string): Promise<Restaura
       lineTotal: Number(item.lineTotal ?? item.line_total ?? 0),
     })),
   }));
+}
+
+
+export function subscribeToRestaurantSalesChanges(
+  restaurantId: string,
+  onChange: () => void,
+  onStatusChange: (status: string) => void,
+): (() => void) | null {
+  if (!supabase) return null;
+
+  const channel = supabase
+    .channel(`restaurant-sales:${restaurantId}`)
+    .on('broadcast', { event: 'restaurant_order_changed' }, onChange)
+    .subscribe((status) => onStatusChange(status));
+
+  return () => {
+    if (supabase) void supabase.removeChannel(channel);
+  };
 }

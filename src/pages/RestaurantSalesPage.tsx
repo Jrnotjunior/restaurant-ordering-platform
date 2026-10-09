@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { getRestaurantOrders, type RestaurantOrder } from '../modules/ordering/orderService';
-import { getRestaurantSales } from '../modules/sales/salesService';
-import { supabase } from '../services/supabaseClient';
+import { getRestaurantSales, subscribeToRestaurantSalesChanges } from '../modules/sales/salesService';
 
 type Props = { restaurantId: string; role?: 'owner' | 'cashier' };
 
@@ -142,25 +141,23 @@ export function RestaurantSalesPage({ restaurantId, role = 'owner' }: Props) {
 
   useEffect(() => {
     void loadOrders();
-    const client = supabase;
-    if (!client) {
+    const unsubscribe = subscribeToRestaurantSalesChanges(
+      restaurantId,
+      () => {
+        void loadOrders();
+      },
+      (status) => {
+        if (status === 'SUBSCRIBED') setRealtimeStatus('live');
+        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') setRealtimeStatus('error');
+      },
+    );
+
+    if (!unsubscribe) {
       setRealtimeStatus('error');
       return;
     }
 
-    const channel = client
-      .channel(`restaurant-sales:${restaurantId}`)
-      .on('broadcast', { event: 'restaurant_order_changed' }, () => {
-        void loadOrders();
-      })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') setRealtimeStatus('live');
-        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') setRealtimeStatus('error');
-      });
-
-    return () => {
-      void client.removeChannel(channel);
-    };
+    return unsubscribe;
   }, [restaurantId]);
 
   const completedOrders = useMemo(() => orders.filter((order) => order.status === 'completed'), [orders]);

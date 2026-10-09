@@ -160,3 +160,6 @@ export async function loadOwnerStats(restaurantId: string): Promise<OwnerStats> 
 }
 
 export { getRestaurantSales } from './salesRepository';
+
+
+export { subscribeToRestaurantSalesChanges } from './salesRepository';
