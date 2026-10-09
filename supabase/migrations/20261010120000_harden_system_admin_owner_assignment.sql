@@ -20,7 +20,7 @@ declare
   v_user auth.users%rowtype;
   v_previous_owner_id uuid;
 begin
-  if not public.is_system_admin() then
+  if auth.uid() is null or not public.system_admin_has_manage_access() then
     raise exception 'System Administrator access required.';
   end if;
 
