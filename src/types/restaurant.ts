@@ -39,7 +39,9 @@ export type RestaurantDayHours = {
 
 export type RestaurantOperatingHours = Record<string, RestaurantDayHours>;
 
-export type RestaurantStorefront = {  hero: {
+export type RestaurantStorefront = {
+  faviconUrl?: string;
+  hero: {
     eyebrow: string;
     imageUrl?: string;
   };
