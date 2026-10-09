@@ -174,6 +174,35 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
 
         <div className="order-tracking-total"><span>Total</span><strong>₱{Number(order.total).toFixed(2)}</strong></div>
 
+        <section className="order-tracking-details" aria-label="Order details and billing">
+          <div className="order-tracking-section-heading">
+            <div><p className="eyebrow">Your order</p><h2>Order details</h2></div>
+          </div>
+          {order.items.length > 0 ? (
+            <div className="order-tracking-items">
+              {order.items.map((item) => (
+                <div className="order-tracking-item" key={item.id}>
+                  <div className="order-tracking-item-name"><strong>{item.productName}</strong><span>{item.quantity} × ₱{item.unitPrice.toFixed(2)}</span></div>
+                  <strong className="order-tracking-item-total">₱{item.lineTotal.toFixed(2)}</strong>
+                </div>
+              ))}
+            </div>
+          ) : <p className="order-tracking-muted">Item details are unavailable for this order.</p>}
+          <div className="order-tracking-billing">
+            <h3>Billing summary</h3>
+            <div className="order-tracking-billing-row"><span>Subtotal</span><span>₱{order.subtotal.toFixed(2)}</span></div>
+            {order.discountAmount > 0 && <div className="order-tracking-billing-row is-discount"><span>Discount</span><span>−₱{order.discountAmount.toFixed(2)}</span></div>}
+            {order.loyaltyDiscountAmount > 0 && Math.abs(order.loyaltyDiscountAmount - order.discountAmount) > 0.009 && <div className="order-tracking-billing-row is-discount"><span>Loyalty reward</span><span>−₱{order.loyaltyDiscountAmount.toFixed(2)}</span></div>}
+            {order.taxVatRegistered && <>
+              <div className="order-tracking-billing-row"><span>VAT ({order.taxVatRate.toFixed(2)}%)</span><span>₱{order.taxVatAmount.toFixed(2)}</span></div>
+              {order.taxVatExemptSales > 0 && <div className="order-tracking-billing-row"><span>VAT-exempt sales</span><span>₱{order.taxVatExemptSales.toFixed(2)}</span></div>}
+            </>}
+            <div className="order-tracking-billing-row"><span>{isPickup ? 'Pickup fee' : 'Delivery fee'}</span><span>₱{order.shippingFee.toFixed(2)}</span></div>
+            <div className="order-tracking-billing-row is-total"><strong>Total paid / due</strong><strong>₱{order.total.toFixed(2)}</strong></div>
+            <p className="order-tracking-payment-note">{order.paymentStatus === 'paid' ? 'Payment confirmed' : order.paymentStatus === 'refunded' ? 'Payment refunded' : order.paymentStatus === 'failed' ? 'Payment failed' : 'Payment pending'} · {order.paymentMethod === 'gcash' ? 'Online payment' : 'Cash'}</p>
+          </div>
+        </section>
+
         {order.deliveryStatus === 'failed' ? (
           <div className="order-tracking-cancelled">
             <strong>Delivery failed</strong>
