@@ -60,7 +60,7 @@ export function CustomerSignUpPage() {
         return;
       }
 
-      setMessage("If an account can be created with these details, you'll receive an email with the next steps. If you already have an account, please sign in.");
+      setMessage("Check your inbox for an account confirmation email. If you don't receive one, try signing in or select Forgot password to regain access to an existing account.");
       setPassword('');
       setConfirmPassword('');
     } catch (err) {
