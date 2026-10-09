@@ -1,5 +1,5 @@
 import { supabaseRpc } from '../../services/supabaseClient';
-import type { PosDiscountType } from '../pos/posRepository';
+import type { PosDiscountType } from '../pos/posService';
 
 export type RestaurantOrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'completed' | 'cancelled';
 export type RestaurantPaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
