@@ -73,3 +73,7 @@
 .tenant-onboarding-submit:disabled{opacity:.55;cursor:not-allowed}
 .tenant-onboarding-error{padding:12px 14px;border:1px solid #fecaca;border-radius:10px;background:#fef2f2;color:#b91c1c;font-size:13px;line-height:1.5}
 @media(max-width:640px){.tenant-onboarding-page{padding:20px 16px}.tenant-onboarding-card{padding:26px 22px;border-radius:16px}.tenant-onboarding-card h1{font-size:32px}}
+
+
+.customer-password-forgot-link{margin:-7px 0 0!important;text-align:right;font-size:13px}
+.customer-password-forgot-link a{color:#334155;font-weight:650;text-decoration:underline;text-underline-offset:3px}
