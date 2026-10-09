@@ -171,7 +171,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
             return;
           }
 
-          if (result.status === 'paid' && result.orderNumber) {
+          if (result.status === 'paid' && result.orderNumber && result.orderId) {
             const pendingCartUserId = window.localStorage.getItem(PENDING_PAYMENT_CART_USER_KEY) || undefined;
             window.localStorage.removeItem(PENDING_PAYMENT_CART_USER_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_REFERENCE_KEY);
@@ -184,7 +184,8 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
             if (!cancelled) {
               setPaymentProcessing(false);
               window.localStorage.setItem(ACTIVE_ORDER_KEY, result.orderNumber);
-            window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
+              window.localStorage.setItem(ACTIVE_ORDER_ID_KEY, result.orderId);
+              window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
             setConfirmedOrder({
                 orderId: result.orderId,
                 orderNumber: result.orderNumber,
