@@ -1,4 +1,4 @@
-import { supabaseRpc } from '../../services/supabaseClient';
+import { supabase, supabaseRpc } from '../../services/supabaseClient';
 import type { PosDiscountType } from '../../types/discount';
 
 export type RestaurantOrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'completed' | 'cancelled';
@@ -317,3 +317,35 @@ export async function updateOrderStatus(orderId: string, status: RestaurantOrder
 }
 
 
+
+
+export function subscribeToOrderTrackingChanges(
+  orderNumber: string,
+  onChange: () => void,
+  onStatusChange: (status: string) => void,
+): (() => void) | null {
+  if (!supabase) return null;
+
+  const channel = supabase
+    .channel(`customer-order:${orderNumber}`)
+    .on(
+      'broadcast',
+      { event: 'customer_order_changed' },
+      () => onChange(),
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'orders',
+        filter: `order_number=eq.${orderNumber}`,
+      },
+      () => onChange(),
+    )
+    .subscribe((status) => onStatusChange(status));
+
+  return () => {
+    if (supabase) void supabase.removeChannel(channel);
+  };
+}
