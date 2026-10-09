@@ -45,6 +45,14 @@ export function Header({ cartCount = 0 }: HeaderProps) {
       await signOut();
       setAccountOpen(false);
       setChangePasswordOpen(false);
+
+      if (isCustomer) {
+        // Customer logout should end on the sign-in screen, not leave the
+        // customer on an order-tracking or other account-related route.
+        window.location.hash = '#account';
+        return;
+      }
+
       setLogoutMessage({ type: 'success', text: 'You have been logged out.' });
       if (window.location.hash) window.location.hash = '';
     } catch (error) {
