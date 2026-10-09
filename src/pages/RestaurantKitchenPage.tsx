@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { RestaurantOrdersPage } from './RestaurantOrdersPage';
-import { getMenu, setProductAvailability } from '../services/menuRepository';
+import { getMenu, setProductAvailability } from '../modules/products/productService';
 import { supabase } from '../services/supabaseClient';
 import type { RestaurantCategory, RestaurantProduct } from '../types/menu';
 
@@ -82,9 +82,9 @@ export function RestaurantKitchenPage({ restaurantId, view = 'orders' }: Props) 
 
   return (
     <section className="restaurant-page restaurant-kitchen-menu-page">
-      <header className="restaurant-orders-header">
+      <header className="restaurant-page-header restaurant-kitchen-menu-header">
         <div>
-          <p className="eyebrow">Kitchen operations</p>
+          <p className="eyebrow">Restaurant operations</p>
           <h1>Menu</h1>
           <p>View products and update availability for the cashier and customer menu.</p>
         </div>

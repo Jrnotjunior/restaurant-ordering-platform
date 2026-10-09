@@ -1,20 +1,12 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { User } from '@supabase/supabase-js';
-import { supabase, supabaseGet } from '../services/supabaseClient';
-
-export type AccountType = 'owner' | 'staff' | 'customer';
-
-export type OwnerRestaurant = {
-  id: string;
-  slug: string;
-  name: string;
-  tagline: string;
-  logo_url: string | null;
-  location_text: string | null;
-  contact_number: string | null;
-  email: string | null;
-  is_active: boolean;
-};
+import { supabase } from '../services/supabaseClient';
+import {
+  initializeAuthSession,
+  resolveAccountContext,
+  type AccountType,
+  type OwnerRestaurant,
+} from '../modules/auth/authService';
 
 type RestaurantOwnerAuthValue = {
   user: User | null;
@@ -38,7 +30,7 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  async function loadRestaurant(currentUser: User | null) {
+  async function loadAccountContext(currentUser: User | null) {
     if (!currentUser) {
       setRestaurant(null);
       setAccountType(null);
@@ -46,37 +38,10 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
       return;
     }
 
-    const ownerRows = await supabaseGet<OwnerRestaurant>('restaurants', {
-      select: 'id,slug,name,tagline,logo_url,location_text,contact_number,email,is_active',
-      owner_id: `eq.${currentUser.id}`,
-      is_active: 'eq.true',
-      limit: '1',
-    });
-
-    const ownerRestaurant = ownerRows[0] ?? null;
-    if (ownerRestaurant) {
-      setRestaurant(ownerRestaurant);
-      setAccountType('owner');
-      setStaffRole(null);
-      return;
-    }
-
-    const staffRows = await supabaseGet<{ restaurant_id: string; role: string }>('restaurant_staff', {
-      select: 'restaurant_id,role',
-      auth_user_id: `eq.${currentUser.id}`,
-      is_active: 'eq.true',
-      limit: '1',
-    });
-
-    setRestaurant(null);
-    if (staffRows[0]) {
-      setAccountType('staff');
-      setStaffRole(staffRows[0].role);
-      return;
-    }
-
-    setAccountType('customer');
-    setStaffRole(null);
+    const context = await resolveAccountContext(currentUser);
+    setRestaurant(context.restaurant);
+    setAccountType(context.accountType);
+    setStaffRole(context.staffRole);
   }
 
   useEffect(() => {
@@ -89,61 +54,17 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
     }
 
     let mounted = true;
-
     let authListener: { subscription: { unsubscribe: () => void } } | null = null;
 
-    // Handle Supabase invitation/auth callbacks before checking the current user.
-    // Depending on the Supabase auth flow, the redirect can contain either a
-    // PKCE code or an invitation token hash. Explicitly exchanging/verifying
-    // these values makes tenant invitation onboarding reliable.
     const initializeAuth = async () => {
       try {
-        if (typeof window !== 'undefined') {
-          const url = new URL(window.location.href);
-          const hashParams = new URLSearchParams(url.hash.replace(/^#/, ''));
-          const code = url.searchParams.get('code');
-          const tokenHash = url.searchParams.get('token_hash') ?? hashParams.get('token_hash');
-          const type = url.searchParams.get('type') ?? hashParams.get('type');
-          const isTenantCallback =
-            url.searchParams.get('tenant-invite') === '1' ||
-            url.searchParams.get('tenant-owner-access') === '1';
-
-          if (isTenantCallback) {
-            // Tenant callback URLs are handled by TenantInviteLandingPage only
-            // after the user explicitly clicks the invitation/access button.
-          } else if (code) {
-            const { error: exchangeError } = await client.auth.exchangeCodeForSession(code);
-            if (exchangeError) {
-              console.error('Tenant invitation code exchange failed', exchangeError);
-            } else {
-              url.searchParams.delete('code');
-              window.history.replaceState({}, document.title, url.toString());
-            }
-          } else if (tokenHash && type === 'invite') {
-            const { error: verifyError } = await client.auth.verifyOtp({
-              token_hash: tokenHash,
-              type: 'invite',
-            });
-            if (verifyError) {
-              console.error('Tenant invitation token verification failed', verifyError);
-            } else {
-              url.searchParams.delete('token_hash');
-              url.searchParams.delete('type');
-              const cleanedHash = new URLSearchParams(url.hash.replace(/^#/, ''));
-              cleanedHash.delete('token_hash');
-              cleanedHash.delete('type');
-              url.hash = cleanedHash.toString() ? `#${cleanedHash.toString()}` : '';
-              window.history.replaceState({}, document.title, url.toString());
-            }
-          }
-        }
+        await initializeAuthSession(client);
 
         const { data, error: userError } = await client.auth.getUser();
 
         if (!mounted) return;
 
         if (userError) {
-          // A missing/expired session is a normal signed-out state.
           setUser(null);
           setRestaurant(null);
           setAccountType(null);
@@ -154,7 +75,7 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
         } else {
           const currentUser = data.user ?? null;
           setUser(currentUser);
-          await loadRestaurant(currentUser);
+          await loadAccountContext(currentUser);
         }
       } catch (authError) {
         if (mounted) {
@@ -182,12 +103,12 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
           return;
         }
 
-        void loadRestaurant(currentUser).catch((restaurantError) => {
+        void loadAccountContext(currentUser).catch((accountError) => {
           if (mounted) {
             setError(
-              restaurantError instanceof Error
-                ? restaurantError.message
-                : 'Unable to load your restaurant.',
+              accountError instanceof Error
+                ? accountError.message
+                : 'Unable to load your account.',
             );
           }
         });
@@ -207,10 +128,13 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
   async function signIn(email: string, password: string) {
     if (!supabase) throw new Error('Supabase is not configured.');
     setError('');
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
     if (signInError) throw signInError;
     setUser(data.user);
-    await loadRestaurant(data.user);
+    await loadAccountContext(data.user);
   }
 
   async function signOut() {
@@ -224,16 +148,35 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
   }
 
   async function refreshRestaurant() {
-    await loadRestaurant(user);
+    await loadAccountContext(user);
   }
 
-  const value = useMemo(() => ({ user, restaurant, accountType, staffRole, loading, error, signIn, signOut, refreshRestaurant }), [user, restaurant, accountType, staffRole, loading, error]);
+  const value = useMemo(
+    () => ({
+      user,
+      restaurant,
+      accountType,
+      staffRole,
+      loading,
+      error,
+      signIn,
+      signOut,
+      refreshRestaurant,
+    }),
+    [user, restaurant, accountType, staffRole, loading, error],
+  );
 
-  return <RestaurantOwnerAuthContext.Provider value={value}>{children}</RestaurantOwnerAuthContext.Provider>;
+  return (
+    <RestaurantOwnerAuthContext.Provider value={value}>
+      {children}
+    </RestaurantOwnerAuthContext.Provider>
+  );
 }
 
 export function useRestaurantOwnerAuth() {
   const value = useContext(RestaurantOwnerAuthContext);
-  if (!value) throw new Error('useRestaurantOwnerAuth must be used within RestaurantOwnerAuthProvider');
+  if (!value) {
+    throw new Error('useRestaurantOwnerAuth must be used within RestaurantOwnerAuthProvider');
+  }
   return value;
 }

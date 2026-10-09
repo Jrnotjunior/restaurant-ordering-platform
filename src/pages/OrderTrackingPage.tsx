@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getOrderStatus, type OrderStatus } from '../services/orderRepository';
-import { supabase } from '../services/supabaseClient';
+import { getOrderStatus, subscribeToOrderTrackingChanges, type OrderStatus } from '../modules/ordering/orderService';
 import '../styles/order-tracking.css';
 
 type OrderTrackingPageProps = {
@@ -67,39 +66,23 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
 
     void load();
 
-    const client = supabase;
-    if (!client) {
+    const unsubscribe = subscribeToOrderTrackingChanges(
+      orderNumber,
+      () => {
+        void load();
+      },
+      (status) => {
+        if (status === 'SUBSCRIBED') setRealtimeStatus('live');
+        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') setRealtimeStatus('error');
+      },
+    );
+
+    if (!unsubscribe) {
       setRealtimeStatus('error');
       return () => {
         cancelled = true;
       };
     }
-
-    const channel = client
-      .channel(`customer-order:${orderNumber}`)
-      .on(
-        'broadcast',
-        { event: 'customer_order_changed' },
-        () => {
-          void load();
-        },
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'orders',
-          filter: `order_number=eq.${orderNumber}`,
-        },
-        () => {
-          void load();
-        },
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') setRealtimeStatus('live');
-        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') setRealtimeStatus('error');
-      });
 
     const refreshInterval = window.setInterval(() => {
       void load();
@@ -108,7 +91,7 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
     return () => {
       cancelled = true;
       window.clearInterval(refreshInterval);
-      void client.removeChannel(channel);
+      unsubscribe();
     };
   }, [orderNumber]);
 

@@ -1,3 +1,5 @@
+import { resolveInvitationTypeFromLocation } from '../../modules/invitations/invitationResolver';
+
 export type AuthEntry =
   | 'tenant-invitation'
   | 'employee-invitation'
@@ -7,6 +9,20 @@ export type AuthEntry =
 
 function pathEndsWith(pathname: string, value: string) {
   return pathname.endsWith(value) || pathname.endsWith(`${value}/`);
+}
+
+function hasNestedFlowMarker(search: URLSearchParams, marker: string) {
+  const confirmationUrl = search.get('confirmation_url');
+  if (!confirmationUrl) return false;
+
+  try {
+    const nested = new URL(confirmationUrl, 'https://invalid.local');
+    return nested.searchParams.get(marker) === '1'
+      || nested.pathname.endsWith(`/${marker}`)
+      || nested.pathname.endsWith(`/${marker}/`);
+  } catch {
+    return confirmationUrl.includes(`${marker}=1`);
+  }
 }
 
 /**
@@ -21,11 +37,15 @@ export function resolveAuthEntry(location: Pick<Location, 'pathname' | 'search' 
   const hash = new URLSearchParams(location.hash.replace(/^#/, ''));
 
   const pathname = location.pathname;
+  const invitationType = resolveInvitationTypeFromLocation(location);
+  const isGenericInvitation = search.get('invitation') === '1';
   const isEmployeeInvitation =
-    pathEndsWith(pathname, '/employee-invite') ||
-    search.get('employee-invite') === '1';
+    invitationType === 'employee_staff' ||
+    hasNestedFlowMarker(search, 'employee-invite');
 
   if (isEmployeeInvitation) return 'employee-invitation';
+
+  if (isGenericInvitation) return 'tenant-invitation';
 
   const isRiderInvitation =
     pathEndsWith(pathname, '/invite') ||
@@ -34,16 +54,11 @@ export function resolveAuthEntry(location: Pick<Location, 'pathname' | 'search' 
   if (isRiderInvitation) return 'rider-invitation';
 
   const isTenantInvitation =
-    search.get('tenant-invite') === '1' ||
-    search.get('tenant-owner-access') === '1' ||
-    search.has('confirmation_url') ||
-    search.get('flow') === 'tenant-owner';
+    invitationType === 'tenant_owner' ||
+    (search.has('confirmation_url') && !hasNestedFlowMarker(search, 'employee-invite'));
 
   if (isTenantInvitation) return 'tenant-invitation';
 
-  // Customer confirmation/password-recovery callbacks intentionally fall
-  // through to the normal application. Their token is handled by Supabase
-  // Auth, not by the tenant invitation screen.
   void hash;
 
   return 'normal-app';

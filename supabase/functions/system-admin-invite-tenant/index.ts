@@ -21,6 +21,32 @@ function getSecretKey() {
   return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 }
 
+
+async function cleanupTenantInvitation(
+  adminClient: ReturnType<typeof createClient>,
+  invitationId: string,
+  invitedUserId?: string,
+) {
+  if (invitedUserId) {
+    const { error } = await adminClient.auth.admin.deleteUser(invitedUserId, false);
+    if (error) {
+      console.error("Unable to remove tenant invitation Auth user:", error);
+      return false;
+    }
+  }
+
+  const { error: invitationDeleteError } = await adminClient
+    .from("tenant_invitations")
+    .delete()
+    .eq("id", invitationId);
+
+  if (invitationDeleteError) {
+    console.error("Unable to remove tenant invitation record:", invitationDeleteError);
+    return false;
+  }
+  return true;
+}
+
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (request.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
@@ -108,15 +134,9 @@ Deno.serve(async (request) => {
 
     if (invitationError) throw invitationError;
 
-    // Supabase sends the Invite User email automatically. The hosted Invite User
-    // template must use {{ .TokenHash }} in a Web2Table landing-page URL so
-    // security scanners cannot consume the one-time verification URL.
-    const redirectTo = "https://jrnotjunior.github.io/restaurant-ordering-platform/?tenant-invite=1";
-
     const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
       email,
       {
-        redirectTo,
         data: {
           invitation_type: "tenant_owner",
           tenant_invitation_id: invitation.id,
@@ -125,7 +145,10 @@ Deno.serve(async (request) => {
     );
 
     if (inviteError || !inviteData?.user?.id) {
-      await adminClient.from("tenant_invitations").delete().eq("id", invitation.id);
+      const cleanedUp = await cleanupTenantInvitation(adminClient, invitation.id);
+      if (!cleanedUp) {
+        return jsonResponse({ error: "The invitation could not be sent and cleanup was incomplete. Please contact support before retrying." }, 500);
+      }
       return jsonResponse({ error: inviteError?.message ?? "Unable to send the tenant invitation email." }, 400);
     }
 
@@ -141,8 +164,10 @@ Deno.serve(async (request) => {
       .eq("status", "pending");
 
     if (bindInvitationError) {
-      await adminClient.auth.admin.deleteUser(invitedUserId, false);
-      await adminClient.from("tenant_invitations").delete().eq("id", invitation.id);
+      const cleanedUp = await cleanupTenantInvitation(adminClient, invitation.id, invitedUserId);
+      if (!cleanedUp) {
+        return jsonResponse({ error: "The tenant invitation could not be finalized and cleanup was incomplete. Please contact support before retrying." }, 500);
+      }
       return jsonResponse({ error: bindInvitationError.message }, 400);
     }
 
@@ -158,8 +183,10 @@ Deno.serve(async (request) => {
     );
 
     if (restaurantError) {
-      await adminClient.auth.admin.deleteUser(invitedUserId, false);
-      await adminClient.from("tenant_invitations").delete().eq("id", invitation.id);
+      const cleanedUp = await cleanupTenantInvitation(adminClient, invitation.id, invitedUserId);
+      if (!cleanedUp) {
+        return jsonResponse({ error: "Tenant setup failed and cleanup was incomplete. Please contact support before retrying." }, 500);
+      }
       return jsonResponse({ error: restaurantError.message }, 400);
     }
 

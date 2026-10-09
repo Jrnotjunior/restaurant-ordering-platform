@@ -1,4 +1,4 @@
-import { supabase, supabaseRpc } from './supabaseClient';
+import { supabase, supabaseRpc } from '../../services/supabaseClient';
 
 const BUCKET = 'product-images';
 const MAX_SIZE = 5 * 1024 * 1024;

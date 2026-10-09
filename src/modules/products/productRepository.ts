@@ -1,5 +1,5 @@
-import type { RestaurantCategory, RestaurantProduct } from '../types/menu';
-import { supabase, supabaseRpc } from './supabaseClient';
+import type { RestaurantCategory, RestaurantProduct } from '../../types/menu';
+import { supabase, supabaseRpc } from '../../services/supabaseClient';
 
 type CategoryRow = {
   id: string;
@@ -46,19 +46,11 @@ export async function getMenu(restaurantId: string, includeUnavailable = false):
     .order('sort_order', { ascending: true })
     .order('name', { ascending: true });
 
-  if (!includeUnavailable) {
-    productQuery = productQuery.eq('is_available', true);
-  }
+  if (!includeUnavailable) productQuery = productQuery.eq('is_available', true);
 
   const [categoryResult, productResult] = await Promise.all([categoryQuery, productQuery]);
-
-  if (categoryResult.error) {
-    throw new Error(`Unable to load product categories: ${categoryResult.error.message}`);
-  }
-
-  if (productResult.error) {
-    throw new Error(`Unable to load products: ${productResult.error.message}`);
-  }
+  if (categoryResult.error) throw new Error(`Unable to load product categories: ${categoryResult.error.message}`);
+  if (productResult.error) throw new Error(`Unable to load products: ${productResult.error.message}`);
 
   const categoryRows = (categoryResult.data ?? []) as CategoryRow[];
   const productRows = (productResult.data ?? []) as ProductRow[];
@@ -74,7 +66,7 @@ export async function getMenu(restaurantId: string, includeUnavailable = false):
       sortOrder: category.sort_order,
       isActive: category.is_active,
       createdAt: category.created_at,
-      updatedAt: category.updated_at
+      updatedAt: category.updated_at,
     })),
     products: productRows.map((product) => ({
       id: product.id,
@@ -88,20 +80,19 @@ export async function getMenu(restaurantId: string, includeUnavailable = false):
       sortOrder: product.sort_order,
       isAvailable: product.is_available,
       createdAt: product.created_at,
-      updatedAt: product.updated_at
-    }))
+      updatedAt: product.updated_at,
+    })),
   };
 }
 
 export async function getOrCreateCategory(restaurantId: string, name: string) {
   if (!supabase) throw new Error('Supabase environment variables are not configured.');
-
   const trimmedName = name.trim();
   if (!trimmedName) throw new Error('Category is required.');
 
   const { data, error } = await supabase.rpc('get_or_create_restaurant_category', {
     p_restaurant_id: restaurantId,
-    p_name: trimmedName
+    p_name: trimmedName,
   });
 
   if (error) throw new Error(`Unable to save category: ${error.message}`);
@@ -114,11 +105,9 @@ export async function setProductAvailability(productId: string, isAvailable: boo
 
   const { error } = await supabase.rpc('update_product_availability', {
     p_product_id: productId,
-    p_is_available: isAvailable
+    p_is_available: isAvailable,
   });
-
   if (error) throw new Error(`Unable to update product availability: ${error.message}`);
-
   if (!restaurantId) return;
 
   const channel = supabase.channel(`restaurant-menu-changes:${restaurantId}`);
@@ -143,7 +132,7 @@ export async function createProduct(values: { restaurantId: string; name: string
     p_name: values.name.trim(),
     p_description: values.description.trim(),
     p_price: values.price,
-    p_category_id: values.categoryId
+    p_category_id: values.categoryId,
   });
 
   if (error) throw new Error(`Unable to create product: ${error.message}`);
@@ -159,12 +148,37 @@ export async function updateProduct(product: RestaurantProduct, values: { name: 
     p_name: values.name.trim(),
     p_description: values.description.trim(),
     p_price: values.price,
-    p_category_id: values.categoryId
+    p_category_id: values.categoryId,
   });
-
   if (error) throw new Error(`Unable to update product: ${error.message}`);
 }
 
 export async function deleteProduct(productId: string) {
   await supabaseRpc('delete_restaurant_product', { p_product_id: productId });
+}
+
+export function subscribeToMenuChanges(restaurantId: string, onChange: () => void): (() => void) | null {
+  if (!supabase) return null;
+
+  const channel = supabase
+    .channel(`restaurant-menu-changes:${restaurantId}`)
+    .on('broadcast', { event: 'restaurant_menu_changed' }, onChange)
+    .subscribe();
+
+  return () => {
+    void supabase?.removeChannel(channel);
+  };
+}
+
+export function subscribeToCashierMenuChanges(restaurantId: string, onChange: () => void): (() => void) | null {
+  if (!supabase) return null;
+
+  const channel = supabase
+    .channel(`restaurant-menu-changes:${restaurantId}`)
+    .on('broadcast', { event: 'restaurant_menu_changed' }, onChange)
+    .subscribe();
+
+  return () => {
+    void supabase?.removeChannel(channel);
+  };
 }

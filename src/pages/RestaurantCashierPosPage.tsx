@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getMenu } from '../services/menuRepository';
-import { createOrder } from '../services/orderRepository';
-import { applyPosGroupDiscounts, confirmDineInPayment, getRestaurantTaxSettings, type PosDiscountIdType, type PosDiscountType, type RestaurantTaxSettings } from '../services/restaurantOrderRepository';
+import { getMenu, subscribeToCashierMenuChanges } from '../modules/products/productService';
+import { createOrder } from '../modules/ordering/orderService';
+import { applyPosGroupDiscounts, confirmPosCashPayment, getCurrentCashierName, getRestaurantTaxSettings, type PosDiscountIdType, type PosDiscountType, type RestaurantTaxSettings } from '../modules/pos/posService';
 import type { RestaurantProduct } from '../types/menu';
-import { supabase } from '../services/supabaseClient';
-import { attachCustomerToOrder, findCustomersByName, getLoyaltyRedemptionSettings, redeemLoyaltyReward, type LoyaltyCustomerSuggestion, type LoyaltyRedemptionSettings } from '../services/loyaltyRepository';
+import { attachCustomerToOrder, findCustomersByName, getLoyaltyRedemptionSettings, redeemLoyaltyReward, type LoyaltyCustomerSuggestion, type LoyaltyRedemptionSettings } from '../modules/loyalty/loyaltyService';
 
 type Props = { restaurantId: string };
 type CartItem = { product: RestaurantProduct; quantity: number };
@@ -54,7 +53,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orderType, setOrderType] = useState<'dine_in' | 'pickup'>('dine_in');
-  const [customerName, setCustomerName] = useState('Walk-in Customer');
+  const [customerName, setCustomerName] = useState('');
   const [notes, setNotes] = useState('');
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [selectedCustomerPoints, setSelectedCustomerPoints] = useState<number | null>(null);
@@ -92,24 +91,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
 
   useEffect(() => { void loadMenu(); void loadCashierName(); }, [restaurantId]);
   async function loadCashierName() {
-    if (!supabase) return;
-    try {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
-      if (!userId) return;
-      const { data, error: cashierError } = await supabase
-        .from('restaurant_staff')
-        .select('preferred_name,name')
-        .eq('restaurant_id', restaurantId)
-        .eq('auth_user_id', userId)
-        .eq('role', 'cashier')
-        .eq('is_active', true)
-        .maybeSingle();
-      if (cashierError) throw cashierError;
-      setCashierName(data?.preferred_name?.trim() || data?.name?.trim() || 'Cashier');
-    } catch {
-      setCashierName('Cashier');
-    }
+    setCashierName(await getCurrentCashierName(restaurantId));
   }
 
 
@@ -142,9 +124,12 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   }, [restaurantId, customerName]);
 
   useEffect(() => {
-    if (!supabase) return;
-    const channel = supabase.channel(`restaurant-menu-changes:${restaurantId}`).on('broadcast', { event: 'restaurant_menu_changed' }, () => { void loadMenu(); }).subscribe();
-    return () => { void supabase?.removeChannel(channel); };
+    const unsubscribe = subscribeToCashierMenuChanges(restaurantId, () => {
+      void loadMenu();
+    });
+    return () => {
+      unsubscribe?.();
+    };
   }, [restaurantId]);
 
   useEffect(() => {
@@ -228,13 +213,16 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
 
   async function placeOrder() {
     if (!cart.length || saving || !cashPaymentReady) return;
+    const enteredCustomerName = customerName.trim();
+    if (!enteredCustomerName) {
+      setError('Enter the customer name before placing the order.');
+      return;
+    }
     setSaving(true);
     setError('');
     setSuccess('');
 
     try {
-      const enteredCustomerName = customerName.trim() || 'Walk-in Customer';
-
       // Only a selected registered customer account can earn loyalty points.
       // If no registered account is selected, the order remains a guest order.
       const loyaltyCustomer = selectedCustomerId
@@ -266,12 +254,12 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
         loyaltyDiscountAmount = redemption.discountAmount;
       }
 
-      await confirmDineInPayment(created.orderId);
+      await confirmPosCashPayment(created.orderId);
       window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
 
       setPrintOrder({
         orderNumber: created.orderNumber,
-        customerName: customerName.trim() || 'Walk-in Customer',
+        customerName: enteredCustomerName,
          notes: notes.trim(),
         cashierName,
         orderType,
@@ -289,7 +277,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
 
       setCart([]);
       clearDiscounts();
-      setCustomerName('Walk-in Customer');
+      setCustomerName('');
       setSelectedCustomerId(null);
       setSelectedCustomerPoints(null);
       setRedeemPoints(false);
@@ -328,6 +316,11 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             <div className="restaurant-pos-products">
               {visibleProducts.map((product) => (
                 <button key={product.id} type="button" className={`restaurant-pos-product${product.isAvailable ? '' : ' is-sold-out'}`} onClick={() => addProduct(product)} disabled={!product.isAvailable} aria-label={product.isAvailable ? `Add ${product.name}` : `${product.name} is sold out`}>
+                  <span className="restaurant-pos-product-image-wrap">
+                    {product.imageUrl
+                      ? <img className="restaurant-pos-product-image" src={product.imageUrl} alt="" loading="lazy" />
+                      : <span className="restaurant-pos-product-image-placeholder" aria-hidden="true">{product.name.charAt(0).toUpperCase()}</span>}
+                  </span>
                   <span className="restaurant-pos-product-name">{product.name}{!product.isAvailable && <small>Sold Out</small>}</span><strong>₱{product.price.toFixed(2)}</strong>
                 </button>
               ))}
@@ -352,7 +345,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
                   setShowCustomerSuggestions(true);
                 }}
                 onBlur={() => window.setTimeout(() => setShowCustomerSuggestions(false), 150)}
-                placeholder="Walk-in Customer"
+                placeholder="Enter customer name"
                 autoComplete="off"
                 disabled={saving}
               />

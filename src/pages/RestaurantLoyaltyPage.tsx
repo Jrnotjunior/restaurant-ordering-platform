@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../services/supabaseClient';
+import { getLoyaltyProgramSettings, saveLoyaltyProgramSettings } from '../modules/loyalty/loyaltyService';
 
 type Props = { restaurantId: string };
 
@@ -16,26 +16,16 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
   const [error, setError] = useState('');
 
   async function loadSettings() {
-    if (!supabase) {
-      setError('Supabase is not configured.');
-      setLoading(false);
-      return;
-    }
     setLoading(true);
     setError('');
     try {
-      const { data, error: loadError } = await supabase
-        .from('restaurants')
-        .select('loyalty_enabled,loyalty_amount_threshold,loyalty_points_awarded,loyalty_redemption_enabled,loyalty_redemption_points,loyalty_redemption_amount')
-        .eq('id', restaurantId)
-        .single();
-      if (loadError) throw loadError;
-      setEnabled(Boolean(data?.loyalty_enabled));
-      setThreshold(String(data?.loyalty_amount_threshold ?? 500));
-      setPoints(String(data?.loyalty_points_awarded ?? 5));
-      setRedemptionEnabled(data?.loyalty_redemption_enabled ?? true);
-      setRedemptionPoints(String(data?.loyalty_redemption_points ?? 50));
-      setRedemptionAmount(String(data?.loyalty_redemption_amount ?? 50));
+      const settings = await getLoyaltyProgramSettings(restaurantId);
+      setEnabled(settings.enabled);
+      setThreshold(String(settings.amountThreshold));
+      setPoints(String(settings.pointsAwarded));
+      setRedemptionEnabled(settings.redemptionEnabled);
+      setRedemptionPoints(String(settings.redemptionPoints));
+      setRedemptionAmount(String(settings.redemptionAmount));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load loyalty settings.');
     } finally {
@@ -46,10 +36,6 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
   useEffect(() => { void loadSettings(); }, [restaurantId]);
 
   async function handleSave() {
-    if (!supabase) {
-      setError('Supabase is not configured.');
-      return;
-    }
     const parsedThreshold = Number(threshold);
     const parsedPoints = Number(points);
     const parsedRedemptionPoints = Number(redemptionPoints);
@@ -75,18 +61,14 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
     setError('');
     setMessage('');
     try {
-      const { error: saveError } = await supabase
-        .from('restaurants')
-        .update({
-          loyalty_enabled: enabled,
-          loyalty_amount_threshold: parsedThreshold,
-          loyalty_points_awarded: parsedPoints,
-          loyalty_redemption_enabled: redemptionEnabled,
-          loyalty_redemption_points: parsedRedemptionPoints,
-          loyalty_redemption_amount: parsedRedemptionAmount,
-        })
-        .eq('id', restaurantId);
-      if (saveError) throw saveError;
+      await saveLoyaltyProgramSettings(restaurantId, {
+        enabled,
+        amountThreshold: parsedThreshold,
+        pointsAwarded: parsedPoints,
+        redemptionEnabled,
+        redemptionPoints: parsedRedemptionPoints,
+        redemptionAmount: parsedRedemptionAmount,
+      });
       setMessage('Loyalty settings saved successfully.');
       await loadSettings();
     } catch (saveError) {

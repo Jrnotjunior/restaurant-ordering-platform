@@ -1,0 +1,1 @@
+This file exists only to trigger the modular-architecture-foundation build check after changing the repository default branch.

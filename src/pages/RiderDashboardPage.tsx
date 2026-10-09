@@ -1,28 +1,9 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { supabase } from '../services/supabaseClient';
+import { getRiderDashboardData } from '../modules/dispatch/dispatchService';
+import type { RiderDeliveryStatus, RiderDelivery, RiderHistoryItem } from '../modules/dispatch/dispatchService';
 
-type DeliveryStatus = 'assigned' | 'delivering';
-
-type RiderDelivery = {
-  id: string;
-  orderNumber: string;
-  customerName: string;
-  address: string;
-  total: number;
-  status: DeliveryStatus;
-};
-
-type RiderHistoryItem = {
-  id: string;
-  orderNumber: string;
-  customerName: string;
-  total: number;
-  createdAt: string;
-  status: 'delivered' | 'failed';
-  failureReason: string | null;
-};
-
-function statusLabel(status: DeliveryStatus) {
+function statusLabel(status: RiderDeliveryStatus) {
   return status === 'delivering' ? 'Out for delivery' : 'Assigned';
 }
 
@@ -68,74 +49,10 @@ export function RiderDashboardPage() {
 
       setEmail(user.email ?? '');
 
-      const { data: rider, error: riderError } = await supabase
-        .from('restaurant_staff')
-        .select('id,name')
-        .eq('role', 'rider')
-        .eq('is_active', true)
-        .eq('auth_user_id', user.id)
-        .maybeSingle();
-      if (riderError) throw riderError;
-      if (!rider) {
-        setError('Your account is not linked to a rider profile. Please contact the restaurant.');
-        setLoading(false);
-        return;
-      }
-
-      setRiderName(rider.name || 'Rider');
-
-      const { data: orderRows, error: orderError } = await supabase
-        .from('orders')
-        .select('id,order_number,customer_name,delivery_address,delivery_barangay,total,delivery_status')
-        .eq('rider_id', rider.id)
-        .eq('order_type', 'delivery')
-        .in('delivery_status', ['assigned', 'delivering'])
-        .order('created_at', { ascending: true });
-      if (orderError) throw orderError;
-
-      setDeliveries(((orderRows ?? []) as Array<{
-        id: string;
-        order_number: string;
-        customer_name: string;
-        delivery_address: string | null;
-        delivery_barangay: string | null;
-        total: number | string;
-        delivery_status: DeliveryStatus;
-      }>).map((order) => ({
-        id: order.id,
-        orderNumber: order.order_number,
-        customerName: order.customer_name,
-        address: order.delivery_address ?? order.delivery_barangay ?? 'Delivery address not provided',
-        total: Number(order.total),
-        status: order.delivery_status,
-      })));
-
-      const { data: historyRows, error: historyError } = await supabase
-        .from('orders')
-        .select('id,order_number,customer_name,total,created_at,delivery_status,delivery_failure_reason')
-        .eq('rider_id', rider.id)
-        .eq('order_type', 'delivery')
-        .in('delivery_status', ['delivered', 'failed'])
-        .order('created_at', { ascending: false });
-      if (historyError) throw historyError;
-
-      setHistory(((historyRows ?? []) as Array<{
-        id: string;
-        order_number: string;
-        customer_name: string;
-        total: number | string;
-        created_at: string;
-        delivery_status: 'delivered' | 'failed';
-        delivery_failure_reason: string | null;
-      }>).map((order) => ({
-        id: order.id,
-        orderNumber: order.order_number,
-        customerName: order.customer_name,
-        total: Number(order.total),
-        createdAt: order.created_at,
-        status: order.delivery_status,
-        failureReason: order.delivery_failure_reason ?? null,
-      })));
+      const dashboardData = await getRiderDashboardData(user.id);
+      setRiderName(dashboardData.riderName);
+      setDeliveries(dashboardData.deliveries);
+      setHistory(dashboardData.history);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load your deliveries.');
     } finally {

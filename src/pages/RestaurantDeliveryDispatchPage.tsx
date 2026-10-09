@@ -1,69 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { supabase } from '../services/supabaseClient';
-
-type ReadyOrder = {
-  id: string;
-  orderNumber: string;
-  customerName: string;
-  address: string;
-  total: number;
-  readyAt: string;
-  pickupMethod: 'customer' | 'third_party_courier' | null;
-  orderType: 'delivery' | 'pickup' | 'dine_in';
-  riderId: string | null;
-};
-
-type Rider = {
-  id: string;
-  name: string;
-  mobileNumber: string;
-  status: 'available' | 'delivering';
-  activeDeliveries: number;
-  deliveredToday: number;
-};
-
-type OrderRow = {
-  id: string;
-  order_number: string;
-  customer_name: string;
-  delivery_address: string | null;
-  delivery_barangay: string | null;
-  notes: string | null;
-  total: number | string;
-  created_at: string;
-  pickup_method: 'customer' | 'third_party_courier' | null;
-  order_type: 'delivery' | 'pickup' | 'dine_in';
-  rider_id: string | null;
-};
-
-type RiderRow = {
-  id: string;
-  name: string;
-  mobile_number: string;
-};
-
-type AssignmentRow = {
-  rider_id: string;
-  status: 'assigned' | 'delivering' | 'delivered' | 'cancelled';
-  assigned_at: string;
-  delivered_at: string | null;
-};
+import { assignDelivery, completeDispatchHandoff, getDispatchData, subscribeToDispatchChanges, type ReadyOrder, type Rider } from '../modules/dispatch/dispatchService';
 
 type Props = { restaurantId: string; role?: 'owner' | 'dispatcher' };
 type DispatchTab = 'dine_in' | 'delivery' | 'pickup';
-
-function formatReadyTime(value: string) {
-  return new Intl.DateTimeFormat('en-PH', {
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(new Date(value));
-}
-
-function todayStartIso() {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-}
 
 export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }: Props) {
   const [orders, setOrders] = useState<ReadyOrder[]>([]);
@@ -72,6 +12,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
   const [selectedOrder, setSelectedOrder] = useState<ReadyOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [assigning, setAssigning] = useState(false);
+  const [assigningRiderId, setAssigningRiderId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
   const [dispatchTabsSlot, setDispatchTabsSlot] = useState<HTMLElement | null>(null);
@@ -81,85 +22,11 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
   }, []);
 
   async function loadDispatchData() {
-    if (!supabase) {
-      setError('Supabase is not configured.');
-      setLoading(false);
-      setRealtimeStatus('error');
-      return;
-    }
-
-    setError('');
-
     try {
-      const [orderResult, riderResult, assignmentResult] = await Promise.all([
-        supabase
-          .from('orders')
-          .select('id,order_number,customer_name,delivery_address,delivery_barangay,notes,total,created_at,pickup_method,order_type,rider_id')
-          .eq('restaurant_id', restaurantId)
-          .in('order_type', ['delivery', 'pickup', 'dine_in'])
-          .eq('status', 'ready')
-          .order('created_at', { ascending: true }),
-        supabase
-          .from('restaurant_staff')
-          .select('id,name,mobile_number')
-          .eq('restaurant_id', restaurantId)
-          .eq('role', 'rider')
-          .eq('is_active', true)
-          .order('name', { ascending: true }),
-        supabase
-          .from('delivery_assignments')
-          .select('rider_id,status,assigned_at,delivered_at')
-          .eq('restaurant_id', restaurantId),
-      ]);
-
-      if (orderResult.error) throw orderResult.error;
-      if (riderResult.error) throw riderResult.error;
-      if (assignmentResult.error) throw assignmentResult.error;
-
-      const assignments = (assignmentResult.data ?? []) as AssignmentRow[];
-      const activeStatuses = new Set<AssignmentRow['status']>(['assigned', 'delivering']);
-      const startOfToday = todayStartIso();
-      const activeByRider = new Map<string, number>();
-      const deliveringByRider = new Map<string, number>();
-      const deliveredTodayByRider = new Map<string, number>();
-
-      for (const assignment of assignments) {
-        if (activeStatuses.has(assignment.status)) {
-          activeByRider.set(assignment.rider_id, (activeByRider.get(assignment.rider_id) ?? 0) + 1);
-        }
-        if (assignment.status === 'delivering') {
-          deliveringByRider.set(assignment.rider_id, (deliveringByRider.get(assignment.rider_id) ?? 0) + 1);
-        }
-        if (assignment.status === 'delivered' && assignment.delivered_at && assignment.delivered_at >= startOfToday) {
-          deliveredTodayByRider.set(assignment.rider_id, (deliveredTodayByRider.get(assignment.rider_id) ?? 0) + 1);
-        }
-      }
-
-      const mapOrder = (order: OrderRow): ReadyOrder => ({
-        id: order.id,
-        orderNumber: order.order_number,
-        customerName: order.customer_name,
-        address: order.delivery_address ?? order.delivery_barangay ?? 'Pickup at restaurant',
-        total: Number(order.total),
-        readyAt: formatReadyTime(order.created_at),
-        pickupMethod: order.pickup_method,
-        orderType: order.order_type,
-        riderId: order.rider_id,
-      });
-      setOrders(((orderResult.data ?? []) as OrderRow[]).map(mapOrder));
-
-      setRiders(((riderResult.data ?? []) as RiderRow[]).map((rider) => {
-        const activeDeliveries = activeByRider.get(rider.id) ?? 0;
-        const activeDelivering = deliveringByRider.get(rider.id) ?? 0;
-        return {
-          id: rider.id,
-          name: rider.name,
-          mobileNumber: rider.mobile_number,
-          status: activeDelivering > 0 ? 'delivering' : 'available',
-          activeDeliveries,
-          deliveredToday: deliveredTodayByRider.get(rider.id) ?? 0,
-        };
-      }));
+      setError('');
+      const data = await getDispatchData(restaurantId);
+      setOrders(data.orders);
+      setRiders(data.riders);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load delivery dispatch data.');
     } finally {
@@ -171,30 +38,21 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
     setLoading(true);
     void loadDispatchData();
 
-    const client = supabase;
-    if (!client) {
-      setRealtimeStatus('error');
-      return;
-    }
-
-    const channel = client
-      .channel(`delivery-dispatch:${restaurantId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `restaurant_id=eq.${restaurantId}` }, () => {
+    const unsubscribe = subscribeToDispatchChanges(
+      restaurantId,
+      () => {
         void loadDispatchData();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'restaurant_staff', filter: `restaurant_id=eq.${restaurantId}` }, () => {
-        void loadDispatchData();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'delivery_assignments', filter: `restaurant_id=eq.${restaurantId}` }, () => {
-        void loadDispatchData();
-      })
-      .subscribe((status) => {
+      },
+      (status) => {
         if (status === 'SUBSCRIBED') setRealtimeStatus('live');
-        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') setRealtimeStatus('error');
-      });
+        else setRealtimeStatus('error');
+      },
+    );
+
+    if (!unsubscribe) setRealtimeStatus('error');
 
     return () => {
-      void client.removeChannel(channel);
+      unsubscribe?.();
     };
   }, [restaurantId]);
 
@@ -219,75 +77,32 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
 
   const statusLabel = (status: Rider['status']) => ({
     available: 'Available',
-    delivering: 'Out delivering',
+    busy: 'Has active delivery',
   }[status]);
 
   async function assignOrder(rider: Rider) {
-    if (role !== 'dispatcher') return;
-    if (!supabase || !selectedOrder || assigning) return;
-    const canAssign = rider.status === 'available';
-    if (!canAssign) return;
-
+    if (role !== 'dispatcher' || !selectedOrder || assigning) return;
     setAssigning(true);
+    setAssigningRiderId(rider.id);
     setError('');
-
     try {
-      const { error: assignmentError } = await supabase
-        .from('delivery_assignments')
-        .insert({
-          order_id: selectedOrder.id,
-          rider_id: rider.id,
-          restaurant_id: restaurantId,
-          status: 'assigned',
-        });
-      if (assignmentError) throw assignmentError;
-
-      const { data: updatedOrder, error: orderError } = await supabase
-        .from('orders')
-        .update({
-          rider_id: rider.id,
-          delivery_status: 'assigned',
-          rider_assigned_at: new Date().toISOString(),
-        })
-        .eq('id', selectedOrder.id)
-        .eq('restaurant_id', restaurantId)
-        .or('delivery_status.eq.unassigned,delivery_status.is.null')
-        .select('id')
-        .maybeSingle();
-
-      if (orderError) {
-        await supabase.from('delivery_assignments').delete().eq('order_id', selectedOrder.id).eq('rider_id', rider.id).eq('status', 'assigned');
-        throw orderError;
-      }
-
-      if (!updatedOrder) {
-        await supabase.from('delivery_assignments').delete().eq('order_id', selectedOrder.id).eq('rider_id', rider.id).eq('status', 'assigned');
-        throw new Error('The order could not be updated for rider assignment. Please refresh and try again.');
-      }
-
+      await assignDelivery(restaurantId, selectedOrder.id, rider.id);
       setSelectedOrder(null);
       await loadDispatchData();
     } catch (assignError) {
       setError(assignError instanceof Error ? assignError.message : 'Unable to assign this delivery.');
     } finally {
+      setAssigningRiderId(null);
       setAssigning(false);
     }
   }
 
   async function completePickup(order: ReadyOrder) {
-    if (role !== 'dispatcher') return;
-    if (!supabase || assigning) return;
+    if (role !== 'dispatcher' || assigning) return;
     setAssigning(true);
     setError('');
     try {
-      const { error: orderError } = await supabase
-        .from('orders')
-        .update({ status: 'completed' })
-        .eq('id', order.id)
-        .eq('restaurant_id', restaurantId)
-        .in('order_type', ['pickup', 'dine_in'])
-        .eq('status', 'ready');
-      if (orderError) throw orderError;
+      await completeDispatchHandoff(restaurantId, order.id, order.orderType === 'dine_in' ? 'dine_in' : 'pickup');
       await loadDispatchData();
     } catch (pickupError) {
       setError(pickupError instanceof Error ? pickupError.message : 'Unable to complete this pickup.');
@@ -424,8 +239,9 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
             </div>
 
             <div className="restaurant-dispatch-modal-riders">
+              {assigning && <p className="restaurant-dispatch-assignment-progress" role="status">Assigning this order to {riders.find((rider) => rider.id === assigningRiderId)?.name ?? "the selected rider"}… Other riders have not been assigned this order.</p>}
               {riders.map((rider) => {
-                const canAssign = rider.status === 'available';
+                const canAssign = true;
 
                 return (
                   <article className="restaurant-dispatch-modal-rider" key={rider.id}>
@@ -439,8 +255,8 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
                         <span>{rider.deliveredToday} delivered today</span>
                       </div>
                     </div>
-                    <button className="restaurant-dispatch-rider-select" type="button" disabled={!canAssign || assigning} onClick={() => void assignOrder(rider)}>
-                      {assigning ? 'Assigning…' : canAssign ? 'Assign' : rider.status === 'delivering' ? 'Currently delivering' : 'Unavailable'}
+                    <button className={`restaurant-dispatch-rider-select${assigning && assigningRiderId !== rider.id ? " is-waiting" : ""}`} type="button" disabled={!canAssign || assigning} onClick={() => void assignOrder(rider)}>
+                      {assigningRiderId === rider.id ? 'Assigning…' : rider.status === 'busy' ? 'Assign Another Order' : 'Assign'}
                     </button>
                   </article>
                 );

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { mapboxFeatureToAddress, reverseMapboxLocation, searchMapboxAddresses, type MapboxLocationFeature } from '../services/mapboxLocationService';
+import { mapboxFeatureToAddress, reverseMapboxLocation, searchMapboxAddresses, type MapboxLocationFeature } from '../modules/location/locationService';
 
 export type MapboxDeliveryAddress = {
   formattedAddress: string;
@@ -82,6 +82,16 @@ export function MapboxDeliveryLocationPicker({
     setLocationConfirmed(false);
     onLocationChange?.();
   }
+
+  useEffect(() => {
+    if (!mapRef.current || !Number.isFinite(initialLatitude) || !Number.isFinite(initialLongitude)) return;
+    const map = mapRef.current;
+    const marker = markerRef.current;
+    const coordinates: [number, number] = [Number(initialLongitude), Number(initialLatitude)];
+    marker?.setLngLat(coordinates);
+    map.setCenter(coordinates);
+    map.setZoom(16);
+  }, [initialLatitude, initialLongitude]);
 
   useEffect(() => {
     let cancelled = false;

@@ -1,5 +1,5 @@
 import { FunctionsHttpError } from '@supabase/supabase-js';
-import { supabase } from './supabaseClient';
+import { supabase } from '../../services/supabaseClient';
 
 export async function createPayMongoCheckout(orderId: string): Promise<string> {
   if (!supabase) {

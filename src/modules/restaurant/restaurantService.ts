@@ -1,4 +1,4 @@
-import type { RestaurantConfig } from '../types/restaurant';
+import type { RestaurantConfig } from '../../types/restaurant';
 
 export type RestaurantLookup = {
   slug?: string;

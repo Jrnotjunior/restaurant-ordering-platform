@@ -387,3 +387,84 @@
     border-radius: 14px;
   }
 }
+
+.saved-address-map-section {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-surface) 94%, var(--color-text));
+}
+.saved-address-map-title,
+.saved-address-map-help {
+  margin: 0;
+}
+.saved-address-map-title {
+  color: var(--color-text);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+.saved-address-map-help {
+  color: var(--color-muted);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+.saved-address-map-section .delivery-location-picker {
+  display: grid;
+  gap: 10px;
+}
+.saved-address-map-section .delivery-location-picker > .checkout-hint {
+  display: none;
+}
+.saved-address-map-section .delivery-location-search {
+  display: grid;
+  gap: 6px;
+}
+.saved-address-map-section .delivery-location-search-row {
+  display: flex;
+  gap: 8px;
+}
+.saved-address-map-section .delivery-location-search-input {
+  min-width: 0;
+  flex: 1;
+}
+.saved-address-map-section .delivery-location-map {
+  width: 100%;
+  height: 280px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.saved-address-map-section .delivery-location-map-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.saved-address-map-section .delivery-location-map-actions span {
+  color: var(--color-muted);
+  font-size: 0.74rem;
+}
+.saved-address-map-section .delivery-location-confirmation {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+.saved-address-map-section .delivery-location-confirmation span,
+.saved-address-map-section .delivery-location-confirmation small {
+  color: var(--color-muted);
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+@media (max-width: 640px) {
+  .saved-address-map-section .delivery-location-map {
+    height: 240px;
+  }
+  .saved-address-map-section .delivery-location-search-row {
+    flex-direction: column;
+  }
+}

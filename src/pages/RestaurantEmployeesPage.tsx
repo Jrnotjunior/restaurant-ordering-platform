@@ -1,42 +1,13 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { supabase, supabaseGet } from '../services/supabaseClient';
-
-type StaffRole = 'cashier' | 'kitchen' | 'dispatcher' | 'rider';
-
-type RiderAccount = {
-  id: string;
-  name: string;
-  mobileNumber: string;
-  email: string;
-  isActive: boolean;
-};
-
-type StaffAccount = {
-  id: string;
-  name: string;
-  preferredName: string;
-  mobileNumber: string;
-  email: string;
-  role: StaffRole;
-  isActive: boolean;
-};
-
-type StaffRow = {
-  id: string;
-  name: string;
-  preferred_name: string | null;
-  mobile_number: string;
-  email: string;
-  role: StaffRole;
-  is_active: boolean;
-};
-
-const roleLabels: Record<StaffRole, string> = {
-  cashier: 'Cashier',
-  kitchen: 'Kitchen',
-  dispatcher: 'Dispatcher',
-  rider: 'Rider',
-};
+import {
+  createEmployee,
+  getEmployees,
+  roleLabels,
+  setEmployeeActive,
+  updateEmployee,
+  type StaffAccount,
+  type StaffRole,
+} from '../modules/employees/employeeService';
 
 export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string }) {
   const [staff, setStaff] = useState<StaffAccount[]>([]);
@@ -44,7 +15,6 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
   const [editingStaff, setEditingStaff] = useState<StaffAccount | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [resendingInvitationId, setResendingInvitationId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [confirmation, setConfirmation] = useState('');
   const [searchEmployee, setSearchEmployee] = useState('');
@@ -53,20 +23,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
     setLoading(true);
     setError('');
     try {
-      const rows = await supabaseGet<StaffRow>('restaurant_staff', {
-        select: 'id,name,preferred_name,mobile_number,email,role,is_active',
-        restaurant_id: `eq.${restaurantId}`,
-        order: 'created_at.asc',
-      });
-      setStaff(rows.map((row) => ({
-        id: row.id,
-        name: row.name,
-        preferredName: row.preferred_name || row.name,
-        mobileNumber: row.mobile_number,
-        email: row.email,
-        role: row.role,
-        isActive: row.is_active,
-      })));
+      setStaff(await getEmployees(restaurantId));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load employees.');
     } finally {
@@ -88,42 +45,34 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
     );
   }, [staff, searchEmployee]);
 
+  function normalizeMobileNumber(value: string) {
+    return value.replace(/\D/g, '').slice(0, 11);
+  }
+
+  function validateMobileNumber(value: string) {
+    return /^09\d{9}$/.test(value);
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!supabase) {
-      setError('Supabase is not configured.');
-      return;
-    }
-
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
     const name = String(form.get('name') || '').trim();
     const preferredName = String(form.get('preferredName') || '').trim();
-    const mobileNumber = String(form.get('mobileNumber') || '').trim();
+    const mobileNumber = normalizeMobileNumber(String(form.get('mobileNumber') || ''));
     const email = String(form.get('email') || '').trim();
     const role = String(form.get('role') || 'cashier') as StaffRole;
+
+    if (!validateMobileNumber(mobileNumber)) {
+      setError('Mobile number must start with 09 and contain exactly 11 digits.');
+      return;
+    }
 
     setSaving(true);
     setError('');
 
     try {
-      const { data, error: functionError } = await supabase.functions.invoke('create-staff', {
-        body: { restaurantId, name, preferredName, mobileNumber, email, role },
-      });
-
-      if (functionError) {
-        let message = functionError.message || 'Unable to create employee account.';
-        if (functionError.context instanceof Response) {
-          try {
-            const payload = await functionError.context.clone().json();
-            if (payload?.error) message = payload.error;
-          } catch {}
-        }
-        throw new Error(message);
-      }
-
-      if (!data?.staff?.auth_user_id) throw new Error('Employee was created, but the Auth account was not linked.');
-
+      await createEmployee(restaurantId, { name, preferredName, mobileNumber, email, role });
       formElement.reset();
       setShowForm(false);
       await loadStaff();
@@ -131,45 +80,6 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
       setError(saveError instanceof Error ? saveError.message : 'Unable to add employee.');
     } finally {
       setSaving(false);
-    }
-  }
-
-  async function resendInvitation(employee: StaffAccount) {
-    if (!supabase) return;
-    setResendingInvitationId(employee.id);
-    setError('');
-    setConfirmation('');
-    try {
-      const { data, error: functionError } = await supabase.functions.invoke('resend-staff-invitation', {
-        body: { restaurantId, staffId: employee.id },
-      });
-      if (functionError) {
-        let message = functionError.message || 'Unable to resend employee invitation.';
-        let alreadyConfirmed = false;
-        if (functionError.context instanceof Response) {
-          try {
-            const payload = await functionError.context.clone().json();
-            if (payload?.error) {
-              message = payload.error;
-              alreadyConfirmed = String(payload.error).toLowerCase().includes('already completed the invitation');
-            }
-          } catch {}
-        }
-        if (!alreadyConfirmed) throw new Error(message);
-
-        const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}?employee-invite=1`;
-        const { error: resetError } = await supabase.auth.resetPasswordForEmail(employee.email, { redirectTo });
-        if (resetError) throw resetError;
-        setConfirmation(`A password setup email was sent to ${employee.email}.`);
-        return;
-      }
-      if (!data?.invitationSent) throw new Error('The invitation was not sent.');
-      setError('');
-      setConfirmation(`A new invitation was sent to ${employee.email}.`);
-    } catch (resendError) {
-      setError(resendError instanceof Error ? resendError.message : 'Unable to resend employee invitation.');
-    } finally {
-      setResendingInvitationId(null);
     }
   }
 
@@ -181,7 +91,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
 
   async function handleEdit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!supabase || !editingStaff) return;
+    if (!editingStaff) return;
 
     const form = new FormData(event.currentTarget);
     const name = String(form.get('name') || '').trim();
@@ -191,15 +101,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
     setSaving(true);
     setError('');
     try {
-      const { error: updateError } = await supabase
-        .from('restaurant_staff')
-        .update({ name, preferred_name: preferredName, mobile_number: mobileNumber })
-        .eq('id', editingStaff.id)
-        .eq('restaurant_id', restaurantId);
-
-      if (updateError) throw updateError;
-
-
+      await updateEmployee(restaurantId, editingStaff.id, { name, preferredName, mobileNumber });
       setEditingStaff(null);
       await loadStaff();
     } catch (updateError) {
@@ -210,27 +112,10 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
   }
 
   async function toggleActive(employee: StaffAccount) {
-    if (!supabase) return;
     setSaving(true);
     setError('');
     try {
-      const { error: updateError } = await supabase
-        .from('restaurant_staff')
-        .update({ is_active: !employee.isActive })
-        .eq('id', employee.id)
-        .eq('restaurant_id', restaurantId);
-
-      if (updateError) throw updateError;
-
-      if (employee.role === 'rider') {
-        const { error: riderUpdateError } = await supabase
-          .from('restaurant_riders')
-          .update({ is_active: !employee.isActive })
-          .eq('restaurant_id', restaurantId)
-          .ilike('email', employee.email);
-        if (riderUpdateError) throw riderUpdateError;
-      }
-
+      await setEmployeeActive(restaurantId, employee, !employee.isActive);
       await loadStaff();
     } catch (updateError) {
       setError(updateError instanceof Error ? updateError.message : 'Unable to update employee status.');
@@ -291,9 +176,9 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
             <div className="restaurant-employee-form-grid">
               <label>Full name<input name="name" type="text" placeholder="e.g. Juan Dela Cruz" required /></label>
               <label>Preferred name<input name="preferredName" type="text" placeholder="e.g. Juan" required /></label>
-              <label>Mobile number<input name="mobileNumber" type="tel" placeholder="09XX XXX XXXX" required /></label>
-              <label>Login email<input name="email" type="email" placeholder="employee@example.com" required /></label>
               <label>Role<select name="role" defaultValue="cashier"><option value="cashier">Cashier</option><option value="kitchen">Kitchen</option><option value="dispatcher">Dispatcher</option><option value="rider">Rider</option></select></label>
+              <label>Mobile number<input name="mobileNumber" type="tel" inputMode="numeric" placeholder="09XXXXXXXXX" maxLength={11} pattern="^09[0-9]{9}$" onInput={(event) => { event.currentTarget.value = normalizeMobileNumber(event.currentTarget.value); }} required /><span className="restaurant-employee-form-help">Must start with 09 and contain exactly 11 digits.</span></label>
+              <label className="restaurant-employee-email-field">Login email<input name="email" type="email" placeholder="employee@example.com" required /></label>
             </div>
             <p className="restaurant-employee-form-help">A Supabase Auth account is created automatically and an invitation email is sent so the employee can set a password.</p>
             <div className="restaurant-employee-form-actions">
@@ -315,9 +200,8 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
                   {!employee.isActive ? <p className="restaurant-employee-status">Inactive</p> : null}
                 </div>
                 <div className="restaurant-employee-actions">
-                  <button className="button button-secondary" type="button" onClick={() => openEmployeeEditor(employee)} disabled={saving || resendingInvitationId === employee.id}>Edit</button>
-                  {!employee.isActive ? null : <button className="button button-secondary" type="button" onClick={() => void resendInvitation(employee)} disabled={saving || resendingInvitationId !== null}>{resendingInvitationId === employee.id ? 'Sending…' : 'Resend Invitation'}</button>}
-                  <button className="button button-secondary" type="button" onClick={() => void toggleActive(employee)} disabled={saving || resendingInvitationId === employee.id}>
+                  <button className="button button-secondary" type="button" onClick={() => openEmployeeEditor(employee)} disabled={saving}>Edit</button>
+                  <button className="button button-secondary" type="button" onClick={() => void toggleActive(employee)} disabled={saving}>
                     {employee.isActive ? 'Deactivate' : 'Activate'}
                   </button>
                 </div>
@@ -335,7 +219,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
               <div className="restaurant-employee-form-grid">
                 <label>Full name<input name="name" type="text" defaultValue={editingStaff.name} required /></label>
                 <label>Preferred name<input name="preferredName" type="text" defaultValue={editingStaff.preferredName} required /></label>
-                <label>Mobile number<input name="mobileNumber" type="tel" defaultValue={editingStaff.mobileNumber} required /></label>
+                <label>Mobile number<input name="mobileNumber" type="tel" inputMode="numeric" defaultValue={editingStaff.mobileNumber} maxLength={11} pattern="^09[0-9]{9}$" onInput={(event) => { event.currentTarget.value = normalizeMobileNumber(event.currentTarget.value); }} required /><span className="restaurant-employee-form-help">Must start with 09 and contain exactly 11 digits.</span></label>
                 <label>Role<input value={roleLabels[editingStaff.role]} readOnly /></label>
                 <label>Login email<input value={editingStaff.email} readOnly /></label>
 

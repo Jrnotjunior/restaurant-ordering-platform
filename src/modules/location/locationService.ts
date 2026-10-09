@@ -24,14 +24,10 @@ export type MapboxLocationFeature = {
       accuracy?: string;
     };
   };
-  geometry?: {
-    coordinates?: [number, number];
-  };
+  geometry?: { coordinates?: [number, number] };
 };
 
-type MapboxFeatureCollection = {
-  features?: MapboxLocationFeature[];
-};
+type MapboxFeatureCollection = { features?: MapboxLocationFeature[] };
 
 const accessToken = () => String(import.meta.env.VITE_MAPBOX_ACCESS_TOKEN ?? '').trim();
 
@@ -93,11 +89,7 @@ async function requestJson(url: string) {
 export async function searchMapboxAddresses(query: string): Promise<MapboxLocationFeature[]> {
   const token = requireToken();
   const params = new URLSearchParams({
-    q: query.trim(),
-    access_token: token,
-    language: 'en',
-    country: 'PH',
-    limit: '5',
+    q: query.trim(), access_token: token, language: 'en', country: 'PH', limit: '5',
     types: 'address,street,place,locality,neighborhood',
   });
   const data = await requestJson(`https://api.mapbox.com/search/geocode/v6/forward?${params.toString()}`);
@@ -107,14 +99,12 @@ export async function searchMapboxAddresses(query: string): Promise<MapboxLocati
 export async function reverseMapboxLocation(latitude: number, longitude: number): Promise<MapboxLocationFeature | null> {
   const token = requireToken();
   const params = new URLSearchParams({
-    longitude: String(longitude),
-    latitude: String(latitude),
-    access_token: token,
-    language: 'en',
-    country: 'PH',
-    limit: '1',
-    types: 'address,street,place,locality',
+    longitude: String(longitude), latitude: String(latitude), access_token: token,
+    language: 'en', country: 'PH', limit: '1', types: 'address,street,place,locality',
   });
   const data = await requestJson(`https://api.mapbox.com/search/geocode/v6/reverse?${params.toString()}`);
   return data.features?.[0] ?? null;
 }
+
+export { calculateDeliveryRoute } from './deliveryRouteRepository';
+export type { DeliveryRouteQuote } from './deliveryRouteRepository';

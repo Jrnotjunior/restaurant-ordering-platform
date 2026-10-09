@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { RestaurantProvider } from './components/RestaurantProvider';
 import { RestaurantOwnerAuthProvider, useRestaurantOwnerAuth } from './components/RestaurantOwnerAuthProvider';
 import { ThemeProvider } from './components/ThemeProvider';
@@ -20,6 +20,7 @@ import { RestaurantEmployeeInvitePage } from './pages/RestaurantEmployeeInvitePa
 import { RestaurantRoleDashboardPage } from './pages/RestaurantRoleDashboardPage';
 import { RestaurantKitchenPage } from './pages/RestaurantKitchenPage';
 import { CustomerSignUpPage } from './pages/CustomerSignUpPage';
+import { CustomerEmailConfirmationPage } from './pages/CustomerEmailConfirmationPage';
 import { PrivacyNoticePage } from './pages/PrivacyNoticePage';
 import { SavedAddressPage } from './pages/SavedAddressPage';
 import { CustomerOrderHistoryPage } from './pages/CustomerOrderHistoryPage';
@@ -30,24 +31,22 @@ import { TenantOnboardingPage } from './pages/TenantOnboardingPage';
 import { TenantInviteLandingPage } from './pages/TenantInviteLandingPage';
 import { defaultRestaurant } from './config/defaultRestaurant';
 import { currentRestaurantLookup } from './config/restaurant';
-import { SupabaseRestaurantRepository } from './services/supabaseRestaurantRepository';
+import { SupabaseRestaurantRepository } from './modules/restaurant/supabaseRestaurantRepository';
 import { isSupabaseConfigured, supabase } from './services/supabaseClient';
 import type { RestaurantConfig } from './types/restaurant';
-import { isRestaurantCurrentlyOpen } from './utils/restaurantHours';
 import type { RestaurantProduct } from './types/menu';
+import { isRestaurantCurrentlyOpen } from './utils/restaurantHours';
 import './styles/cart-empty.css';
 import './styles/cart-notification.css';
 import { resolveAuthEntry } from './app/auth/authEntry';
 import { normalizeHashRoute, resolveAppRoute } from './app/routing/routeResolver';
+import { useCart } from './modules/ordering/useCart';
+import { OwnerRestaurantGuard, RestaurantModuleGuard, RiderRouteGuard, StaffRoleGuard } from './modules/auth/authGuards';
+import type { CartItem } from './modules/ordering/cartTypes';
 
 const restaurantRepository = new SupabaseRestaurantRepository();
-const CART_STORAGE_KEY = 'restaurant-ordering-cart';
-const LEGACY_CART_STORAGE_KEY = CART_STORAGE_KEY;
-const PENDING_PAYMENT_ORDER_KEY = 'restaurant-ordering-pending-payment-order';
-const PENDING_PAYMENT_REFERENCE_KEY = 'restaurant-ordering-pending-payment-reference';
-const PENDING_PAYMENT_CHECKOUT_URL_KEY = 'restaurant-ordering-pending-payment-checkout-url';
-const CART_CLEAR_EVENT = 'restaurant-ordering-cart-clear';
-type CartItem = { product: RestaurantProduct; quantity: number };
+
+
 
 function withBasePath(path: string) {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -73,310 +72,9 @@ function withBasePath(path: string) {
 }
 
 
-function RestaurantModuleGuard({
-  restaurantId,
-  anyOf,
-  children,
-}: {
-  restaurantId: string;
-  anyOf: string[];
-  children: ReactNode;
-}) {
-  const [checking, setChecking] = useState(true);
-  const [allowed, setAllowed] = useState(false);
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function checkModuleAccess() {
-      const client = supabase;
-      if (!client) {
-        if (mounted) {
-          setAllowed(false);
-          setChecking(false);
-        }
-        return;
-      }
-
-      const checks = await Promise.all(
-        anyOf.map(async (moduleKey) => {
-          const { data, error } = await client.rpc('restaurant_has_module', {
-            p_restaurant_id: restaurantId,
-            p_module_key: moduleKey,
-          });
-          return !error && data === true;
-        }),
-      );
-
-      if (!mounted) return;
-
-      setAllowed(checks.some(Boolean));
-      setChecking(false);
-    }
-
-    void checkModuleAccess();
-
-    return () => {
-      mounted = false;
-    };
-  }, [restaurantId, anyOf.join('|')]);
-
-  if (checking) {
-    return <section className="restaurant-owner-auth-loading">Checking feature access…</section>;
-  }
-
-  if (!allowed) {
-    // Package restrictions are an internal system detail. Never expose them
-    // to restaurant users or customers. If a hidden/bookmarked route is
-    // opened, silently return to the restaurant workspace instead.
-    if (window.location.hash !== '#restaurant/owner') {
-      window.location.hash = '#restaurant/owner';
-    }
-    return <section className="restaurant-owner-auth-loading">Loading…</section>;
-  }
-
-  return <>{children}</>;
-}
-
-function RiderRouteGuard({ children }: { children: ReactNode }) {
-  const [checking, setChecking] = useState(true);
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function checkRiderAccess() {
-      if (!supabase) {
-        if (mounted) setChecking(false);
-        return;
-      }
-
-      const { data, error: authError } = await supabase.auth.getUser();
-      if (authError) {
-        window.location.hash = '#account';
-        return;
-      }
-
-      const user = data.user;
-      const role = user?.app_metadata?.role ?? user?.user_metadata?.role;
-
-      if (!mounted) return;
-
-      if (role === 'rider' || user) {
-        if (user) {
-          const { data: riderProfile } = await supabase
-            .from('restaurant_staff')
-            .select('id,restaurant_id')
-            .eq('auth_user_id', user.id)
-            .eq('role', 'rider')
-            .eq('is_active', true)
-            .maybeSingle();
-
-          if (!mounted) return;
-
-          if (riderProfile || role === 'rider') {
-            if (riderProfile?.restaurant_id) {
-              const { data: deliveryEnabled, error: moduleError } = await supabase.rpc('restaurant_has_module', {
-                p_restaurant_id: riderProfile.restaurant_id,
-                p_module_key: 'dispatch_delivery',
-              });
-
-              if (moduleError || deliveryEnabled !== true) {
-                window.location.hash = '#restaurant/owner';
-                return;
-              }
-            }
-
-            setChecking(false);
-            return;
-          }
-        }
-      }
-
-      if (role === 'customer') {
-        window.location.hash = '';
-        return;
-      }
-
-      if (user) {
-        const { data: ownerRestaurant } = await supabase
-          .from('restaurants')
-          .select('id')
-          .eq('owner_id', user.id)
-          .eq('is_active', true)
-          .limit(1)
-          .maybeSingle();
-
-        if (!mounted) return;
-
-        if (ownerRestaurant) {
-          window.location.hash = '#restaurant/orders';
-          return;
-        }
-      }
-
-      window.location.hash = '#account';
-    }
-
-    void checkRiderAccess();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  if (checking) {
-    return <section className="restaurant-owner-auth-loading">Checking account access…</section>;
-  }
-
-  return <>{children}</>;
-}
-
 function CartPage({ items, onIncrease, onDecrease, onRemove }: { items: CartItem[]; onIncrease: (productId: string) => void; onDecrease: (productId: string) => void; onRemove: (productId: string) => void; }) {
   const subtotal = items.reduce((total, item) => total + item.product.price * item.quantity, 0);
   return <section className="cart-page"><div className="menu-intro"><h1>Your cart.</h1><p>Review your items before checkout.</p></div>{items.length === 0 ? <div className="cart-empty"><p>Your cart is empty.</p><a className="button button-primary" href={withBasePath('/menu')}>Browse Menu</a></div> : <div className="cart-layout"><div className="cart-items" aria-label="Cart items">{items.map((item) => <article className="cart-item" key={item.product.id}><div className="cart-item-main"><div><h2>{item.product.name}</h2><p>₱{item.product.price.toFixed(2)}</p></div><strong>₱{(item.product.price * item.quantity).toFixed(2)}</strong></div><div className="cart-item-actions"><div className="quantity-control" aria-label={`Quantity for ${item.product.name}`}><button type="button" onClick={() => onDecrease(item.product.id)}>−</button><span>{item.quantity}</span><button type="button" onClick={() => onIncrease(item.product.id)}>+</button></div><button className="cart-remove" type="button" onClick={() => onRemove(item.product.id)}>Remove</button></div></article>)}</div><aside className="cart-summary"><div className="cart-summary-row"><span>Subtotal</span><strong>₱{subtotal.toFixed(2)}</strong></div><p>Delivery fees and payment details will be calculated during checkout.</p><a className="button button-primary" href={withBasePath('/checkout')}>Continue to Checkout</a></aside></div>}</section>;
-}
-
-function ownerRestaurantConfig(restaurant: NonNullable<ReturnType<typeof useRestaurantOwnerAuth>['restaurant']>): RestaurantConfig {
-  return { ...defaultRestaurant, id: restaurant.id, name: restaurant.name, tagline: restaurant.tagline, logoUrl: restaurant.logo_url ?? undefined, locationText: restaurant.location_text ?? undefined, contactNumber: restaurant.contact_number ?? undefined, email: restaurant.email ?? undefined };
-}
-
-function OwnerRestaurantGuard({ children }: { children: (restaurant: RestaurantConfig) => ReactNode }) {
-  const { restaurant, user } = useRestaurantOwnerAuth();
-  const [checkingRole, setCheckingRole] = useState(true);
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function checkAccess() {
-      if (!user || !supabase) {
-        if (mounted) setCheckingRole(false);
-        return;
-      }
-
-      const role = user.app_metadata?.role ?? user.user_metadata?.role;
-
-      if (role === 'customer') {
-        window.location.hash = '';
-        return;
-      }
-
-      // Owner-only routes can sometimes be opened from an old bookmark or
-      // browser tab by a staff account. Resolve the staff role first so the
-      // account is sent to its own workspace instead of showing "No restaurant
-      // assigned".
-      const { data: staffRows, error: staffLookupError } = await supabase
-        .from('restaurant_staff')
-        .select('role')
-        .eq('auth_user_id', user.id)
-        .eq('is_active', true)
-        .order('created_at', { ascending: true })
-        .limit(1);
-
-      if (!mounted) return;
-
-      if (staffLookupError) {
-        console.error('Unable to verify staff access.', staffLookupError);
-        setCheckingRole(false);
-        return;
-      }
-
-      const staffRole = staffRows?.[0]?.role;
-
-      if (staffRole === 'cashier') {
-        window.location.hash = '#restaurant/cashier';
-        return;
-      }
-
-      if (staffRole === 'kitchen') {
-        window.location.hash = '#restaurant/kitchen';
-        return;
-      }
-
-      if (staffRole === 'dispatcher') {
-        window.location.hash = '#restaurant/dispatcher';
-        return;
-      }
-
-      if (staffRole === 'rider' || role === 'rider') {
-        window.location.hash = '#rider/dashboard';
-        return;
-      }
-
-      setCheckingRole(false);
-    }
-
-    void checkAccess();
-
-    return () => {
-      mounted = false;
-    };
-  }, [user]);
-
-  if (!user) return <RestaurantOwnerLoginPage />;
-
-  if (checkingRole) {
-    return <section className="restaurant-owner-auth-loading">Checking account access…</section>;
-  }
-
-  if (!restaurant) return <section className="restaurant-owner-auth-no-restaurant"><div className="restaurant-owner-auth-no-restaurant-card"><p className="eyebrow">Restaurant operations</p><h1>No restaurant assigned</h1><p>Your owner account is signed in, but it is not linked to an active restaurant yet. Set the restaurant's <code>owner_id</code> to your Supabase Auth user ID, then reload this page.</p><p><strong>Signed in as:</strong> {user.email ?? user.id}</p></div></section>;
-
-  return children(ownerRestaurantConfig(restaurant));
-}
-
-function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen' | 'dispatcher'; children: (restaurant: RestaurantConfig) => ReactNode }) {
-  const { user, accountType, loading: authLoading } = useRestaurantOwnerAuth();
-  const [checking, setChecking] = useState(true);
-  const [allowed, setAllowed] = useState(false);
-  const [restaurantId, setRestaurantId] = useState<string | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-    async function checkStaffAccess() {
-      if (authLoading) return;
-      if (!user || !supabase) {
-        if (mounted) setChecking(false);
-        return;
-      }
-
-      const { data: staffRows, error } = await supabase
-        .from('restaurant_staff')
-        .select('restaurant_id,role')
-        .eq('auth_user_id', user.id)
-        .eq('is_active', true)
-        .order('created_at', { ascending: true })
-        .limit(1);
-
-      const data = staffRows?.[0] ?? null;
-
-      if (!mounted) return;
-
-      if (error) {
-        console.error('Unable to verify staff access.', error);
-        setChecking(false);
-        return;
-      }
-
-      if (data?.role === role && data.restaurant_id) {
-        setRestaurantId(data.restaurant_id);
-        setAllowed(true);
-      }
-
-      setChecking(false);
-    }
-
-    void checkStaffAccess();
-    return () => { mounted = false; };
-  }, [role, user]);
-
-  if (!user) return <RestaurantOwnerLoginPage />;
-  if (checking) return <section className="restaurant-owner-auth-loading">Checking employee access…</section>;
-
-  if (!allowed || !restaurantId) {
-    window.location.hash = '#account';
-    return <section className="restaurant-owner-auth-loading">Redirecting to sign in…</section>;
-  }
-
-  return children({ ...defaultRestaurant, id: restaurantId });
 }
 
 function PublicCustomerRouteGuard({ children }: { children: ReactNode }) {
@@ -390,20 +88,20 @@ function PublicCustomerRouteGuard({ children }: { children: ReactNode }) {
 function AppContent() {
   const [restaurant, setRestaurant] = useState<RestaurantConfig>(defaultRestaurant);
   const [route, setRoute] = useState(() => normalizeHashRoute(window.location.hash || ''));
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [cartNotification, setCartNotification] = useState('');
   const { user, loading: authLoading, error: authError } = useRestaurantOwnerAuth();
-  const hydratedCartUserIdRef = useRef<string | null>(null);
-  const cartPersistenceReadyRef = useRef(false);
-  const cartItemsRef = useRef<CartItem[]>([]);
 
-  useEffect(() => {
-    cartItemsRef.current = cartItems;
-  }, [cartItems]);
+  const {
+    items: cartItems,
+    count: cartCount,
+    notification: cartNotification,
+    addItem: addCartItem,
+    increase: increaseCartItem,
+    decrease: decreaseCartItem,
+    remove: removeCartItem,
+    clear: clearCart,
+    dismissNotification: dismissCartNotification,
+  } = useCart(user?.id, authLoading);
 
-  // Guest carts exist only in memory. Once a customer is authenticated,
-  // their cart is persisted to a user-scoped browser key so it survives
-  // navigation and refreshes without being shared with another account.
   useEffect(() => {
     if (authLoading || !user || !supabase) return;
 
@@ -445,48 +143,6 @@ function AppContent() {
   }, [authLoading, user?.id]);
 
   useEffect(() => {
-    if (authLoading) return;
-
-    cartPersistenceReadyRef.current = false;
-
-    if (!user) {
-      hydratedCartUserIdRef.current = null;
-      setCartItems([]);
-      window.localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
-      return;
-    }
-
-    const storageKey = CART_STORAGE_KEY + ':' + user.id;
-    let storedItems: CartItem[] = [];
-
-    try {
-      const stored = window.localStorage.getItem(storageKey);
-      if (stored) storedItems = JSON.parse(stored) as CartItem[];
-    } catch {
-      storedItems = [];
-    }
-
-    hydratedCartUserIdRef.current = user.id;
-
-    if (storedItems.length > 0) {
-      setCartItems(storedItems);
-    } else if (cartItemsRef.current.length > 0) {
-      window.localStorage.setItem(storageKey, JSON.stringify(cartItemsRef.current));
-    } else {
-      setCartItems([]);
-    }
-
-    cartPersistenceReadyRef.current = true;
-    window.localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
-  }, [authLoading, user?.id]);
-
-  useEffect(() => {
-    if (authLoading || !user || hydratedCartUserIdRef.current !== user.id || !cartPersistenceReadyRef.current) return;
-    const storageKey = CART_STORAGE_KEY + ':' + user.id;
-    window.localStorage.setItem(storageKey, JSON.stringify(cartItems));
-  }, [authLoading, user?.id, cartItems]);
-
-  useEffect(() => {
     const handleHashChange = () => {
       setRoute(normalizeHashRoute(window.location.hash || ''));
     };
@@ -499,21 +155,6 @@ function AppContent() {
 
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
-  useEffect(() => {
-    function handleSuccessfulOrder() {
-      setCartItems([]);
-      if (user) {
-        window.localStorage.removeItem(CART_STORAGE_KEY + ':' + user.id);
-      }
-      window.localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
-      window.localStorage.removeItem(PENDING_PAYMENT_ORDER_KEY);
-      window.localStorage.removeItem(PENDING_PAYMENT_REFERENCE_KEY);
-      window.localStorage.removeItem(PENDING_PAYMENT_CHECKOUT_URL_KEY);
-    }
-    window.addEventListener(CART_CLEAR_EVENT, handleSuccessfulOrder);
-    return () => window.removeEventListener(CART_CLEAR_EVENT, handleSuccessfulOrder);
-  }, [user?.id]);
-  useEffect(() => { if (!cartNotification) return; const timer = window.setTimeout(() => setCartNotification(''), 3000); return () => window.clearTimeout(timer); }, [cartNotification]);
   useEffect(() => {
     if (!isSupabaseConfigured) return;
 
@@ -536,7 +177,6 @@ function AppContent() {
 
   const [showStoreClosedModal, setShowStoreClosedModal] = useState(false);
 
-  const cartCount = useMemo(() => cartItems.reduce((total, item) => total + item.quantity, 0), [cartItems]);
   async function addToCart(product: RestaurantProduct) {
     let storeOpen = true;
 
@@ -562,15 +202,8 @@ function AppContent() {
       return;
     }
 
-    setCartItems((current) => {
-      const existing = current.find((item) => item.product.id === product.id);
-      if (existing) return current.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
-      return [...current, { product, quantity: 1 }];
-    });
-    setCartNotification(`${product.name} added to cart`);
+    addCartItem(product);
   }
-  function changeQuantity(productId: string, delta: number) { setCartItems((current) => current.map((item) => item.product.id === productId ? { ...item, quantity: item.quantity + delta } : item).filter((item) => item.quantity > 0)); }
-  function removeFromCart(productId: string) { setCartItems((current) => current.filter((item) => item.product.id !== productId)); }
 
   const routeContext = resolveAppRoute(window.location, route);
   const {
@@ -578,6 +211,7 @@ function AppContent() {
     isCartPage,
     isAccountPage,
     isSignUpPage,
+    isCustomerEmailConfirmationPage,
     isPrivacyPage,
     isCheckoutPage,
     trackOrderNumber,
@@ -611,6 +245,9 @@ function AppContent() {
   if (isEmployeeInvitePage) return <RestaurantEmployeeInvitePage />;
   if (isRiderInvitePage) return <RiderInvitePage />;
   if (isSignUpPage) return <CustomerSignUpPage />;
+  if (isCustomerEmailConfirmationPage || new URLSearchParams(window.location.search).get('customer-confirmation') === '1') {
+    return <CustomerEmailConfirmationPage />;
+  }
   if (isPrivacyPage) return <PrivacyNoticePage />;
   if (route === '#saved-address') return <PublicCustomerRouteGuard><RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}><SavedAddressPage /></RestaurantLayout></ThemeProvider></RestaurantProvider></PublicCustomerRouteGuard>;
   if (route === '#order-history') return <PublicCustomerRouteGuard><RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}><CustomerOrderHistoryPage /></RestaurantLayout></ThemeProvider></RestaurantProvider></PublicCustomerRouteGuard>;
@@ -618,7 +255,7 @@ function AppContent() {
   if (isRiderDashboardPage) return <RiderRouteGuard><RiderDashboardPage /></RiderRouteGuard>;
   if (riderDeliveryMatch) return <RiderRouteGuard><RiderDeliveryPage orderId={decodeURIComponent(riderDeliveryMatch[1])} /></RiderRouteGuard>;
 
-  const publicContent = trackOrderNumber ? <OrderTrackingPage orderNumber={trackOrderNumber} /> : isMenuPage || (!isCartPage && !isCheckoutPage && !trackingMatch) ? <MenuPage onAddToCart={addToCart} cartCount={cartCount} /> : isCartPage ? <CartPage items={cartItems} onIncrease={(id) => changeQuantity(id, 1)} onDecrease={(id) => changeQuantity(id, -1)} onRemove={(id) => removeFromCart(id)} /> : isCheckoutPage ? <CheckoutPage items={cartItems} /> : <OrderTrackingPage orderNumber={decodeURIComponent(trackingMatch![1])} />;
+  const publicContent = trackOrderNumber ? <OrderTrackingPage orderNumber={trackOrderNumber} /> : isMenuPage || (!isCartPage && !isCheckoutPage && !trackingMatch) ? <MenuPage onAddToCart={addToCart} cartCount={cartCount} /> : isCartPage ? <CartPage items={cartItems} onIncrease={increaseCartItem} onDecrease={decreaseCartItem} onRemove={removeCartItem} /> : isCheckoutPage ? <CheckoutPage items={cartItems} onClearCart={clearCart} /> : <OrderTrackingPage orderNumber={decodeURIComponent(trackingMatch![1])} />;
 
   if (isCashierPosPage) {
     return <StaffRoleGuard role="cashier">{(staffRestaurant) => (
@@ -774,7 +411,7 @@ function AppContent() {
         <button className="button button-primary restaurant-closed-modal-button" type="button" onClick={() => setShowStoreClosedModal(false)}>Okay</button>
       </div>
     </div>
-  ) : null}{cartNotification ? <div className="cart-notification" role="status" aria-live="polite"><div className="cart-notification-icon" aria-hidden="true">✓</div><div className="cart-notification-content"><strong>Added to cart</strong><span>{cartNotification}</span></div><a className="cart-notification-link" href={withBasePath('/cart')}>View cart</a><button className="cart-notification-close" type="button" aria-label="Dismiss notification" onClick={() => setCartNotification('')}>×</button></div> : null}</RestaurantLayout></ThemeProvider></RestaurantProvider>;
+  ) : null}{cartNotification ? <div className="cart-notification" role="status" aria-live="polite"><div className="cart-notification-icon" aria-hidden="true">✓</div><div className="cart-notification-content"><strong>Added to cart</strong><span>{cartNotification}</span></div><a className="cart-notification-link" href={withBasePath('/cart')}>View cart</a><button className="cart-notification-close" type="button" aria-label="Dismiss notification" onClick={dismissCartNotification}>×</button></div> : null}</RestaurantLayout></ThemeProvider></RestaurantProvider>;
   // Order tracking is a public customer page. It must not wait for employee
   // access checks, so navigating from the header never shows an account guard.
   if (trackOrderNumber || trackingMatch) return publicPage;

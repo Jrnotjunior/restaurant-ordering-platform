@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ProductCard } from '../components/ProductCard';
 import { useRestaurant } from '../components/RestaurantProvider';
-import { isSupabaseConfigured, supabase } from '../services/supabaseClient';
-import { getMenu } from '../services/menuRepository';
+import { isSupabaseConfigured } from '../services/supabaseClient';
+import { getMenu, subscribeToMenuChanges } from '../modules/products/productService';
 import type { RestaurantCategory, RestaurantProduct } from '../types/menu';
 import '../styles/menu-category.css';
 import '../styles/storefront-customization.css';
@@ -53,22 +53,19 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
   }, [restaurant.id]);
 
   useEffect(() => {
-    if (!restaurant.id || !supabase) return;
+    if (!restaurant.id) return;
 
-    const channel = supabase
-      .channel(`menu-availability:${restaurant.id}`)
-      .on('broadcast', { event: 'restaurant_menu_changed' }, () => {
-        void getMenu(restaurant.id!, true)
-          .then((menu) => {
-            setCategories(menu.categories);
-            setProducts(menu.products);
-          })
-          .catch((loadError: unknown) => console.error('Unable to refresh menu availability.', loadError));
-      })
-      .subscribe();
+    const unsubscribe = subscribeToMenuChanges(restaurant.id, () => {
+      void getMenu(restaurant.id!, true)
+        .then((menu) => {
+          setCategories(menu.categories);
+          setProducts(menu.products);
+        })
+        .catch((loadError: unknown) => console.error('Unable to refresh menu availability.', loadError));
+    });
 
     return () => {
-      void supabase?.removeChannel(channel);
+      unsubscribe?.();
     };
   }, [restaurant.id]);
 

@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { RestaurantProduct } from '../types/menu';
-import { createOrder } from '../services/orderRepository';
-import { createPendingOnlinePayment, getOnlinePaymentStatus } from '../services/onlinePaymentRepository';
-import { createPayMongoCheckout } from '../services/paymongoRepository';
-import { calculateDeliveryRoute, type DeliveryRouteQuote } from '../services/deliveryRouteRepository';
-import { attachCustomerToOrder, getLoyaltyRedemptionSettings, getMyCustomerProfile, getMyCustomerProfileId, getMyLoyaltyPoints, redeemLoyaltyReward, saveMyDefaultDeliveryAddress } from '../services/loyaltyRepository';
+import { createOrder } from '../modules/ordering/orderService';
+import { createPayMongoCheckout, createPendingOnlinePayment, getOnlinePaymentStatus } from '../modules/payments/paymentService';
+import { calculateDeliveryRoute, type DeliveryRouteQuote } from '../modules/location/locationService';
+import { attachCustomerToOrder, getLoyaltyRedemptionSettings, getMyLoyaltyPoints, redeemLoyaltyReward } from '../modules/loyalty/loyaltyService';
+import { getMyCustomerProfile, getMyCustomerProfileId, saveMyDefaultDeliveryAddress } from '../modules/customer/customerAccountService';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
 import { useRestaurant } from '../components/RestaurantProvider';
 import { supabase } from '../services/supabaseClient';
@@ -15,11 +15,12 @@ import '../styles/checkout-mobile.css';
 type CartItem = { product: RestaurantProduct; quantity: number };
 type OrderType = 'delivery' | 'pickup' | 'dine_in';
 type PaymentMethod = 'cash' | 'online';
-type CheckoutPageProps = { items: CartItem[] };
+type CheckoutPageProps = { items: CartItem[]; onClearCart: (targetUserId?: string) => void };
 type ConfirmedOrder = { orderNumber: string; paymentMethod: PaymentMethod; orderType: OrderType; pickupMethod?: 'customer' | 'third_party_courier'; pickupAddress?: string; total: number };
 const PENDING_PAYMENT_CHECKOUT_URL_KEY = 'restaurant-ordering-pending-payment-checkout-url';
 const ACTIVE_ORDER_KEY = 'restaurant-ordering-active-order';
 const PENDING_PAYMENT_REFERENCE_KEY = 'restaurant-ordering-pending-payment-reference';
+const PENDING_PAYMENT_CART_USER_KEY = 'restaurant-ordering-pending-payment-cart-user';
 const PENDING_PAYMENT_PICKUP_METHOD_KEY = 'restaurant-ordering-pending-payment-pickup-method';
 
 const orderTypes: Array<{ value: OrderType; label: string; description: string }> = [
@@ -35,10 +36,9 @@ const paymentMethods: Array<{ value: PaymentMethod; label: string; description: 
 
 const outsideDeliveryAreaMessage = 'This address is outside the store delivery area. You can still order by choosing your own courier to pick up the order from the restaurant.';
 const PENDING_PAYMENT_ORDER_KEY = 'restaurant-ordering-pending-payment-order';
-const CART_CLEAR_EVENT = 'restaurant-ordering-cart-clear';
 const thirdPartyCourierNote = 'THIRD-PARTY COURIER: Customer is responsible for booking and paying the delivery courier (such as Lalamove or Grab Express). The restaurant will prepare the food for courier pickup at the listed restaurant pickup point.';
 
-export function CheckoutPage({ items }: CheckoutPageProps) {
+export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
   const restaurant = useRestaurant();
   const { user } = useRestaurantOwnerAuth();
   const [orderType, setOrderType] = useState<OrderType>('delivery');
@@ -111,6 +111,8 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
           } else if (result.status === 'paid' && result.orderNumber) {
             window.history.replaceState({}, '', window.location.pathname + window.location.hash);
             setPaymentNotCompleted(false);
+            const pendingCartUserId = window.localStorage.getItem(PENDING_PAYMENT_CART_USER_KEY) || undefined;
+            window.localStorage.removeItem(PENDING_PAYMENT_CART_USER_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_REFERENCE_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_CHECKOUT_URL_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_ORDER_KEY);
@@ -118,7 +120,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             window.localStorage.removeItem(PENDING_PAYMENT_PICKUP_METHOD_KEY);
             window.localStorage.setItem(ACTIVE_ORDER_KEY, result.orderNumber);
             window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
-            window.dispatchEvent(new Event(CART_CLEAR_EVENT));
+            onClearCart(pendingCartUserId);
             setConfirmedOrder({
               orderNumber: result.orderNumber,
               paymentMethod: 'online',
@@ -149,6 +151,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
             window.localStorage.removeItem(PENDING_PAYMENT_REFERENCE_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_CHECKOUT_URL_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_ORDER_KEY);
+            window.localStorage.removeItem(PENDING_PAYMENT_CART_USER_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_PICKUP_METHOD_KEY);
             window.history.replaceState({}, '', window.location.pathname + window.location.hash);
             if (!cancelled) {
@@ -166,13 +169,15 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
           }
 
           if (result.status === 'paid' && result.orderNumber) {
+            const pendingCartUserId = window.localStorage.getItem(PENDING_PAYMENT_CART_USER_KEY) || undefined;
+            window.localStorage.removeItem(PENDING_PAYMENT_CART_USER_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_REFERENCE_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_CHECKOUT_URL_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_ORDER_KEY);
             const pickupMethod = window.localStorage.getItem(PENDING_PAYMENT_PICKUP_METHOD_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_PICKUP_METHOD_KEY);
             window.history.replaceState({}, '', window.location.pathname + window.location.hash);
-            window.dispatchEvent(new Event(CART_CLEAR_EVENT));
+            onClearCart(pendingCartUserId);
             if (!cancelled) {
               setPaymentProcessing(false);
               window.localStorage.setItem(ACTIVE_ORDER_KEY, result.orderNumber);
@@ -232,11 +237,43 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         setCustomerName(profile.name ?? '');
         setMobileNumber(profile.phone ?? '');
         const hasAddress = Boolean(profile.defaultDeliveryCity?.trim() && profile.defaultDeliveryBarangay?.trim() && profile.defaultDeliveryAddress?.trim());
+        const hasSavedCoordinates = Number.isFinite(profile.defaultDeliveryLatitude) && profile.defaultDeliveryLatitude !== null
+          && Number.isFinite(profile.defaultDeliveryLongitude) && profile.defaultDeliveryLongitude !== null;
         setHasDefaultAddress(hasAddress);
         if (hasAddress) {
           setDeliveryCity(profile.defaultDeliveryCity ?? '');
           setDeliveryBarangay(profile.defaultDeliveryBarangay ?? '');
           setAddress(profile.defaultDeliveryAddress ?? '');
+        }
+        if (hasAddress && hasSavedCoordinates) {
+          const savedLocation: MapboxDeliveryAddress = {
+            formattedAddress: [profile.defaultDeliveryAddress, profile.defaultDeliveryBarangay, profile.defaultDeliveryCity].filter(Boolean).join(', '),
+            city: profile.defaultDeliveryCity ?? '',
+            barangay: profile.defaultDeliveryBarangay ?? '',
+            address: profile.defaultDeliveryAddress ?? '',
+            placeId: profile.defaultDeliveryPlaceId ?? '',
+            latitude: profile.defaultDeliveryLatitude,
+            longitude: profile.defaultDeliveryLongitude,
+          };
+          setSelectedDeliveryLocation(savedLocation);
+          setDeliveryRouteLoading(true);
+          void calculateDeliveryRoute(restaurantId, profile.defaultDeliveryLatitude!, profile.defaultDeliveryLongitude!)
+            .then((quote) => {
+              if (!cancelled) setDeliveryRouteQuote(quote);
+            })
+            .catch((error) => {
+              if (!cancelled) {
+                console.error('Unable to calculate delivery for saved address.', error);
+                setDeliveryRouteQuote(null);
+              }
+            })
+            .finally(() => {
+              if (!cancelled) setDeliveryRouteLoading(false);
+            });
+        } else if (hasAddress) {
+          // Legacy saved addresses without coordinates need one-time map confirmation.
+          setSelectedDeliveryLocation(null);
+          setDeliveryRouteQuote(null);
         }
       })
       .catch((error) => {
@@ -357,7 +394,15 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
     const barangay = deliveryBarangay.trim();
     const completeAddress = address.trim();
     if (!city || !barangay || !completeAddress || !deliveryRouteQuote?.inRange) return;
-    await saveMyDefaultDeliveryAddress(items[0].product.restaurantId, city, barangay, completeAddress);
+    await saveMyDefaultDeliveryAddress(
+      items[0].product.restaurantId,
+      city,
+      barangay,
+      completeAddress,
+      selectedDeliveryLocation?.latitude ?? null,
+      selectedDeliveryLocation?.longitude ?? null,
+      selectedDeliveryLocation?.placeId ?? null,
+    );
     setHasDefaultAddress(true);
   }
 
@@ -430,6 +475,11 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
         throw new Error('The loyalty reward covers the entire order. Please choose cash payment or contact the restaurant for a free-order arrangement.');
       }
       window.localStorage.setItem(PENDING_PAYMENT_REFERENCE_KEY, pendingPayment.referenceNumber);
+      if (user?.id) {
+        window.localStorage.setItem(PENDING_PAYMENT_CART_USER_KEY, user.id);
+      } else {
+        window.localStorage.removeItem(PENDING_PAYMENT_CART_USER_KEY);
+      }
       if (isOwnCourierPickup) {
         window.localStorage.setItem(PENDING_PAYMENT_PICKUP_METHOD_KEY, 'third_party_courier');
       } else {
@@ -469,7 +519,7 @@ export function CheckoutPage({ items }: CheckoutPageProps) {
       }
       window.localStorage.setItem(ACTIVE_ORDER_KEY, createdOrder.orderNumber);
       window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
-      window.dispatchEvent(new Event(CART_CLEAR_EVENT));
+      onClearCart();
       setConfirmedOrder({ orderNumber: createdOrder.orderNumber, paymentMethod: 'cash', orderType: isOwnCourierPickup ? 'pickup' : orderType, pickupMethod: isOwnCourierPickup ? 'third_party_courier' : undefined, pickupAddress: isOwnCourierPickup ? restaurantPickupPoint : undefined, total: confirmedTotal });
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'We could not create your order. Please try again.');

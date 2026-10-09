@@ -1,22 +1,9 @@
 import { useEffect, useState } from 'react';
-import { supabaseRpc } from '../services/supabaseClient';
+import { getMyOrderHistory, type CustomerOrderHistoryOrder as HistoryOrder } from '../modules/customer/customerAccountService';
 import { useRestaurant } from '../components/RestaurantProvider';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
 import '../styles/customer-order-history.css';
 
-type HistoryItem = { productName: string; quantity: number; unitPrice: number; lineTotal: number };
-type HistoryOrder = {
-  order_id: string;
-  order_number: string;
-  order_type: string;
-  payment_method: string;
-  payment_status: string;
-  status: string;
-  delivery_status: string | null;
-  total: number;
-  created_at: string;
-  items: HistoryItem[];
-};
 
 function statusLabel(order: HistoryOrder) {
   if (order.delivery_status === 'delivered' || order.status === 'completed') return 'Completed';
@@ -62,9 +49,7 @@ export function CustomerOrderHistoryPage() {
       setLoading(true);
       setError('');
       try {
-        const rows = await supabaseRpc<HistoryOrder>('get_my_order_history', {
-          p_restaurant_id: restaurant.id,
-        });
+        const rows = await getMyOrderHistory(restaurant.id);
         if (!cancelled) setOrders(rows);
       } catch (loadError) {
         if (!cancelled) {

@@ -1,7 +1,7 @@
-import { defaultRestaurant } from '../config/defaultRestaurant';
-import type { RestaurantConfig, RestaurantOperatingHours, RestaurantStorefront, RestaurantTheme } from '../types/restaurant';
+import { defaultRestaurant } from '../../config/defaultRestaurant';
+import type { RestaurantConfig, RestaurantOperatingHours, RestaurantStorefront, RestaurantTheme } from '../../types/restaurant';
 import type { RestaurantLookup, RestaurantRepository } from './restaurantService';
-import { supabaseGet, supabaseRpc } from './supabaseClient';
+import { supabaseGet, supabaseRpc } from '../../services/supabaseClient';
 
 type RestaurantRow = {
   id: string; slug: string; name: string; tagline: string; logo_url: string | null;
@@ -23,7 +23,8 @@ function mergeStorefront(customization: WebsiteCustomizationRow | null): Restaur
     ...base,
     ...(custom ?? {}),
     hero: { ...base.hero, ...(custom?.hero ?? {}) },
-    socialLinks: { ...base.socialLinks, ...(custom?.socialLinks ?? {}) }  };
+    socialLinks: { ...base.socialLinks, ...(custom?.socialLinks ?? {}) }
+  };
 }
 
 function mergeTheme(customization: WebsiteCustomizationRow | null): RestaurantTheme {
