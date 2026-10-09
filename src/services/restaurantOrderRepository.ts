@@ -1,18 +1,17 @@
+// Compatibility re-exports. Callers should prefer the feature service modules.
+export { getRestaurantOrders, updateOrderStatus } from '../modules/ordering/orderService';
+export type { RestaurantOrder, RestaurantOrderStatus } from '../modules/ordering/orderService';
+export { getRestaurantSales } from '../modules/sales/salesService';
 
-export { getRestaurantOrders, updateOrderStatus } from '../modules/ordering/orderRepository';
-export type { RestaurantOrder, RestaurantOrderStatus } from '../modules/ordering/orderRepository';
-export { getRestaurantSales } from '../modules/sales/salesRepository';
-
-
-// Compatibility exports: POS operations now live in the POS module.
+// Legacy POS names retained for compatibility.
 export {
   applyPosGroupDiscounts,
   getRestaurantTaxSettings,
   confirmPosCashPayment as confirmDineInPayment,
-} from '../modules/pos/posRepository';
+} from '../modules/pos/posService';
 export type {
   PosDiscountBeneficiary,
   PosDiscountIdType,
   PosDiscountType,
   RestaurantTaxSettings,
-} from '../modules/pos/posRepository';
+} from '../modules/pos/posService';
