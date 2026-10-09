@@ -87,7 +87,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
 
     const refreshInterval = window.setInterval(() => {
       void load();
-    }, 1000);
+    }, 15000);
 
     return () => {
       cancelled = true;
