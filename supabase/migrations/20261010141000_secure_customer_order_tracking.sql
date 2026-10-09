@@ -4,7 +4,6 @@ DO $migration$
 DECLARE
   v_definition text;
   v_replaced text;
-  v_signature text;
 BEGIN
   SELECT pg_get_functiondef(p.oid)
     INTO v_definition
@@ -43,6 +42,7 @@ END;
 $migration$;
 
 REVOKE ALL ON FUNCTION public.get_order_status(text) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.get_order_status_by_id(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_order_status_by_id(uuid) TO anon, authenticated;
 
 -- A payment reference is a bearer credential used by guest checkout's return URL.
