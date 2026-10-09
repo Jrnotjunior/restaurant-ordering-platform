@@ -361,6 +361,10 @@ export async function updateOrderStatus(orderId: string, status: RestaurantOrder
   await supabaseRpc('update_order_status', { p_order_id: orderId, p_status: status });
 }
 
+export async function cancelMyPendingOrder(orderId: string) {
+  await supabaseRpc('cancel_my_pending_order', { p_order_id: orderId });
+}
+
 
 
 
