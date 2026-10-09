@@ -13,4 +13,5 @@ export type {
   TrackedOrder,
   RestaurantOrder,
   RestaurantOrderStatus,
+  RestaurantPaymentStatus,
 } from './orderRepository';
