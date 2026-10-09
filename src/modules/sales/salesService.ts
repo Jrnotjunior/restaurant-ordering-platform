@@ -158,3 +158,5 @@ export async function loadOwnerStats(restaurantId: string): Promise<OwnerStats> 
     dailySales,
   };
 }
+
+export { getRestaurantSales } from './salesRepository';
