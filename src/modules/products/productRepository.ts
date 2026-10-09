@@ -169,3 +169,16 @@ export function subscribeToMenuChanges(restaurantId: string, onChange: () => voi
     void supabase?.removeChannel(channel);
   };
 }
+
+export function subscribeToCashierMenuChanges(restaurantId: string, onChange: () => void): (() => void) | null {
+  if (!supabase) return null;
+
+  const channel = supabase
+    .channel(`restaurant-menu-changes:${restaurantId}`)
+    .on('broadcast', { event: 'restaurant_menu_changed' }, onChange)
+    .subscribe();
+
+  return () => {
+    void supabase?.removeChannel(channel);
+  };
+}
