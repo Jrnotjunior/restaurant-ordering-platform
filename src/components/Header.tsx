@@ -36,13 +36,16 @@ export function Header({ cartCount = 0 }: HeaderProps) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordMessage, setPasswordMessage] = useState('');
   const [logoutMessage, setLogoutMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [logoutSaving, setLogoutSaving] = useState(false);
   const [loyaltyPoints, setLoyaltyPoints] = useState<number | null>(null);
   const [loyaltyLoading, setLoyaltyLoading] = useState(false);
   const [activeOrderNumber, setActiveOrderNumber] = useState(() => window.localStorage.getItem(ACTIVE_ORDER_KEY));
   const [activeOrderId, setActiveOrderId] = useState(() => window.localStorage.getItem(ACTIVE_ORDER_ID_KEY));
 
   async function handleLogout() {
+    if (logoutSaving) return;
     setLogoutMessage(null);
+    setLogoutSaving(true);
     try {
       await signOut();
       setAccountOpen(false);
@@ -60,6 +63,8 @@ export function Header({ cartCount = 0 }: HeaderProps) {
     } catch (error) {
       console.error('Unable to log out.', error);
       setLogoutMessage({ type: 'error', text: 'Unable to log out. Please try again.' });
+    } finally {
+      setLogoutSaving(false);
     }
   }
 
@@ -189,7 +194,7 @@ export function Header({ cartCount = 0 }: HeaderProps) {
                     {passwordMessage ? <span className="header-account-password-message" role="status">{passwordMessage}</span> : null}
                   </form>
                 ) : null}
-                <button className="header-account-menu-item" type="button" onClick={() => void handleLogout()}>Log out</button>
+                <button className="header-account-menu-item" type="button" onClick={() => void handleLogout()} disabled={logoutSaving} aria-busy={logoutSaving}>{logoutSaving ? 'Logging out…' : 'Log out'}</button>
               </> : null}
             </div>
           ) : null}
