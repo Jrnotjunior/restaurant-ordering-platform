@@ -358,7 +358,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
     if (customerProfileError) return customerProfileError;
     if (!customerName.trim()) return 'Enter your full name to continue.';
     if (/[0-9]/.test(customerName)) return 'Your full name must not contain numbers.';
-    if (orderType !== 'dine_in' && !/^09\\d{9}$/.test(mobileNumber)) return 'Enter a valid 11-digit Philippine mobile number starting with 09.';
+    if (orderType !== 'dine_in' && !/^09\d{9}$/.test(mobileNumber)) return 'Enter a valid 11-digit Philippine mobile number starting with 09.';
     if (isOwnCourierPickup && !restaurantPickupPoint) return 'The restaurant pickup address is not configured. Please contact the restaurant.';
     if (isDelivery && !thirdPartyCourierDelivery) {
       if (deliveryRouteLoading) return 'Checking whether your delivery address is within the restaurant delivery area. Please wait.';
