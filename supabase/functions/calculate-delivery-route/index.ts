@@ -58,8 +58,14 @@ Deno.serve(async (req) => {
   const baseFee = Number(restaurant.delivery_base_fee);
   const maxDistanceMeters = Number(restaurant.delivery_max_distance_meters);
 
+  if (!Number.isFinite(incrementMeters) || incrementMeters <= 0 || !Number.isFinite(feePerIncrement) || feePerIncrement < 0 || !Number.isFinite(baseFee) || baseFee < 0 || !Number.isFinite(maxDistanceMeters) || maxDistanceMeters <= 0) {
+    return json({ error: "This restaurant has invalid delivery pricing settings." }, 409);
+  }
+
+  // A quote is reusable only while the origin and pricing inputs still match.
+  // Older quotes without snapshots are deliberately recalculated.
   const { data: cachedQuote } = await admin.from("delivery_quotes")
-    .select("id,expires_at,distance_meters,delivery_fee")
+    .select("id,expires_at,distance_meters,delivery_fee,origin_latitude,origin_longitude,pricing_base_fee,pricing_distance_increment_meters,pricing_fee_per_increment")
     .eq("restaurant_id", restaurantId)
     .eq("customer_latitude", latitude)
     .eq("customer_longitude", longitude)
@@ -69,7 +75,14 @@ Deno.serve(async (req) => {
     .limit(1)
     .maybeSingle();
 
-  if (cachedQuote) {
+  const cachedSettingsMatch = cachedQuote
+    && Number(cachedQuote.origin_latitude) === originLat
+    && Number(cachedQuote.origin_longitude) === originLng
+    && Number(cachedQuote.pricing_base_fee) === baseFee
+    && Number(cachedQuote.pricing_distance_increment_meters) === incrementMeters
+    && Number(cachedQuote.pricing_fee_per_increment) === feePerIncrement;
+
+  if (cachedQuote && cachedSettingsMatch) {
     const cachedDistance = Number(cachedQuote.distance_meters);
     return json({
       quoteId: cachedQuote.id,
@@ -80,10 +93,6 @@ Deno.serve(async (req) => {
       inRange: cachedDistance <= maxDistanceMeters,
       cached: true,
     });
-  }
-
-  if (!Number.isFinite(incrementMeters) || incrementMeters <= 0 || !Number.isFinite(feePerIncrement) || feePerIncrement < 0 || !Number.isFinite(baseFee) || baseFee < 0 || !Number.isFinite(maxDistanceMeters) || maxDistanceMeters <= 0) {
-    return json({ error: "This restaurant has invalid delivery pricing settings." }, 409);
   }
 
   // Rate-limit only uncached route calculations; cached quotes remain reusable.
@@ -139,6 +148,9 @@ Deno.serve(async (req) => {
   const { data: quote, error: quoteError } = await admin.from("delivery_quotes").insert({
     restaurant_id: restaurantId, customer_latitude: latitude, customer_longitude: longitude,
     distance_meters: Math.round(distanceMeters), delivery_fee: deliveryFee,
+    origin_latitude: originLat, origin_longitude: originLng,
+    pricing_base_fee: baseFee, pricing_distance_increment_meters: incrementMeters,
+    pricing_fee_per_increment: feePerIncrement,
   }).select("id,expires_at").single();
 
   await admin.from("system_api_usage_events").insert({
