@@ -16,7 +16,6 @@ The restaurant ordering platform is being migrated from page-centered orchestrat
 - kitchen — kitchen queue, sold-out availability, ready status.
 - dispatch — delivery zones, shipping fees, dispatch workflow.
 - products — restaurant products and categories.
-- kitchen — kitchen queue and ready-status workflow.
 - employees — staff invitations, employee roles, rider-as-employee behavior.
 - sales — sales views and reporting.
 
@@ -48,6 +47,7 @@ The extracted boundaries now include:
 - loyalty — points configuration, customer lookup, redemption, and pending-payment redemption
 - pos — cashier payment confirmation and POS discount/tax access
 - kitchen — kitchen queue retrieval and kitchen order status progression
+- dispatch — dispatch page consumes module-owned `DispatchTab` and dispatch service exports; repository still owns the underlying Supabase queries and dispatch mutations
 
 The following compatibility adapters remain intentionally where legacy consumers still depend on them:
 
@@ -59,9 +59,10 @@ Feature migrations are being completed one module at a time with build and user 
 ## Next migrations
 
 1. Complete the kitchen boundary and regression-test the kitchen queue and ready workflow.
-2. Extract dispatch, delivery zones, and shipping-fee workflows.
-3. Complete remaining order-management repository extraction where shared consumers still depend on the legacy repository.
-4. Add build/test checks before each migration is merged.
+2. Extract delivery-zone management and shipping-fee workflows into dedicated module services/repositories, preserving existing tenant scoping and checkout behavior.
+3. Move remaining dispatch business operations behind the dispatch service rather than exposing repository implementations directly; keep database access in the repository.
+4. Complete remaining order-management repository extraction where shared consumers still depend on the legacy repository.
+5. Add build/test checks before each migration is merged.
 
 ## Safety rule
 
