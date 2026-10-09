@@ -193,6 +193,7 @@ export function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen'
   const [allowed, setAllowed] = useState(false);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [redirecting, setRedirecting] = useState(false);
+  const [roleCheckError, setRoleCheckError] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -209,7 +210,12 @@ export function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen'
         .limit(1);
       const data = staffRows?.[0] ?? null;
       if (!mounted) return;
-      if (error) { console.error('Unable to verify staff access.', error); setChecking(false); return; }
+      if (error) {
+        console.error('Unable to verify staff access.', error);
+        setRoleCheckError(true);
+        setChecking(false);
+        return;
+      }
       if (data?.role === role && data.restaurant_id) {
         setRestaurantId(data.restaurant_id);
         setAllowed(true);
@@ -230,6 +236,9 @@ export function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen'
   if (authLoading) return <section className="restaurant-owner-auth-loading">Loading employee session…</section>;
   if (!user) return <RestaurantOwnerLoginPage />;
   if (checking) return <section className="restaurant-owner-auth-loading">Checking employee access…</section>;
+  if (roleCheckError) {
+    return <section className="restaurant-owner-auth-loading">Unable to verify employee permissions. Access is blocked; please refresh or contact support.</section>;
+  }
   if (!allowed || !restaurantId) {
     return (
       <section className="restaurant-owner-auth-loading">
