@@ -213,6 +213,8 @@ function AppContent() {
     isAccountPage,
     isSignUpPage,
     isCustomerEmailConfirmationPage,
+    isCustomerPasswordResetPage,
+    isCustomerForgotPasswordPage,
     isPrivacyPage,
     isCheckoutPage,
     trackOrderNumber,
@@ -245,8 +247,8 @@ function AppContent() {
   if (isTenantInvitePage) return <TenantOnboardingPage />;
   if (isEmployeeInvitePage) return <RestaurantEmployeeInvitePage />;
   if (isRiderInvitePage) return <RiderInvitePage />;
-  if (new URLSearchParams(window.location.search).get('customer-password-reset') === '1') return <CustomerPasswordRecoveryPage mode="reset" />;
-  if (route === '#forgot-password') return <CustomerPasswordRecoveryPage mode="request" />;
+  if (isCustomerPasswordResetPage) return <CustomerPasswordRecoveryPage mode="reset" />;
+  if (isCustomerForgotPasswordPage) return <CustomerPasswordRecoveryPage mode="request" />;
   if (isSignUpPage) return <CustomerSignUpPage />;
   if (isCustomerEmailConfirmationPage || new URLSearchParams(window.location.search).get('customer-confirmation') === '1') {
     return <CustomerEmailConfirmationPage />;
