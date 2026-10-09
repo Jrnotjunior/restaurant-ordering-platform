@@ -2,6 +2,7 @@ export {
   applyPosGroupDiscounts,
   confirmPosCashPayment,
   getRestaurantTaxSettings,
+  getCurrentCashierName,
 } from './posRepository';
 
 export type {
