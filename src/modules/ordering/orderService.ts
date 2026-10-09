@@ -1,5 +1,6 @@
 export {
   createOrder,
+  cancelMyPendingOrder,
   getOrderStatus,
   getRestaurantOrders,
   updateOrderStatus,
