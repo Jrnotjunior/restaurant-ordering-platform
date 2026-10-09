@@ -16,25 +16,24 @@ BEGIN
     RAISE EXCEPTION 'Sign in to cancel this order' USING ERRCODE = '42501';
   END IF;
 
-  SELECT cp.id
-    INTO v_customer_id
-  FROM public.customer_profiles cp
-  WHERE cp.auth_user_id = auth.uid()
-  ORDER BY cp.created_at ASC
-  LIMIT 1;
-
-  IF v_customer_id IS NULL THEN
-    RAISE EXCEPTION 'Customer account not found' USING ERRCODE = '42501';
-  END IF;
-
   SELECT o.*
     INTO v_order
   FROM public.orders o
   WHERE o.id = p_order_id
-    AND o.customer_id = v_customer_id
   FOR UPDATE;
 
   IF NOT FOUND THEN
+    RAISE EXCEPTION 'Order not found' USING ERRCODE = '42501';
+  END IF;
+
+  SELECT cp.id
+    INTO v_customer_id
+  FROM public.customer_profiles cp
+  WHERE cp.auth_user_id = auth.uid()
+    AND cp.restaurant_id = v_order.restaurant_id
+  LIMIT 1;
+
+  IF v_customer_id IS NULL OR v_order.customer_id IS DISTINCT FROM v_customer_id THEN
     RAISE EXCEPTION 'Order not found or does not belong to your account' USING ERRCODE = '42501';
   END IF;
 
