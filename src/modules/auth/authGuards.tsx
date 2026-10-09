@@ -5,6 +5,7 @@ import { useRestaurantOwnerAuth } from '../../components/RestaurantOwnerAuthProv
 import { defaultRestaurant } from '../../config/defaultRestaurant';
 import { supabase } from '../../services/supabaseClient';
 import type { RestaurantConfig } from '../../types/restaurant';
+import { staffRouteForRole } from './staffRoleRouting';
 
 export function ownerRestaurantConfig(
   restaurant: NonNullable<ReturnType<typeof useRestaurantOwnerAuth>['restaurant']>,
@@ -191,6 +192,8 @@ export function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen'
   const [checking, setChecking] = useState(true);
   const [allowed, setAllowed] = useState(false);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
+  const [roleCheckError, setRoleCheckError] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -207,10 +210,22 @@ export function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen'
         .limit(1);
       const data = staffRows?.[0] ?? null;
       if (!mounted) return;
-      if (error) { console.error('Unable to verify staff access.', error); setChecking(false); return; }
+      if (error) {
+        console.error('Unable to verify staff access.', error);
+        setRoleCheckError(true);
+        setChecking(false);
+        return;
+      }
       if (data?.role === role && data.restaurant_id) {
         setRestaurantId(data.restaurant_id);
         setAllowed(true);
+      } else {
+        // A signed-in employee who opens another staff workspace should return
+        // to their verified workspace, not the generic account/sign-in route.
+        // This preserves the current Auth session and avoids a misleading login redirect.
+        const destination = staffRouteForRole(data?.role) ?? '#account';
+        setRedirecting(true);
+        if (window.location.hash !== destination) window.location.hash = destination;
       }
       setChecking(false);
     }
@@ -221,9 +236,15 @@ export function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen'
   if (authLoading) return <section className="restaurant-owner-auth-loading">Loading employee session…</section>;
   if (!user) return <RestaurantOwnerLoginPage />;
   if (checking) return <section className="restaurant-owner-auth-loading">Checking employee access…</section>;
+  if (roleCheckError) {
+    return <section className="restaurant-owner-auth-loading">Unable to verify employee permissions. Access is blocked; please refresh or contact support.</section>;
+  }
   if (!allowed || !restaurantId) {
-    window.location.hash = '#account';
-    return <section className="restaurant-owner-auth-loading">Redirecting to sign in…</section>;
+    return (
+      <section className="restaurant-owner-auth-loading">
+        {redirecting ? 'Returning to your workspace…' : 'Redirecting to your account…'}
+      </section>
+    );
   }
   return children({ ...defaultRestaurant, id: restaurantId });
 }
