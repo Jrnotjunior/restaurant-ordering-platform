@@ -5,6 +5,7 @@ import {
   getOrCreateCategory as getOrCreateCategoryRepository,
   setProductAvailability as setProductAvailabilityRepository,
   subscribeToMenuChanges as subscribeToMenuChangesRepository,
+  subscribeToCashierMenuChanges as subscribeToCashierMenuChangesRepository,
   updateProduct as updateProductRepository,
 } from './productRepository';
 import {
@@ -17,6 +18,7 @@ export const getMenu = getMenuRepository;
 export const getOrCreateCategory = getOrCreateCategoryRepository;
 export const setProductAvailability = setProductAvailabilityRepository;
 export const subscribeToMenuChanges = subscribeToMenuChangesRepository;
+export const subscribeToCashierMenuChanges = subscribeToCashierMenuChangesRepository;
 export const createProduct = createProductRepository;
 export const updateProduct = updateProductRepository;
 export const deleteProduct = deleteProductRepository;
