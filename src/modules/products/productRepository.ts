@@ -161,7 +161,7 @@ export function subscribeToMenuChanges(restaurantId: string, onChange: () => voi
   if (!supabase) return null;
 
   const channel = supabase
-    .channel(`menu-availability:${restaurantId}`)
+    .channel(`restaurant-menu-changes:${restaurantId}`)
     .on('broadcast', { event: 'restaurant_menu_changed' }, onChange)
     .subscribe();
 
