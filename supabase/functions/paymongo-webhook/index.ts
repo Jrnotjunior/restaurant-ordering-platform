@@ -127,7 +127,7 @@ Deno.serve(async (request) => {
     }
 
     const signature = parseSignature(signatureHeader);
-    if (!signature.timestamp || !/^\\d+$/.test(signature.timestamp)) {
+    if (!signature.timestamp || !/^\d+$/.test(signature.timestamp)) {
       return jsonResponse({ error: "Invalid webhook signature." }, 401);
     }
 
