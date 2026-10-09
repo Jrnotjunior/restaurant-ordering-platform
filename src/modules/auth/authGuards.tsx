@@ -5,6 +5,7 @@ import { useRestaurantOwnerAuth } from '../../components/RestaurantOwnerAuthProv
 import { defaultRestaurant } from '../../config/defaultRestaurant';
 import { supabase } from '../../services/supabaseClient';
 import type { RestaurantConfig } from '../../types/restaurant';
+import { staffRouteForRole } from './staffRoleRouting';
 
 export function ownerRestaurantConfig(
   restaurant: NonNullable<ReturnType<typeof useRestaurantOwnerAuth>['restaurant']>,
@@ -191,6 +192,7 @@ export function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen'
   const [checking, setChecking] = useState(true);
   const [allowed, setAllowed] = useState(false);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -211,6 +213,13 @@ export function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen'
       if (data?.role === role && data.restaurant_id) {
         setRestaurantId(data.restaurant_id);
         setAllowed(true);
+      } else {
+        // A signed-in employee who opens another staff workspace should return
+        // to their verified workspace, not the generic account/sign-in route.
+        // This preserves the current Auth session and avoids a misleading login redirect.
+        const destination = staffRouteForRole(data?.role) ?? '#account';
+        setRedirecting(true);
+        if (window.location.hash !== destination) window.location.hash = destination;
       }
       setChecking(false);
     }
@@ -222,8 +231,11 @@ export function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen'
   if (!user) return <RestaurantOwnerLoginPage />;
   if (checking) return <section className="restaurant-owner-auth-loading">Checking employee access…</section>;
   if (!allowed || !restaurantId) {
-    window.location.hash = '#account';
-    return <section className="restaurant-owner-auth-loading">Redirecting to sign in…</section>;
+    return (
+      <section className="restaurant-owner-auth-loading">
+        {redirecting ? 'Returning to your workspace…' : 'Redirecting to your account…'}
+      </section>
+    );
   }
   return children({ ...defaultRestaurant, id: restaurantId });
 }
