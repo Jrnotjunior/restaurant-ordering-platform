@@ -220,15 +220,33 @@ Deno.serve(async (request) => {
 
     if (eventType === "checkout_session.payment.paid") {
       const paidAmount = Number(paymentAttributes.amount);
-      const expectedAmount = Math.round(Number(pendingPayment.total) * 100);
       const paidCurrency = String(paymentAttributes.currency ?? "").toUpperCase();
+      const expectedAmount = Math.round(Number(pendingPayment.total) * 100);
+      const lineItems = Array.isArray(sessionAttributes.line_items) ? sessionAttributes.line_items : [];
+      const lineItemsValid = lineItems.length > 0 && lineItems.every((item: any) =>
+        String(item?.currency ?? "").toUpperCase() === "PHP" &&
+        Number.isSafeInteger(Number(item?.amount)) &&
+        Number.isSafeInteger(Number(item?.quantity)) &&
+        Number(item.amount) >= 0 &&
+        Number(item.quantity) > 0
+      );
+      const checkoutAmount = lineItemsValid
+        ? lineItems.reduce((sum: number, item: any) => sum + Number(item.amount) * Number(item.quantity), 0)
+        : NaN;
+
+      // PayMongo's payment amount may include a pass-on fee, while net_amount
+      // reflects the merchant's amount after fees. Verify the actual Checkout
+      // Session line items against the order total rather than assuming the
+      // customer's payment amount must equal the merchant's subtotal.
       if (
         !paidPayment ||
         !Number.isSafeInteger(paidAmount) ||
-        paidAmount !== expectedAmount ||
-        paidCurrency !== "PHP"
+        paidAmount <= 0 ||
+        paidCurrency !== "PHP" ||
+        !lineItemsValid ||
+        checkoutAmount !== expectedAmount
       ) {
-        return jsonResponse({ error: "Paid amount or currency does not match the pending payment." }, 400);
+        return jsonResponse({ error: "Paid amount or checkout line items do not match the pending payment." }, 400);
       }
     }
     const paymongoPaymentId = String(paidPayment?.id ?? "").trim() || null;
