@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { defaultRestaurant } from '../config/defaultRestaurant';
 import { supabase } from '../services/supabaseClient';
+import { RestaurantFaviconSettings } from '../components/RestaurantFaviconSettings';
 import type { RestaurantStorefront, RestaurantTheme } from '../types/restaurant';
 
 type Props = { restaurantId: string };
@@ -387,6 +388,13 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
             </div>
           </div>
         ) : null}
+
+        <RestaurantFaviconSettings
+          restaurantId={restaurantId}
+          faviconUrl={storefront.faviconUrl}
+          disabled={loading || saving}
+          onChange={(url) => { setStorefront((current) => ({ ...current, faviconUrl: url || undefined })); setMessage(''); setError(''); }}
+        />
 
         <div className="website-customization-card">
           <h2>Branding</h2>
