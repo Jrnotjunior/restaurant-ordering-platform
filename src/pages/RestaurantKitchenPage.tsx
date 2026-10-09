@@ -82,9 +82,9 @@ export function RestaurantKitchenPage({ restaurantId, view = 'orders' }: Props) 
 
   return (
     <section className="restaurant-page restaurant-kitchen-menu-page">
-      <header className="restaurant-orders-header">
+      <header className="restaurant-page-header restaurant-kitchen-menu-header">
         <div>
-          <p className="eyebrow">Kitchen operations</p>
+          <p className="eyebrow">Restaurant operations</p>
           <h1>Menu</h1>
           <p>View products and update availability for the cashier and customer menu.</p>
         </div>
