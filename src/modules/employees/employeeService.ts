@@ -114,13 +114,4 @@ export async function setEmployeeActive(
 
   if (error) throw error;
 
-  if (employee.role === 'rider') {
-    const { error: riderError } = await supabase
-      .from('restaurant_riders')
-      .update({ is_active: isActive })
-      .eq('restaurant_id', restaurantId)
-      .ilike('email', employee.email);
-
-    if (riderError) throw riderError;
-  }
 }
