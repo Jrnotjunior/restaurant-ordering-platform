@@ -214,9 +214,9 @@ export async function createOrder(input: CreateOrderInput): Promise<CreatedOrder
   };
 }
 
-export async function getOrderStatus(orderNumber: string): Promise<TrackedOrder> {
-  const rows = await supabaseRpc<TrackedOrderRow>('get_order_status', {
-    p_order_number: orderNumber,
+export async function getOrderStatus(orderId: string): Promise<TrackedOrder> {
+  const rows = await supabaseRpc<TrackedOrderRow>('get_order_status_by_id', {
+    p_order_id: orderId,
   });
 
   const row = rows[0];
@@ -365,14 +365,14 @@ export async function updateOrderStatus(orderId: string, status: RestaurantOrder
 
 
 export function subscribeToOrderTrackingChanges(
-  orderNumber: string,
+  orderId: string,
   onChange: () => void,
   onStatusChange: (status: string) => void,
 ): (() => void) | null {
   if (!supabase) return null;
 
   const channel = supabase
-    .channel(`customer-order:${orderNumber}`)
+    .channel(`customer-order:${orderId}`)
     .on(
       'broadcast',
       { event: 'customer_order_changed' },
@@ -384,7 +384,7 @@ export function subscribeToOrderTrackingChanges(
         event: 'UPDATE',
         schema: 'public',
         table: 'orders',
-        filter: `order_number=eq.${orderNumber}`,
+        filter: `id=eq.${orderId}`,
       },
       () => onChange(),
     )
