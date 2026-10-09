@@ -25,6 +25,16 @@ export function TenantInviteLandingPage() {
       window.location.replace(getInvitationEntryUrl(invitationType));
       return;
     }
+
+    // Older tenant invitations may not have invitation_type in Auth metadata.
+    // The onboarding RPC still validates the signed-in user's pending invitation,
+    // so route an explicit tenant flow to onboarding instead of leaving the
+    // recipient stuck on the "Continue to restaurant" screen.
+    if (tenantFlow) {
+      window.location.replace(getInvitationEntryUrl('tenant_owner'));
+      return;
+    }
+
     setError('This invitation is missing a valid invitation type. Please contact the sender.');
     setAccepting(false);
   }
