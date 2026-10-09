@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { getOrderStatus, subscribeToOrderTrackingChanges, type OrderStatus } from '../modules/ordering/orderService';
+import { cancelMyPendingOrder, getOrderStatus, subscribeToOrderTrackingChanges, type OrderStatus } from '../modules/ordering/orderService';
+import { supabase } from '../services/supabaseClient';
 import '../styles/order-tracking.css';
 
 type OrderTrackingPageProps = {
@@ -35,6 +36,30 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
   const [order, setOrder] = useState<Awaited<ReturnType<typeof getOrderStatus>> | null>(null);
   const [error, setError] = useState('');
   const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
+  const [isAuthenticatedCustomer, setIsAuthenticatedCustomer] = useState(false);
+  const [cancellingOrder, setCancellingOrder] = useState(false);
+  const [cancellationError, setCancellationError] = useState('');
+  const [cancellationMessage, setCancellationMessage] = useState('');
+
+  useEffect(() => {
+    if (!supabase) return;
+    let mounted = true;
+
+    void supabase.auth.getUser().then(({ data }) => {
+      if (mounted) setIsAuthenticatedCustomer(Boolean(data.user));
+    }).catch(() => {
+      if (mounted) setIsAuthenticatedCustomer(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticatedCustomer(Boolean(session?.user));
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -135,6 +160,33 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
   const operatingHours = order.operatingHours;
   const showPickupLocation = isPickup && order.status === 'completed' && Boolean(storeAddress);
 
+  async function cancelOrder() {
+    if (!order || cancellingOrder) return;
+    const confirmed = window.confirm('Cancel this unpaid cash order? This cannot be undone.');
+    if (!confirmed) return;
+
+    setCancellingOrder(true);
+    setCancellationError('');
+    setCancellationMessage('');
+    try {
+      await cancelMyPendingOrder(order.orderId);
+      const refreshedOrder = await getOrderStatus(order.orderId);
+      setOrder(refreshedOrder);
+      setCancellationMessage('Your order has been cancelled.');
+      if (window.localStorage.getItem('restaurant-ordering-active-order-id') === refreshedOrder.orderId) {
+        window.localStorage.removeItem('restaurant-ordering-active-order-id');
+        window.localStorage.removeItem(ACTIVE_ORDER_KEY);
+        window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
+      }
+    } catch (cancelError) {
+      setCancellationError(cancelError instanceof Error
+        ? cancelError.message
+        : 'Unable to cancel this order. Please refresh and try again.');
+    } finally {
+      setCancellingOrder(false);
+    }
+  }
+
   function formatOperatingHours() {
     if (!operatingHours) return [];
     return ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
@@ -174,6 +226,16 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
         </div>
 
         <div className="order-tracking-total"><span>Total</span><strong>₱{Number(order.total).toFixed(2)}</strong></div>
+        {isAuthenticatedCustomer && order.status === 'pending' && order.paymentMethod === 'cash' && order.paymentStatus === 'pending' ? (
+          <div className="order-tracking-cancel">
+            <p>You can cancel this unpaid cash order before the restaurant confirms it.</p>
+            <button className="button" type="button" onClick={() => void cancelOrder()} disabled={cancellingOrder}>
+              {cancellingOrder ? 'Cancelling…' : 'Cancel order'}
+            </button>
+          </div>
+        ) : null}
+        {cancellationError ? <p className="checkout-error" role="alert">{cancellationError}</p> : null}
+        {cancellationMessage ? <p className="checkout-success" role="status">{cancellationMessage}</p> : null}
 
         <section className="order-tracking-details" aria-label="Order details and billing">
           <div className="order-tracking-section-heading">
