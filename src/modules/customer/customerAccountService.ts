@@ -177,3 +177,29 @@ export async function deleteMyCustomerAddress(
     p_address_id: addressId,
   });
 }
+
+export type CustomerOrderHistoryItem = {
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+};
+
+export type CustomerOrderHistoryOrder = {
+  order_id: string;
+  order_number: string;
+  order_type: string;
+  payment_method: string;
+  payment_status: string;
+  status: string;
+  delivery_status: string | null;
+  total: number;
+  created_at: string;
+  items: CustomerOrderHistoryItem[];
+};
+
+export async function getMyOrderHistory(restaurantId: string): Promise<CustomerOrderHistoryOrder[]> {
+  return supabaseRpc<CustomerOrderHistoryOrder>('get_my_order_history', {
+    p_restaurant_id: restaurantId,
+  });
+}
