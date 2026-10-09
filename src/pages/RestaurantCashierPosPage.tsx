@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getMenu } from '../modules/products/productService';
 import { createOrder } from '../modules/ordering/orderService';
-import { applyPosGroupDiscounts, confirmPosCashPayment, getRestaurantTaxSettings, type PosDiscountIdType, type PosDiscountType, type RestaurantTaxSettings } from '../modules/pos/posService';
+import { applyPosGroupDiscounts, confirmPosCashPayment, getCurrentCashierName, getRestaurantTaxSettings, type PosDiscountIdType, type PosDiscountType, type RestaurantTaxSettings } from '../modules/pos/posService';
 import type { RestaurantProduct } from '../types/menu';
-import { supabase } from '../services/supabaseClient';
 import { attachCustomerToOrder, findCustomersByName, getLoyaltyRedemptionSettings, redeemLoyaltyReward, type LoyaltyCustomerSuggestion, type LoyaltyRedemptionSettings } from '../modules/loyalty/loyaltyService';
 
 type Props = { restaurantId: string };
@@ -92,24 +91,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
 
   useEffect(() => { void loadMenu(); void loadCashierName(); }, [restaurantId]);
   async function loadCashierName() {
-    if (!supabase) return;
-    try {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
-      if (!userId) return;
-      const { data, error: cashierError } = await supabase
-        .from('restaurant_staff')
-        .select('preferred_name,name')
-        .eq('restaurant_id', restaurantId)
-        .eq('auth_user_id', userId)
-        .eq('role', 'cashier')
-        .eq('is_active', true)
-        .maybeSingle();
-      if (cashierError) throw cashierError;
-      setCashierName(data?.preferred_name?.trim() || data?.name?.trim() || 'Cashier');
-    } catch {
-      setCashierName('Cashier');
-    }
+    setCashierName(await getCurrentCashierName(restaurantId));
   }
 
 
