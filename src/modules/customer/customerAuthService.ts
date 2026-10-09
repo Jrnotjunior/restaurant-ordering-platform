@@ -96,3 +96,28 @@ export async function getCurrentCustomerUser(): Promise<User | null> {
 
   return data.user ?? null;
 }
+
+
+export async function requestCustomerPasswordReset(email: string): Promise<void> {
+  if (!supabase) {
+    throw new Error('Supabase is not configured.');
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail) {
+    throw new Error('Enter the email address associated with your account.');
+  }
+
+  const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}?customer-password-reset=1`;
+  const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, { redirectTo });
+  if (error) throw error;
+}
+
+export async function updateCustomerPassword(password: string): Promise<void> {
+  if (!supabase) {
+    throw new Error('Supabase is not configured.');
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) throw error;
+}

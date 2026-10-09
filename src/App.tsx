@@ -20,6 +20,7 @@ import { RestaurantEmployeeInvitePage } from './pages/RestaurantEmployeeInvitePa
 import { RestaurantRoleDashboardPage } from './pages/RestaurantRoleDashboardPage';
 import { RestaurantKitchenPage } from './pages/RestaurantKitchenPage';
 import { CustomerSignUpPage } from './pages/CustomerSignUpPage';
+import { CustomerPasswordRecoveryPage } from './pages/CustomerPasswordRecoveryPage';
 import { CustomerEmailConfirmationPage } from './pages/CustomerEmailConfirmationPage';
 import { PrivacyNoticePage } from './pages/PrivacyNoticePage';
 import { SavedAddressPage } from './pages/SavedAddressPage';
@@ -212,6 +213,8 @@ function AppContent() {
     isAccountPage,
     isSignUpPage,
     isCustomerEmailConfirmationPage,
+    isCustomerPasswordResetPage,
+    isCustomerForgotPasswordPage,
     isPrivacyPage,
     isCheckoutPage,
     trackOrderNumber,
@@ -244,6 +247,8 @@ function AppContent() {
   if (isTenantInvitePage) return <TenantOnboardingPage />;
   if (isEmployeeInvitePage) return <RestaurantEmployeeInvitePage />;
   if (isRiderInvitePage) return <RiderInvitePage />;
+  if (isCustomerPasswordResetPage) return <CustomerPasswordRecoveryPage mode="reset" />;
+  if (isCustomerForgotPasswordPage) return <CustomerPasswordRecoveryPage mode="request" />;
   if (isSignUpPage) return <CustomerSignUpPage />;
   if (isCustomerEmailConfirmationPage || new URLSearchParams(window.location.search).get('customer-confirmation') === '1') {
     return <CustomerEmailConfirmationPage />;
