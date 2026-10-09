@@ -104,6 +104,7 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
   const [passwordError, setPasswordError] = useState('');
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [logoutSaving, setLogoutSaving] = useState(false);
+  const [logoutMessage, setLogoutMessage] = useState('');
   const restaurant = useRestaurant();
   const [ownerModules, setOwnerModules] = useState<Record<string, boolean>>({});
   const [modulesLoading, setModulesLoading] = useState(role === 'owner');
@@ -165,12 +166,23 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
   }
 
   async function handleLogout() {
-    if (!supabase) return;
+    if (logoutSaving) return;
+    setLogoutMessage('');
+    if (!supabase) {
+      setLogoutMessage('Account service is unavailable. Please try again.');
+      return;
+    }
     setLogoutSaving(true);
-    const { error } = await supabase.auth.signOut();
-    setLogoutSaving(false);
-    if (error) { setPasswordError(error.message); return; }
-    window.location.href = `${window.location.origin}${import.meta.env.BASE_URL}`;
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      window.location.href = `${window.location.origin}${import.meta.env.BASE_URL}`;
+    } catch (error) {
+      console.error('Unable to log out.', error);
+      setLogoutMessage('Unable to log out. Please try again.');
+    } finally {
+      setLogoutSaving(false);
+    }
   }
 
   useEffect(() => {
@@ -236,7 +248,8 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
               <div className="restaurant-account-dropdown">
                 <div className="restaurant-account-email">{email || 'Restaurant account'}</div>
                 <button type="button" onClick={openPasswordChange}>Change password</button>
-                <button type="button" onClick={() => void handleLogout()} disabled={logoutSaving}>{logoutSaving ? 'Logging out…' : 'Log out'}</button>
+                <button type="button" onClick={() => void handleLogout()} disabled={logoutSaving} aria-busy={logoutSaving}>{logoutSaving ? 'Logging out…' : 'Log out'}</button>
+                {logoutMessage ? <p className="restaurant-logout-error" role="alert">{logoutMessage}</p> : null}
               </div>
             ) : null}
           </div>
