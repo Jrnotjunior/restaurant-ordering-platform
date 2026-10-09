@@ -168,6 +168,17 @@ Deno.serve(async (request) => {
 
     if (eventInsertError) throw eventInsertError;
 
+    const rejectWebhookEvent = async (status: number, message: string, eventStatus = "failed") => {
+      const { error: auditError } = await adminClient
+        .from("paymongo_webhook_events")
+        .update({ status: eventStatus, last_error: message })
+        .eq("event_id", eventId);
+      if (auditError) {
+        console.error("Unable to record rejected webhook event", auditError);
+      }
+      return jsonResponse({ error: message }, status);
+    };
+
     if (
       eventType !== "checkout_session.payment.paid" &&
       eventType !== "checkout_session.payment.failed" &&
@@ -181,10 +192,7 @@ Deno.serve(async (request) => {
 
     const orderNumber = String(sessionAttributes.reference_number ?? "").trim();
     if (!orderNumber) {
-      await adminClient.from("paymongo_webhook_events")
-        .update({ status: "processed", processed_at: new Date().toISOString() })
-        .eq("event_id", eventId);
-      return jsonResponse({ received: true }, 200);
+      return await rejectWebhookEvent(400, "Checkout session reference number is missing.");
     }
 
     // Resolve the pending payment from the signed checkout session and verify
@@ -196,21 +204,24 @@ Deno.serve(async (request) => {
       .maybeSingle();
 
     if (pendingPaymentError) throw pendingPaymentError;
-    if (!pendingPayment) return jsonResponse({ error: "Pending payment not found." }, 404);
+    if (!pendingPayment) return await rejectWebhookEvent(404, "Pending payment not found.");
 
     const sessionId = String(session?.id ?? "").trim();
     const metadataPaymentId = String(sessionMetadata?.payment_id ?? "").trim();
-    if (metadataPaymentId && metadataPaymentId !== String(pendingPayment.id)) {
-      return jsonResponse({ error: "Webhook payment mismatch." }, 400);
+    if (!metadataPaymentId || metadataPaymentId !== String(pendingPayment.id)) {
+      return await rejectWebhookEvent(400, "Webhook payment metadata is missing or does not match.");
     }
-    if (metadataRestaurantId && metadataRestaurantId !== String(pendingPayment.restaurant_id)) {
-      return jsonResponse({ error: "Webhook restaurant mismatch." }, 400);
+    if (!metadataRestaurantId || metadataRestaurantId !== String(pendingPayment.restaurant_id)) {
+      return await rejectWebhookEvent(400, "Webhook restaurant metadata is missing or does not match.");
+    }
+    if (!sessionId) {
+      return await rejectWebhookEvent(400, "Webhook checkout session ID is missing.");
     }
     if (pendingPayment.checkout_session_id && sessionId !== String(pendingPayment.checkout_session_id)) {
-      return jsonResponse({ error: "Webhook checkout session mismatch." }, 400);
+      return await rejectWebhookEvent(400, "Webhook checkout session mismatch.");
     }
     if (restaurantId && restaurantId !== String(pendingPayment.restaurant_id)) {
-      return jsonResponse({ error: "Webhook restaurant mismatch." }, 400);
+      return await rejectWebhookEvent(400, "Webhook restaurant mismatch.");
     }
 
     const paidPayment = Array.isArray(sessionAttributes.payments)
@@ -246,7 +257,7 @@ Deno.serve(async (request) => {
         !lineItemsValid ||
         checkoutAmount !== expectedAmount
       ) {
-        return jsonResponse({ error: "Paid amount or checkout line items do not match the pending payment." }, 400);
+        return await rejectWebhookEvent(400, "Paid amount or checkout line items do not match the pending payment.");
       }
     }
     const paymongoPaymentId = String(paidPayment?.id ?? "").trim() || null;
