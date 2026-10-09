@@ -16,9 +16,10 @@ type CartItem = { product: RestaurantProduct; quantity: number };
 type OrderType = 'delivery' | 'pickup' | 'dine_in';
 type PaymentMethod = 'cash' | 'online';
 type CheckoutPageProps = { items: CartItem[]; onClearCart: (targetUserId?: string) => void };
-type ConfirmedOrder = { orderNumber: string; paymentMethod: PaymentMethod; orderType: OrderType; pickupMethod?: 'customer' | 'third_party_courier'; pickupAddress?: string; total: number };
+type ConfirmedOrder = { orderId: string; orderNumber: string; paymentMethod: PaymentMethod; orderType: OrderType; pickupMethod?: 'customer' | 'third_party_courier'; pickupAddress?: string; total: number };
 const PENDING_PAYMENT_CHECKOUT_URL_KEY = 'restaurant-ordering-pending-payment-checkout-url';
 const ACTIVE_ORDER_KEY = 'restaurant-ordering-active-order';
+const ACTIVE_ORDER_ID_KEY = 'restaurant-ordering-active-order-id';
 const PENDING_PAYMENT_REFERENCE_KEY = 'restaurant-ordering-pending-payment-reference';
 const PENDING_PAYMENT_CART_USER_KEY = 'restaurant-ordering-pending-payment-cart-user';
 const PENDING_PAYMENT_PICKUP_METHOD_KEY = 'restaurant-ordering-pending-payment-pickup-method';
@@ -108,7 +109,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
             setPaymentFailureMessage('Payment failed. No restaurant order was created. Please try again.');
           } else if (result.status === 'expired') {
             setPaymentFailureMessage('Payment checkout expired. No restaurant order was created. Please try again.');
-          } else if (result.status === 'paid' && result.orderNumber) {
+          } else if (result.status === 'paid' && result.orderNumber && result.orderId) {
             window.history.replaceState({}, '', window.location.pathname + window.location.hash);
             setPaymentNotCompleted(false);
             const pendingCartUserId = window.localStorage.getItem(PENDING_PAYMENT_CART_USER_KEY) || undefined;
@@ -119,9 +120,11 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
             const pickupMethod = window.localStorage.getItem(PENDING_PAYMENT_PICKUP_METHOD_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_PICKUP_METHOD_KEY);
             window.localStorage.setItem(ACTIVE_ORDER_KEY, result.orderNumber);
+            window.localStorage.setItem(ACTIVE_ORDER_ID_KEY, result.orderId);
             window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
             onClearCart(pendingCartUserId);
             setConfirmedOrder({
+              orderId: result.orderId,
               orderNumber: result.orderNumber,
               paymentMethod: 'online',
               orderType: pickupMethod === 'third_party_courier' ? 'pickup' : orderType,
@@ -168,7 +171,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
             return;
           }
 
-          if (result.status === 'paid' && result.orderNumber) {
+          if (result.status === 'paid' && result.orderNumber && result.orderId) {
             const pendingCartUserId = window.localStorage.getItem(PENDING_PAYMENT_CART_USER_KEY) || undefined;
             window.localStorage.removeItem(PENDING_PAYMENT_CART_USER_KEY);
             window.localStorage.removeItem(PENDING_PAYMENT_REFERENCE_KEY);
@@ -181,8 +184,10 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
             if (!cancelled) {
               setPaymentProcessing(false);
               window.localStorage.setItem(ACTIVE_ORDER_KEY, result.orderNumber);
-            window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
+              window.localStorage.setItem(ACTIVE_ORDER_ID_KEY, result.orderId);
+              window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
             setConfirmedOrder({
+                orderId: result.orderId,
                 orderNumber: result.orderNumber,
                 paymentMethod: 'online',
                 orderType: pickupMethod === 'third_party_courier' ? 'pickup' : orderType,
@@ -344,7 +349,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
     </section>
   );
 
-  if (confirmedOrder) return <OrderConfirmationPage orderNumber={confirmedOrder.orderNumber} paymentMethod={confirmedOrder.paymentMethod} orderType={confirmedOrder.orderType} pickupMethod={confirmedOrder.pickupMethod} pickupAddress={confirmedOrder.pickupAddress} total={confirmedOrder.total} onReturnHome={() => { window.location.hash = ''; }} />;
+  if (confirmedOrder) return <OrderConfirmationPage orderId={confirmedOrder.orderId} orderNumber={confirmedOrder.orderNumber} paymentMethod={confirmedOrder.paymentMethod} orderType={confirmedOrder.orderType} pickupMethod={confirmedOrder.pickupMethod} pickupAddress={confirmedOrder.pickupAddress} total={confirmedOrder.total} onReturnHome={() => { window.location.hash = ''; }} />;
 
   const hasExactDeliveryLocation = Boolean(
     selectedDeliveryLocation
@@ -536,9 +541,10 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
         setRedeemPoints(false);
       }
       window.localStorage.setItem(ACTIVE_ORDER_KEY, createdOrder.orderNumber);
+      window.localStorage.setItem(ACTIVE_ORDER_ID_KEY, createdOrder.orderId);
       window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
       onClearCart();
-      setConfirmedOrder({ orderNumber: createdOrder.orderNumber, paymentMethod: 'cash', orderType: isOwnCourierPickup ? 'pickup' : orderType, pickupMethod: isOwnCourierPickup ? 'third_party_courier' : undefined, pickupAddress: isOwnCourierPickup ? restaurantPickupPoint : undefined, total: confirmedTotal });
+      setConfirmedOrder({ orderId: createdOrder.orderId, orderNumber: createdOrder.orderNumber, paymentMethod: 'cash', orderType: isOwnCourierPickup ? 'pickup' : orderType, pickupMethod: isOwnCourierPickup ? 'third_party_courier' : undefined, pickupAddress: isOwnCourierPickup ? restaurantPickupPoint : undefined, total: confirmedTotal });
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'We could not create your order. Please try again.');
     } finally {

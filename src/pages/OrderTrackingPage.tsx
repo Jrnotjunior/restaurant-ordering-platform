@@ -3,7 +3,7 @@ import { getOrderStatus, subscribeToOrderTrackingChanges, type OrderStatus } fro
 import '../styles/order-tracking.css';
 
 type OrderTrackingPageProps = {
-  orderNumber: string;
+  orderId: string;
 };
 
 const ACTIVE_ORDER_KEY = 'restaurant-ordering-active-order';
@@ -31,7 +31,7 @@ const pickupSteps: Array<{ key: CustomerStatus; label: string; description: stri
 const deliveryStatusOrder: CustomerStatus[] = ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'arrived', 'completed'];
 const pickupStatusOrder: CustomerStatus[] = ['pending', 'confirmed', 'preparing', 'ready', 'completed'];
 
-export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
+export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
   const [order, setOrder] = useState<Awaited<ReturnType<typeof getOrderStatus>> | null>(null);
   const [error, setError] = useState('');
   const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
@@ -41,11 +41,12 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
 
     async function load() {
       try {
-        const result = await getOrderStatus(orderNumber);
+        const result = await getOrderStatus(orderId);
         if (!cancelled) {
           setOrder(result);
           if (result.status === 'completed' || result.status === 'cancelled' || result.deliveryStatus === 'delivered' || result.deliveryStatus === 'failed') {
-            if (window.localStorage.getItem(ACTIVE_ORDER_KEY) === result.orderNumber) {
+            if (window.localStorage.getItem('restaurant-ordering-active-order-id') === result.orderId) {
+              window.localStorage.removeItem('restaurant-ordering-active-order-id');
               window.localStorage.removeItem(ACTIVE_ORDER_KEY);
               window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
             }
@@ -67,7 +68,7 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
     void load();
 
     const unsubscribe = subscribeToOrderTrackingChanges(
-      orderNumber,
+      orderId,
       () => {
         void load();
       },
@@ -93,7 +94,7 @@ export function OrderTrackingPage({ orderNumber }: OrderTrackingPageProps) {
       window.clearInterval(refreshInterval);
       unsubscribe();
     };
-  }, [orderNumber]);
+  }, [orderId]);
 
   if (error) {
     return <section className="order-tracking-page"><div className="order-tracking-card"><p className="eyebrow">Order tracking</p><h1>We couldn't load your order.</h1><p>{error}</p><a className="button button-primary" href="./">Back to Home</a></div></section>;

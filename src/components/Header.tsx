@@ -7,6 +7,7 @@ import '../styles/cart-badge.css';
 import '../styles/header-actions.css';
 
 const ACTIVE_ORDER_KEY = 'restaurant-ordering-active-order';
+const ACTIVE_ORDER_ID_KEY = 'restaurant-ordering-active-order-id';
 
 function withBasePath(path: string) {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -38,6 +39,7 @@ export function Header({ cartCount = 0 }: HeaderProps) {
   const [loyaltyPoints, setLoyaltyPoints] = useState<number | null>(null);
   const [loyaltyLoading, setLoyaltyLoading] = useState(false);
   const [activeOrderNumber, setActiveOrderNumber] = useState(() => window.localStorage.getItem(ACTIVE_ORDER_KEY));
+  const [activeOrderId, setActiveOrderId] = useState(() => window.localStorage.getItem(ACTIVE_ORDER_ID_KEY));
 
   async function handleLogout() {
     setLogoutMessage(null);
@@ -104,7 +106,10 @@ export function Header({ cartCount = 0 }: HeaderProps) {
   }, [isCustomer, restaurant.id, user?.id]);
 
   useEffect(() => {
-    const refreshActiveOrder = () => setActiveOrderNumber(window.localStorage.getItem(ACTIVE_ORDER_KEY));
+    const refreshActiveOrder = () => {
+      setActiveOrderNumber(window.localStorage.getItem(ACTIVE_ORDER_KEY));
+      setActiveOrderId(window.localStorage.getItem(ACTIVE_ORDER_ID_KEY));
+    };
     window.addEventListener('storage', refreshActiveOrder);
     window.addEventListener('restaurant-ordering-active-order-change', refreshActiveOrder);
     return () => {
@@ -128,8 +133,8 @@ export function Header({ cartCount = 0 }: HeaderProps) {
           {cartCount > 0 ? <span className="header-cart-badge" aria-hidden="true">{cartCount > 99 ? '99+' : cartCount}</span> : null}
         </a>
 
-        {activeOrderNumber ? (
-          <a className="header-track-order" href={`${import.meta.env.BASE_URL}?trackOrder=${encodeURIComponent(activeOrderNumber)}`} aria-label={"Track order " + activeOrderNumber} title="Track my order">
+        {activeOrderNumber && activeOrderId ? (
+          <a className="header-track-order" href={`${import.meta.env.BASE_URL}?trackOrder=${encodeURIComponent(activeOrderId)}`} aria-label={"Track order " + activeOrderNumber} title="Track my order">
             <svg className="header-track-order-icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
               <path d="M4 5.5h16v13H4z" fill="none" stroke="currentColor" strokeWidth="1.8" />
               <path d="M8 9h8M8 13h5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
