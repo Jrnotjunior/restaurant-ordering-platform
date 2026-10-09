@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { supabase } from '../services/supabaseClient';
-import { assignDelivery, completeDispatchHandoff, getDispatchData, type ReadyOrder, type Rider } from '../modules/dispatch/dispatchService';
+import { assignDelivery, completeDispatchHandoff, getDispatchData, subscribeToDispatchChanges, type ReadyOrder, type Rider } from '../modules/dispatch/dispatchService';
 
 type Props = { restaurantId: string; role?: 'owner' | 'dispatcher' };
 type DispatchTab = 'dine_in' | 'delivery' | 'pickup';
@@ -39,30 +38,21 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
     setLoading(true);
     void loadDispatchData();
 
-    const client = supabase;
-    if (!client) {
-      setRealtimeStatus('error');
-      return;
-    }
-
-    const channel = client
-      .channel(`delivery-dispatch:${restaurantId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `restaurant_id=eq.${restaurantId}` }, () => {
+    const unsubscribe = subscribeToDispatchChanges(
+      restaurantId,
+      () => {
         void loadDispatchData();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'restaurant_staff', filter: `restaurant_id=eq.${restaurantId}` }, () => {
-        void loadDispatchData();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'delivery_assignments', filter: `restaurant_id=eq.${restaurantId}` }, () => {
-        void loadDispatchData();
-      })
-      .subscribe((status) => {
+      },
+      (status) => {
         if (status === 'SUBSCRIBED') setRealtimeStatus('live');
-        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') setRealtimeStatus('error');
-      });
+        else setRealtimeStatus('error');
+      },
+    );
+
+    if (!unsubscribe) setRealtimeStatus('error');
 
     return () => {
-      void client.removeChannel(channel);
+      unsubscribe?.();
     };
   }, [restaurantId]);
 
