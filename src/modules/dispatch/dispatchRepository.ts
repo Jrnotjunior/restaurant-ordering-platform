@@ -104,3 +104,26 @@ export async function completeDispatchHandoff(restaurantId:string,orderId:string
   if(error) throw error;
   if(!data) throw new Error('This order is no longer ready for handoff. Please refresh the Dispatch page.');
 }
+
+export function subscribeToDispatchChanges(
+  restaurantId: string,
+  onChange: () => void,
+  onStatusChange: (status: 'SUBSCRIBED' | 'CHANNEL_ERROR' | 'TIMED_OUT' | 'CLOSED') => void,
+): (() => void) | null {
+  if (!supabase) return null;
+
+  const channel = supabase
+    .channel(`delivery-dispatch:${restaurantId}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `restaurant_id=eq.${restaurantId}` }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'restaurant_staff', filter: `restaurant_id=eq.${restaurantId}` }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'delivery_assignments', filter: `restaurant_id=eq.${restaurantId}` }, onChange)
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+        onStatusChange(status);
+      }
+    });
+
+  return () => {
+    void supabase?.removeChannel(channel);
+  };
+}
