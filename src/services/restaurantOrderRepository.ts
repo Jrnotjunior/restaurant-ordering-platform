@@ -1,5 +1,3 @@
-import { supabaseRpc } from './supabaseClient';
-import type { RestaurantOrderStatus } from '../modules/ordering/orderRepository';
 
 export { getRestaurantOrders, updateOrderStatus } from '../modules/ordering/orderRepository';
 export type { RestaurantOrder, RestaurantOrderStatus } from '../modules/ordering/orderRepository';
