@@ -187,10 +187,50 @@ Deno.serve(async (request) => {
       return jsonResponse({ received: true }, 200);
     }
 
+    // Resolve the pending payment from the signed checkout session and verify
+    // tenant, metadata, and session identity before changing payment state.
+    const { data: pendingPayment, error: pendingPaymentError } = await adminClient
+      .from("pending_online_payments")
+      .select("id,restaurant_id,reference_number,total,status,checkout_session_id")
+      .eq("reference_number", orderNumber)
+      .maybeSingle();
+
+    if (pendingPaymentError) throw pendingPaymentError;
+    if (!pendingPayment) return jsonResponse({ error: "Pending payment not found." }, 404);
+
+    const sessionId = String(session?.id ?? "").trim();
+    const metadataPaymentId = String(sessionMetadata?.payment_id ?? "").trim();
+    if (metadataPaymentId && metadataPaymentId !== String(pendingPayment.id)) {
+      return jsonResponse({ error: "Webhook payment mismatch." }, 400);
+    }
+    if (metadataRestaurantId && metadataRestaurantId !== String(pendingPayment.restaurant_id)) {
+      return jsonResponse({ error: "Webhook restaurant mismatch." }, 400);
+    }
+    if (pendingPayment.checkout_session_id && sessionId !== String(pendingPayment.checkout_session_id)) {
+      return jsonResponse({ error: "Webhook checkout session mismatch." }, 400);
+    }
+    if (restaurantId && restaurantId !== String(pendingPayment.restaurant_id)) {
+      return jsonResponse({ error: "Webhook restaurant mismatch." }, 400);
+    }
+
     const paidPayment = Array.isArray(sessionAttributes.payments)
-      ? sessionAttributes.payments.find((payment: any) => payment?.attributes?.status === "paid") ?? sessionAttributes.payments[0]
+      ? sessionAttributes.payments.find((payment: any) => payment?.attributes?.status === "paid") ?? null
       : null;
     const paymentAttributes = paidPayment?.attributes ?? {};
+
+    if (eventType === "checkout_session.payment.paid") {
+      const paidAmount = Number(paymentAttributes.amount);
+      const expectedAmount = Math.round(Number(pendingPayment.total) * 100);
+      const paidCurrency = String(paymentAttributes.currency ?? "").toUpperCase();
+      if (
+        !paidPayment ||
+        !Number.isSafeInteger(paidAmount) ||
+        paidAmount !== expectedAmount ||
+        paidCurrency !== "PHP"
+      ) {
+        return jsonResponse({ error: "Paid amount or currency does not match the pending payment." }, 400);
+      }
+    }
     const paymongoPaymentId = String(paidPayment?.id ?? "").trim() || null;
     const paymongoPaymentMethod = String(paymentAttributes?.source?.type ?? "").trim() || null;
     const paymongoFee = Number.isFinite(Number(paymentAttributes.fee)) ? Number(paymentAttributes.fee) / 100 : null;
