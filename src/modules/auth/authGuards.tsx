@@ -124,12 +124,13 @@ export function RiderRouteGuard({ children }: { children: ReactNode }) {
 }
 
 export function OwnerRestaurantGuard({ children }: { children: (restaurant: RestaurantConfig) => ReactNode }) {
-  const { restaurant, user } = useRestaurantOwnerAuth();
+  const { restaurant, user, loading: authLoading } = useRestaurantOwnerAuth();
   const [checkingRole, setCheckingRole] = useState(true);
 
   useEffect(() => {
     let mounted = true;
     async function check() {
+      if (authLoading) return;
       if (!user || !supabase) { if (mounted) setCheckingRole(false); return; }
       const role = user.app_metadata?.role ?? user.user_metadata?.role;
       if (role === 'customer') { window.location.hash = ''; return; }
@@ -153,8 +154,9 @@ export function OwnerRestaurantGuard({ children }: { children: (restaurant: Rest
     }
     void check();
     return () => { mounted = false; };
-  }, [user]);
+  }, [user, authLoading]);
 
+  if (authLoading) return <section className="restaurant-owner-auth-loading">Loading restaurant session…</section>;
   if (!user) return <RestaurantOwnerLoginPage />;
   if (checkingRole) return <section className="restaurant-owner-auth-loading">Checking account access…</section>;
   if (!restaurant) return <section className="restaurant-owner-auth-no-restaurant"><div className="restaurant-owner-auth-no-restaurant-card"><p className="eyebrow">Restaurant operations</p><h1>No restaurant assigned</h1><p>Your owner account is signed in, but it is not linked to an active restaurant yet. Set the restaurant's <code>owner_id</code> to your Supabase Auth user ID, then reload this page.</p><p><strong>Signed in as:</strong> {user.email ?? user.id}</p></div></section>;
@@ -193,6 +195,7 @@ export function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen'
     return () => { mounted = false; };
   }, [role, user, authLoading]);
 
+  if (authLoading) return <section className="restaurant-owner-auth-loading">Loading employee session…</section>;
   if (!user) return <RestaurantOwnerLoginPage />;
   if (checking) return <section className="restaurant-owner-auth-loading">Checking employee access…</section>;
   if (!allowed || !restaurantId) {
