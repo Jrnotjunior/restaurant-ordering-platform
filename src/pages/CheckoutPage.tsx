@@ -352,6 +352,24 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
       && Number.isFinite(selectedDeliveryLocation.longitude)
   );
   const isOwnCourierPickup = thirdPartyCourierDelivery && orderType === 'pickup';
+  const checkoutValidationMessage = (() => {
+    if (items.length === 0) return 'Your cart is empty. Add items before continuing to checkout.';
+    if (customerProfileLoading) return 'Loading your customer information. Please wait.';
+    if (customerProfileError) return customerProfileError;
+    if (!customerName.trim()) return 'Enter your full name to continue.';
+    if (/[0-9]/.test(customerName)) return 'Your full name must not contain numbers.';
+    if (orderType !== 'dine_in' && !/^09\\d{9}$/.test(mobileNumber)) return 'Enter a valid 11-digit Philippine mobile number starting with 09.';
+    if (isOwnCourierPickup && !restaurantPickupPoint) return 'The restaurant pickup address is not configured. Please contact the restaurant.';
+    if (isDelivery && !thirdPartyCourierDelivery) {
+      if (deliveryRouteLoading) return 'Checking whether your delivery address is within the restaurant delivery area. Please wait.';
+      if (!hasExactDeliveryLocation) return 'Select your delivery location on the map.';
+      if (!deliveryCity.trim() || !deliveryBarangay.trim() || !address.trim()) return 'Complete your delivery city, barangay, and street address.';
+      if (!deliveryRouteQuote) return 'We could not calculate delivery for this address. Please select your location on the map again.';
+      if (!deliveryRouteQuote.inRange) return outsideDeliveryAreaMessage;
+    }
+    return '';
+  })();
+
   const canContinue = items.length > 0 && !customerProfileLoading && !customerProfileError && Boolean(customerName.trim()) && !/[0-9]/.test(customerName) && (orderType === 'dine_in' || /^09\d{9}$/.test(mobileNumber)) && (
     isOwnCourierPickup
       ? Boolean(restaurantPickupPoint)
@@ -627,6 +645,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
           {redeemPoints && loyaltyDiscountPreview > 0 && <div className="checkout-summary-row checkout-loyalty-discount"><span>Loyalty Discount</span><strong>-₱{loyaltyDiscountPreview.toFixed(2)}</strong></div>}
           <div className="checkout-summary-total"><span>Total</span><strong>₱{checkoutTotal.toFixed(2)}</strong></div></div>
           <button className="button button-primary" type="button" disabled={!canContinue} onClick={() => { setSubmitError(''); setPaymentMethod(''); setShowPaymentModal(true); }}>Continue to Payment</button>
+          {!canContinue && checkoutValidationMessage && <p className="checkout-field-hint" role="status">{checkoutValidationMessage}</p>}
         </aside>
       </div>
 
