@@ -180,7 +180,13 @@ function AppContent() {
     const hostname = window.location.hostname.trim().toLowerCase();
     const configuredSlug = currentRestaurantLookup.slug;
     const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
-    const lookup = !isLocalHost && hostname ? { domain: hostname } : { slug: configuredSlug };
+    // GitHub Pages hosts the app under a shared github.io hostname, not the
+    // restaurant's custom domain. Resolve the configured demo tenant by slug
+    // there so its saved storefront settings (including faviconUrl) load.
+    const isGitHubPagesHost = hostname === 'github.io' || hostname.endsWith('.github.io');
+    const lookup = !isLocalHost && hostname && !isGitHubPagesHost
+      ? { domain: hostname }
+      : { slug: configuredSlug };
 
     restaurantRepository.getRestaurant(lookup)
       .then((loadedRestaurant) => {
