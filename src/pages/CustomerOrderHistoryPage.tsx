@@ -86,7 +86,7 @@ export function CustomerOrderHistoryPage() {
               <div className="customer-order-history-items">
                 {order.items.map((item, index) => <div key={index}><span>{item.quantity} × {item.productName}</span><strong>₱{Number(item.lineTotal).toFixed(2)}</strong></div>)}
               </div>
-              <a className="button button-primary customer-order-history-track" href={`?trackOrder=${encodeURIComponent(order.order_number)}`}>View order tracking</a>
+              <a className="button button-primary customer-order-history-track" href={`?trackOrder=${encodeURIComponent(order.order_id)}`}>View order tracking</a>
             </article>
           ))}
         </div>}
