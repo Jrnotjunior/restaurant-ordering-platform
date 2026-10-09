@@ -276,3 +276,16 @@
 .restaurant-navigation-row .restaurant-account-menu {
   z-index: 10001;
 }
+
+
+.restaurant-logout-error {
+  margin: 6px 8px 4px;
+  padding: 9px 10px;
+  border: 1px solid #f1b8b8;
+  border-radius: 8px;
+  background: #fff5f5;
+  color: #9b1c1c;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
