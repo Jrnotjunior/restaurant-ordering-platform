@@ -14,6 +14,7 @@ export type CustomerSignUpResult = {
   user: User | null;
   hasSession: boolean;
   emailConfirmationRequired: boolean;
+  emailAlreadyRegistered: boolean;
 };
 
 function isLocalHost(hostname: string) {
@@ -79,6 +80,8 @@ export async function signUpCustomer(input: CustomerSignUpInput): Promise<Custom
     user: data.user ?? null,
     hasSession: Boolean(data.session),
     emailConfirmationRequired: !data.session,
+    // Supabase returns an empty identities array for an existing email when email confirmation is enabled.
+    emailAlreadyRegistered: !data.session && (data.user?.identities?.length ?? 0) === 0,
   };
 }
 
