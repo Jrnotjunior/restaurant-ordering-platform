@@ -22,7 +22,12 @@ const authUserId=inviteData.user.id;
 const {data:staff,error:staffError}=await admin.from("restaurant_staff").insert({restaurant_id:restaurantId,auth_user_id:authUserId,name,preferred_name:preferredName,mobile_number:mobileNumber,email,role}).select("id,auth_user_id,name,mobile_number,email,role,is_active").single();
 if(staffError) {
   console.error("Employee record creation failed after invitation:",staffError);
-  return json({error:"The invitation was sent, but the employee record could not be created. Please contact support."},500);
+  const {error:cleanupError}=await admin.auth.admin.deleteUser(authUserId);
+  if(cleanupError) {
+    console.error("Unable to remove orphaned employee Auth user:",cleanupError);
+    return json({error:"The employee record could not be created and invitation cleanup failed. Please contact support before retrying."},500);
+  }
+  return json({error:"The employee record could not be created, so the invitation was cancelled. Please try again."},500);
 }
 return json({staff,rider_id:role==="rider" ? staff.id : null,invitationSent:true},201);
 }catch(error){console.error("create-staff error",error);return json({error:error instanceof Error?error.message:"Unable to create employee account."},500)}});
