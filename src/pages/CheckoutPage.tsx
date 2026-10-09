@@ -645,7 +645,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
           {redeemPoints && loyaltyDiscountPreview > 0 && <div className="checkout-summary-row checkout-loyalty-discount"><span>Loyalty Discount</span><strong>-₱{loyaltyDiscountPreview.toFixed(2)}</strong></div>}
           <div className="checkout-summary-total"><span>Total</span><strong>₱{checkoutTotal.toFixed(2)}</strong></div></div>
           <button className="button button-primary" type="button" disabled={!canContinue} onClick={() => { setSubmitError(''); setPaymentMethod(''); setShowPaymentModal(true); }}>Continue to Payment</button>
-          {!canContinue && checkoutValidationMessage && <p className="checkout-field-hint" role="status">{checkoutValidationMessage}</p>}
+          {!canContinue && checkoutValidationMessage && <div className="checkout-validation-notice" role="status" aria-live="polite"><span className="checkout-validation-notice-icon" aria-hidden="true">!</span><div className="checkout-validation-notice-content"><strong>Before you continue</strong><p>{checkoutValidationMessage}</p></div></div>}
         </aside>
       </div>
 
