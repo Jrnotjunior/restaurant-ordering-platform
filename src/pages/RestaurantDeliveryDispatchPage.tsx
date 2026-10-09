@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { assignDelivery, completeDispatchHandoff, getDispatchData, subscribeToDispatchChanges, type ReadyOrder, type Rider } from '../modules/dispatch/dispatchService';
+import { assignDelivery, completeDispatchHandoff, getDispatchData, subscribeToDispatchChanges, type DispatchTab, type ReadyOrder, type Rider } from '../modules/dispatch/dispatchService';
 
 type Props = { restaurantId: string; role?: 'owner' | 'dispatcher' };
-type DispatchTab = 'dine_in' | 'delivery' | 'pickup';
 
 export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }: Props) {
   const [orders, setOrders] = useState<ReadyOrder[]>([]);
