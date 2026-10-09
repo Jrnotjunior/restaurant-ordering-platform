@@ -156,3 +156,16 @@ export async function updateProduct(product: RestaurantProduct, values: { name: 
 export async function deleteProduct(productId: string) {
   await supabaseRpc('delete_restaurant_product', { p_product_id: productId });
 }
+
+export function subscribeToMenuChanges(restaurantId: string, onChange: () => void): (() => void) | null {
+  if (!supabase) return null;
+
+  const channel = supabase
+    .channel(`menu-availability:${restaurantId}`)
+    .on('broadcast', { event: 'restaurant_menu_changed' }, onChange)
+    .subscribe();
+
+  return () => {
+    void supabase?.removeChannel(channel);
+  };
+}
