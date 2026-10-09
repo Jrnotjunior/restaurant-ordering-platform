@@ -32,6 +32,7 @@ export type PendingOnlinePayment = {
 export type OnlinePaymentStatus = {
   status: 'pending' | 'paid' | 'failed' | 'expired' | 'cancelled';
   orderNumber: string | null;
+  orderId: string | null;
   total: number;
 };
 
@@ -110,6 +111,7 @@ export async function getOnlinePaymentStatus(referenceNumber: string): Promise<O
   return {
     status: row.status,
     orderNumber: row.order_number ?? null,
+    orderId: row.order_id ?? null,
     total: Number(row.total),
   };
 }
