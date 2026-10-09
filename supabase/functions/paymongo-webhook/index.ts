@@ -57,10 +57,13 @@ Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (request.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
 
-  const rawBody = await request.text();
   const signatureHeader = request.headers.get("Paymongo-Signature") ?? "";
 
   try {
+    const rawBody = await request.text();
+    if (new TextEncoder().encode(rawBody).byteLength > 1_048_576) {
+      return jsonResponse({ error: "Webhook payload is too large." }, 413);
+    }
     const payload = JSON.parse(rawBody);
     const eventId = String(payload?.data?.id ?? "").trim();
     const eventType = String(payload?.data?.attributes?.type ?? "").trim();
@@ -124,7 +127,16 @@ Deno.serve(async (request) => {
     }
 
     const signature = parseSignature(signatureHeader);
-    if (!signature.timestamp) return jsonResponse({ error: "Invalid webhook signature." }, 401);
+    if (!signature.timestamp || !/^\\d+$/.test(signature.timestamp)) {
+      return jsonResponse({ error: "Invalid webhook signature." }, 401);
+    }
+
+    // Reject stale signed requests to reduce replay risk. PayMongo retries should
+    // arrive within this tolerance; processed event IDs remain idempotent below.
+    const signatureTimeMs = Number(signature.timestamp) * 1000;
+    if (!Number.isSafeInteger(signatureTimeMs) || Math.abs(Date.now() - signatureTimeMs) > 10 * 60 * 1000) {
+      return jsonResponse({ error: "Webhook signature timestamp is outside the allowed window." }, 401);
+    }
 
     const providedSignature = isLiveMode ? signature.live : signature.test;
     const expectedSignature = await hmacSha256Hex(webhookSecret, `${signature.timestamp}.${rawBody}`);
