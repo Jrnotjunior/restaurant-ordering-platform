@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { getRestaurantOrders, type RestaurantOrder } from '../modules/ordering/orderService';
-import { getRestaurantSales } from '../modules/sales/salesRepository';
+import { getRestaurantSales } from '../modules/sales/salesService';
 import { supabase } from '../services/supabaseClient';
 
 type Props = { restaurantId: string; role?: 'owner' | 'cashier' };
