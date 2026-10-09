@@ -1,4 +1,6 @@
 import { supabaseRpc } from '../../services/supabaseClient';
+import type { PosDiscountType } from '../../types/discount';
+export type { PosDiscountType };
 
 export type RestaurantTaxSettings = {
   vatRegistered: boolean;
@@ -25,7 +27,7 @@ export async function confirmPosCashPayment(orderId: string) {
   await supabaseRpc('confirm_dine_in_payment', { p_order_id: orderId });
 }
 
-export type PosDiscountType = 'senior' | 'pwd';
+
 
 export type PosDiscountIdType =
   | 'osca_id'
