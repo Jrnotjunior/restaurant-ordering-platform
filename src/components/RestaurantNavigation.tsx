@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { useRestaurant } from './RestaurantProvider';
+import { getPasswordPolicyError, PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '../utils/passwordPolicy';
 
 export type RestaurantNavigationRole = 'owner' | 'cashier' | 'kitchen' | 'dispatcher' | 'rider';
 
@@ -155,7 +156,7 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
     event.preventDefault();
     setPasswordError('');
     if (!supabase) { setPasswordError('Supabase is not configured.'); return; }
-    if (newPassword.length < 8) { setPasswordError('Password must be at least 8 characters.'); return; }
+    const passwordPolicyError = getPasswordPolicyError(newPassword); if (passwordPolicyError) { setPasswordError(passwordPolicyError); return; }
     if (newPassword !== confirmPassword) { setPasswordError('Passwords do not match.'); return; }
     setPasswordSaving(true);
     const { error } = await supabase.auth.updateUser({ password: newPassword });
@@ -293,10 +294,10 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
               <div><p className="eyebrow">Account</p><h2 id="restaurant-password-title">Change password</h2></div>
               <button className="restaurant-password-close" type="button" aria-label="Close" onClick={() => setPasswordOpen(false)}>×</button>
             </div>
-            <p className="restaurant-password-helper">Choose a new password with at least 8 characters.</p>
+            <p className="restaurant-password-helper">Choose a unique password with 8–128 characters. Avoid common passwords.</p>
             <form onSubmit={handleChangePassword}>
-              <label className="restaurant-password-field"><span>New password</span><input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={8} autoComplete="new-password" required /></label>
-              <label className="restaurant-password-field"><span>Confirm new password</span><input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={8} autoComplete="new-password" required /></label>
+              <label className="restaurant-password-field"><span>New password</span><input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH} autoComplete="new-password" required /></label>
+              <label className="restaurant-password-field"><span>Confirm new password</span><input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH} autoComplete="new-password" required /></label>
               {passwordError ? <p className="restaurant-password-error" role="alert">{passwordError}</p> : null}
               <div className="restaurant-password-actions"><button className="button" type="button" onClick={() => setPasswordOpen(false)}>Cancel</button><button className="button button-primary" type="submit" disabled={passwordSaving}>{passwordSaving ? 'Saving…' : 'Change password'}</button></div>
             </form>

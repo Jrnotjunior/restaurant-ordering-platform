@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { requestCustomerPasswordReset, updateCustomerPassword } from '../modules/customer/customerAuthService';
 import { supabase } from '../services/supabaseClient';
+import { getPasswordPolicyError, PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '../utils/passwordPolicy';
 
 type CustomerPasswordRecoveryPageProps = {
   mode: 'request' | 'reset';
@@ -107,8 +108,9 @@ export function CustomerPasswordRecoveryPage({ mode }: CustomerPasswordRecoveryP
     setError('');
     setMessage('');
 
-    if (password.length < 6) {
-      setError('Your new password must contain at least 6 characters.');
+    const passwordPolicyError = getPasswordPolicyError(password);
+    if (passwordPolicyError) {
+      setError(passwordPolicyError);
       return;
     }
     if (password !== confirmPassword) {
@@ -142,7 +144,7 @@ export function CustomerPasswordRecoveryPage({ mode }: CustomerPasswordRecoveryP
         <h1 id="customer-password-recovery-title">{mode === 'request' ? 'Forgot password?' : 'Reset password'}</h1>
         <p>{mode === 'request'
           ? 'Enter the email address associated with your account. We’ll send instructions to reset your password if an account is registered with that address.'
-          : 'Choose a new password for your customer account.'}</p>
+          : 'Choose a unique password with at least 8 characters. Avoid common passwords.'}</p>
 
         {error && <div className="restaurant-dashboard-error" role="alert">{error}</div>}
         {message && <div className="restaurant-auth-success" role="status">{message}</div>}
@@ -161,11 +163,11 @@ export function CustomerPasswordRecoveryPage({ mode }: CustomerPasswordRecoveryP
           <form className="restaurant-owner-auth-form" onSubmit={(event) => void handleReset(event)}>
             <label>
               New password
-              <input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={6} required disabled={submitting} />
+              <input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH} required disabled={submitting} />
             </label>
             <label>
               Confirm new password
-              <input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={6} required disabled={submitting} />
+              <input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH} required disabled={submitting} />
             </label>
             <button className="button button-primary" type="submit" disabled={submitting}>
               {submitting ? 'Updating password…' : 'Update password'}

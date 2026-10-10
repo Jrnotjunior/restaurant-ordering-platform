@@ -3,6 +3,7 @@ import { useRestaurant } from './RestaurantProvider';
 import { useRestaurantOwnerAuth } from './RestaurantOwnerAuthProvider';
 import { supabase } from '../services/supabaseClient';
 import { getMyLoyaltyPoints } from '../modules/loyalty/loyaltyService';
+import { getPasswordPolicyError, PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '../utils/passwordPolicy';
 import '../styles/cart-badge.css';
 import '../styles/header-actions.css';
 
@@ -174,7 +175,7 @@ export function Header({ cartCount = 0 }: HeaderProps) {
                   <form className="header-account-password-form" onSubmit={async (event) => {
                     event.preventDefault();
                     setPasswordMessage('');
-                    if (newPassword.length < 6) { setPasswordMessage('Password must be at least 6 characters.'); return; }
+                    const passwordPolicyError = getPasswordPolicyError(newPassword); if (passwordPolicyError) { setPasswordMessage(passwordPolicyError); return; }
                     if (newPassword !== confirmPassword) { setPasswordMessage('Passwords do not match.'); return; }
                     if (!supabase) { setPasswordMessage('Account service is unavailable.'); return; }
                     const { error } = await supabase.auth.updateUser({ password: newPassword });
@@ -183,8 +184,8 @@ export function Header({ cartCount = 0 }: HeaderProps) {
                     setConfirmPassword('');
                     setPasswordMessage('Password changed.');
                   }}>
-                    <input type="password" aria-label="New password" placeholder="New password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} />
-                    <input type="password" aria-label="Confirm password" placeholder="Confirm password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} />
+                    <input type="password" aria-label="New password" placeholder="New password (8–128 characters)" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH} required />
+                    <input type="password" aria-label="Confirm password" placeholder="Confirm password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH} required />
                     <button className="header-account-password-save" type="submit">Save password</button>
                     {passwordMessage ? <span className="header-account-password-message" role="status">{passwordMessage}</span> : null}
                   </form>
