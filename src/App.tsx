@@ -27,7 +27,6 @@ import { SavedAddressPage } from './pages/SavedAddressPage';
 import { CustomerOrderHistoryPage } from './pages/CustomerOrderHistoryPage';
 import { RiderDeliveryPage } from './pages/RiderDeliveryPage';
 import { RiderDashboardPage } from './pages/RiderDashboardPage';
-import { RiderInvitePage } from './pages/RiderInvitePage';
 import { TenantOnboardingPage } from './pages/TenantOnboardingPage';
 import { TenantInviteLandingPage } from './pages/TenantInviteLandingPage';
 import { defaultRestaurant } from './config/defaultRestaurant';
@@ -275,7 +274,7 @@ function AppContent() {
   if (isTenantInviteLandingPage) return <TenantInviteLandingPage />;
   if (isTenantInvitePage) return <TenantOnboardingPage />;
   if (isEmployeeInvitePage) return <RestaurantEmployeeInvitePage />;
-  if (isRiderInvitePage) return <RiderInvitePage />;
+  if (isRiderInvitePage) return <RestaurantEmployeeInvitePage />;
   if (isCustomerPasswordResetPage) return <CustomerPasswordRecoveryPage mode="reset" />;
   if (isCustomerForgotPasswordPage) return <CustomerPasswordRecoveryPage mode="request" />;
   if (isSignUpPage) return <CustomerSignUpPage />;
@@ -463,9 +462,6 @@ export function App() {
   }
   if (authEntry === 'employee-invitation') {
     return <RestaurantEmployeeInvitePage />;
-  }
-  if (authEntry === 'rider-invitation') {
-    return <RiderInvitePage />;
   }
 
   return (
