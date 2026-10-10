@@ -93,18 +93,24 @@ function AppContent() {
 
   useEffect(() => {
     const favicon = restaurant.storefront.faviconUrl;
-    let link = document.querySelector<HTMLLinkElement>('link[data-restaurant-favicon="true"]');
+    // Reuse the favicon link from index.html instead of adding a second one.
+    // Keeping the static SVG link first can cause browsers to keep showing the
+    // platform icon even after a restaurant-specific favicon is loaded.
+    let link = document.querySelector<HTMLLinkElement>('link[rel~="icon"]');
     if (!link) {
       link = document.createElement('link');
       link.rel = 'icon';
-      link.dataset.restaurantFavicon = 'true';
       document.head.appendChild(link);
     }
+    link.dataset.restaurantFavicon = 'true';
 
     // Use a self-contained platform fallback so a missing favicon.ico request
     // does not occur when a restaurant has not uploaded its own icon.
     const fallback = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23374151'/%3E%3Cpath d='M20 12v17m-6-17v11c0 5 3 8 6 8s6-3 6-8V12m-6 19v21m19-40v40m0-40c8 0 12 7 12 16v5H39' fill='none' stroke='%23fff' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E";
     link.href = favicon || fallback;
+    // index.html declares its fallback as SVG; clear that MIME type when the
+    // uploaded file is PNG/JPG/WebP so the browser can decode the real format.
+    link.type = favicon ? '' : 'image/svg+xml';
   }, [restaurant.storefront.faviconUrl]);
 
 
