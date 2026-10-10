@@ -106,19 +106,17 @@ export function RestaurantOwnerLoginPage() {
       <section className="restaurant-owner-auth-card" aria-labelledby="account-login-title">
         <p className="eyebrow">Account access</p>
         <h1 id="account-login-title">Sign in</h1>
-        <p>Use your account credentials. Your role determines which area of the system you can access.</p>
-
         {(error || authError) && <div className="restaurant-dashboard-error" role="alert">{error || authError}</div>}
 
         <form className="restaurant-owner-auth-form" onSubmit={(event) => void handleSubmit(event)}>
           <label>
             Email
-            <input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" disabled={submitting} />
+            <input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={submitting} />
           </label>
           <label>
             Password
             <span className="customer-password-input-wrap">
-              <input type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={1} placeholder="Enter your password" disabled={submitting} />
+              <input type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={1} disabled={submitting} />
               <button
                 className="customer-password-visibility-button"
                 type="button"
