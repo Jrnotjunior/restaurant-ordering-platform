@@ -161,7 +161,7 @@ export function CustomerSignUpPage() {
             <span>I agree to the use of my personal information for account creation and order-related services. <a href="#privacy">Privacy Notice</a>.</span>
           </label>
           {fieldError("consent")}
-          <button className="button button-primary" type="submit" disabled={submitting || !personalInfoConsent}>
+          <button className="button button-primary" type="submit" disabled={submitting}>
             {submitting ? 'Creating account…' : 'Create account'}
           </button>
         </form>
