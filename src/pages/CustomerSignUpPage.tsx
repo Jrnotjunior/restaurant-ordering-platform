@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { signUpCustomer } from '../modules/customer/customerAuthService';
+import { getPasswordPolicyError, getPasswordGuidance, PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '../utils/passwordPolicy';
 
 export function CustomerSignUpPage() {
   const [name, setName] = useState('');
@@ -38,8 +39,9 @@ export function CustomerSignUpPage() {
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
+    const passwordPolicyError = getPasswordPolicyError(password);
+    if (passwordPolicyError) {
+      setError(passwordPolicyError);
       return;
     }
 
@@ -115,11 +117,12 @@ export function CustomerSignUpPage() {
           </label>
           <label>
             Password
-            <input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} disabled={submitting} />
+            <input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH} disabled={submitting} required />
+            <small>{password ? getPasswordGuidance(password).join(" · ") : "Use at least 8 characters. Longer, unique passwords are safer. Avoid common passwords."}</small>
           </label>
           <label>
             Confirm password
-            <input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} disabled={submitting} />
+            <input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH} disabled={submitting} required />
           </label>
           <label className="customer-personal-info-consent">
             <input
