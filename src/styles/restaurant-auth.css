@@ -145,3 +145,50 @@
   padding: 0;
   accent-color: #111827;
 }
+
+
+/* Password visibility eye inside customer signup inputs */
+.customer-password-input-wrap {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+.customer-password-input-wrap > input {
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 46px !important;
+}
+.customer-password-input-wrap .customer-password-visibility-button {
+  position: absolute;
+  top: 50%;
+  right: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+}
+.customer-password-input-wrap .customer-password-visibility-button:hover {
+  background: #f1f5f9;
+  color: #111827;
+}
+.customer-password-input-wrap .customer-password-visibility-button:focus-visible {
+  outline: 2px solid #64748b;
+  outline-offset: 1px;
+}
+.customer-password-input-wrap .customer-password-visibility-button:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+.customer-password-input-wrap .customer-password-visibility-button svg {
+  display: block;
+  width: 19px;
+  height: 19px;
+}
