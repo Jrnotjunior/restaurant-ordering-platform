@@ -238,3 +238,8 @@
     font-size: 10px;
   }
 }
+
+/* Customer sign-up field validation feedback */
+.customer-field-error{display:block;margin:5px 0 0;color:#b91c1c;font-size:12px;font-weight:500;line-height:1.45}
+.restaurant-owner-auth-form input[aria-invalid="true"]{border-color:#dc2626!important}
+.restaurant-owner-auth-form input[aria-invalid="true"]:focus{outline:2px solid #fecaca;outline-offset:1px}
