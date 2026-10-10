@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { supabase } from '../services/supabaseClient';
+import { getPasswordPolicyError, PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '../utils/passwordPolicy';
 
 function appBaseUrl() {
   return `${window.location.origin}${import.meta.env.BASE_URL}`;
@@ -161,8 +162,9 @@ export function RiderInvitePage() {
       return;
     }
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
+    const passwordPolicyError = getPasswordPolicyError(password);
+    if (passwordPolicyError) {
+      setError(passwordPolicyError);
       return;
     }
 
@@ -223,7 +225,7 @@ export function RiderInvitePage() {
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            <p style={{ marginBottom: 20 }}>Set a password to finish creating your rider account.</p>
+            <p style={{ marginBottom: 20 }}>Set a unique password with at least 8 characters. Avoid common passwords.</p>
 
             <label style={{ display: 'grid', gap: 8, marginBottom: 16 }}>
               <span>Email</span>
@@ -232,12 +234,12 @@ export function RiderInvitePage() {
 
             <label style={{ display: 'grid', gap: 8, marginBottom: 16 }}>
               <span>Password</span>
-              <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={8} autoComplete="new-password" required />
+              <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH} autoComplete="new-password" required />
             </label>
 
             <label style={{ display: 'grid', gap: 8, marginBottom: 18 }}>
               <span>Confirm password</span>
-              <input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={8} autoComplete="new-password" required />
+              <input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH} autoComplete="new-password" required />
             </label>
 
             <button className="button button-primary" type="submit" disabled={saving}>
