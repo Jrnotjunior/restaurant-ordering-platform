@@ -27,8 +27,8 @@ export type AppRouteContext = {
   restaurantRoleRoute: 'owner' | 'cashier' | 'kitchen' | 'dispatcher' | undefined;
   isRiderDashboardPage: boolean;
   riderDeliveryMatch: RegExpMatchArray | null;
-  isRiderInvitePath: boolean;
-  isRiderInvitePage: boolean;
+  isLegacyEmployeeInvitePath: boolean;
+  isLegacyEmployeeInvitePage: boolean;
   isEmployeeInvitePage: boolean;
   isTenantInviteLandingPage: boolean;
   isTenantInvitePage: boolean;
@@ -81,9 +81,10 @@ export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' |
 
   const isRiderDashboardPage = route === '#rider/dashboard' || route === '#rider/delivery-preview';
   const riderDeliveryMatch = route.match(/^#rider\/delivery\/([^/]+)$/);
-  const isRiderInvitePath =
+  // Older staff invitation links are retained, but all staff roles use the shared invitation page.
+  const isLegacyEmployeeInvitePath =
     location.pathname.endsWith('/invite') || location.pathname.endsWith('/invite/');
-  const isRiderInvitePage = isRiderInvitePath || searchParams.get('invite') === '1';
+  const isLegacyEmployeeInvitePage = isLegacyEmployeeInvitePath || searchParams.get('invite') === '1';
   const nestedConfirmationUrl = searchParams.get('confirmation_url') ?? '';
   let nestedEmployeeInvite = false;
   if (nestedConfirmationUrl) {
@@ -157,8 +158,8 @@ export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' |
     restaurantRoleRoute,
     isRiderDashboardPage,
     riderDeliveryMatch,
-    isRiderInvitePath,
-    isRiderInvitePage,
+    isLegacyEmployeeInvitePath,
+    isLegacyEmployeeInvitePage,
     isEmployeeInvitePage,
     isTenantInviteLandingPage,
     isTenantInvitePage,
