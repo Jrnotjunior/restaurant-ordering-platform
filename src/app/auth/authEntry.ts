@@ -3,7 +3,6 @@ import { resolveInvitationTypeFromLocation } from '../../modules/invitations/inv
 export type AuthEntry =
   | 'tenant-invitation'
   | 'employee-invitation'
-  | 'rider-invitation'
   | 'customer-or-public'
   | 'normal-app';
 
@@ -46,17 +45,13 @@ export function resolveAuthEntry(location: Pick<Location, 'pathname' | 'search' 
   const isGenericInvitation = search.get('invitation') === '1';
   const isEmployeeInvitation =
     invitationType === 'employee_staff' ||
-    hasNestedFlowMarker(search, 'employee-invite');
+    hasNestedFlowMarker(search, 'employee-invite') ||
+    pathEndsWith(pathname, '/invite') ||
+    search.get('invite') === '1';
 
   if (isEmployeeInvitation) return 'employee-invitation';
 
   if (isGenericInvitation) return 'tenant-invitation';
-
-  const isRiderInvitation =
-    pathEndsWith(pathname, '/invite') ||
-    search.get('invite') === '1';
-
-  if (isRiderInvitation) return 'rider-invitation';
 
   const isTenantInvitation =
     invitationType === 'tenant_owner' ||
