@@ -263,7 +263,7 @@ function AppContent() {
     restaurantRoleRoute,
     isRiderDashboardPage,
     riderDeliveryMatch,
-    isRiderInvitePage,
+    isLegacyEmployeeInvitePage,
     isEmployeeInvitePage,
     isTenantInviteLandingPage,
     isTenantInvitePage,
@@ -274,7 +274,7 @@ function AppContent() {
   if (isTenantInviteLandingPage) return <TenantInviteLandingPage />;
   if (isTenantInvitePage) return <TenantOnboardingPage />;
   if (isEmployeeInvitePage) return <RestaurantEmployeeInvitePage />;
-  if (isRiderInvitePage) return <RestaurantEmployeeInvitePage />;
+  if (isLegacyEmployeeInvitePage) return <RestaurantEmployeeInvitePage />;
   if (isCustomerPasswordResetPage) return <CustomerPasswordRecoveryPage mode="reset" />;
   if (isCustomerForgotPasswordPage) return <CustomerPasswordRecoveryPage mode="request" />;
   if (isSignUpPage) return <CustomerSignUpPage />;
