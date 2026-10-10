@@ -75,7 +75,7 @@ export function TenantInviteLandingPage() {
       } else {
         const hash = getAuthHashParams();
         const authError = hash.get('error_description') || hash.get('error');
-        if (authError) setError(decodeURIComponent(authError.replace(/\+/g, ' ')));
+        if (authError) setError(decodeURIComponent(authError.replace(/\\+/g, ' ')));
         setCheckingSession(false);
       }
     }
@@ -114,7 +114,7 @@ export function TenantInviteLandingPage() {
     const hashError = hash.get('error_description') || hash.get('error');
 
     if (hashError) {
-      setError(decodeURIComponent(hashError.replace(/\+/g, ' ')));
+      setError(decodeURIComponent(hashError.replace(/\\+/g, ' ')));
       setAccepting(false);
       return;
     }
@@ -194,7 +194,7 @@ export function TenantInviteLandingPage() {
 
         {confirmationUrl || tokenHash || sessionReady || checkingSession || tenantFlow || genericInvitationFlow || (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) ? (
           <div className="modal-actions">
-            <button type="button" onClick={() => void acceptInvitation()} disabled={accepting || checkingSession}>
+            <button className="button button-primary" type="button" onClick={() => void acceptInvitation()} disabled={accepting || checkingSession}>
               {accepting ? 'Opening secure access…' : checkingSession ? 'Checking invitation…' : tenantFlow ? 'Continue to restaurant' : 'Accept invitation'}
             </button>
           </div>
