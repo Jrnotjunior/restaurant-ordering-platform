@@ -80,3 +80,115 @@
 
 .customer-password-forgot-link{margin:-7px 0 0!important;text-align:right;font-size:13px}
 .customer-password-forgot-link a{color:#334155;font-weight:650;text-decoration:underline;text-underline-offset:3px}
+
+
+/* Customer sign-up password controls */
+.customer-owner-auth-form .customer-signup-password-field { gap: 7px; }
+.restaurant-owner-auth-form .customer-password-checklist {
+  min-width: 0;
+  margin: -6px 0 0;
+  padding: 12px 13px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+.customer-password-checklist legend {
+  padding: 0 5px;
+  color: #111827;
+  font-size: 13px;
+  font-weight: 700;
+}
+.restaurant-owner-auth-form .customer-password-checklist > p {
+  margin: 0 0 10px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+.restaurant-owner-auth-form .customer-password-checklist .customer-password-checklist-item {
+  display: flex;
+  grid-template-columns: none;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 7px 0 0;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.restaurant-owner-auth-form .customer-password-checklist-item input {
+  flex: 0 0 15px;
+  width: 15px;
+  height: 15px;
+  margin: 1px 0 0;
+  padding: 0;
+  accent-color: #15803d;
+}
+.restaurant-owner-auth-form .customer-password-checklist-item.is-met span { color: #166534; }
+.customer-password-policy-error { display: block; margin-top: 8px; color: #b91c1c; font-size: 12px; line-height: 1.4; }
+.restaurant-owner-auth-form .customer-password-show-toggle {
+  display: flex;
+  grid-template-columns: none;
+  align-items: center;
+  gap: 8px;
+  margin-top: -10px;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.restaurant-owner-auth-form .customer-password-show-toggle input {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  accent-color: #111827;
+}
+
+
+/* Password visibility eye inside customer signup inputs */
+.customer-password-input-wrap {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+.customer-password-input-wrap > input {
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 46px !important;
+}
+.customer-password-input-wrap .customer-password-visibility-button {
+  position: absolute;
+  top: 50%;
+  right: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+}
+.customer-password-input-wrap .customer-password-visibility-button:hover {
+  background: #f1f5f9;
+  color: #111827;
+}
+.customer-password-input-wrap .customer-password-visibility-button:focus-visible {
+  outline: 2px solid #64748b;
+  outline-offset: 1px;
+}
+.customer-password-input-wrap .customer-password-visibility-button:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+.customer-password-input-wrap .customer-password-visibility-button svg {
+  display: block;
+  width: 19px;
+  height: 19px;
+}

@@ -8,6 +8,8 @@ export function CustomerSignUpPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [emailAlreadyRegistered, setEmailAlreadyRegistered] = useState(false);
@@ -115,14 +117,41 @@ export function CustomerSignUpPage() {
             Email
             <input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={submitting} />
           </label>
-          <label>
+          <label className="customer-signup-password-field">
             Password
-            <input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH} disabled={submitting} required />
-            <small>{password ? getPasswordGuidance(password).join(" · ") : "Use at least 8 characters. Longer, unique passwords are safer. Avoid common passwords."}</small>
+            <span className="customer-password-input-wrap">
+              <input type={showPassword ? 'text' : 'password'} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH} disabled={submitting} required />
+              <button className="customer-password-visibility-button" type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} disabled={submitting}>
+                {showPassword ? <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.9 5.2A10.8 10.8 0 0112 5c5.2 0 8.8 4.7 9.5 6-.3.6-1.4 2.2-3.4 3.7M6.2 6.2C3.9 7.6 2.6 9.7 2.5 11c.7 1.3 4.3 6 9.5 6 1 0 1.9-.2 2.7-.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg> : <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.8"/></svg>}
+              </button>
+            </span>
           </label>
-          <label>
+          <fieldset className="customer-password-checklist" aria-describedby="customer-password-checklist-note">
+            <legend>Password standard</legend>
+            <p id="customer-password-checklist-note">All requirements below must be met before you can create an account.</p>
+            {[
+              { label: 'At least 8 characters', met: password.length >= PASSWORD_MIN_LENGTH, required: true },
+              { label: '128 characters or fewer', met: password.length > 0 && password.length <= PASSWORD_MAX_LENGTH, required: true },
+              { label: 'Includes a lowercase letter', met: /[a-z]/.test(password), required: true },
+              { label: 'Includes an uppercase letter', met: /[A-Z]/.test(password), required: true },
+              { label: 'Includes a number', met: /\d/.test(password), required: true },
+              { label: 'Includes a symbol', met: /[^A-Za-z0-9]/.test(password), required: true },
+            ].map((rule) => (
+              <label className={`customer-password-checklist-item${rule.met ? ' is-met' : ''}`} key={rule.label}>
+                <input type="checkbox" checked={rule.met} readOnly tabIndex={-1} aria-label={rule.label + (rule.met ? ' met' : ' not met')} />
+                <span>{rule.label} (required)</span>
+              </label>
+            ))}
+            {password && getPasswordPolicyError(password) ? <small className="customer-password-policy-error">{getPasswordPolicyError(password)}</small> : null}
+          </fieldset>
+          <label className="customer-signup-password-field">
             Confirm password
-            <input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH} disabled={submitting} required />
+            <span className="customer-password-input-wrap">
+              <input type={showConfirmPassword ? 'text' : 'password'} autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH} disabled={submitting} required />
+              <button className="customer-password-visibility-button" type="button" onClick={() => setShowConfirmPassword((visible) => !visible)} aria-label={showConfirmPassword ? 'Hide confirmation password' : 'Show confirmation password'} aria-pressed={showConfirmPassword} disabled={submitting}>
+                {showConfirmPassword ? <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.9 5.2A10.8 10.8 0 0112 5c5.2 0 8.8 4.7 9.5 6-.3.6-1.4 2.2-3.4 3.7M6.2 6.2C3.9 7.6 2.6 9.7 2.5 11c.7 1.3 4.3 6 9.5 6 1 0 1.9-.2 2.7-.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg> : <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.8"/></svg>}
+              </button>
+            </span>
           </label>
           <label className="customer-personal-info-consent">
             <input
