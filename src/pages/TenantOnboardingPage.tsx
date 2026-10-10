@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
 import { supabase } from '../services/supabaseClient';
+import { getPasswordPolicyError, PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '../utils/passwordPolicy';
 
 type Invitation = {
   id: string;
@@ -64,8 +65,9 @@ export function TenantOnboardingPage() {
     setSaving(true);
     setError('');
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
+    const passwordPolicyError = getPasswordPolicyError(password);
+    if (passwordPolicyError) {
+      setError(passwordPolicyError);
       setSaving(false);
       return;
     }
@@ -159,7 +161,7 @@ export function TenantOnboardingPage() {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              minLength={8}
+              minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH}
               autoComplete="new-password"
               placeholder="Create your password"
               disabled={saving}
@@ -173,7 +175,7 @@ export function TenantOnboardingPage() {
               type="password"
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
-              minLength={8}
+              minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH}
               autoComplete="new-password"
               placeholder="Re-enter your password"
               disabled={saving}
@@ -181,7 +183,7 @@ export function TenantOnboardingPage() {
             />
           </label>
 
-          <p className="tenant-onboarding-password-hint">Use at least 8 characters.</p>
+          <p className="tenant-onboarding-password-hint">Use at least 8 characters, avoid common passwords, and consider mixing letters, numbers, and symbols.</p>
 
           {error && <div className="tenant-onboarding-error" role="alert">{error}</div>}
 
