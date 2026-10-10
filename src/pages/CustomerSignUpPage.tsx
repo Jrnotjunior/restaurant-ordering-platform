@@ -159,7 +159,7 @@ export function CustomerSignUpPage() {
               disabled={submitting}
               required
             />
-            <span>I agree to the collection and processing of the personal information I provide for account creation and order-related services in accordance with Republic Act No. 10173 (Data Privacy Act of 2012). I understand that I have rights as a data subject under applicable privacy laws. <a href="#privacy">Read our Privacy Notice</a>.</span>
+            <span>I agree to the use of my personal information for account creation and order-related services. <a href="#privacy">Privacy Notice</a>.</span>
           </label>
           <button className="button button-primary" type="submit" disabled={submitting || !personalInfoConsent}>
             {submitting ? 'Creating account…' : 'Create account'}
