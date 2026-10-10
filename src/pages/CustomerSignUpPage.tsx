@@ -19,8 +19,8 @@ export function CustomerSignUpPage() {
   const [submitted, setSubmitted] = useState(false);
   const fieldErrors = {
     name: !name.trim() ? 'Please enter your full name.' : '',
-    phone: !phone.trim() ? 'Please enter your phone number.' : !/^09\\d{9}$/.test(phone.trim()) ? 'Enter an 11-digit mobile number starting with 09.' : '',
-    email: !email.trim() ? 'Please enter your email address.' : !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email.trim()) ? 'Please enter a valid email address.' : '',
+    phone: !phone.trim() ? 'Please enter your phone number.' : !/^09[0-9]{9}$/.test(phone.trim()) ? 'Enter an 11-digit mobile number starting with 09.' : '',
+    email: !email.trim() ? 'Please enter your email address.' : !(email.trim().includes('@') && email.trim().split('@')[1]?.includes('.') && !/\s/.test(email.trim())) ? 'Please enter a valid email address.' : '',
     password: !password ? 'Please create a password.' : getPasswordPolicyError(password) || '',
     confirmPassword: !confirmPassword ? 'Please confirm your password.' : confirmPassword !== password ? 'Passwords do not match.' : '',
     consent: !personalInfoConsent ? 'Please agree to the Privacy Notice to create an account.' : '',
