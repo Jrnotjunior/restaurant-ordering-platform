@@ -128,7 +128,7 @@ export function CustomerSignUpPage() {
           </label>
           <fieldset className="customer-password-checklist" aria-describedby="customer-password-checklist-note">
             <legend>Password standard</legend>
-            <p id="customer-password-checklist-note">Use the first two requirements. The other suggestions help strengthen your password.</p>
+            <p id="customer-password-checklist-note">All requirements below must be met before you can create an account.</p>
             {[
               { label: 'At least 8 characters', met: password.length >= PASSWORD_MIN_LENGTH, required: true },
               { label: '128 characters or fewer', met: password.length > 0 && password.length <= PASSWORD_MAX_LENGTH, required: true },
@@ -138,7 +138,7 @@ export function CustomerSignUpPage() {
             ].map((rule) => (
               <label className={`customer-password-checklist-item${rule.met ? ' is-met' : ''}`} key={rule.label}>
                 <input type="checkbox" checked={rule.met} readOnly tabIndex={-1} aria-label={rule.label + (rule.met ? ' met' : ' not met')} />
-                <span>{rule.label}{rule.required ? ' (required)' : ' (recommended)'}</span>
+                <span>{rule.label} (required)</span>
               </label>
             ))}
             {password && getPasswordPolicyError(password) ? <small className="customer-password-policy-error">{getPasswordPolicyError(password)}</small> : null}
