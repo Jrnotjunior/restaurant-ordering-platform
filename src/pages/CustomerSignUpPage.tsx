@@ -8,6 +8,7 @@ export function CustomerSignUpPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPasswords, setShowPasswords] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [emailAlreadyRegistered, setEmailAlreadyRegistered] = useState(false);
@@ -115,14 +116,34 @@ export function CustomerSignUpPage() {
             Email
             <input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={submitting} />
           </label>
-          <label>
+          <label className="customer-signup-password-field">
             Password
-            <input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH} disabled={submitting} required />
-            <small>{password ? getPasswordGuidance(password).join(" · ") : "Use at least 8 characters. Longer, unique passwords are safer. Avoid common passwords."}</small>
+            <input type={showPasswords ? 'text' : 'password'} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH} disabled={submitting} required />
           </label>
-          <label>
+          <fieldset className="customer-password-checklist" aria-describedby="customer-password-checklist-note">
+            <legend>Password standard</legend>
+            <p id="customer-password-checklist-note">Use the first two requirements. The other suggestions help strengthen your password.</p>
+            {[
+              { label: 'At least 8 characters', met: password.length >= PASSWORD_MIN_LENGTH, required: true },
+              { label: '128 characters or fewer', met: password.length > 0 && password.length <= PASSWORD_MAX_LENGTH, required: true },
+              { label: 'Uppercase and lowercase letters', met: /[a-z]/.test(password) && /[A-Z]/.test(password), required: false },
+              { label: 'Includes a number', met: /\\d/.test(password), required: false },
+              { label: 'Includes a symbol', met: /[^A-Za-z0-9]/.test(password), required: false },
+            ].map((rule) => (
+              <label className={`customer-password-checklist-item${rule.met ? ' is-met' : ''}`} key={rule.label}>
+                <input type="checkbox" checked={rule.met} readOnly tabIndex={-1} aria-label={rule.label + (rule.met ? ' met' : ' not met')} />
+                <span>{rule.label}{rule.required ? ' (required)' : ' (recommended)'}</span>
+              </label>
+            ))}
+            {password && getPasswordPolicyError(password) ? <small className="customer-password-policy-error">{getPasswordPolicyError(password)}</small> : null}
+          </fieldset>
+          <label className="customer-signup-password-field">
             Confirm password
-            <input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH} disabled={submitting} required />
+            <input type={showPasswords ? 'text' : 'password'} autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH} disabled={submitting} required />
+          </label>
+          <label className="customer-password-show-toggle">
+            <input type="checkbox" checked={showPasswords} onChange={(event) => setShowPasswords(event.target.checked)} disabled={submitting} />
+            <span>Show password</span>
           </label>
           <label className="customer-personal-info-consent">
             <input
