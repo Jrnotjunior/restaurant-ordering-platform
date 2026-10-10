@@ -25,5 +25,6 @@ export function getPasswordGuidance(password: string): string[] {
     /[A-Z]/.test(password) ? 'Includes an uppercase letter' : 'Add an uppercase letter',
     /\d/.test(password) ? 'Includes a number' : 'Add a number',
     /[^A-Za-z0-9]/.test(password) ? 'Includes a symbol' : 'Add a symbol',
+    COMMON_PASSWORDS.has(password.toLowerCase()) ? 'Avoid common passwords' : 'Not a common password',
   ];
 }
