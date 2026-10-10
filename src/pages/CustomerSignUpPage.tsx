@@ -127,7 +127,7 @@ export function CustomerSignUpPage() {
               { label: 'At least 8 characters', met: password.length >= PASSWORD_MIN_LENGTH, required: true },
               { label: '128 characters or fewer', met: password.length > 0 && password.length <= PASSWORD_MAX_LENGTH, required: true },
               { label: 'Uppercase and lowercase letters', met: /[a-z]/.test(password) && /[A-Z]/.test(password), required: false },
-              { label: 'Includes a number', met: /\\d/.test(password), required: false },
+              { label: 'Includes a number', met: /\d/.test(password), required: false },
               { label: 'Includes a symbol', met: /[^A-Za-z0-9]/.test(password), required: false },
             ].map((rule) => (
               <label className={`customer-password-checklist-item${rule.met ? ' is-met' : ''}`} key={rule.label}>
