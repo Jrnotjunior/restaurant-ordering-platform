@@ -75,7 +75,7 @@ export function TenantInviteLandingPage() {
       } else {
         const hash = getAuthHashParams();
         const authError = hash.get('error_description') || hash.get('error');
-        if (authError) setError(decodeURIComponent(authError.replace(/\\+/g, ' ')));
+        if (authError) setError(decodeURIComponent(authError.replace(/\+/g, ' ')));
         setCheckingSession(false);
       }
     }
@@ -114,7 +114,7 @@ export function TenantInviteLandingPage() {
     const hashError = hash.get('error_description') || hash.get('error');
 
     if (hashError) {
-      setError(decodeURIComponent(hashError.replace(/\\+/g, ' ')));
+      setError(decodeURIComponent(hashError.replace(/\+/g, ' ')));
       setAccepting(false);
       return;
     }
