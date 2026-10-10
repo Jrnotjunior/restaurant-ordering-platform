@@ -36,6 +36,11 @@ export function resolveAuthEntry(location: Pick<Location, 'pathname' | 'search' 
   const search = new URLSearchParams(location.search);
   const hash = new URLSearchParams(location.hash.replace(/^#/, ''));
 
+  // The tenant onboarding destination intentionally carries tenant-invite=1
+  // as context. It must reach AppContent's onboarding route, not be captured
+  // again by this callback entry resolver (which would loop on the landing page).
+  if (search.get('tenant-onboarding') === '1') return 'normal-app';
+
   const pathname = location.pathname;
   const invitationType = resolveInvitationTypeFromLocation(location);
   const isGenericInvitation = search.get('invitation') === '1';
