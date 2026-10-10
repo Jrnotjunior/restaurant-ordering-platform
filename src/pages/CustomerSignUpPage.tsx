@@ -28,7 +28,7 @@ export function CustomerSignUpPage() {
       return;
     }
 
-    if (!/^09\d{9}$/.test(trimmedPhone)) {
+    if (!/^09\\d{9}$/.test(trimmedPhone)) {
       setError('Phone number must start with 09 and contain exactly 11 digits.');
       return;
     }
@@ -64,7 +64,7 @@ export function CustomerSignUpPage() {
 
       if (result.emailAlreadyRegistered) {
         setEmailAlreadyRegistered(true);
-        setMessage("This email already has an account. If you don't remember your password, please reset it.");
+        setMessage("This email already has an account. If you don't remember your password, you can");
       } else {
         setMessage('Check your inbox for an account confirmation email to complete your registration.');
       }
@@ -87,7 +87,7 @@ export function CustomerSignUpPage() {
         {error && <div className="restaurant-dashboard-error" role="alert">{error}</div>}
         {message && (
           <div className="restaurant-auth-success" role="status">
-            {message}{emailAlreadyRegistered && <> <a href="#forgot-password">Reset your password</a>.</>}
+            {message}{emailAlreadyRegistered && <> <a className="restaurant-auth-success-link" href="#forgot-password">reset your password</a>.</>}
           </div>
         )}
 
@@ -103,7 +103,7 @@ export function CustomerSignUpPage() {
               inputMode="numeric"
               autoComplete="tel"
               value={phone}
-              onChange={(event) => setPhone(event.target.value.replace(/\D/g, '').slice(0, 11))}
+              onChange={(event) => setPhone(event.target.value.replace(/\\D/g, '').slice(0, 11))}
               maxLength={11}
               required
               disabled={submitting}
