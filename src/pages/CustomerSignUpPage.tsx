@@ -26,31 +26,7 @@ export function CustomerSignUpPage() {
     const trimmedPhone = phone.trim();
     const trimmedEmail = email.trim().toLowerCase();
 
-    if (!trimmedName || !trimmedPhone || !trimmedEmail || !password || !confirmPassword) {
-      setError('Complete all required fields.');
-      return;
-    }
-
-    if (!/^09\d{9}$/.test(trimmedPhone)) {
-      setError('Phone number must start with 09 and contain exactly 11 digits.');
-      return;
-    }
-
-    if (!personalInfoConsent) {
-      setError('Please agree to provide your personal information before creating an account.');
-      return;
-    }
-
-    const passwordPolicyError = getPasswordPolicyError(password);
-    if (passwordPolicyError) {
-      setError(passwordPolicyError);
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
+    if (fieldErrors.name || fieldErrors.phone || fieldErrors.email || fieldErrors.password || fieldErrors.confirmPassword || fieldErrors.consent) return;
 
     setSubmitting(true);
     try {
