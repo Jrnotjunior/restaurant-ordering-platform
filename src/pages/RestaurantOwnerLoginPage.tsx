@@ -7,6 +7,9 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
   const { user, loading: authLoading, signIn, signOut, error: authError } = useRestaurantOwnerAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordlessMode, setPasswordlessMode] = useState(staffOnly);
+  const [emailCodeRequested, setEmailCodeRequested] = useState(false);
+  const [emailCode, setEmailCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -48,6 +51,78 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
 
     return () => { cancelled = true; };
   }, [authLoading, user?.id]);
+
+  async function requestEmailCode() {
+    setError('');
+    if (!supabase) { setError('Email sign-in is not configured.'); return; }
+    if (!email.trim()) { setError('Enter your account email first.'); return; }
+    setSubmitting(true);
+    try {
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email: email.trim().toLowerCase(),
+        options: { shouldCreateUser: false },
+      });
+      if (otpError) throw otpError;
+      setEmailCodeRequested(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to send the email verification code.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function verifyEmailCode(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError('');
+    if (!supabase) { setError('Email sign-in is not configured.'); return; }
+    if (!/^\\d{6}$/.test(emailCode)) { setError('Enter the six-digit code sent to your email.'); return; }
+    setSubmitting(true);
+    try {
+      const { data, error: otpError } = await supabase.auth.verifyOtp({
+        email: email.trim().toLowerCase(),
+        token: emailCode,
+        type: 'email',
+      });
+      if (otpError) throw otpError;
+      if (!data.user) throw new Error('Email verification did not return an account.');
+      const userId = data.user.id;
+      const { data: staffProfile, error: staffError } = await supabase
+        .from('restaurant_staff')
+        .select('role,is_active')
+        .eq('auth_user_id', userId)
+        .eq('is_active', true)
+        .maybeSingle();
+      if (staffError) throw staffError;
+      if (staffProfile) {
+        if (!['cashier', 'kitchen', 'dispatcher', 'rider'].includes(staffProfile.role)) {
+          throw new Error('This staff account has an unsupported role.');
+        }
+        window.location.hash = staffProfile.role === 'rider' ? '#rider/dashboard'
+          : staffProfile.role === 'kitchen' ? '#restaurant/kitchen'
+          : staffProfile.role === 'dispatcher' ? '#restaurant/dispatcher' : '#restaurant/cashier';
+        return;
+      }
+      const { data: ownerRestaurant, error: ownerError } = await supabase
+        .from('restaurants')
+        .select('id')
+        .eq('owner_id', userId)
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle();
+      if (ownerError) throw ownerError;
+      if (ownerRestaurant) {
+        if (staffOnly) throw new Error('This is a Restaurant Owner account. Use the Restaurant Owner sign-in page.');
+        window.location.hash = '#restaurant/orders';
+        return;
+      }
+      await supabase.auth.signOut();
+      throw new Error('This email is not linked to an active Restaurant Owner or Staff account. Customer sign-in is unchanged.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to verify the email code.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   async function handleGoogleSignIn() {
     setError('');
@@ -214,36 +289,30 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
           <svg viewBox="0 0 48 48" aria-hidden="true" width="19" height="19"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 3.1 13.22l7.98 6.19C12.97 13.72 18.03 9.5 24 9.5Z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.75 7.18l7.73 6C44.43 37.98 46.98 31.88 46.98 24.55Z"/><path fill="#FBBC05" d="M11.08 28.59A14.4 14.4 0 0 1 10.3 24c0-1.59.27-3.13.76-4.59L3.1 13.22A23.9 23.9 0 0 0 0 24c0 3.87.93 7.52 3.1 10.78l7.98-6.19Z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.91-5.8l-7.73-6c-2.14 1.44-4.88 2.3-8.18 2.3-5.97 0-11.03-4.22-12.92-9.91L3.1 34.78C6.51 42.62 14.62 48 24 48Z"/></svg>
           {googleSubmitting ? 'Connecting to Google…' : 'Continue with Google'}
         </button>}
-        <form className="restaurant-owner-auth-form" onSubmit={(event) => void handleSubmit(event)}>
-          <label>
-            Email
-            <input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={submitting} />
-          </label>
-          <label>
-            Password
-            <span className="customer-password-input-wrap">
+        {passwordlessMode ? (
+          <form className="restaurant-owner-auth-form" onSubmit={(event) => { event.preventDefault(); if (emailCodeRequested) void verifyEmailCode(event); else void requestEmailCode(); }}>
+            <p>Sign in without a password. We'll email a one-time verification code to your registered account.</p>
+            <label>Email<input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required disabled={submitting || emailCodeRequested} /></label>
+            {emailCodeRequested ? <label>Email verification code<input type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={emailCode} onChange={(event) => setEmailCode(event.target.value.replace(/\\D/g, '').slice(0, 6))} required disabled={submitting} /></label> : null}
+            <button className="button button-primary" type="submit" disabled={submitting || (emailCodeRequested && emailCode.length !== 6)}>
+              {submitting ? 'Please wait…' : emailCodeRequested ? 'Verify code and continue' : 'Send email code'}
+            </button>
+            {emailCodeRequested ? <button className="button" type="button" onClick={() => { setEmailCodeRequested(false); setEmailCode(''); setError(''); }} disabled={submitting}>Use a different email</button> : null}
+          </form>
+        ) : (
+          <form className="restaurant-owner-auth-form" onSubmit={(event) => void handleSubmit(event)}>
+            <label>Email<input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={submitting} /></label>
+            <label>Password<span className="customer-password-input-wrap">
               <input type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={1} disabled={submitting} />
-              <button
-                className="customer-password-visibility-button"
-                type="button"
-                onClick={() => setShowPassword((visible) => !visible)}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-                aria-pressed={showPassword}
-                disabled={submitting}
-              >
-                {showPassword ? (
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.9 5.2A10.8 10.8 0 0112 5c5.2 0 8.8 4.7 9.5 6-.3.6-1.4 2.2-3.4 3.7M6.2 6.2C3.9 7.6 2.6 9.7 2.5 11c.7 1.3 4.3 6 9.5 6 1 0 1.9-.2 2.7-.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.8"/></svg>
-                )}
+              <button className="customer-password-visibility-button" type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} disabled={submitting}>
+                {showPassword ? <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.9 5.2A10.8 10.8 0 0112 5c5.2 0 8.8 4.7 9.5 6-.3.6-1.4 2.2-3.4 3.7M6.2 6.2C3.9 7.6 2.6 9.7 2.5 11c.7 1.3 4.3 6 9.5 6 1 0 1.9-.2 2.7-.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg> : <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.8"/></svg>}
               </button>
-            </span>
-          </label>
-          <p className="customer-password-forgot-link"><a href="#forgot-password">Forgot password?</a></p>
-          <button className="button button-primary" type="submit" disabled={submitting}>
-            {submitting ? 'Signing in…' : 'Sign in'}
-          </button>
-        </form>
+            </span></label>
+            <p className="customer-password-forgot-link"><a href="#forgot-password">Forgot password?</a></p>
+            <button className="button button-primary" type="submit" disabled={submitting}>{submitting ? 'Signing in…' : 'Sign in'}</button>
+          </form>
+        )}
+        {!staffOnly ? <p className="restaurant-auth-switch">{passwordlessMode ? 'Customer account?' : 'Restaurant Owner or Staff?'} <button type="button" className="text-button" onClick={() => { setPasswordlessMode((value) => !value); setEmailCodeRequested(false); setEmailCode(''); setError(''); }}>{passwordlessMode ? 'Use customer sign-in' : 'Sign in with email code'}</button></p> : null}
 
         {!staffOnly && <p className="restaurant-auth-switch">New customer? <a href="#signup">Create account</a></p>}
         {staffOnly && <p className="restaurant-auth-switch"><a href="#account">Back to sign in</a></p>}
