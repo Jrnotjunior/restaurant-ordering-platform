@@ -232,8 +232,46 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
     setCustomerProfileLoading(true);
     setCustomerProfileError('');
 
-    void getMyCustomerProfile(restaurantId)
-      .then((profile) => {
+    async function loadCustomerProfile() {
+      try {
+        let profile = await getMyCustomerProfile(restaurantId);
+
+        // Google OAuth doesn't set the app's customer metadata. If this login
+        // originated from the customer sign-up page, create the tenant-scoped
+        // profile on first checkout instead of asking the customer to sign in
+        // repeatedly. Owner/staff Google sign-ins never set this marker.
+        const signupMarkerKey = 'restaurant-ordering-google-customer-signup';
+        const rawSignupMarker = window.localStorage.getItem(signupMarkerKey);
+        let signupMarker: { restaurantId?: string; createdAt?: number } | null = null;
+        try {
+          signupMarker = rawSignupMarker ? JSON.parse(rawSignupMarker) as { restaurantId?: string; createdAt?: number } : null;
+        } catch {
+          window.localStorage.removeItem(signupMarkerKey);
+        }
+
+        if (!profile && signupMarker) {
+          const markerMatchesRestaurant = signupMarker.restaurantId === restaurantId;
+          const markerIsRecent = typeof signupMarker.createdAt === 'number'
+            && Date.now() - signupMarker.createdAt < 24 * 60 * 60 * 1000;
+          if (markerMatchesRestaurant && markerIsRecent) {
+            const metadata = user.user_metadata ?? {};
+            const fullName = String(metadata.full_name ?? metadata.name ?? '').trim()
+              || String(user.email ?? '').split('@')[0]
+              || 'Customer';
+            const phone = String(metadata.phone ?? '').trim() || null;
+            const { error: createProfileError } = await supabase!.rpc('upsert_customer_profile', {
+              p_restaurant_id: restaurantId,
+              p_name: fullName,
+              p_phone: phone,
+            });
+            if (createProfileError) throw createProfileError;
+            window.localStorage.removeItem(signupMarkerKey);
+            profile = await getMyCustomerProfile(restaurantId);
+          } else if (!markerMatchesRestaurant || !markerIsRecent) {
+            window.localStorage.removeItem(signupMarkerKey);
+          }
+        }
+
         if (cancelled) return;
         if (!profile) {
           setCustomerProfileError('Your customer profile could not be loaded. Please sign in again.');
@@ -280,15 +318,16 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
           setSelectedDeliveryLocation(null);
           setDeliveryRouteQuote(null);
         }
-      })
-      .catch((error) => {
+      } catch (error) {
         if (cancelled) return;
         console.error('Unable to load customer checkout profile.', error);
         setCustomerProfileError('We could not load your customer information. Please refresh and try again.');
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setCustomerProfileLoading(false);
-      });
+      }
+    }
+
+    void loadCustomerProfile();
 
     return () => {
       cancelled = true;
