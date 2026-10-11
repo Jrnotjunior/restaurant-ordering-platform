@@ -39,7 +39,8 @@ export function CustomerSignUpPage() {
     }
     setGoogleSubmitting(true);
     try {
-      await getCurrentCustomerRestaurant();
+      const restaurant = await getCurrentCustomerRestaurant();
+      window.localStorage.setItem('restaurant-ordering-google-customer-signup', JSON.stringify({ restaurantId: restaurant.id, createdAt: Date.now() }));
       const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}#account`;
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
