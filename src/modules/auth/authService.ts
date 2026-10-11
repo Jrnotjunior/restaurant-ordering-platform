@@ -64,7 +64,12 @@ export async function resolveAccountContext(currentUser: User | null): Promise<A
 export async function initializeAuthSession(client: SupabaseClient) {
   if (typeof window !== 'undefined') {
     const url = new URL(window.location.href);
-    const hashParams = new URLSearchParams(url.hash.replace(/^#/, ''));
+    // GitHub Pages hash routing can produce `#account#access_token=...`.
+    // Parse the OAuth parameters after the last hash separator so `account`
+    // does not become part of the access_token parameter name.
+    const rawHash = url.hash.replace(/^#/, '');
+    const authHash = rawHash.includes('#') ? rawHash.slice(rawHash.lastIndexOf('#') + 1) : rawHash;
+    const hashParams = new URLSearchParams(authHash);
     const code = url.searchParams.get('code');
     const tokenHash = url.searchParams.get('token_hash') ?? hashParams.get('token_hash');
     const type = url.searchParams.get('type') ?? hashParams.get('type');
