@@ -20,7 +20,8 @@ This is an internal engineering tracker, not a SOC 2 report, certification, or a
 - The handler resolves a restaurant-specific webhook secret from the account connection when an organization ID is present, with a global `PAYMONGO_WEBHOOK_SECRET` fallback. Confirm the fallback is intentionally configured and that production/test secrets are separated correctly.
 - Live read-only query of `information_schema.routine_privileges` for `public.finalize_online_payment` returned only `postgres` and `service_role` EXECUTE grants; no `anon` or `authenticated` EXECUTE grants were listed. This supports the intended service-role-only boundary for this function.
 - Repository migration `20261005180000_record_paymongo_transaction_fees.sql` also revokes execute from `public`, `anon`, and `authenticated`, and grants it to `service_role`.
-- Atomic-claim remediation committed on 2026-10-12: migration `20261012150000_claim_paymongo_webhook_events_atomically.sql` adds service-role-only RPC `claim_paymongo_webhook_event`. It atomically claims an event, permits retry of failed events, and permits recovery of processing claims older than five minutes. The Edge Function now calls the RPC before side effects, returns 200 for processed duplicates, and 409 for an event already processing. This is committed code only; deployment and concurrency tests remain pending.
+- Atomic-claim remediation committed on 2026-10-12: migration `20261012150000_claim_paymongo_webhook_events_atomically.sql` adds service-role-only RPC `claim_paymongo_webhook_event`. It atomically claims an event, permits retry of failed events, and permits recovery of processing claims older than five minutes. The Edge Function calls the RPC before side effects, returns 200 for processed duplicates, and 409 for an event already processing.
+- Live deployment completed on 2026-10-12: migration applied successfully; read-only catalog query confirmed `claim_paymongo_webhook_event` exists. `information_schema.routine_privileges` listed only `postgres` and `service_role` as EXECUTE grantees. Edge Function `paymongo-webhook` deployed successfully as ACTIVE version 14 with `verify_jwt=false`, preserving the existing PayMongo HMAC authentication model. A subsequent live fetch confirmed version 14 source contains the atomic-claim RPC call. Concurrency, failed-retry, and stale-claim recovery tests have not yet been run.
 - The webhook event table migration enables RLS and grants authenticated users SELECT under a restaurant-owner policy, while service_role has select/insert/update. Review whether exposing `last_error` and event metadata to restaurant owners is appropriate; do not expose secret values.
 
 ## Supabase Security Advisor snapshot
@@ -34,7 +35,7 @@ This is an internal engineering tracker, not a SOC 2 report, certification, or a
 - `service_role` is privileged and bypasses RLS; its use must remain server-side and secrets must never reach clients.
 
 ## Work order
-1. Deploy the atomic webhook-claim migration and updated Edge Function; test simultaneous duplicate delivery and abandoned-claim recovery.
+1. Test simultaneous duplicate delivery, failed-event retry, and abandoned-claim recovery for the deployed atomic webhook claim.
 2. Verify production/test webhook secret configuration and the global-secret fallback.
 3. Audit anonymous `create_order` behavior and abuse protections without breaking guest checkout.
 4. Audit privileged functions for tenant/role checks, MFA assurance where required, safe `search_path`, idempotency, and least privilege.
@@ -48,8 +49,10 @@ This is an internal engineering tracker, not a SOC 2 report, certification, or a
 - [x] Live ACLs reviewed for the ten no-policy tables; no direct `anon`/`authenticated` table grants were listed.
 - [x] Live `finalize_online_payment` EXECUTE grants inspected; only `postgres` and `service_role` were listed.
 - [x] Webhook source reviewed for signature verification, freshness, checkout metadata, amount/currency checks, and use of the finalizer.
-- [x] Atomic webhook event-claim implementation committed to `main` (deployment and concurrency tests still pending).
-- [ ] Atomic claim migration and Edge Function deployed; concurrent duplicate and stale-claim recovery tests pass.
+- [x] Atomic webhook event-claim implementation committed to `main`.
+- [x] Atomic claim migration applied; live function existence and EXECUTE grants verified.
+- [x] Updated `paymongo-webhook` Edge Function deployed as ACTIVE version 14; live source confirmed to contain atomic-claim call.
+- [ ] Concurrent duplicate, failed-event retry, and stale-claim recovery tests pass.
 - [ ] Production/test secret configuration and fallback independently verified.
 - [ ] Anonymous checkout authorization and abuse controls reviewed.
 - [ ] All privileged RPCs reviewed and security regression tests pass.
