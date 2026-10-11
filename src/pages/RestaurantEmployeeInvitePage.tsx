@@ -105,11 +105,11 @@ export function RestaurantEmployeeInvitePage() {
           <a className="button button-primary" href={appBaseUrl()}>Back to restaurant</a>
         </> : accepted ? <>
           <p>Your invitation for <strong>{email}</strong> has been accepted. No password is needed.</p>
-          <p>Continue to sign in with an email verification code. Your required authenticator setup will be completed before you access staff tools.</p>
-          <a className="button button-primary" href={appBaseUrl() + '#staff-login'}>Continue to staff sign in</a>
+          <p>Continue with Google to access your staff account. Required authenticator setup must be completed before you access staff tools.</p>
+          <a className="button button-primary" href={appBaseUrl() + '#staff-login'}>Continue with Google</a>
           <p className="restaurant-auth-switch">Role: {role || 'Restaurant staff'}</p>
         </> : <>
-          <p>Accept your invitation to activate passwordless access for your restaurant team account.</p>
+          <p>Accept your invitation to activate your restaurant team account.</p>
           <button className="button button-primary" type="button" onClick={() => void acceptInvitation()} disabled={accepting}>
             {accepting ? 'Accepting…' : 'Accept Invitation'}
           </button>
