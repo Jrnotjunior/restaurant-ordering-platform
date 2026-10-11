@@ -42,6 +42,16 @@ This is an internal engineering tracker, not a SOC 2 report, certification, or a
 - Current evidence therefore does not justify adding broad RLS policies just to silence the linter. The no-policy finding is still worth tracking, but the immediate direct-table exposure risk appears mitigated by the absence of client-role table grants. Recheck effective privileges after any future grants or schema changes.
 - `service_role` is privileged and bypasses RLS; its use must remain server-side and secrets must never reach clients.
 
+
+### Guest order-tracking privacy review — 2026-10-12
+- Live read-only inspection of `public.get_order_status_by_id(uuid)` confirmed signed-in requests are filtered to the matching authenticated customer profile, while requests with `auth.uid() IS NULL` can retrieve the order by UUID alone.
+- The RPC response includes customer-visible order details and may include a rider's name and mobile number, as well as delivery failure details and tax/discount data. This is a deliberate guest-tracking capability today, but possession of the order UUID currently acts as the guest authorization credential.
+- Existing migration `20261010141000_secure_customer_order_tracking.sql` replaced order-number lookup with UUID lookup and made payment references longer. This reduces easy enumeration but does not prevent disclosure if an order UUID leaks through a shared URL, browser history, screenshots, logs, or referrer handling.
+- Existing migration `20261012100000_restrict_customer_order_tracking_to_owner.sql` restricts authenticated sessions to their own linked customer profile, but preserves the anonymous UUID-only path.
+- No production behavior was changed in this review. Do not revoke anonymous tracking without a replacement: the frontend calls `get_order_status_by_id` using the order UUID, and anonymous guest tracking is a supported flow.
+- Remediation design: issue a separate high-entropy guest tracking token at order creation; store only a cryptographic hash of that token; use a narrowly scoped guest-tracking RPC that validates the token and returns the minimum necessary customer-facing fields; keep authenticated ownership checks on the existing UUID-based RPC; do not return rider phone numbers to anonymous guests unless the product requirement explicitly requires it. Plan token propagation through cash checkout, online-payment success/return flow, and order tracking URLs before rollout.
+- Required tests before deployment: token cannot be guessed or reused across orders; wrong/expired token returns no order data; signed-in customer cannot use another customer's order UUID; valid guest token preserves the required tracking timeline; public response excludes unnecessary personal information.
+
 ## Work order
 1. Test simultaneous duplicate delivery, failed-event retry, and abandoned-claim recovery for the deployed atomic webhook claim.
 2. Verify production/test webhook secret configuration and the global-secret fallback.
