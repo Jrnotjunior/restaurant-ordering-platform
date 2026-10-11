@@ -239,6 +239,7 @@ function AppContent() {
     isMenuPage,
     isCartPage,
     isAccountPage,
+    isStaffLoginPage,
     isSignUpPage,
     isCustomerEmailConfirmationPage,
     isCustomerPasswordResetPage,
@@ -285,6 +286,7 @@ function AppContent() {
   if (route === '#saved-address') return <PublicCustomerRouteGuard><RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}><SavedAddressPage /></RestaurantLayout></ThemeProvider></RestaurantProvider></PublicCustomerRouteGuard>;
   if (route === '#order-history') return <PublicCustomerRouteGuard><RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}><CustomerOrderHistoryPage /></RestaurantLayout></ThemeProvider></RestaurantProvider></PublicCustomerRouteGuard>;
   if (isAccountPage) return <RestaurantOwnerLoginPage />;
+  if (isStaffLoginPage) return <RestaurantOwnerLoginPage staffOnly />;
   if (isRiderDashboardPage) return <RiderRouteGuard><RiderDashboardPage /></RiderRouteGuard>;
   if (riderDeliveryMatch) return <RiderRouteGuard><RiderDeliveryPage orderId={decodeURIComponent(riderDeliveryMatch[1])} /></RiderRouteGuard>;
 
