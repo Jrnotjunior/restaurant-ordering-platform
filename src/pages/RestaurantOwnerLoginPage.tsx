@@ -128,7 +128,11 @@ export function RestaurantOwnerLoginPage() {
   // OAuth redirects back to #account. This route must show the signed-in
   // state when Supabase has restored a session instead of always showing the
   // sign-in form, which previously made successful logins look unsuccessful.
-  if (user) {
+  // During email/password login, Supabase publishes the authenticated user
+  // before handleSubmit finishes resolving the role and navigating away.
+  // Keep the login screen in its submitting state during that transition so
+  // the account page (and its sign-out button) does not flash briefly.
+  if (user && !submitting) {
     return (
       <main className="restaurant-owner-auth-page">
         <section className="restaurant-owner-auth-card" aria-labelledby="account-signed-in-title">
