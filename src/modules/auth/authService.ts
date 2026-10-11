@@ -84,6 +84,7 @@ export async function initializeAuthSession(client: SupabaseClient) {
 
       if (error) {
         console.error('Customer confirmation session restoration failed', error);
+        throw new Error(`Customer confirmation could not restore the session: ${error.message}`);
       } else {
         url.hash = '';
         window.history.replaceState({}, document.title, url.toString());
@@ -109,6 +110,7 @@ export async function initializeAuthSession(client: SupabaseClient) {
 
       if (error) {
         console.error('OAuth callback session restoration failed', error);
+        throw new Error(`Google sign-in returned, but Supabase could not restore the session: ${error.message}`);
       } else {
         // Remove credentials from the address bar. The storefront then opens
         // on its default menu route with the authenticated session retained.
@@ -122,6 +124,7 @@ export async function initializeAuthSession(client: SupabaseClient) {
       const { error } = await client.auth.exchangeCodeForSession(code);
       if (error) {
         console.error('Auth callback code exchange failed', error);
+        throw new Error(`Google sign-in callback could not be completed: ${error.message}`);
       } else {
         url.searchParams.delete('code');
         window.history.replaceState({}, document.title, url.toString());
@@ -140,6 +143,7 @@ export async function initializeAuthSession(client: SupabaseClient) {
 
       if (error) {
         console.error('Invitation token verification failed', error);
+        throw new Error(`Invitation verification failed: ${error.message}`);
       } else {
         url.searchParams.delete('token_hash');
         url.searchParams.delete('type');
