@@ -1262,3 +1262,9 @@ textarea {
   flex-direction: column;
   gap: 8px;
 }
+
+
+/* Add breathing room between Google sign-in and the email/password form. */
+.restaurant-owner-auth-card > .customer-google-signup-button {
+  margin-bottom: 16px;
+}
