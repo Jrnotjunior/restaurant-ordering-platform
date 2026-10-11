@@ -61,7 +61,6 @@ export async function signUpCustomer(input: CustomerSignUpInput): Promise<Custom
         role: 'customer',
         first_name: input.firstName,
         last_name: input.lastName,
-        name: `${input.firstName} ${input.lastName}`.trim(),
         phone: input.phone || null,
         restaurant_id: restaurant.id,
       },
