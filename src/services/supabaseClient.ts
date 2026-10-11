@@ -72,7 +72,9 @@ export const supabase = isSupabaseConfigured
         // This prevents Store Owner, Cashier, Kitchen, and Dispatcher tabs
         // from broadcasting their sign-in state to one another.
         storageKey: getRestaurantAuthStorageKey(),
-        storage: window.sessionStorage,
+        // Keep the per-tab key, but persist its PKCE verifier and session in localStorage.
+        // This avoids losing the OAuth verifier/session during provider redirects.
+        storage: window.localStorage,
         // Tenant invitation callbacks are explicitly handled after a user click.
         detectSessionInUrl: false,
       },
