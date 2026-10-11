@@ -241,40 +241,25 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
       try {
         let profile = await getMyCustomerProfile(currentRestaurantId);
 
-        // Google OAuth doesn't set the app's customer metadata. If this login
-        // originated from the customer sign-up page, create the tenant-scoped
-        // profile on first checkout instead of asking the customer to sign in
-        // repeatedly. Owner/staff Google sign-ins never set this marker.
-        const signupMarkerKey = 'restaurant-ordering-google-customer-signup';
-        const rawSignupMarker = window.localStorage.getItem(signupMarkerKey);
-        let signupMarker: { restaurantId?: string; createdAt?: number } | null = null;
-        try {
-          signupMarker = rawSignupMarker ? JSON.parse(rawSignupMarker) as { restaurantId?: string; createdAt?: number } : null;
-        } catch {
-          window.localStorage.removeItem(signupMarkerKey);
-        }
-
-        if (!profile && signupMarker) {
-          const markerMatchesRestaurant = signupMarker.restaurantId === currentRestaurantId;
-          const markerIsRecent = typeof signupMarker.createdAt === 'number'
-            && Date.now() - signupMarker.createdAt < 24 * 60 * 60 * 1000;
-          if (markerMatchesRestaurant && markerIsRecent) {
-            const metadata = currentUser.user_metadata ?? {};
-            const fullName = String(metadata.full_name ?? metadata.name ?? '').trim()
-              || String(currentUser.email ?? '').split('@')[0]
-              || 'Customer';
-            const phone = String(metadata.phone ?? '').trim() || null;
-            const { error: createProfileError } = await supabase!.rpc('upsert_customer_profile', {
-              p_restaurant_id: currentRestaurantId,
-              p_name: fullName,
-              p_phone: phone,
-            });
-            if (createProfileError) throw createProfileError;
-            window.localStorage.removeItem(signupMarkerKey);
-            profile = await getMyCustomerProfile(currentRestaurantId);
-          } else if (!markerMatchesRestaurant || !markerIsRecent) {
-            window.localStorage.removeItem(signupMarkerKey);
-          }
+        // A Google sign-in from the regular Sign In page does not carry the
+        // customer-signup marker. When an authenticated user reaches customer
+        // checkout, ensure their own profile exists for this restaurant.
+        // The RPC enforces auth.uid() and the current restaurant tenant, so
+        // this cannot create a profile for another user or another restaurant.
+        if (!profile) {
+          const metadata = currentUser.user_metadata ?? {};
+          const fullName = String(metadata.full_name ?? metadata.name ?? '').trim()
+            || String(currentUser.email ?? '').split('@')[0]
+            || 'Customer';
+          const phone = String(metadata.phone ?? '').trim() || null;
+          const { error: createProfileError } = await supabase!.rpc('upsert_customer_profile', {
+            p_restaurant_id: currentRestaurantId,
+            p_name: fullName,
+            p_phone: phone,
+          });
+          if (createProfileError) throw createProfileError;
+          window.localStorage.removeItem('restaurant-ordering-google-customer-signup');
+          profile = await getMyCustomerProfile(currentRestaurantId);
         }
 
         if (cancelled) return;
