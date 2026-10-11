@@ -15,7 +15,6 @@ type RestaurantOwnerAuthValue = {
   staffRole: string | null;
   loading: boolean;
   error: string;
-  signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshRestaurant: () => Promise<void>;
 };
@@ -146,18 +145,6 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
     };
   }, []);
 
-  async function signIn(email: string, password: string) {
-    if (!supabase) throw new Error('Supabase is not configured.');
-    setError('');
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
-    if (signInError) throw signInError;
-    setUser(data.user);
-    await loadAccountContext(data.user);
-  }
-
   async function signOut() {
     if (!supabase) return;
     const { error: signOutError } = await supabase.auth.signOut();
@@ -180,7 +167,6 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
       staffRole,
       loading,
       error,
-      signIn,
       signOut,
       refreshRestaurant,
     }),
