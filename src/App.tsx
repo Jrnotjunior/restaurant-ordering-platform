@@ -94,15 +94,11 @@ function AppContent() {
   useEffect(() => {
     const favicon = restaurant.storefront.faviconUrl?.trim();
     const iconLinks = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]'));
-
-    // Never show a Web2Table/platform fallback favicon. Use only a favicon
-    // explicitly configured for this restaurant; otherwise remove icon links.
-    if (!favicon) {
-      iconLinks.forEach((link) => link.remove());
-      return;
-    }
-
     let link = iconLinks.shift();
+
+    // Remove duplicate icon declarations, then keep one neutral data URL when
+    // this restaurant has no uploaded favicon. Without any icon link, browsers
+    // automatically request /favicon.ico from the site root.
     iconLinks.forEach((duplicate) => duplicate.remove());
 
     if (!link) {
@@ -112,7 +108,7 @@ function AppContent() {
     }
 
     link.dataset.restaurantFavicon = 'true';
-    link.href = favicon;
+    link.href = favicon || 'data:,';
     link.type = '';
   }, [restaurant.storefront.faviconUrl]);
 
