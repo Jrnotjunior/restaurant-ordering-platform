@@ -96,7 +96,12 @@ function AppContent() {
     // Reuse the favicon link from index.html instead of adding a second one.
     // Keeping the static SVG link first can cause browsers to keep showing the
     // platform icon even after a restaurant-specific favicon is loaded.
-    let link = document.querySelector<HTMLLinkElement>('link[rel~="icon"]');
+    // Keep exactly one favicon link. Remove any duplicate or legacy links
+    // left by the HTML shell or previous app initialization.
+    const iconLinks = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]'));
+    let link = iconLinks.shift();
+    iconLinks.forEach((duplicate) => duplicate.remove());
+
     if (!link) {
       link = document.createElement('link');
       link.rel = 'icon';
