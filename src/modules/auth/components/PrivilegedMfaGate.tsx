@@ -1,8 +1,7 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { useRestaurantOwnerAuth } from '../../../components/RestaurantOwnerAuthProvider';
 import { supabase } from '../../../services/supabaseClient';
-
-type Factor = { id: string; status?: string; friendly_name?: string };
+import { getPrivilegedMfaState, verifyPrivilegedMfaCode } from '../mfaService';
 
 type GateState =
   | { kind: 'loading' }
@@ -46,46 +45,8 @@ export function PrivilegedMfaGate({ children }: { children: ReactNode }) {
 
       setGate({ kind: 'loading' });
       try {
-        const [{ data: assurance, error: assuranceError }, { data: factors, error: factorsError }] = await Promise.all([
-          supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
-          supabase.auth.mfa.listFactors(),
-        ]);
-        if (assuranceError) throw assuranceError;
-        if (factorsError) throw factorsError;
-        if (cancelled) return;
-
-        if (assurance.currentLevel === 'aal2') {
-          setGate({ kind: 'ready' });
-          return;
-        }
-
-        const verified = factors.totp.find((factor) => factor.status === 'verified');
-        if (verified) {
-          setGate({ kind: 'challenge', factorId: verified.id });
-          return;
-        }
-
-        const pending = factors.totp.find((factor) => factor.status !== 'verified');
-        if (pending) {
-          // Supabase can retain an unverified enrollment after an interrupted setup.
-          // Ask for its code rather than creating duplicate factors.
-          setGate({ kind: 'challenge', factorId: pending.id });
-          return;
-        }
-
-        const { data: enrollment, error: enrollmentError } = await supabase.auth.mfa.enroll({
-          factorType: 'totp',
-          friendlyName: 'Web2Table authenticator',
-        });
-        if (enrollmentError) throw enrollmentError;
-        if (!cancelled) {
-          setGate({
-            kind: 'enroll',
-            factorId: enrollment.id,
-            qrCode: enrollment.totp.qr_code,
-            uri: enrollment.totp.uri,
-          });
-        }
+        const result = await getPrivilegedMfaState(supabase);
+        if (!cancelled) setGate(result);
       } catch (error) {
         if (!cancelled) {
           setGate({
@@ -106,20 +67,7 @@ export function PrivilegedMfaGate({ children }: { children: ReactNode }) {
     setBusy(true);
     setMessage('');
     try {
-      const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({ factorId });
-      if (challengeError) throw challengeError;
-      const { error: verifyError } = await supabase.auth.mfa.verify({
-        factorId,
-        challengeId: challenge.id,
-        code: code.trim(),
-      });
-      if (verifyError) throw verifyError;
-
-      const { data: assurance, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-      if (assuranceError) throw assuranceError;
-      if (assurance.currentLevel !== 'aal2') {
-        throw new Error('The code was accepted, but this session has not reached the required security level. Please try again.');
-      }
+      await verifyPrivilegedMfaCode(supabase, factorId, code);
       setCode('');
       setGate({ kind: 'ready' });
     } catch (error) {
