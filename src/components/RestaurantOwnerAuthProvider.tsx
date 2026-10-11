@@ -109,6 +109,12 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
       const { data } = client.auth.onAuthStateChange((_event, session) => {
         const currentUser = session?.user ?? null;
         setUser(currentUser);
+        // Clear the previous user's role context immediately so the MFA gate
+        // cannot reuse a stale customer/owner/staff classification during a
+        // cross-account sign-in transition.
+        setRestaurant(null);
+        setAccountType(null);
+        setStaffRole(null);
 
         if (!currentUser) {
           setRestaurant(null);
