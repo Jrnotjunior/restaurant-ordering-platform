@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { RestaurantProvider } from './components/RestaurantProvider';
 import { RestaurantOwnerAuthProvider, useRestaurantOwnerAuth } from './components/RestaurantOwnerAuthProvider';
+import { PrivilegedMfaGate } from './components/PrivilegedMfaGate';
 import { ThemeProvider } from './components/ThemeProvider';
 import { RestaurantLayout } from './layouts/RestaurantLayout';
 import { MenuPage } from './pages/MenuPage';
@@ -468,7 +469,9 @@ export function App() {
 
   return (
     <RestaurantOwnerAuthProvider>
-      <AppContent />
+      <PrivilegedMfaGate>
+        <AppContent />
+      </PrivilegedMfaGate>
     </RestaurantOwnerAuthProvider>
   );
 }
