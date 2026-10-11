@@ -3,6 +3,7 @@ export type AppRouteContext = {
   isMenuPage: boolean;
   isCartPage: boolean;
   isAccountPage: boolean;
+  isStaffLoginPage: boolean;
   isSignUpPage: boolean;
   isCustomerEmailConfirmationPage: boolean;
   isCustomerPasswordResetPage: boolean;
@@ -48,6 +49,7 @@ export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' |
   const isMenuPage = route === '#menu' || location.pathname.endsWith('/menu') || location.pathname.endsWith('/menu/');
   const isCartPage = route === '#cart';
   const isAccountPage = route === '#account';
+  const isStaffLoginPage = route === '#staff-login';
   const isSignUpPage = route === '#signup';
   const isCustomerEmailConfirmationPage = route === '#signup-confirmation';
   const isCustomerPasswordResetPage = searchParams.get('customer-password-reset') === '1';
@@ -134,6 +136,7 @@ export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' |
     isMenuPage,
     isCartPage,
     isAccountPage,
+    isStaffLoginPage,
     isSignUpPage,
     isCustomerEmailConfirmationPage,
     isCustomerPasswordResetPage,
