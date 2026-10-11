@@ -43,7 +43,9 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
   const restaurant = useRestaurant();
   const { user } = useRestaurantOwnerAuth();
   const [orderType, setOrderType] = useState<OrderType>('delivery');
-  const [customerName, setCustomerName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const customerName = [firstName.trim(), lastName.trim()].filter(Boolean).join(' ');
   const [mobileNumber, setMobileNumber] = useState('');
   const [customerProfileLoading, setCustomerProfileLoading] = useState(false);
   const [customerProfileError, setCustomerProfileError] = useState('');
@@ -223,7 +225,8 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
     if (!user || !restaurantId) {
       setCustomerProfileLoading(false);
       setCustomerProfileError('');
-      setCustomerName('');
+      setFirstName('');
+      setLastName('');
       setMobileNumber('');
       setHasDefaultAddress(false);
       return;
@@ -271,7 +274,8 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
           setCustomerProfileError('Your customer profile could not be loaded. Please sign in again.');
           return;
         }
-        setCustomerName(profile.name ?? '');
+        setFirstName(profile.firstName ?? '');
+        setLastName(profile.lastName ?? '');
         setMobileNumber(profile.phone ?? '');
         const hasAddress = Boolean(profile.defaultDeliveryCity?.trim() && profile.defaultDeliveryBarangay?.trim() && profile.defaultDeliveryAddress?.trim());
         const hasSavedCoordinates = Number.isFinite(profile.defaultDeliveryLatitude) && profile.defaultDeliveryLatitude !== null
@@ -394,8 +398,9 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
     if (items.length === 0) return 'Your cart is empty. Add items before continuing to checkout.';
     if (customerProfileLoading) return 'Loading your customer information. Please wait.';
     if (customerProfileError) return customerProfileError;
-    if (!customerName.trim()) return 'Enter your full name to continue.';
-    if (/[0-9]/.test(customerName)) return 'Your full name must not contain numbers.';
+    if (!firstName.trim()) return 'Enter your first name to continue.';
+    if (!lastName.trim()) return 'Enter your last name to continue.';
+    if (/[0-9]/.test(firstName) || /[0-9]/.test(lastName)) return 'First and last names must not contain numbers.';
     if (orderType !== 'dine_in' && !/^09\d{9}$/.test(mobileNumber)) return 'Enter a valid 11-digit Philippine mobile number starting with 09.';
     if (isOwnCourierPickup && !restaurantPickupPoint) return 'The restaurant pickup address is not configured. Please contact the restaurant.';
     if (isDelivery && !thirdPartyCourierDelivery) {
@@ -408,7 +413,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
     return '';
   })();
 
-  const canContinue = items.length > 0 && !customerProfileLoading && !customerProfileError && Boolean(customerName.trim()) && !/[0-9]/.test(customerName) && (orderType === 'dine_in' || /^09\d{9}$/.test(mobileNumber)) && (
+  const canContinue = items.length > 0 && !customerProfileLoading && !customerProfileError && Boolean(firstName.trim() && lastName.trim()) && !/[0-9]/.test(firstName) && !/[0-9]/.test(lastName) && (orderType === 'dine_in' || /^09\d{9}$/.test(mobileNumber)) && (
     isOwnCourierPickup
       ? Boolean(restaurantPickupPoint)
       : isDelivery
@@ -611,7 +616,8 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
           </div></fieldset>
 
           <fieldset className="checkout-section"><legend>Customer information</legend>{customerProfileError && <p className="checkout-error" role="alert">{customerProfileError}</p>}<div className="checkout-fields">
-            <label><span>Full name</span><input type="text" value={customerProfileLoading ? '' : customerName} onChange={(event) => setCustomerName(event.target.value)} autoComplete="name" required />{/[0-9]/.test(customerName) && <span className="checkout-field-error" role="alert">Full name must not contain numbers.</span>}</label>
+            <label><span>First name</span><input type="text" value={customerProfileLoading ? '' : firstName} onChange={(event) => setFirstName(event.target.value)} autoComplete="given-name" required />{/[0-9]/.test(firstName) && <span className="checkout-field-error" role="alert">First name must not contain numbers.</span>}</label>
+            <label><span>Last name</span><input type="text" value={customerProfileLoading ? '' : lastName} onChange={(event) => setLastName(event.target.value)} autoComplete="family-name" required />{/[0-9]/.test(lastName) && <span className="checkout-field-error" role="alert">Last name must not contain numbers.</span>}</label>
             {orderType !== 'dine_in' && <label><span>Mobile number</span><input type="tel" value={customerProfileLoading ? '' : mobileNumber} onChange={(event) => setMobileNumber(event.target.value)} autoComplete="tel" inputMode="numeric" maxLength={11} pattern="09[0-9]{9}" title="Enter an 11-digit Philippine mobile number starting with 09." required />{mobileNumber.length >= 2 && !mobileNumber.startsWith('09') && <span className="checkout-field-error" role="alert">Mobile number must start with 09.</span>}{mobileNumber.length > 0 && mobileNumber.startsWith('09') && mobileNumber.length < 11 && <span className="checkout-field-hint">Enter all 11 digits.</span>}</label>}
           </div></fieldset>
 
