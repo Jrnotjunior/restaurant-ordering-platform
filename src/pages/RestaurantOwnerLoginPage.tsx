@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
 import { getCurrentCustomerRestaurant } from '../modules/customer/customerAuthService';
 import { supabase } from '../services/supabaseClient';
@@ -11,6 +11,43 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (authLoading || !user || !supabase) return;
+    const role = user.app_metadata?.role ?? user.user_metadata?.role;
+    if (role !== 'customer') return;
+
+    const storageKey = 'restaurant-ordering-google-customer-signup';
+    const rawSignup = window.localStorage.getItem(storageKey);
+    if (!rawSignup) return;
+
+    let signup: { restaurantId?: string; firstName?: string; lastName?: string; phone?: string };
+    try {
+      signup = JSON.parse(rawSignup);
+    } catch {
+      window.localStorage.removeItem(storageKey);
+      return;
+    }
+
+    if (!signup.restaurantId || !signup.firstName?.trim() || !signup.lastName?.trim() || !/^09[0-9]{9}$/.test(signup.phone ?? '')) return;
+
+    let cancelled = false;
+    void supabase.rpc('upsert_customer_profile', {
+      p_restaurant_id: signup.restaurantId,
+      p_first_name: signup.firstName.trim(),
+      p_last_name: signup.lastName.trim(),
+      p_phone: signup.phone,
+    }).then(({ error: profileError }) => {
+      if (cancelled) return;
+      if (profileError) {
+        setError(profileError.message || 'Unable to save your customer profile.');
+        return;
+      }
+      window.localStorage.removeItem(storageKey);
+    });
+
+    return () => { cancelled = true; };
+  }, [authLoading, user?.id]);
 
   async function handleGoogleSignIn() {
     setError('');
