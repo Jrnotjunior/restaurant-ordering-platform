@@ -4,7 +4,7 @@ import { getCurrentCustomerRestaurant } from '../modules/customer/customerAuthSe
 import { supabase } from '../services/supabaseClient';
 
 export function RestaurantOwnerLoginPage() {
-  const { loading: authLoading, signIn, error: authError } = useRestaurantOwnerAuth();
+  const { user, loading: authLoading, signIn, signOut, error: authError } = useRestaurantOwnerAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -123,6 +123,42 @@ export function RestaurantOwnerLoginPage() {
 
   if (authLoading) {
     return <main className="restaurant-owner-auth-page"><section className="restaurant-owner-auth-card"><p>Loading account…</p></section></main>;
+  }
+
+  // OAuth redirects back to #account. This route must show the signed-in
+  // state when Supabase has restored a session instead of always showing the
+  // sign-in form, which previously made successful logins look unsuccessful.
+  if (user) {
+    return (
+      <main className="restaurant-owner-auth-page">
+        <section className="restaurant-owner-auth-card" aria-labelledby="account-signed-in-title">
+          <p className="eyebrow">Your account</p>
+          <h1 id="account-signed-in-title">You're signed in</h1>
+          <p>{user.email ?? 'Your account is active.'}</p>
+          {authError && <div className="restaurant-dashboard-error" role="alert">{authError}</div>}
+          <nav aria-label="Account links" className="restaurant-owner-auth-form">
+            <a className="button button-primary" href="#order-history">View order history</a>
+            <a className="button" href="#saved-address">Saved addresses</a>
+            <a className="button" href="#">Back to menu</a>
+          </nav>
+          <button
+            className="button"
+            type="button"
+            onClick={() => {
+              setSubmitting(true);
+              void signOut()
+                .then(() => { window.location.hash = '#account'; })
+                .catch((err) => setError(err instanceof Error ? err.message : 'Unable to sign out.'))
+                .finally(() => setSubmitting(false));
+            }}
+            disabled={submitting}
+          >
+            {submitting ? 'Signing out…' : 'Sign out'}
+          </button>
+          {error && <div className="restaurant-dashboard-error" role="alert">{error}</div>}
+        </section>
+      </main>
+    );
   }
 
   return (
