@@ -8,7 +8,7 @@ This is an internal engineering tracker, not a SOC 2 report, certification, or a
 - Frontend callers in `src/modules/customer/customerAuthService.ts`, `src/pages/RestaurantOwnerLoginPage.tsx`, and `src/pages/CheckoutPage.tsx` call `upsert_customer_profile` with separate first/last-name arguments.
 - Earlier migrations define the legacy `p_name` argument.
 - A forward migration was committed at `supabase/migrations/20261012140000_fix_customer_profile_split_name_rpc.sql` to align the RPC with the split-name schema.
-- Status: committed to GitHub; **not confirmed applied to the live Supabase project**. Verify deployed schema and migration history before calling this resolved.
+- Live verification: Supabase migration history contains the split-name RPC migrations, and a read-only query confirmed deployed `upsert_customer_profile(p_restaurant_id uuid, p_first_name text, p_last_name text, p_phone text)` plus `get_my_customer_profile_id(p_restaurant_id uuid)`. The deployed upsert checks auth, tenant context, active restaurant, required names, and initializes loyalty account. Its return shape still includes legacy `name` as a concatenated output field even though storage uses separate columns; assess whether the API contract must remove that output field to meet the requirement that full name is nowhere in the system.
 
 ### Anonymous checkout order RPC
 - `public.create_order` is intentionally executable by `anon` and `authenticated` in migration `0066_fix_create_order_checkout_signature.sql`.
@@ -35,7 +35,8 @@ This is an internal engineering tracker, not a SOC 2 report, certification, or a
 - [x] Supabase Security Advisor findings retrieved.
 - [x] Customer profile RPC mismatch identified and forward migration committed.
 - [x] Payment finalizer grants inspected in repository migration.
-- [ ] Customer-profile migration applied and verified in live Supabase.
+- [x] Live customer-profile RPC signature verified by read-only SQL; deployed function matches the frontend argument contract.
+- [ ] Decide and implement removal of legacy concatenated `name` RPC output if required by the strict no-full-name requirement.
 - [ ] GitHub Actions build passes on current `main`.
 - [ ] Payment callback and deployed grants independently verified.
 - [ ] Security regression tests pass.
