@@ -4,7 +4,8 @@ import { SupabaseRestaurantRepository } from '../restaurant/supabaseRestaurantRe
 import { supabase } from '../../services/supabaseClient';
 
 export type CustomerSignUpInput = {
-  name: string;
+  firstName: string;
+  lastName: string;
   phone: string;
   email: string;
   password: string;
@@ -56,7 +57,9 @@ export async function signUpCustomer(input: CustomerSignUpInput): Promise<Custom
     options: {
       data: {
         role: 'customer',
-        name: input.name,
+        first_name: input.firstName,
+        last_name: input.lastName,
+        name: `${input.firstName} ${input.lastName}`.trim(),
         phone: input.phone || null,
         restaurant_id: restaurant.id,
       },
@@ -69,7 +72,8 @@ export async function signUpCustomer(input: CustomerSignUpInput): Promise<Custom
   if (data.session) {
     const { error: profileError } = await supabase.rpc('upsert_customer_profile', {
       p_restaurant_id: restaurant.id,
-      p_name: input.name,
+      p_first_name: input.firstName,
+      p_last_name: input.lastName,
       p_phone: input.phone || null,
     });
 
