@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { signUpCustomer } from '../modules/customer/customerAuthService';
+import { getCurrentCustomerRestaurant, signUpCustomer } from '../modules/customer/customerAuthService';
+import { supabase } from '../services/supabaseClient';
 import { getPasswordPolicyError, getPasswordGuidance, PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '../utils/passwordPolicy';
 
 export function CustomerSignUpPage() {
@@ -15,6 +16,7 @@ export function CustomerSignUpPage() {
   const [message, setMessage] = useState('');
   const [emailAlreadyRegistered, setEmailAlreadyRegistered] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [googleSubmitting, setGoogleSubmitting] = useState(false);
   const [personalInfoConsent, setPersonalInfoConsent] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -30,6 +32,28 @@ export function CustomerSignUpPage() {
   const shouldShow = (field: string) => submitted || Boolean(touched[field]);
   const markTouched = (field: string) => setTouched((current) => ({ ...current, [field]: true }));
   const fieldError = (field: keyof typeof fieldErrors) => shouldShow(field) && fieldErrors[field] ? <small className="customer-field-error" role="alert">{fieldErrors[field]}</small> : null;
+
+  async function handleGoogleSignUp() {
+    setError('');
+    setMessage('');
+    if (!supabase) {
+      setError('Google sign-in is not configured yet. Please use email registration for now.');
+      return;
+    }
+    setGoogleSubmitting(true);
+    try {
+      await getCurrentCustomerRestaurant();
+      const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}#account`;
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo, queryParams: { prompt: 'select_account' } },
+      });
+      if (oauthError) throw oauthError;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to start Google sign-up.');
+      setGoogleSubmitting(false);
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -87,6 +111,11 @@ export function CustomerSignUpPage() {
           </div>
         )}
 
+        <button className="customer-google-signup-button" type="button" onClick={() => void handleGoogleSignUp()} disabled={submitting || googleSubmitting}>
+          <svg viewBox="0 0 48 48" aria-hidden="true" width="19" height="19"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 3.1 13.22l7.98 6.19C12.97 13.72 18.03 9.5 24 9.5Z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.75 7.18l7.73 6C44.43 37.98 46.98 31.88 46.98 24.55Z"/><path fill="#FBBC05" d="M11.08 28.59A14.4 14.4 0 0 1 10.3 24c0-1.59.27-3.13.76-4.59L3.1 13.22A23.9 23.9 0 0 0 0 24c0 3.87.93 7.52 3.1 10.78l7.98-6.19Z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.91-5.8l-7.73-6c-2.14 1.44-4.88 2.3-8.18 2.3-5.97 0-11.03-4.22-12.92-9.91L3.1 34.78C6.51 42.62 14.62 48 24 48Z"/></svg>
+          {googleSubmitting ? 'Connecting to Google…' : 'Continue with Google'}
+        </button>
+        <div className="customer-signup-divider" aria-hidden="true"><span>or sign up with email</span></div>
         <form className="restaurant-owner-auth-form" noValidate onSubmit={(event) => void handleSubmit(event)}>
           <div className="customer-signup-name-row">
             <label>
