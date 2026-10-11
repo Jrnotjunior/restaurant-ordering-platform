@@ -106,3 +106,10 @@ Never claim SOC 2 compliance based on this tracker. Repository state is not proo
 - `is_system_admin()` and `system_admin_is_owner()` require the JWT role to be `system_admin` and JWT AAL to be `aal2`; owner helper also requires an active `owner` row in `system_admin_access`.
 - `system_admin_has_access()` and `system_admin_has_manage_access()` require JWT AAL2 plus an active access row, with access-level allowlists; management excludes `view_only`.
 - This is a live database ACL and function-setting check, not proof that every downstream admin RPC calls the correct helper. Continue auditing individual admin mutation functions and ensure MFA is actually enrolled/required in Supabase Auth.
+
+
+### System Admin bootstrap MFA hardening — 2026-10-12
+- Live review found `system_admin_bootstrap_owner()` was executable by authenticated users and checked the `app_metadata.role = system_admin` claim, but did not require JWT AAL2. The bootstrap is intended to be available only while `system_admin_access` is empty; live pre-change state had one access row and one active owner.
+- Added migration `20261012190000_require_mfa_for_system_admin_bootstrap.sql` and applied the function replacement to the connected Supabase project. The one-time bootstrap now requires a non-null authenticated user, the System Admin app_metadata role, and `aal2` before inserting the owner row; the empty-table one-time guard remains.
+- Post-apply live verification confirmed the deployed function includes the AAL2 check and EXECUTE roles remain `authenticated, postgres`, with no anon/PUBLIC grant.
+- This is code and live database hardening; no bootstrap invocation was attempted and no access rows were changed. Runtime negative tests with non-AAL2 JWTs and a first-time bootstrap test remain unperformed because no disposable project was used.
