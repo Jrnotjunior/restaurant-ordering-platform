@@ -123,6 +123,8 @@ Never claim SOC 2 compliance based on this tracker. Repository state is not proo
 
 
 ### System Admin owner-status consistency review — 2026-10-12
+- Production follow-up completed: migration `system_admin_owner_active_status` was successfully applied to Supabase on 2026-10-12. Live catalog verification confirms `system_admin_is_owner()` now requires non-null `auth.uid()`, System Admin app-metadata role, JWT AAL2, and an allowlist row with `is_active = true`, `status = 'active'`, and `access_level = 'owner'`. Effective EXECUTE roles verified: `authenticated` and `postgres`; no `anon` or `PUBLIC` grant appeared. This verifies deployed definition and grants, but does not replace end-to-end tests using revoked/inactive identities.
+
 - Code commit `819e97db78b0a7e195bc8503fefb6c76eb707461` adds migration `20261012200000_require_active_status_for_system_admin_owner.sql`. It aligns `system_admin_is_owner()` with the active-status condition already enforced by `is_system_admin()`: the caller must be authenticated, have the System Admin app-metadata role, JWT AAL2, and an allowlist row with `is_active = true`, `status = 'active'`, and `access_level = 'owner'`.
 - Live application of this migration was blocked by the database tool safety check. **It is committed to GitHub but not confirmed applied to production.** Do not treat the production owner helper as fixed until the migration is applied and its deployed definition/grants are verified.
 - Regression tests still needed: inactive-status owner row, disabled owner row, non-owner access level, missing AAL2, and revoked/no allowlist row must all deny owner access; active owner at AAL2 should pass. Use staging/test identities and avoid changing the live administrator allowlist as a test.
