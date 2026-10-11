@@ -253,7 +253,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
         const metadataFirstName = String(metadata.first_name ?? metadata.given_name ?? '').trim();
         const metadataLastName = String(metadata.last_name ?? metadata.family_name ?? '').trim();
         const combinedMetadataName = String(metadata.full_name ?? metadata.name ?? '').trim();
-        const combinedNameParts = combinedMetadataName.split(/\\s+/).filter(Boolean);
+        const combinedNameParts = combinedMetadataName.split(/\s+/).filter(Boolean);
         const phone = String(metadata.phone ?? '').trim() || null;
 
         // The Google signup form collects the name before OAuth and stores it
