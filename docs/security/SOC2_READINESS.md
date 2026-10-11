@@ -61,6 +61,15 @@ This is an internal engineering tracker, not a SOC 2 report, certification, or a
 - Open configuration item: leaked-password protection is disabled in Supabase Auth. Enable it in the Auth password/security settings after confirming the customer/staff passwordless and Google OAuth flows are not unintentionally changed. This setting is not changed by a database migration.
 - Next review sequence: inventory the 11 anonymous function signatures and verify source-level guards; start with `get_online_payment_status(text)` and `get_order_status_by_id(uuid)` because they expose bearer-credential status lookups, then review public checkout RPCs and their rate-limit/abuse controls. Separately audit admin mutation RPCs reported for `authenticated`.
 
+
+### Public RPC source review — 2026-10-12
+- Reviewed repository source for `get_online_payment_status(text)`, `resolve_restaurant_by_domain(text)`, `get_restaurant_tax_settings(uuid)`, and `restaurant_public_self_ordering_enabled(uuid)` against the anonymous-function Advisor findings.
+- `get_restaurant_tax_settings(uuid)` has an internal authorization check requiring the restaurant owner or an active cashier staff membership matching `auth.uid()`; its migration grants execution only to `authenticated`. The Advisor's anonymous finding may reflect historical/stale privilege state, so confirm current live grants before changing this function.
+- `restaurant_public_self_ordering_enabled(uuid)` returns a boolean only and checks active restaurant, ordering enabled, active unexpired subscription, active self-ordering module, and module override. Anonymous access is consistent with public storefront gating.
+- `resolve_restaurant_by_domain(text)` is intentionally public for custom-domain storefront resolution and filters to active restaurants matching the hostname. It returns public storefront fields including contact number and email. The caller currently maps both into `RestaurantConfig`; reducing those fields requires checking the storefront's contact UX and public restaurant lookup path before changing the RPC contract.
+- `get_online_payment_status(text)` returns payment status, order number, order UUID, and total to a caller possessing the payment reference. Payment references are generated with a timestamp and random UUID-derived suffix, lengthened by migration `20261010141000_secure_customer_order_tracking.sql`; however, the RPC does not require customer authentication and returns no customer ownership check. Treat the reference as a bearer secret, avoid logging it, and test that references are unguessable and cannot be enumerated. A token-based follow-up is recommended if reference leakage risk is unacceptable.
+- No production permissions or RPC return contracts were changed during this review. The historical Advisor snapshot alone is not sufficient evidence to revoke execution; compare current live grants with the migrations and call sites first.
+
 ## Work order
 1. Test simultaneous duplicate delivery, failed-event retry, and abandoned-claim recovery for the deployed atomic webhook claim.
 2. Verify production/test webhook secret configuration and the global-secret fallback.
