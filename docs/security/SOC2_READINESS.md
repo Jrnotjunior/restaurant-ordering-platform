@@ -52,6 +52,15 @@ This is an internal engineering tracker, not a SOC 2 report, certification, or a
 - Remediation design: issue a separate high-entropy guest tracking token at order creation; store only a cryptographic hash of that token; use a narrowly scoped guest-tracking RPC that validates the token and returns the minimum necessary customer-facing fields; keep authenticated ownership checks on the existing UUID-based RPC; do not return rider phone numbers to anonymous guests unless the product requirement explicitly requires it. Plan token propagation through cash checkout, online-payment success/return flow, and order tracking URLs before rollout.
 - Required tests before deployment: token cannot be guessed or reused across orders; wrong/expired token returns no order data; signed-in customer cannot use another customer's order UUID; valid guest token preserves the required tracking timeline; public response excludes unnecessary personal information.
 
+
+### Security Advisor refresh — 2026-10-12
+- Ran the Supabase Security Advisor against the connected production project. The latest response still reports 10 RLS-enabled tables without policies, 11 `SECURITY DEFINER` functions executable by `anon`, 89 executable by `authenticated`, and leaked-password protection disabled.
+- The anonymous `SECURITY DEFINER` findings include public checkout/order creation and guest status lookups, which are product entry points and must not be blanket-revoked. They also include public configuration lookups such as restaurant tax settings, domain resolution, and public self-ordering eligibility. Each signature needs review for safe `search_path`, tenant isolation, input validation, and minimal return fields.
+- The authenticated findings include high-impact system-admin and restaurant mutation RPCs. Advisor presence alone does not prove a vulnerability because some functions perform internal role checks, but it is a priority authorization review.
+- No global grant changes were made: broad revocation risks breaking checkout and operational workflows, and broad policies on the ten no-policy tables could expose privileged data.
+- Open configuration item: leaked-password protection is disabled in Supabase Auth. Enable it in the Auth password/security settings after confirming the customer/staff passwordless and Google OAuth flows are not unintentionally changed. This setting is not changed by a database migration.
+- Next review sequence: inventory the 11 anonymous function signatures and verify source-level guards; start with `get_online_payment_status(text)` and `get_order_status_by_id(uuid)` because they expose bearer-credential status lookups, then review public checkout RPCs and their rate-limit/abuse controls. Separately audit admin mutation RPCs reported for `authenticated`.
+
 ## Work order
 1. Test simultaneous duplicate delivery, failed-event retry, and abandoned-claim recovery for the deployed atomic webhook claim.
 2. Verify production/test webhook secret configuration and the global-secret fallback.
