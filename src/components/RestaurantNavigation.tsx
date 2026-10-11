@@ -185,8 +185,8 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
       <>
         <aside className="restaurant-owner-sidebar" aria-label="Restaurant management navigation">
           <a className="restaurant-owner-brand" href="#restaurant/owner" aria-label="Restaurant Dashboard">
-            <span className="restaurant-owner-brand-mark" aria-hidden="true">🍴</span>
-            <span><strong>Restaurant</strong><small>Management System</small></span>
+            <span className="restaurant-owner-brand-mark" aria-hidden="true">WT</span>
+            <span><strong>Web2Table</strong><small>Restaurant Management</small></span>
           </a>
           <nav className="restaurant-owner-sidebar-nav">
             {ownerNavigationItems.map((item) => {
