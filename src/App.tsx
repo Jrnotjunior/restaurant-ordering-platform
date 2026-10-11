@@ -92,13 +92,16 @@ function AppContent() {
   const { user, loading: authLoading, error: authError } = useRestaurantOwnerAuth();
 
   useEffect(() => {
-    const favicon = restaurant.storefront.faviconUrl;
-    // Reuse the favicon link from index.html instead of adding a second one.
-    // Keeping the static SVG link first can cause browsers to keep showing the
-    // platform icon even after a restaurant-specific favicon is loaded.
-    // Keep exactly one favicon link. Remove any duplicate or legacy links
-    // left by the HTML shell or previous app initialization.
+    const favicon = restaurant.storefront.faviconUrl?.trim();
     const iconLinks = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]'));
+
+    // Never show a Web2Table/platform fallback favicon. Use only a favicon
+    // explicitly configured for this restaurant; otherwise remove icon links.
+    if (!favicon) {
+      iconLinks.forEach((link) => link.remove());
+      return;
+    }
+
     let link = iconLinks.shift();
     iconLinks.forEach((duplicate) => duplicate.remove());
 
@@ -107,15 +110,10 @@ function AppContent() {
       link.rel = 'icon';
       document.head.appendChild(link);
     }
-    link.dataset.restaurantFavicon = 'true';
 
-    // Use a self-contained platform fallback so a missing favicon.ico request
-    // does not occur when a restaurant has not uploaded its own icon.
-    const fallback = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23374151'/%3E%3Cpath d='M20 12v17m-6-17v11c0 5 3 8 6 8s6-3 6-8V12m-6 19v21m19-40v40m0-40c8 0 12 7 12 16v5H39' fill='none' stroke='%23fff' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E";
-    link.href = favicon || fallback;
-    // index.html declares its fallback as SVG; clear that MIME type when the
-    // uploaded file is PNG/JPG/WebP so the browser can decode the real format.
-    link.type = favicon ? '' : 'image/svg+xml';
+    link.dataset.restaurantFavicon = 'true';
+    link.href = favicon;
+    link.type = '';
   }, [restaurant.storefront.faviconUrl]);
 
 
