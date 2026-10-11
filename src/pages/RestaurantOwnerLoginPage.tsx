@@ -118,7 +118,8 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
     <main className="restaurant-owner-auth-page">
       <section className="restaurant-owner-auth-card" aria-labelledby="account-login-title">
         <p className="eyebrow">{staffOnly ? 'Restaurant team' : 'Account access'}</p>
-        <h1 id="account-login-title">{staffOnly ? 'Staff sign in' : 'Sign in'}</h1>
+        <h1 id="account-login-title">{staffOnly ? 'Welcome back, team.' : 'Welcome back.'}</h1>
+        <p className="restaurant-login-description">{staffOnly ? 'Sign in securely to access your restaurant team account and daily tasks.' : 'Sign in to your account to manage your restaurant, view orders, and continue with Web2Table.'}</p>
         {(error || authError) && <div className="restaurant-dashboard-error" role="alert">{error || authError}</div>}
 
         <button className="customer-google-signup-button" type="button" onClick={() => void handleGoogleSignIn()} disabled={submitting || googleSubmitting}>
