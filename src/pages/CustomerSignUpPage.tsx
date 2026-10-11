@@ -142,14 +142,11 @@ export function CustomerSignUpPage() {
             type="tel"
             inputMode="numeric"
             autoComplete="tel-national"
-            placeholder="09XXXXXXXXX"
             value={googlePhone}
             onChange={(event) => setGooglePhone(event.target.value.replace(/[^0-9]/g, '').slice(0, 11))}
             required
             disabled={submitting || googleSubmitting}
-            aria-describedby="customer-google-phone-hint"
           />
-          <small id="customer-google-phone-hint">Enter an 11-digit Philippine mobile number starting with 09.</small>
         </label>
           <label className="customer-personal-info-consent">
             <input
