@@ -206,8 +206,8 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
   return (
     <main className="restaurant-owner-auth-page">
       <section className="restaurant-owner-auth-card" aria-labelledby="account-login-title">
-        <p className="eyebrow">{staffOnly ? 'Restaurant team' : 'Customer account'}</p>
-        <h1 id="account-login-title">{staffOnly ? 'Staff sign in' : 'Sign in with Google'}</h1>
+        <p className="eyebrow">{staffOnly ? 'Restaurant team' : 'Account access'}</p>
+        <h1 id="account-login-title">{staffOnly ? 'Staff sign in' : 'Sign in'}</h1>
         {(error || authError) && <div className="restaurant-dashboard-error" role="alert">{error || authError}</div>}
 
         {!staffOnly && <button className="customer-google-signup-button" type="button" onClick={() => void handleGoogleSignIn()} disabled={submitting || googleSubmitting}>
@@ -239,13 +239,14 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
               </button>
             </span>
           </label>
-          {!staffOnly && <p className="customer-password-forgot-link"><a href="#forgot-password">Forgot password?</a></p>}
+          <p className="customer-password-forgot-link"><a href="#forgot-password">Forgot password?</a></p>
           <button className="button button-primary" type="submit" disabled={submitting}>
             {submitting ? 'Signing in…' : 'Sign in'}
           </button>
-        </form>}
+        </form>
 
-        {staffOnly ? <p className="restaurant-auth-switch"><a href="#account">Customer sign in</a></p> : <p className="restaurant-auth-switch">Restaurant team? <a href="#staff-login">Staff sign in</a></p>}
+        {!staffOnly && <p className="restaurant-auth-switch">New customer? <a href="#signup">Create account</a></p>}
+        {staffOnly && <p className="restaurant-auth-switch"><a href="#account">Back to sign in</a></p>}
       </section>
     </main>
   );
