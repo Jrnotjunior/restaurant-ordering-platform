@@ -11,6 +11,8 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
 
   useEffect(() => {
     if (authLoading || !user || !accountType || !supabase) return;
+    // Capture the narrowed client so TypeScript can safely use it inside the async closure.
+    const client = supabase;
 
     // Owners and staff are authorized through their database-backed tenant records.
     // Customer Google authentication is not sufficient by itself: a customer
@@ -43,7 +45,7 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
             /^09[0-9]{9}$/.test(signup.phone ?? '');
 
           if (completeSignup) {
-            const { error: profileError } = await supabase.rpc('upsert_customer_profile', {
+            const { error: profileError } = await client.rpc('upsert_customer_profile', {
               p_restaurant_id: restaurant.id,
               p_first_name: signup.firstName!.trim(),
               p_last_name: signup.lastName!.trim(),
@@ -56,13 +58,13 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
 
         // The database profile, not Google metadata or local storage, is the
         // final authority for customer registration.
-        const { data: profileId, error: lookupError } = await supabase.rpc('get_my_customer_profile_id', {
+        const { data: profileId, error: lookupError } = await client.rpc('get_my_customer_profile_id', {
           p_restaurant_id: restaurant.id,
         });
         if (lookupError) throw lookupError;
 
         if (!cancelled && !profileId) {
-          await supabase.auth.signOut();
+          await client.auth.signOut();
           if (!cancelled) {
             setError('No registered customer account was found for this Google account. Please create an account first.');
             window.location.hash = '#signup';
@@ -72,7 +74,7 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
       } catch (verificationError) {
         if (cancelled) return;
         setError(verificationError instanceof Error ? verificationError.message : 'Unable to verify your customer registration.');
-        await supabase.auth.signOut();
+        await client.auth.signOut();
         if (!cancelled) window.location.hash = '#signup';
       }
     }
