@@ -98,3 +98,11 @@ This is an internal engineering tracker, not a SOC 2 report, certification, or a
 - [ ] Operational SOC 2 evidence assembled and reviewed by a qualified auditor.
 
 Never claim SOC 2 compliance based on this tracker. Repository state is not proof of deployed database state.
+
+
+### System Admin helper authorization — live grant verification (2026-10-12)
+- Queried live `pg_proc`/ACL metadata for `is_system_admin()`, `system_admin_is_owner()`, `system_admin_has_access()`, `system_admin_has_manage_access()`, and `get_my_system_admin_status()`.
+- All five are SECURITY DEFINER with explicit function search_path settings. Live EXECUTE roles were `authenticated` and `postgres`; no `anon` or `PUBLIC` EXECUTE grant was present in the effective ACL.
+- `is_system_admin()` and `system_admin_is_owner()` require the JWT role to be `system_admin` and JWT AAL to be `aal2`; owner helper also requires an active `owner` row in `system_admin_access`.
+- `system_admin_has_access()` and `system_admin_has_manage_access()` require JWT AAL2 plus an active access row, with access-level allowlists; management excludes `view_only`.
+- This is a live database ACL and function-setting check, not proof that every downstream admin RPC calls the correct helper. Continue auditing individual admin mutation functions and ensure MFA is actually enrolled/required in Supabase Auth.
