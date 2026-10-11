@@ -145,28 +145,33 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: "Invalid webhook signature." }, 401);
     }
 
-    const { data: existingEvent, error: existingEventError } = await adminClient
-      .from("paymongo_webhook_events")
-      .select("event_id,status")
-      .eq("event_id", eventId)
-      .maybeSingle();
+    // Atomically claim this event before any side effects. Concurrent duplicate
+    // deliveries cannot both transition the same event into processing.
+    const { data: claimed, error: claimError } = await adminClient.rpc("claim_paymongo_webhook_event", {
+      p_event_id: eventId,
+      p_restaurant_id: restaurantId || null,
+      p_environment: environment,
+      p_event_type: eventType || "unknown",
+    });
 
-    if (existingEventError) throw existingEventError;
-    if (existingEvent?.status === "processed") return jsonResponse({ received: true, duplicate: true }, 200);
+    if (claimError) throw claimError;
+    if (!claimed) {
+      const { data: existingEvent, error: existingEventError } = await adminClient
+        .from("paymongo_webhook_events")
+        .select("event_id,status")
+        .eq("event_id", eventId)
+        .maybeSingle();
 
-    const { error: eventInsertError } = await adminClient
-      .from("paymongo_webhook_events")
-      .upsert({
-        event_id: eventId,
-        restaurant_id: restaurantId || null,
-        environment,
-        event_type: eventType || "unknown",
-        status: "processing",
-        attempts: existingEvent ? 2 : 1,
-        last_error: null,
-      }, { onConflict: "event_id" });
+      if (existingEventError) throw existingEventError;
+      if (existingEvent?.status === "processed") {
+        return jsonResponse({ received: true, duplicate: true }, 200);
+      }
 
-    if (eventInsertError) throw eventInsertError;
+      // A live claim is in progress. A non-2xx response allows the provider to
+      // retry if the original delivery fails; abandoned claims can be reclaimed
+      // by the database function after five minutes.
+      return jsonResponse({ error: "Webhook event is already being processed. Retry shortly." }, 409);
+    }
 
     const rejectWebhookEvent = async (status: number, message: string, eventStatus = "failed") => {
       const { error: auditError } = await adminClient
