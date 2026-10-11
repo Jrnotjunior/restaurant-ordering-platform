@@ -156,7 +156,7 @@ export function CustomerSignUpPage() {
             </span>
             {fieldError("password")}
           </label>
-          <fieldset className="customer-password-checklist" aria-label="Password requirements">
+          {password.length > 0 && <fieldset className="customer-password-checklist" aria-label="Password requirements">
             {[
               { label: 'At least 8 characters', met: password.length >= PASSWORD_MIN_LENGTH, required: true },
               { label: '128 characters or fewer', met: password.length > 0 && password.length <= PASSWORD_MAX_LENGTH, required: true },
@@ -171,7 +171,7 @@ export function CustomerSignUpPage() {
               </label>
             ))}
             {password && getPasswordPolicyError(password) ? <small className="customer-password-policy-error">{getPasswordPolicyError(password)}</small> : null}
-          </fieldset>
+          </fieldset>}
           <label className="customer-personal-info-consent">
             <input
               type="checkbox"
