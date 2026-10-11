@@ -253,31 +253,58 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
         const metadataFirstName = String(metadata.first_name ?? metadata.given_name ?? '').trim();
         const metadataLastName = String(metadata.last_name ?? metadata.family_name ?? '').trim();
         const combinedMetadataName = String(metadata.full_name ?? metadata.name ?? '').trim();
-        const combinedNameParts = combinedMetadataName.split(/\s+/).filter(Boolean);
-        const emailPrefix = String(currentUser.email ?? '').split('@')[0].replace(/[._-]+/g, ' ').trim();
-        const emailNameParts = emailPrefix.split(/\s+/).filter(Boolean);
-        const cleanName = (value: string) => value.replace(/[0-9]/g, '').replace(/\s+/g, ' ').trim();
-
-        // Use provider name fields first. Email-derived fallbacks are cleaned of
-        // digits so numeric usernames never become invalid customer names.
-        let firstName = cleanName(metadataFirstName
-          || (combinedNameParts.length > 1 ? combinedNameParts[0] : '')
-          || emailNameParts[0]
-          || 'Customer');
-        let lastName = cleanName(metadataLastName
-          || (combinedNameParts.length > 1 ? combinedNameParts.slice(1).join(' ') : '')
-          || emailNameParts.slice(1).join(' ')
-          || 'Customer');
-        if (!firstName) firstName = 'Customer';
-        if (!lastName) lastName = 'Customer';
+        const combinedNameParts = combinedMetadataName.split(/\\s+/).filter(Boolean);
         const phone = String(metadata.phone ?? '').trim() || null;
 
-        // Create missing profiles, and repair older auto-generated profiles whose
-        // names came from numeric email usernames. Keep real valid profile names.
+        // The Google signup form collects the name before OAuth and stores it
+        // temporarily so the exact customer-provided names survive the redirect.
+        // Only accept this pending data for the same restaurant and for a short
+        // window; never derive a customer's name from their email address.
+        let pendingSignup: { restaurantId?: string; firstName?: string; lastName?: string; createdAt?: number } | null = null;
+        try {
+          const rawPendingSignup = window.localStorage.getItem('restaurant-ordering-google-customer-signup');
+          if (rawPendingSignup) pendingSignup = JSON.parse(rawPendingSignup);
+        } catch {
+          window.localStorage.removeItem('restaurant-ordering-google-customer-signup');
+        }
+        const pendingSignupIsValid = Boolean(
+          pendingSignup
+          && pendingSignup.restaurantId === currentRestaurantId
+          && typeof pendingSignup.createdAt === 'number'
+          && Date.now() - pendingSignup.createdAt < 30 * 60 * 1000
+          && pendingSignup.createdAt <= Date.now()
+          && pendingSignup.firstName?.trim()
+          && pendingSignup.lastName?.trim(),
+        );
+        if (pendingSignup && !pendingSignupIsValid) {
+          window.localStorage.removeItem('restaurant-ordering-google-customer-signup');
+          pendingSignup = null;
+        }
+
+        let firstName = pendingSignupIsValid
+          ? String(pendingSignup?.firstName ?? '').trim()
+          : metadataFirstName;
+        let lastName = pendingSignupIsValid
+          ? String(pendingSignup?.lastName ?? '').trim()
+          : metadataLastName;
+
+        // If Google provides only a full name, use it only when it has a clear
+        // first/remaining-name split. Do not guess from the email prefix.
+        if ((!firstName || !lastName) && combinedNameParts.length > 1) {
+          if (!firstName) firstName = combinedNameParts[0];
+          if (!lastName) lastName = combinedNameParts.slice(1).join(' ');
+        }
+
+        // Create missing profiles or repair legacy profiles that were populated
+        // from email-derived names. Prefer the customer's pre-OAuth names.
         if (!profile || /[0-9]/.test(profile.firstName ?? '') || /[0-9]/.test(profile.lastName ?? '')) {
           if (profile && !/[0-9]/.test(profile.firstName ?? '') && !/[0-9]/.test(profile.lastName ?? '')) {
             firstName = profile.firstName!.trim();
             lastName = profile.lastName!.trim();
+          }
+          if (!firstName || !lastName) {
+            setCustomerProfileError('Please complete your customer profile with your first and last name before checkout.');
+            return;
           }
           const { error: createProfileError } = await supabase!.rpc('upsert_customer_profile', {
             p_restaurant_id: currentRestaurantId,
