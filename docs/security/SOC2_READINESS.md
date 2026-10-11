@@ -34,7 +34,7 @@ This is an internal engineering tracker, not a SOC 2 report, certification, or a
 - `service_role` is privileged and bypasses RLS; its use must remain server-side and secrets must never reach clients.
 
 ## Work order
-1. Make webhook event claiming concurrency-safe and test simultaneous duplicate delivery.
+1. Deploy the atomic webhook-claim migration and updated Edge Function; test simultaneous duplicate delivery and abandoned-claim recovery.
 2. Verify production/test webhook secret configuration and the global-secret fallback.
 3. Audit anonymous `create_order` behavior and abuse protections without breaking guest checkout.
 4. Audit privileged functions for tenant/role checks, MFA assurance where required, safe `search_path`, idempotency, and least privilege.
@@ -48,7 +48,8 @@ This is an internal engineering tracker, not a SOC 2 report, certification, or a
 - [x] Live ACLs reviewed for the ten no-policy tables; no direct `anon`/`authenticated` table grants were listed.
 - [x] Live `finalize_online_payment` EXECUTE grants inspected; only `postgres` and `service_role` were listed.
 - [x] Webhook source reviewed for signature verification, freshness, checkout metadata, amount/currency checks, and use of the finalizer.
-- [ ] Concurrency-safe webhook event claiming implemented and duplicate-concurrency tests pass.
+- [x] Atomic webhook event-claim implementation committed to `main` (deployment and concurrency tests still pending).
+- [ ] Atomic claim migration and Edge Function deployed; concurrent duplicate and stale-claim recovery tests pass.
 - [ ] Production/test secret configuration and fallback independently verified.
 - [ ] Anonymous checkout authorization and abuse controls reviewed.
 - [ ] All privileged RPCs reviewed and security regression tests pass.
