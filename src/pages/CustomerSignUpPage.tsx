@@ -105,7 +105,22 @@ export function CustomerSignUpPage() {
       }
       setPassword('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to create your account.');
+      const errorMessage = err instanceof Error ? err.message : '';
+      const normalizedError = errorMessage.toLowerCase();
+
+      // Supabase may return an explicit duplicate-user error when email
+      // confirmation is disabled. Give the same helpful feedback as the
+      // identities-empty response without exposing raw auth errors.
+      if (
+        normalizedError.includes('already registered') ||
+        normalizedError.includes('user already exists') ||
+        normalizedError.includes('email already exists')
+      ) {
+        setEmailAlreadyRegistered(true);
+        setMessage('This email already has an account. Sign in instead, or');
+      } else {
+        setError(errorMessage || 'Unable to create your account.');
+      }
     } finally {
       setSubmitting(false);
     }
