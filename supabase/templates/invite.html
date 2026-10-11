@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+  <title>Web2Table Invitation</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f3f3f3;font-family:Arial,Helvetica,sans-serif;color:#171717;">
+  <div style="display:none;font-size:1px;color:#f3f3f3;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">
+    {{ if eq .Data.invitation_type "tenant_owner" }}You've been invited to set up your restaurant on Web2Table.{{ else }}You've been invited to join your restaurant team on Web2Table.{{ end }}
+  </div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background-color:#f3f3f3;">
+    <tr><td align="center" style="padding:36px 16px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border:1px solid #e5e5e5;border-collapse:separate;border-spacing:0;">
+        <tr>
+          <td align="center" style="background-color:#080808;padding:30px 24px;border-bottom:4px solid #e53935;">
+            <img src="https://xaihajwrsvcdjisezmmc.supabase.co/storage/v1/object/public/web2table-assets/web2table.png" alt="Web2Table" width="240" style="display:block;width:100%;max-width:240px;height:auto;border:0;outline:none;text-decoration:none;">
+          </td>
+        </tr>
+        <tr><td style="padding:40px 36px 24px 36px;">
+          <p style="margin:0 0 12px 0;font-size:12px;line-height:18px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#e53935;">{{ if eq .Data.invitation_type "tenant_owner" }}RESTAURANT OWNER INVITATION{{ else }}RESTAURANT TEAM INVITATION{{ end }}</p>
+          <h1 style="margin:0 0 20px 0;font-size:28px;line-height:36px;font-weight:700;color:#111111;">
+            {{ if eq .Data.invitation_type "tenant_owner" }}You're invited to Web2Table{{ else }}Your restaurant has invited you{{ end }}
+          </h1>
+          {{ if eq .Data.invitation_type "tenant_owner" }}
+          <p style="margin:0 0 18px 0;font-size:16px;line-height:26px;color:#444444;">You've been invited to join Web2Table as a restaurant owner.</p>
+          <p style="margin:0 0 28px 0;font-size:16px;line-height:26px;color:#444444;">Accept your invitation to continue setting up your restaurant account. We'll guide you through secure account verification and sign-in.</p>
+          {{ else }}
+          <p style="margin:0 0 18px 0;font-size:16px;line-height:26px;color:#444444;">You've been invited to join a restaurant team on Web2Table.</p>
+          <p style="margin:0 0 28px 0;font-size:16px;line-height:26px;color:#444444;">Accept your invitation to activate your staff account. We'll guide you through secure account verification and sign-in.</p>
+          {{ end }}
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 28px 0;">
+            <tr><td align="center" bgcolor="#e53935" style="background-color:#e53935;border-radius:4px;">
+              <a href="{{ .SiteURL }}/?invitation=1&amp;token_hash={{ .TokenHash }}&amp;type=invite" target="_blank" style="display:inline-block;padding:15px 30px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:20px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:4px;">Accept Invitation</a>
+            </td></tr>
+          </table>
+          <p style="margin:0 0 12px 0;font-size:13px;line-height:21px;color:#666666;">If the button doesn't work, copy and paste this link into your browser:</p>
+          <p style="margin:0 0 28px 0;font-size:12px;line-height:21px;overflow-wrap:anywhere;word-break:break-word;">
+            <a href="{{ .SiteURL }}/?invitation=1&amp;token_hash={{ .TokenHash }}&amp;type=invite" target="_blank" style="color:#d32f2f;text-decoration:underline;overflow-wrap:anywhere;word-break:break-word;">Open your Web2Table invitation</a>
+          </p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background-color:#f8f8f8;border-left:3px solid #e53935;">
+            <tr><td style="padding:16px 18px;">
+              <p style="margin:0 0 6px 0;font-size:13px;line-height:19px;font-weight:bold;color:#222222;">Security reminder</p>
+              <p style="margin:0;font-size:13px;line-height:21px;color:#666666;">If you weren't expecting this invitation, you can safely ignore this email. Never share your invitation link or verification codes with anyone.</p>
+            </td></tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding:24px 36px;background-color:#080808;border-top:1px solid #222222;">
+          <p style="margin:0 0 8px 0;font-size:14px;line-height:20px;font-weight:bold;color:#ffffff;">Web2Table</p>
+          <p style="margin:0 0 16px 0;font-size:12px;line-height:20px;color:#bdbdbd;">Restaurant operations, connected.</p>
+          <p style="margin:0 0 12px 0;font-size:12px;line-height:20px;color:#bdbdbd;">Need assistance? <a href="mailto:contact@web2table.io" style="color:#ff6b6b;text-decoration:none;">contact@web2table.io</a></p>
+          <p style="margin:0;padding-top:16px;border-top:1px solid #303030;font-size:11px;line-height:18px;color:#888888;">This is an automated account invitation email. Please do not reply directly to this message.</p>
+        </td></tr>
+      </table>
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;"><tr><td align="center" style="padding:18px 12px 0 12px;">
+        <p style="margin:0;font-size:11px;line-height:18px;color:#888888;">&copy; Web2Table. All rights reserved.</p>
+      </td></tr></table>
+    </td></tr>
+  </table>
+</body>
+</html>
