@@ -31,6 +31,14 @@ export function Header({ cartCount = 0 }: HeaderProps) {
   const isRestaurantOwner = accountType === 'owner';
   const isRestaurantStaff = accountType === 'staff';
   const isCustomer = accountType === 'customer';
+  const customerMetadata = user?.user_metadata as Record<string, unknown> | undefined;
+  const customerDisplayName = [
+    typeof customerMetadata?.first_name === 'string' ? customerMetadata.first_name.trim() : '',
+    typeof customerMetadata?.last_name === 'string' ? customerMetadata.last_name.trim() : '',
+  ].filter(Boolean).join(' ')
+    || (typeof customerMetadata?.full_name === 'string' ? customerMetadata.full_name.trim() : '')
+    || (typeof customerMetadata?.name === 'string' ? customerMetadata.name.trim() : '')
+    || 'Customer';
   const [accountOpen, setAccountOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [newPassword, setNewPassword] = useState('');
@@ -162,7 +170,7 @@ export function Header({ cartCount = 0 }: HeaderProps) {
           {accountOpen ? (
             <div className="header-account-dropdown" role="menu">
               <div className="header-account-identity">
-                <strong>{isRestaurantOwner ? 'Restaurant Owner' : isRestaurantStaff ? (staffRole ? staffRole.charAt(0).toUpperCase() + staffRole.slice(1) : 'Staff') : (typeof user?.user_metadata?.name === 'string' && user.user_metadata.name.trim() ? user.user_metadata.name.trim() : 'Customer')}</strong>
+                <strong>{isRestaurantOwner ? 'Restaurant Owner' : isRestaurantStaff ? (staffRole ? staffRole.charAt(0).toUpperCase() + staffRole.slice(1) : 'Staff') : customerDisplayName}</strong>
                 <span>{user?.email}</span>
                 {isCustomer ? <span className="header-account-points">Loyalty points: {loyaltyLoading ? '…' : loyaltyPoints ?? '—'}</span> : null}
               </div>
