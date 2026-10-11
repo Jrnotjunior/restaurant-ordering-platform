@@ -2,7 +2,8 @@ import { supabaseRpc } from '../../services/supabaseClient';
 
 export type CustomerCheckoutProfile = {
   customerId: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   phone: string | null;
   defaultDeliveryCity: string | null;
   defaultDeliveryBarangay: string | null;
@@ -34,7 +35,8 @@ export async function getMyCustomerProfileId(restaurantId: string): Promise<stri
 export async function getMyCustomerProfile(restaurantId: string): Promise<CustomerCheckoutProfile | null> {
   const rows = await supabaseRpc<{
     customer_id: string;
-    name: string;
+    first_name: string;
+    last_name: string;
     phone: string | null;
     default_delivery_city: string | null;
     default_delivery_barangay: string | null;
@@ -51,7 +53,8 @@ export async function getMyCustomerProfile(restaurantId: string): Promise<Custom
 
   return {
     customerId: row.customer_id,
-    name: row.name,
+    firstName: row.first_name ?? '',
+    lastName: row.last_name ?? '',
     phone: row.phone ?? null,
     defaultDeliveryCity: row.default_delivery_city ?? null,
     defaultDeliveryBarangay: row.default_delivery_barangay ?? null,
