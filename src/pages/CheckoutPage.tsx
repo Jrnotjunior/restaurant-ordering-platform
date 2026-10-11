@@ -251,10 +251,24 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
         // this cannot create a profile for another user or another restaurant.
         if (!profile) {
           const metadata = currentUser.user_metadata ?? {};
+          const metadataFirstName = String(metadata.first_name ?? metadata.given_name ?? '').trim();
+          const metadataLastName = String(metadata.last_name ?? metadata.family_name ?? '').trim();
+          const combinedMetadataName = String(metadata.full_name ?? metadata.name ?? '').trim();
+          const combinedNameParts = combinedMetadataName.split(/\s+/).filter(Boolean);
           const emailPrefix = String(currentUser.email ?? '').split('@')[0].replace(/[._-]+/g, ' ').trim();
           const emailNameParts = emailPrefix.split(/\s+/).filter(Boolean);
-          const firstName = String(metadata.first_name ?? metadata.given_name ?? emailNameParts[0] ?? 'Customer').trim();
-          const lastName = String(metadata.last_name ?? metadata.family_name ?? emailNameParts.slice(1).join(' ')).trim();
+
+          // Prefer explicit provider first/last fields. If the provider only gives
+          // a combined display name, split it conservatively at the first space;
+          // for a single-token name, fall back to the email prefix instead.
+          const firstName = metadataFirstName
+            || (combinedNameParts.length > 1 ? combinedNameParts[0] : '')
+            || emailNameParts[0]
+            || 'Customer';
+          const lastName = metadataLastName
+            || (combinedNameParts.length > 1 ? combinedNameParts.slice(1).join(' ') : '')
+            || emailNameParts.slice(1).join(' ')
+            || 'Customer';
           const phone = String(metadata.phone ?? '').trim() || null;
           const { error: createProfileError } = await supabase!.rpc('upsert_customer_profile', {
             p_restaurant_id: currentRestaurantId,
