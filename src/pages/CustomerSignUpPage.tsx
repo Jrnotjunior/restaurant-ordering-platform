@@ -68,7 +68,8 @@ export function CustomerSignUpPage() {
     setSubmitting(true);
     try {
       const result = await signUpCustomer({
-        name: trimmedName,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
         phone: trimmedPhone,
         email: trimmedEmail,
         password,
