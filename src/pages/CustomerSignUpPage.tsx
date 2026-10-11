@@ -3,7 +3,8 @@ import { signUpCustomer } from '../modules/customer/customerAuthService';
 import { getPasswordPolicyError, getPasswordGuidance, PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '../utils/passwordPolicy';
 
 export function CustomerSignUpPage() {
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,7 +19,8 @@ export function CustomerSignUpPage() {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [submitted, setSubmitted] = useState(false);
   const fieldErrors = {
-    name: !name.trim() ? 'Please enter your full name.' : '',
+    firstName: !firstName.trim() ? 'Please enter your first name.' : '',
+    lastName: !lastName.trim() ? 'Please enter your last name.' : '',
     phone: !phone.trim() ? 'Please enter your phone number.' : !/^09[0-9]{9}$/.test(phone.trim()) ? 'Enter an 11-digit mobile number starting with 09.' : '',
     email: !email.trim() ? 'Please enter your email address.' : !(email.trim().includes('@') && email.trim().split('@')[1]?.includes('.') && !/\s/.test(email.trim())) ? 'Please enter a valid email address.' : '',
     password: !password ? 'Please create a password.' : getPasswordPolicyError(password) || '',
@@ -36,11 +38,11 @@ export function CustomerSignUpPage() {
     setMessage('');
     setEmailAlreadyRegistered(false);
 
-    const trimmedName = name.trim();
+    const trimmedName = `${firstName.trim()} ${lastName.trim()}`.trim();
     const trimmedPhone = phone.trim();
     const trimmedEmail = email.trim().toLowerCase();
 
-    if (fieldErrors.name || fieldErrors.phone || fieldErrors.email || fieldErrors.password || fieldErrors.confirmPassword || fieldErrors.consent) return;
+    if (fieldErrors.firstName || fieldErrors.lastName || fieldErrors.phone || fieldErrors.email || fieldErrors.password || fieldErrors.confirmPassword || fieldErrors.consent) return;
 
     setSubmitting(true);
     try {
@@ -86,11 +88,18 @@ export function CustomerSignUpPage() {
         )}
 
         <form className="restaurant-owner-auth-form" noValidate onSubmit={(event) => void handleSubmit(event)}>
-          <label>
-            Full name
-            <input type="text" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} onBlur={() => markTouched("name")} aria-invalid={shouldShow("name") && Boolean(fieldErrors.name)} required disabled={submitting} />
-            {fieldError("name")}
-          </label>
+          <div className="customer-signup-name-row">
+            <label>
+              First name
+              <input type="text" autoComplete="given-name" value={firstName} onChange={(event) => setFirstName(event.target.value)} onBlur={() => markTouched("firstName")} aria-invalid={shouldShow("firstName") && Boolean(fieldErrors.firstName)} required disabled={submitting} />
+              {fieldError("firstName")}
+            </label>
+            <label>
+              Last name
+              <input type="text" autoComplete="family-name" value={lastName} onChange={(event) => setLastName(event.target.value)} onBlur={() => markTouched("lastName")} aria-invalid={shouldShow("lastName") && Boolean(fieldErrors.lastName)} required disabled={submitting} />
+              {fieldError("lastName")}
+            </label>
+          </div>
           <label>
             Phone number
             <input
