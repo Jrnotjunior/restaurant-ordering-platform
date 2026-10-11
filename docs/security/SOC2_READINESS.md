@@ -113,3 +113,10 @@ Never claim SOC 2 compliance based on this tracker. Repository state is not proo
 - Added migration `20261012190000_require_mfa_for_system_admin_bootstrap.sql` and applied the function replacement to the connected Supabase project. The one-time bootstrap now requires a non-null authenticated user, the System Admin app_metadata role, and `aal2` before inserting the owner row; the empty-table one-time guard remains.
 - Post-apply live verification confirmed the deployed function includes the AAL2 check and EXECUTE roles remain `authenticated, postgres`, with no anon/PUBLIC grant.
 - This is code and live database hardening; no bootstrap invocation was attempted and no access rows were changed. Runtime negative tests with non-AAL2 JWTs and a first-time bootstrap test remain unperformed because no disposable project was used.
+
+
+### System Admin active-allowlist identity enforcement — 2026-10-12
+- During the privileged RPC audit, several read RPCs relied on `public.is_system_admin()`. Before this change, that helper checked the trusted app_metadata role and AAL2 but did not check the current `system_admin_access` allowlist. A revoked/deactivated account with a stale role claim could therefore still pass those read checks.
+- Added and applied `20261012193000_require_active_allowlist_for_system_admin_identity.sql`. The helper now requires authenticated `auth.uid()`, the trusted System Admin role, JWT AAL2, and an allowlist row with `is_active=true`, `status='active'`, and an approved access level.
+- Post-apply live SQL confirmed the deployed definition and effective EXECUTE roles (`authenticated, postgres`; no anon/PUBLIC grant). Live state currently has one active access row.
+- This central helper change hardens all callers that rely on `is_system_admin()`. No user access records were modified. Revoked-user JWT negative tests and per-RPC integration tests remain outstanding.
