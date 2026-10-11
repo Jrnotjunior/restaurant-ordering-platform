@@ -24,6 +24,14 @@ This is an internal engineering tracker, not a SOC 2 report, certification, or a
 - Live deployment completed on 2026-10-12: migration applied successfully; read-only catalog query confirmed `claim_paymongo_webhook_event` exists. `information_schema.routine_privileges` listed only `postgres` and `service_role` as EXECUTE grantees. Edge Function `paymongo-webhook` deployed successfully as ACTIVE version 14 with `verify_jwt=false`, preserving the existing PayMongo HMAC authentication model. A subsequent live fetch confirmed version 14 source contains the atomic-claim RPC call. Concurrency, failed-retry, and stale-claim recovery tests have not yet been run.
 - The webhook event table migration enables RLS and grants authenticated users SELECT under a restaurant-owner policy, while service_role has select/insert/update. Review whether exposing `last_error` and event metadata to restaurant owners is appropriate; do not expose secret values.
 
+
+### Guest checkout NULL-validation hardening — deployed 2026-10-12
+- Found SQL three-valued-logic gaps in exposed checkout RPCs: `IF jsonb_typeof(p_items) <> 'array' OR jsonb_array_length(p_items) = 0` does not reject SQL NULL reliably, and `p_order_type NOT IN (...)` / `p_payment_method NOT IN (...)` likewise do not explicitly reject NULL.
+- Added migration `20261012180000_harden_all_guest_checkout_rpc_validation.sql` (commit `9ca54018d8f4a5057956ae37cf7eef7033f2ae81`). It rewrites only these validation predicates in the six current checkout RPC overloads using each live function definition, preserving business logic and grants. The migration applied successfully to the live Supabase project.
+- Live catalog verification confirmed explicit NULL/non-array/empty-item guards in the base `create_order`, quote-based order creation, both `create_pending_online_payment` overloads, and quote-based pending payment. The customer-location `create_order` overload delegates to the hardened base function; the customer-location pending-payment overload delegates to the hardened pending-payment base function.
+- Live rollback-free validation probes passed for the base `create_order`: SQL NULL items, scalar JSON, object JSON, and empty arrays were rejected with `At least one item is required`; NULL order type was rejected with `Invalid order type`; NULL payment method was rejected with `Invalid payment method`. The test inputs were rejected before order creation; no test orders were created.
+- Remaining: add repeatable automated regression tests and verify the client-facing REST RPC path in a non-production/staging test setup. Do not interpret these targeted checks as a complete guest-checkout abuse/rate-limit review.
+
 ## Supabase Security Advisor snapshot
 - Security Advisor observed 10 RLS-enabled tables with no policies on 2026-10-11: `delivery_quotes`, `delivery_route_rate_limits`, `pending_online_payments`, `restaurant_module_overrides`, `restaurant_order_counters`, `restaurant_subscriptions`, `system_admin_access`, `system_modules`, `system_package_modules`, `system_packages`.
 - 11 `SECURITY DEFINER` functions were reported executable by `anon`; 89 were reported executable by `authenticated`. These counts require per-function review; do not apply blanket revokes.
@@ -54,7 +62,8 @@ This is an internal engineering tracker, not a SOC 2 report, certification, or a
 - [x] Updated `paymongo-webhook` Edge Function deployed as ACTIVE version 14; live source confirmed to contain atomic-claim call.
 - [ ] Concurrent duplicate, failed-event retry, and stale-claim recovery tests pass.
 - [ ] Production/test secret configuration and fallback independently verified.
-- [ ] Anonymous checkout authorization and abuse controls reviewed.
+- [x] Guest checkout NULL/non-array/empty item and NULL order/payment validation hardened in all live RPC overloads; targeted live rejection probes passed.
+- [ ] Anonymous checkout authorization, rate limiting, and broader abuse controls fully reviewed.
 - [ ] All privileged RPCs reviewed and security regression tests pass.
 - [ ] GitHub Actions build passes on current `main`.
 - [ ] Strict no-full-name API contract confirmed throughout the system.
