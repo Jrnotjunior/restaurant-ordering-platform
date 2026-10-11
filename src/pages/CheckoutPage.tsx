@@ -249,32 +249,41 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
         // checkout, ensure their own profile exists for this restaurant.
         // The RPC enforces auth.uid() and the current restaurant tenant, so
         // this cannot create a profile for another user or another restaurant.
-        if (!profile) {
-          const metadata = currentUser.user_metadata ?? {};
-          const metadataFirstName = String(metadata.first_name ?? metadata.given_name ?? '').trim();
-          const metadataLastName = String(metadata.last_name ?? metadata.family_name ?? '').trim();
-          const combinedMetadataName = String(metadata.full_name ?? metadata.name ?? '').trim();
-          const combinedNameParts = combinedMetadataName.split(/\s+/).filter(Boolean);
-          const emailPrefix = String(currentUser.email ?? '').split('@')[0].replace(/[._-]+/g, ' ').trim();
-          const emailNameParts = emailPrefix.split(/\s+/).filter(Boolean);
+        const metadata = currentUser.user_metadata ?? {};
+        const metadataFirstName = String(metadata.first_name ?? metadata.given_name ?? '').trim();
+        const metadataLastName = String(metadata.last_name ?? metadata.family_name ?? '').trim();
+        const combinedMetadataName = String(metadata.full_name ?? metadata.name ?? '').trim();
+        const combinedNameParts = combinedMetadataName.split(/\s+/).filter(Boolean);
+        const emailPrefix = String(currentUser.email ?? '').split('@')[0].replace(/[._-]+/g, ' ').trim();
+        const emailNameParts = emailPrefix.split(/\s+/).filter(Boolean);
+        const cleanName = (value: string) => value.replace(/[0-9]/g, '').replace(/\s+/g, ' ').trim();
 
-          // Prefer explicit provider first/last fields. If the provider only gives
-          // a combined display name, split it conservatively at the first space;
-          // for a single-token name, fall back to the email prefix instead.
-          const firstName = metadataFirstName
-            || (combinedNameParts.length > 1 ? combinedNameParts[0] : '')
-            || emailNameParts[0]
-            || 'Customer';
-          const lastName = metadataLastName
-            || (combinedNameParts.length > 1 ? combinedNameParts.slice(1).join(' ') : '')
-            || emailNameParts.slice(1).join(' ')
-            || 'Customer';
-          const phone = String(metadata.phone ?? '').trim() || null;
+        // Use provider name fields first. Email-derived fallbacks are cleaned of
+        // digits so numeric usernames never become invalid customer names.
+        let firstName = cleanName(metadataFirstName
+          || (combinedNameParts.length > 1 ? combinedNameParts[0] : '')
+          || emailNameParts[0]
+          || 'Customer');
+        let lastName = cleanName(metadataLastName
+          || (combinedNameParts.length > 1 ? combinedNameParts.slice(1).join(' ') : '')
+          || emailNameParts.slice(1).join(' ')
+          || 'Customer');
+        if (!firstName) firstName = 'Customer';
+        if (!lastName) lastName = 'Customer';
+        const phone = String(metadata.phone ?? '').trim() || null;
+
+        // Create missing profiles, and repair older auto-generated profiles whose
+        // names came from numeric email usernames. Keep real valid profile names.
+        if (!profile || /[0-9]/.test(profile.firstName ?? '') || /[0-9]/.test(profile.lastName ?? '')) {
+          if (profile && !/[0-9]/.test(profile.firstName ?? '') && !/[0-9]/.test(profile.lastName ?? '')) {
+            firstName = profile.firstName!.trim();
+            lastName = profile.lastName!.trim();
+          }
           const { error: createProfileError } = await supabase!.rpc('upsert_customer_profile', {
             p_restaurant_id: currentRestaurantId,
-            p_first_name: firstName || 'Customer',
+            p_first_name: firstName,
             p_last_name: lastName,
-            p_phone: phone,
+            p_phone: phone ?? profile?.phone ?? null,
           });
           if (createProfileError) throw createProfileError;
           window.localStorage.removeItem('restaurant-ordering-google-customer-signup');
