@@ -370,3 +370,18 @@
 @media(max-width:350px) {
   .customer-google-name-row { grid-template-columns: 1fr; gap: 12px; }
 }
+
+
+/* Keep privacy consent visually separated from the customer name fields. */
+.restaurant-owner-auth-card .customer-google-name-row {
+  margin-bottom: 12px;
+}
+.restaurant-owner-auth-card .customer-personal-info-consent {
+  margin: 12px 0 18px;
+  align-items: flex-start;
+  gap: 9px;
+}
+.restaurant-owner-auth-card .customer-personal-info-consent input[type="checkbox"] {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
