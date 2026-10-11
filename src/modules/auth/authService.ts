@@ -97,6 +97,27 @@ export async function initializeAuthSession(client: SupabaseClient) {
       return;
     }
 
+    // Supabase may return OAuth credentials in the URL fragment depending on
+    // the provider/flow configuration. Session detection is disabled in the
+    // client so we must restore those credentials explicitly, just like the
+    // customer email-confirmation flow above.
+    if (accessToken && refreshToken) {
+      const { error } = await client.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+
+      if (error) {
+        console.error('OAuth callback session restoration failed', error);
+      } else {
+        // Remove credentials from the address bar. The storefront then opens
+        // on its default menu route with the authenticated session retained.
+        url.hash = '';
+        window.history.replaceState({}, document.title, url.toString());
+      }
+      return;
+    }
+
     if (code) {
       const { error } = await client.auth.exchangeCodeForSession(code);
       if (error) {
