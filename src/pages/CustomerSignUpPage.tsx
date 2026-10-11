@@ -9,9 +9,7 @@ export function CustomerSignUpPage() {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [emailAlreadyRegistered, setEmailAlreadyRegistered] = useState(false);
@@ -26,7 +24,6 @@ export function CustomerSignUpPage() {
     phone: !phone.trim() ? 'Please enter your phone number.' : !/^09[0-9]{9}$/.test(phone.trim()) ? 'Enter an 11-digit mobile number starting with 09.' : '',
     email: !email.trim() ? 'Please enter your email address.' : !(email.trim().includes('@') && email.trim().split('@')[1]?.includes('.') && !/\s/.test(email.trim())) ? 'Please enter a valid email address.' : '',
     password: !password ? 'Please create a password.' : getPasswordPolicyError(password) || '',
-    confirmPassword: !confirmPassword ? 'Please confirm your password.' : confirmPassword !== password ? 'Passwords do not match.' : '',
     consent: !personalInfoConsent ? 'Please agree to the Privacy Notice to create an account.' : '',
   };
   const shouldShow = (field: string) => submitted || Boolean(touched[field]);
@@ -66,7 +63,7 @@ export function CustomerSignUpPage() {
     const trimmedPhone = phone.trim();
     const trimmedEmail = email.trim().toLowerCase();
 
-    if (fieldErrors.firstName || fieldErrors.lastName || fieldErrors.phone || fieldErrors.email || fieldErrors.password || fieldErrors.confirmPassword || fieldErrors.consent) return;
+    if (fieldErrors.firstName || fieldErrors.lastName || fieldErrors.phone || fieldErrors.email || fieldErrors.password || fieldErrors.consent) return;
 
     setSubmitting(true);
     try {
@@ -89,7 +86,6 @@ export function CustomerSignUpPage() {
         setMessage('Check your inbox for an account confirmation email to complete your registration.');
       }
       setPassword('');
-      setConfirmPassword('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to create your account.');
     } finally {
@@ -159,16 +155,6 @@ export function CustomerSignUpPage() {
               </button>
             </span>
             {fieldError("password")}
-          </label>
-          <label className="customer-signup-password-field">
-            Confirm password
-            <span className="customer-password-input-wrap">
-              <input type={showConfirmPassword ? 'text' : 'password'} autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH} onBlur={() => markTouched("confirmPassword")} aria-invalid={shouldShow("confirmPassword") && Boolean(fieldErrors.confirmPassword)} disabled={submitting} required />
-              <button className="customer-password-visibility-button" type="button" onClick={() => setShowConfirmPassword((visible) => !visible)} aria-label={showConfirmPassword ? 'Hide confirmation password' : 'Show confirmation password'} aria-pressed={showConfirmPassword} disabled={submitting}>
-                {showConfirmPassword ? <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.9 5.2A10.8 10.8 0 0112 5c5.2 0 8.8 4.7 9.5 6-.3.6-1.4 2.2-3.4 3.7M6.2 6.2C3.9 7.6 2.6 9.7 2.5 11c.7 1.3 4.3 6 9.5 6 1 0 1.9-.2 2.7-.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg> : <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.8"/></svg>}
-              </button>
-            </span>
-            {fieldError("confirmPassword")}
           </label>
           <fieldset className="customer-password-checklist" aria-label="Password requirements">
             {[
