@@ -17,6 +17,7 @@ export function CustomerSignUpPage() {
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
   const [googleFirstName, setGoogleFirstName] = useState('');
   const [googleLastName, setGoogleLastName] = useState('');
+  const [googlePhone, setGooglePhone] = useState('');
   const [personalInfoConsent, setPersonalInfoConsent] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -39,18 +40,22 @@ export function CustomerSignUpPage() {
       setError('Enter your first and last name before continuing with Google.');
       return;
     }
+    if (!/^09[0-9]{9}$/.test(googlePhone.trim())) {
+      setError('Enter an 11-digit mobile number starting with 09.');
+      return;
+    }
     if (!personalInfoConsent) {
       setError('Please agree to the Privacy Notice to create an account.');
       return;
     }
     if (!supabase) {
-      setError('Google sign-in is not configured yet. Please use email registration for now.');
+      setError('Google sign-in is not configured. Please try again later.');
       return;
     }
     setGoogleSubmitting(true);
     try {
       const restaurant = await getCurrentCustomerRestaurant();
-      window.localStorage.setItem('restaurant-ordering-google-customer-signup', JSON.stringify({ restaurantId: restaurant.id, firstName: googleFirstName.trim(), lastName: googleLastName.trim(), createdAt: Date.now() }));
+      window.localStorage.setItem('restaurant-ordering-google-customer-signup', JSON.stringify({ restaurantId: restaurant.id, firstName: googleFirstName.trim(), lastName: googleLastName.trim(), phone: googlePhone.trim(), createdAt: Date.now() }));
       const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}#account`;
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -131,6 +136,21 @@ export function CustomerSignUpPage() {
             <input type="text" autoComplete="family-name" value={googleLastName} onChange={(event) => setGoogleLastName(event.target.value)} required disabled={submitting || googleSubmitting} />
           </label>
         </div>
+        <label className="customer-google-phone-field">
+          Phone number
+          <input
+            type="tel"
+            inputMode="numeric"
+            autoComplete="tel-national"
+            placeholder="09XXXXXXXXX"
+            value={googlePhone}
+            onChange={(event) => setGooglePhone(event.target.value.replace(/[^0-9]/g, '').slice(0, 11))}
+            required
+            disabled={submitting || googleSubmitting}
+            aria-describedby="customer-google-phone-hint"
+          />
+          <small id="customer-google-phone-hint">Enter an 11-digit Philippine mobile number starting with 09.</small>
+        </label>
           <label className="customer-personal-info-consent">
             <input
               type="checkbox"
