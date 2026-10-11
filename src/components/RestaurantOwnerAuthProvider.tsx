@@ -75,7 +75,22 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
         } else {
           const currentUser = data.user ?? null;
           setUser(currentUser);
-          await loadAccountContext(currentUser);
+          try {
+            await loadAccountContext(currentUser);
+          } catch (accountError) {
+            // A tenant/account-profile lookup failure must not erase a valid
+            // Supabase session. Keep the user authenticated and fall back to
+            // customer context so the account icon does not send them back
+            // to sign-in just because a role lookup failed.
+            if (mounted && currentUser) {
+              setRestaurant(null);
+              setAccountType('customer');
+              setStaffRole(null);
+              setError(accountError instanceof Error ? accountError.message : 'Unable to load your account details.');
+            } else if (mounted) {
+              throw accountError;
+            }
+          }
         }
       } catch (authError) {
         if (mounted) {
