@@ -131,7 +131,6 @@ export function CustomerSignUpPage() {
             <input type="text" autoComplete="family-name" value={googleLastName} onChange={(event) => setGoogleLastName(event.target.value)} required disabled={submitting || googleSubmitting} />
           </label>
         </div>
-        <p className="customer-google-name-hint">Enter your name first, then continue with your Google account.</p>
           <label className="customer-personal-info-consent">
             <input
               type="checkbox"
