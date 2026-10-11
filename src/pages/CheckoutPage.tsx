@@ -229,12 +229,17 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
       return;
     }
 
+    // Capture the values after the guard so TypeScript can safely narrow them
+    // inside the async callback below.
+    const currentUser = user;
+    const currentRestaurantId = restaurantId;
+
     setCustomerProfileLoading(true);
     setCustomerProfileError('');
 
     async function loadCustomerProfile() {
       try {
-        let profile = await getMyCustomerProfile(restaurantId);
+        let profile = await getMyCustomerProfile(currentRestaurantId);
 
         // Google OAuth doesn't set the app's customer metadata. If this login
         // originated from the customer sign-up page, create the tenant-scoped
@@ -250,23 +255,23 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
         }
 
         if (!profile && signupMarker) {
-          const markerMatchesRestaurant = signupMarker.restaurantId === restaurantId;
+          const markerMatchesRestaurant = signupMarker.restaurantId === currentRestaurantId;
           const markerIsRecent = typeof signupMarker.createdAt === 'number'
             && Date.now() - signupMarker.createdAt < 24 * 60 * 60 * 1000;
           if (markerMatchesRestaurant && markerIsRecent) {
-            const metadata = user.user_metadata ?? {};
+            const metadata = currentUser.user_metadata ?? {};
             const fullName = String(metadata.full_name ?? metadata.name ?? '').trim()
-              || String(user.email ?? '').split('@')[0]
+              || String(currentUser.email ?? '').split('@')[0]
               || 'Customer';
             const phone = String(metadata.phone ?? '').trim() || null;
             const { error: createProfileError } = await supabase!.rpc('upsert_customer_profile', {
-              p_restaurant_id: restaurantId,
+              p_restaurant_id: currentRestaurantId,
               p_name: fullName,
               p_phone: phone,
             });
             if (createProfileError) throw createProfileError;
             window.localStorage.removeItem(signupMarkerKey);
-            profile = await getMyCustomerProfile(restaurantId);
+            profile = await getMyCustomerProfile(currentRestaurantId);
           } else if (!markerMatchesRestaurant || !markerIsRecent) {
             window.localStorage.removeItem(signupMarkerKey);
           }
@@ -300,7 +305,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
           };
           setSelectedDeliveryLocation(savedLocation);
           setDeliveryRouteLoading(true);
-          void calculateDeliveryRoute(restaurantId, profile.defaultDeliveryLatitude!, profile.defaultDeliveryLongitude!)
+          void calculateDeliveryRoute(currentRestaurantId, profile.defaultDeliveryLatitude!, profile.defaultDeliveryLongitude!)
             .then((quote) => {
               if (!cancelled) setDeliveryRouteQuote(quote);
             })
