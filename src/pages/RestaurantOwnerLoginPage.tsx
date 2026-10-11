@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
 import { supabase } from '../services/supabaseClient';
+import { getCurrentCustomerRestaurant } from '../modules/customer/customerAuthService';
 
 export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: boolean }) {
   const { user, accountType, staffRole, loading: authLoading, signOut, error: authError } = useRestaurantOwnerAuth();
@@ -9,41 +10,76 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
 
   useEffect(() => {
-    if (authLoading || !user || !supabase) return;
-    const role = user.app_metadata?.role ?? user.user_metadata?.role;
-    if (role !== 'customer') return;
+    if (authLoading || !user || !accountType || !supabase) return;
 
-    const storageKey = 'restaurant-ordering-google-customer-signup';
-    const rawSignup = window.localStorage.getItem(storageKey);
-    if (!rawSignup) return;
-
-    let signup: { restaurantId?: string; firstName?: string; lastName?: string; phone?: string };
-    try {
-      signup = JSON.parse(rawSignup);
-    } catch {
-      window.localStorage.removeItem(storageKey);
-      return;
-    }
-
-    if (!signup.restaurantId || !signup.firstName?.trim() || !signup.lastName?.trim() || !/^09[0-9]{9}$/.test(signup.phone ?? '')) return;
+    // Owners and staff are authorized through their database-backed tenant records.
+    // Customer Google authentication is not sufficient by itself: a customer
+    // must have a complete customer_profiles record for this restaurant.
+    if (accountType !== 'customer') return;
 
     let cancelled = false;
-    void supabase.rpc('upsert_customer_profile', {
-      p_restaurant_id: signup.restaurantId,
-      p_first_name: signup.firstName.trim(),
-      p_last_name: signup.lastName.trim(),
-      p_phone: signup.phone,
-    }).then(({ error: profileError }) => {
-      if (cancelled) return;
-      if (profileError) {
-        setError(profileError.message || 'Unable to save your customer profile.');
-        return;
-      }
-      window.localStorage.removeItem(storageKey);
-    });
+    const storageKey = 'restaurant-ordering-google-customer-signup';
 
+    async function verifyCustomerRegistration() {
+      try {
+        const restaurant = await getCurrentCustomerRestaurant();
+        const rawSignup = window.localStorage.getItem(storageKey);
+
+        // A pending signup may create the profile only after the user has
+        // explicitly completed the registration form before Google OAuth.
+        if (rawSignup) {
+          let signup: { restaurantId?: string; firstName?: string; lastName?: string; phone?: string };
+          try {
+            signup = JSON.parse(rawSignup);
+          } catch {
+            window.localStorage.removeItem(storageKey);
+            signup = {};
+          }
+
+          const completeSignup =
+            signup.restaurantId === restaurant.id &&
+            Boolean(signup.firstName?.trim()) &&
+            Boolean(signup.lastName?.trim()) &&
+            /^09[0-9]{9}$/.test(signup.phone ?? '');
+
+          if (completeSignup) {
+            const { error: profileError } = await supabase.rpc('upsert_customer_profile', {
+              p_restaurant_id: restaurant.id,
+              p_first_name: signup.firstName!.trim(),
+              p_last_name: signup.lastName!.trim(),
+              p_phone: signup.phone,
+            });
+            if (profileError) throw profileError;
+            window.localStorage.removeItem(storageKey);
+          }
+        }
+
+        // The database profile, not Google metadata or local storage, is the
+        // final authority for customer registration.
+        const { data: profileId, error: lookupError } = await supabase.rpc('get_my_customer_profile_id', {
+          p_restaurant_id: restaurant.id,
+        });
+        if (lookupError) throw lookupError;
+
+        if (!cancelled && !profileId) {
+          await supabase.auth.signOut();
+          if (!cancelled) {
+            setError('No registered customer account was found for this Google account. Please create an account first.');
+            window.location.hash = '#signup';
+          }
+          return;
+        }
+      } catch (verificationError) {
+        if (cancelled) return;
+        setError(verificationError instanceof Error ? verificationError.message : 'Unable to verify your customer registration.');
+        await supabase.auth.signOut();
+        if (!cancelled) window.location.hash = '#signup';
+      }
+    }
+
+    void verifyCustomerRegistration();
     return () => { cancelled = true; };
-  }, [authLoading, user?.id]);
+  }, [authLoading, user?.id, accountType]);
 
   async function handleGoogleSignIn() {
     setError('');
