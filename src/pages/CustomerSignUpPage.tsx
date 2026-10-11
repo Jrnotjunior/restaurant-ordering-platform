@@ -120,19 +120,7 @@ export function CustomerSignUpPage() {
           </div>
         )}
 
-          <label className="customer-personal-info-consent">
-            <input
-              type="checkbox"
-              checked={personalInfoConsent}
-              onChange={(event) => setPersonalInfoConsent(event.target.checked)}
-              disabled={submitting}
-              onBlur={() => markTouched("consent")}
-              aria-invalid={shouldShow("consent") && Boolean(fieldErrors.consent)}
-              required
-            />
-            <span>I agree to the use of my personal information for account creation and order-related services. <a href="#privacy">Privacy Notice</a>.</span>
-          </label>
-          {fieldError("consent")}
+
                 <div className="customer-signup-name-row customer-google-name-row">
           <label>
             First name
@@ -153,6 +141,20 @@ export function CustomerSignUpPage() {
         <p className="restaurant-auth-switch">
           Already have an account? <a href="#account">Sign in</a>
         </p>
+
+          <label className="customer-personal-info-consent">
+            <input
+              type="checkbox"
+              checked={personalInfoConsent}
+              onChange={(event) => setPersonalInfoConsent(event.target.checked)}
+              disabled={submitting}
+              onBlur={() => markTouched("consent")}
+              aria-invalid={shouldShow("consent") && Boolean(fieldErrors.consent)}
+              required
+            />
+            <span>I agree to the use of my personal information for account creation and order-related services. <a href="#privacy">Privacy Notice</a>.</span>
+          </label>
+          {fieldError("consent")}
       </section>
     </main>
   );
