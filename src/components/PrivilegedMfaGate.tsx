@@ -27,6 +27,12 @@ export function PrivilegedMfaGate({ children }: { children: ReactNode }) {
     let cancelled = false;
     async function checkMfa() {
       if (authLoading) return;
+      if (user && appRole !== 'system_admin' && accountType === null) {
+        // Wait for the provider to resolve owner/staff/customer status. Never
+        // briefly render protected pages while a privileged role lookup is pending.
+        setGate({ kind: 'loading' });
+        return;
+      }
       if (!user || !isPrivileged) {
         setGate({ kind: 'ready' });
         setCode('');
@@ -124,7 +130,8 @@ export function PrivilegedMfaGate({ children }: { children: ReactNode }) {
   }
 
   if (authLoading || gate.kind === 'loading') {
-    if (!isPrivileged && !authLoading) return <>{children}</>;
+    if (!user && !authLoading) return <>{children}</>;
+    if (user && accountType === 'customer' && gate.kind === 'loading' && !authLoading) return <>{children}</>;
     return <main className="restaurant-owner-auth-page"><section className="restaurant-owner-auth-card"><p>Checking account security…</p></section></main>;
   }
 
