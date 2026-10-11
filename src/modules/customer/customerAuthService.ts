@@ -29,11 +29,13 @@ export async function getCurrentCustomerRestaurant() {
 
   const hostname = window.location.hostname.trim().toLowerCase();
   const repository = new SupabaseRestaurantRepository();
+  const isGitHubPagesHost = hostname === 'github.io' || hostname.endsWith('.github.io');
+  const useConfiguredSlug = isLocalHost(hostname) || !hostname || isGitHubPagesHost;
 
   const restaurant = await repository.getRestaurant(
-    !isLocalHost(hostname) && hostname
-      ? { domain: hostname }
-      : { slug: currentRestaurantLookup.slug },
+    useConfiguredSlug
+      ? { slug: currentRestaurantLookup.slug }
+      : { domain: hostname },
   );
 
   if (!restaurant?.id) {
