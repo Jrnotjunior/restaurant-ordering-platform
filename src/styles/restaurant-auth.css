@@ -385,3 +385,6 @@
   flex: 0 0 auto;
   margin-top: 2px;
 }
+
+/* Friendly sign-in introduction, matching the customer account creation page. */
+.restaurant-owner-auth-card .restaurant-login-description{margin:0 0 26px!important;color:#64748b;font-size:16px;line-height:1.6}
