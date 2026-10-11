@@ -75,7 +75,7 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
     event.preventDefault();
     setError('');
     if (!supabase) { setError('Email sign-in is not configured.'); return; }
-    if (!/^\\d{6}$/.test(emailCode)) { setError('Enter the six-digit code sent to your email.'); return; }
+    if (!/^\d{6}$/.test(emailCode)) { setError('Enter the six-digit code sent to your email.'); return; }
     setSubmitting(true);
     try {
       const { data, error: otpError } = await supabase.auth.verifyOtp({
@@ -293,7 +293,7 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
           <form className="restaurant-owner-auth-form" onSubmit={(event) => { event.preventDefault(); if (emailCodeRequested) void verifyEmailCode(event); else void requestEmailCode(); }}>
             <p>Sign in without a password. We'll email a one-time verification code to your registered account.</p>
             <label>Email<input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required disabled={submitting || emailCodeRequested} /></label>
-            {emailCodeRequested ? <label>Email verification code<input type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={emailCode} onChange={(event) => setEmailCode(event.target.value.replace(/\\D/g, '').slice(0, 6))} required disabled={submitting} /></label> : null}
+            {emailCodeRequested ? <label>Email verification code<input type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={emailCode} onChange={(event) => setEmailCode(event.target.value.replace(/\D/g, '').slice(0, 6))} required disabled={submitting} /></label> : null}
             <button className="button button-primary" type="submit" disabled={submitting || (emailCodeRequested && emailCode.length !== 6)}>
               {submitting ? 'Please wait…' : emailCodeRequested ? 'Verify code and continue' : 'Send email code'}
             </button>
