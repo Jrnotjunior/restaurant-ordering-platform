@@ -251,10 +251,14 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
           const fullName = String(metadata.full_name ?? metadata.name ?? '').trim()
             || String(currentUser.email ?? '').split('@')[0]
             || 'Customer';
+          const nameParts = fullName.split(/\s+/).filter(Boolean);
+          const firstName = String(metadata.first_name ?? metadata.given_name ?? nameParts[0] ?? 'Customer').trim();
+          const lastName = String(metadata.last_name ?? metadata.family_name ?? nameParts.slice(1).join(' ')).trim();
           const phone = String(metadata.phone ?? '').trim() || null;
           const { error: createProfileError } = await supabase!.rpc('upsert_customer_profile', {
             p_restaurant_id: currentRestaurantId,
-            p_name: fullName,
+            p_first_name: firstName || 'Customer',
+            p_last_name: lastName,
             p_phone: phone,
           });
           if (createProfileError) throw createProfileError;
