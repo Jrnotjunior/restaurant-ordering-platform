@@ -1,7 +1,6 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState } from 'react';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
 import { supabase } from '../services/supabaseClient';
-import { getPasswordPolicyError, PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '../utils/passwordPolicy';
 
 type Invitation = {
   id: string;
@@ -16,8 +15,6 @@ export function TenantOnboardingPage() {
   const [invitation, setInvitation] = useState<Invitation | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [restaurantName, setRestaurantName] = useState('');
   const [error, setError] = useState('');
 
@@ -58,49 +55,22 @@ export function TenantOnboardingPage() {
     };
   }, [authLoading, user?.id, authError]);
 
-  async function setOwnerPassword(event: FormEvent) {
-    event.preventDefault();
+  async function finishOwnerSetup() {
     if (!supabase) return;
-
     setSaving(true);
     setError('');
-
-    const passwordPolicyError = getPasswordPolicyError(password);
-    if (passwordPolicyError) {
-      setError(passwordPolicyError);
-      setSaving(false);
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
-      setSaving(false);
-      return;
-    }
-
-    const { error: passwordError } = await supabase.auth.updateUser({ password });
-
-    if (passwordError) {
-      setError(passwordError.message);
-      setSaving(false);
-      return;
-    }
-
     const { data: setupData, error: setupError } = await supabase.rpc('complete_tenant_owner_setup');
-
     if (setupError) {
       setError(setupError.message);
       setSaving(false);
       return;
     }
-
     const setup = Array.isArray(setupData) ? setupData[0] : setupData;
     if (!setup?.restaurant_id) {
       setError('Account setup completed, but the restaurant could not be confirmed.');
       setSaving(false);
       return;
     }
-
     window.history.replaceState({}, document.title, window.location.pathname);
     window.location.hash = '#restaurant/owner';
   }
@@ -141,56 +111,14 @@ export function TenantOnboardingPage() {
         <p className="eyebrow">Tenant access</p>
         <h1 id="tenant-onboarding-title">Set up your owner account.</h1>
         <p className="tenant-onboarding-intro">
-          {restaurantName || 'Your restaurant'} is ready. Create your password to finish setup and enter your restaurant dashboard.
+          {restaurantName || 'Your restaurant'} is ready. Your email invitation verifies your identity, so you do not need to create a password.
         </p>
-
-        <form className="tenant-onboarding-form" onSubmit={(event) => void setOwnerPassword(event)}>
-          <label>
-            Email
-            <input
-              type="email"
-              value={user.email ?? invitation.email}
-              readOnly
-              autoComplete="email"
-            />
-          </label>
-
-          <label>
-            Password
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH}
-              autoComplete="new-password"
-              placeholder="Create your password"
-              disabled={saving}
-              required
-            />
-          </label>
-
-          <label>
-            Confirm password
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH}
-              autoComplete="new-password"
-              placeholder="Re-enter your password"
-              disabled={saving}
-              required
-            />
-          </label>
-
-          <p className="tenant-onboarding-password-hint">Use at least 8 characters, avoid common passwords, and consider mixing letters, numbers, and symbols.</p>
-
-          {error && <div className="tenant-onboarding-error" role="alert">{error}</div>}
-
-          <button className="tenant-onboarding-submit" type="submit" disabled={saving}>
-            {saving ? 'Setting up account…' : 'Create account'}
-          </button>
-        </form>
+        <p><strong>Email:</strong> {user.email ?? invitation.email}</p>
+        <p>You will sign in using a one-time email code and complete authenticator verification before accessing your dashboard.</p>
+        {error && <div className="tenant-onboarding-error" role="alert">{error}</div>}
+        <button className="tenant-onboarding-submit" type="button" onClick={() => void finishOwnerSetup()} disabled={saving}>
+          {saving ? 'Finishing setup…' : 'Finish setup'}
+        </button>
       </div>
     </section>
   );
