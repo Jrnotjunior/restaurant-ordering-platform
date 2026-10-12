@@ -54,6 +54,22 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
               p_phone: signup.phone,
             });
             if (profileError) throw profileError;
+
+            // Keep Supabase's Auth dashboard display label aligned with the
+            // name the customer entered, rather than Google's brand/account
+            // label. The canonical first/last-name fields remain in the
+            // customer profile; Auth metadata stores first_name and last_name
+            // separately, and uses first_name only for the display label.
+            const { error: metadataError } = await client.auth.updateUser({
+              data: {
+                first_name: signup.firstName!.trim(),
+                last_name: signup.lastName!.trim(),
+                name: signup.firstName!.trim(),
+              },
+            });
+            if (metadataError) {
+              console.error('Customer profile was saved, but Auth display metadata could not be updated.', metadataError);
+            }
             window.localStorage.removeItem(storageKey);
           }
         }
