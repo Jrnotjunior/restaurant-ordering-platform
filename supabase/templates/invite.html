@@ -9,7 +9,7 @@
 </head>
 <body style="margin:0;padding:0;background-color:#f3f3f3;font-family:Arial,Helvetica,sans-serif;color:#171717;">
   <div style="display:none;font-size:1px;color:#f3f3f3;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">
-    {{ if eq .Data.invitation_type "tenant_owner" }}You've been invited to set up your restaurant on Web2Table.{{ else }}You've been invited to join your restaurant team on Web2Table.{{ end }}
+    {{ if eq .Data.invitation_type "tenant_owner" }}You've been invited to set up your restaurant on Web2Table.{{ else }}You've been invited to join {{ .Data.restaurant_name }}.{{ end }}
   </div>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background-color:#f3f3f3;">
     <tr><td align="center" style="padding:36px 16px;">
@@ -22,14 +22,14 @@
         <tr><td style="padding:40px 36px 24px 36px;">
           <p style="margin:0 0 12px 0;font-size:12px;line-height:18px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#e53935;">{{ if eq .Data.invitation_type "tenant_owner" }}RESTAURANT OWNER INVITATION{{ else }}RESTAURANT TEAM INVITATION{{ end }}</p>
           <h1 style="margin:0 0 20px 0;font-size:28px;line-height:36px;font-weight:700;color:#111111;">
-            {{ if eq .Data.invitation_type "tenant_owner" }}You're invited to Web2Table{{ else }}Your restaurant has invited you{{ end }}
+            {{ if eq .Data.invitation_type "tenant_owner" }}Welcome to Web2Table{{ else }}Welcome to {{ .Data.restaurant_name }}{{ end }}
           </h1>
           {{ if eq .Data.invitation_type "tenant_owner" }}
           <p style="margin:0 0 18px 0;font-size:16px;line-height:26px;color:#444444;">You've been invited to join Web2Table as a restaurant owner.</p>
-          <p style="margin:0 0 28px 0;font-size:16px;line-height:26px;color:#444444;">Accept your invitation to continue setting up your restaurant account. We'll guide you through secure account verification and sign-in.</p>
+          <p style="margin:0 0 28px 0;font-size:16px;line-height:26px;color:#444444;">Accept your invitation using the button below to continue with your restaurant account setup.</p>
           {{ else }}
-          <p style="margin:0 0 18px 0;font-size:16px;line-height:26px;color:#444444;">You've been invited to join a restaurant team on Web2Table.</p>
-          <p style="margin:0 0 28px 0;font-size:16px;line-height:26px;color:#444444;">Accept your invitation to activate your staff account. We'll guide you through secure account verification and sign-in.</p>
+          <p style="margin:0 0 18px 0;font-size:16px;line-height:26px;color:#444444;">You've been invited to join {{ .Data.restaurant_name }} as a staff member.</p>
+          <p style="margin:0 0 28px 0;font-size:16px;line-height:26px;color:#444444;">Accept your invitation using the button below to continue with your staff account setup.</p>
           {{ end }}
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 28px 0;">
             <tr><td align="center" bgcolor="#e53935" style="background-color:#e53935;border-radius:4px;">
