@@ -226,8 +226,12 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
 
   function openStoreLocation() {
     if (!storeAddress) return;
-    const query = encodeURIComponent(storeAddress);
-    window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank', 'noopener,noreferrer');
+    const hasSavedCoordinates = order.storeLatitude !== null && order.storeLongitude !== null
+      && Number.isFinite(order.storeLatitude) && Number.isFinite(order.storeLongitude);
+    const query = hasSavedCoordinates
+      ? `${order.storeLatitude},${order.storeLongitude}`
+      : storeAddress;
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank', 'noopener,noreferrer');
   }
 
   async function copyStoreAddress() {
