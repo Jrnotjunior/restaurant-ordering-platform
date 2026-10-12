@@ -31,7 +31,7 @@ function getPublishableKey() {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: { ...corsHeaders,  "Access-Control-Max-Age": "86400", } });
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
   if (req.method !== "POST") return respond({ error: "Method not allowed" }, 405);
 
   const authorization = req.headers.get("Authorization") ?? "";
@@ -62,7 +62,7 @@ Deno.serve(async (req: Request) => {
     console.error("reject-unregistered-customer role verification failed", roleError);
     return respond({ error: "Could not safely verify account ownership; no account was deleted" }, 500);
   }
-  if (hasRole === true) {
+  if (hasRole !== false) {
     return respond({ deleted: false, reason: "Identity has an application account or invitation; preserved." }, 409);
   }
 
@@ -70,7 +70,7 @@ Deno.serve(async (req: Request) => {
   const { data: recheck, error: recheckError } = await admin.rpc("auth_user_has_application_role", {
     p_user_id: user.id,
   });
-  if (recheckError || recheck === true) {
+  if (recheckError || recheck !== false) {
     return respond({ error: "Account status changed or could not be verified; account preserved" }, 409);
   }
 
