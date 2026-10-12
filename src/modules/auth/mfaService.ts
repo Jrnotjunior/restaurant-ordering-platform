@@ -28,22 +28,33 @@ export async function getPrivilegedMfaState(client: SupabaseClient): Promise<Mfa
     if (error) throw error;
   }
 
-  // Supabase requires authenticator friendly names to be unique per user.
-  // A previous interrupted enrollment may leave the name reserved briefly,
-  // even after an unverified factor is removed. Use a unique label so setup
-  // can recover instead of trapping the user on the security-error screen.
-  // Timestamp-only names can collide when the MFA gate retries or remounts
-  // within the same second. Add a random suffix so every enrollment attempt
-  // has a distinct name, including retries after an interrupted setup.
-  const enrollmentSuffix = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-    ? crypto.randomUUID().replace(/-/g, '').slice(0, 12)
-    : Math.random().toString(36).slice(2, 14);
-  const friendlyName = `Web2Table authenticator ${new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14)} ${enrollmentSuffix}`;
-  const { data: enrollment, error: enrollmentError } = await client.auth.mfa.enroll({
-    factorType: 'totp',
-    friendlyName,
-  });
+  // Use a unique name for every enrollment attempt. If Supabase still reports
+  // a duplicate (for example, due to a stale/in-flight attempt), retry with a
+  // fresh name rather than sending the user to the generic security error page.
+  let enrollment: Awaited<ReturnType<typeof client.auth.mfa.enroll>>['data'] = null;
+  let enrollmentError: Awaited<ReturnType<typeof client.auth.mfa.enroll>>['error'] = null;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const enrollmentSuffix = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID().replace(/-/g, '').slice(0, 12)
+      : Math.random().toString(36).slice(2, 14);
+    const friendlyName = `Web2Table authenticator ${new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14)} ${enrollmentSuffix}`;
+
+    const result = await client.auth.mfa.enroll({
+      factorType: 'totp',
+      friendlyName,
+    });
+    enrollment = result.data;
+    enrollmentError = result.error;
+
+    if (!enrollmentError) break;
+    if (!/friendly name.*already exists|already exists.*friendly name/i.test(enrollmentError.message)) {
+      throw enrollmentError;
+    }
+  }
+
   if (enrollmentError) throw enrollmentError;
+  if (!enrollment) throw new Error('Authenticator setup did not return an enrollment factor. Please try again.');
 
   return {
     kind: 'enroll',
