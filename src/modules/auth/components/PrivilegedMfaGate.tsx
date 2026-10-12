@@ -147,11 +147,11 @@ export function PrivilegedMfaGate({ children }: { children: ReactNode }) {
             aria-describedby={message ? 'privileged-mfa-message' : undefined}
           />
           {message ? <p id="privileged-mfa-message" role="alert">{message}</p> : null}
-          <button className="button button-primary" type="submit" disabled={busy || code.length !== 6}>
+          <button className="button button-primary privileged-mfa-submit" type="submit" disabled={busy || code.length !== 6}>
             {busy ? 'Verifying…' : gate.kind === 'enroll' ? 'Verify and enable 2FA' : 'Verify and continue'}
           </button>
         </form>
-        <button className="button" type="button" onClick={() => void signOut()}>Sign out</button>
+        <button className="button privileged-mfa-signout" type="button" onClick={() => void signOut()}>Sign out</button>
       </section>
     </main>
   );
