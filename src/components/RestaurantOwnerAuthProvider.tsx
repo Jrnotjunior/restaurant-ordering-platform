@@ -137,20 +137,26 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
         setAccountType(null);
         setStaffRole(null);
 
-        void loadAccountContext(currentUser).then(() => {
-          if (mounted) setError('');
-        }).catch((accountError) => {
-          if (mounted) {
-            setRestaurant(null);
-            setAccountType(null);
-            setStaffRole(null);
-            setError(
-              accountError instanceof Error
-                ? accountError.message
-                : 'Unable to load your account. Please retry.',
-            );
-          }
-        });
+        // Do not call Supabase session APIs synchronously from inside
+        // onAuthStateChange. Supabase warns that auth calls in this callback
+        // can deadlock; the RPC helper reads the active session to build its
+        // Authorization header. Defer role resolution until the callback exits.
+        window.setTimeout(() => {
+          void loadAccountContext(currentUser).then(() => {
+            if (mounted) setError('');
+          }).catch((accountError) => {
+            if (mounted) {
+              setRestaurant(null);
+              setAccountType(null);
+              setStaffRole(null);
+              setError(
+                accountError instanceof Error
+                  ? accountError.message
+                  : 'Unable to load your account. Please retry.',
+              );
+            }
+          });
+        }, 0);
       });
 
       authListener = data;
