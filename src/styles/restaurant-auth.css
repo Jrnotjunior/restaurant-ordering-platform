@@ -401,3 +401,10 @@
 .customer-password-input-row .customer-password-visibility svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .customer-password-input-row .customer-password-visibility:focus-visible{outline:2px solid #111827;outline-offset:1px}
 .customer-password-input-row .customer-password-visibility:disabled{opacity:.5;cursor:not-allowed}
+
+.customer-password-requirements{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin:2px 0 0;padding:0;list-style:none;color:#64748b;font-size:12px;line-height:1.4;font-weight:400}
+.customer-password-requirements li{display:flex;align-items:flex-start;gap:7px;min-width:0}
+.customer-password-requirement-check{flex:0 0 15px;width:15px;height:15px;margin-top:1px;display:inline-grid;place-items:center;border:1px solid #cbd5e1;border-radius:50%;font-size:10px;font-weight:700;color:#fff}
+.customer-password-requirements li.is-met{color:#15803d}
+.customer-password-requirements li.is-met .customer-password-requirement-check{border-color:#15803d;background:#15803d}
+@media(max-width:420px){.customer-password-requirements{grid-template-columns:1fr}}
