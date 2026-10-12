@@ -63,15 +63,16 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
             const firstName = signup.firstName!.trim();
             const lastName = signup.lastName!.trim();
             const phone = signup.phone!.trim();
+            const displayName = `${firstName} ${lastName}`;
             const { error: metadataError } = await client.auth.updateUser({
               data: {
                 first_name: firstName,
                 last_name: lastName,
                 phone,
-                // Supabase Auth's Users table displays the metadata "name"
-                // value. Never use the Google provider's app label here.
-                name: firstName,
-                display_name: firstName,
+                // Supabase Auth's Users table uses the metadata "name"
+                // value as its display label.
+                name: displayName,
+                display_name: displayName,
               },
             });
             if (metadataError) {
@@ -81,7 +82,8 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
             }
             const { data: refreshedUser, error: refreshError } = await client.auth.getUser();
             if (refreshError || !refreshedUser.user ||
-                refreshedUser.user.user_metadata?.name !== firstName ||
+                refreshedUser.user.user_metadata?.name !== displayName ||
+                refreshedUser.user.user_metadata?.display_name !== displayName ||
                 refreshedUser.user.user_metadata?.first_name !== firstName ||
                 refreshedUser.user.user_metadata?.last_name !== lastName ||
                 refreshedUser.user.user_metadata?.phone !== phone) {
