@@ -410,19 +410,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
                 </label>
               </div>
             </div>
-            <label className="website-customization-field">
-              <span>Brand color</span>
-              <div className="website-customization-color-control">
-                <input type="color" value={websiteTheme.colors.primary} disabled={loading || saving} onChange={(event) => {
-                  const value = event.target.value;
-                  setWebsiteTheme((current) => ({ ...current, colors: { ...current.colors, primary: value, primaryHover: value } }));
-                  setMessage('');
-                  setError('');
-                }} />
-                <span>{websiteTheme.colors.primary.toUpperCase()}</span>
-              </div>
-              <small className="website-customization-field-hint">Used for buttons and important accents.</small>
-            </label>
+
           </div>
         </div>
 
