@@ -145,7 +145,7 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
   // sign-in form, which previously made successful logins look unsuccessful.
   // A restored Google session is not enough: keep the account screen hidden
   // until the current restaurant's customer profile has been verified.
-  const customerVerificationPending = Boolean(user && accountType === 'customer' && verifiedCustomerId !== user.id);
+  const customerVerificationPending = Boolean(user && (!accountType || (accountType === 'customer' && verifiedCustomerId !== user.id)));
 
   if (customerVerificationPending) {
     return (
@@ -157,7 +157,7 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
     );
   }
 
-  if (user && !submitting && (accountType !== 'customer' || verifiedCustomerId === user.id)) {
+  if (user && accountType && !submitting && (accountType !== 'customer' || verifiedCustomerId === user.id)) {
     return (
       <main className="restaurant-owner-auth-page">
         <section className="restaurant-owner-auth-card" aria-labelledby="account-signed-in-title">
