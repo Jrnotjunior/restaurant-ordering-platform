@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { createProduct, deleteProduct, getMenu, getOrCreateCategory, saveProductImage, setProductAvailability, updateProduct, uploadProductImage } from '../modules/products/productService';
 import type { RestaurantCategory, RestaurantProduct } from '../types/menu';
 import { useOwnerUnsavedChanges } from '../contexts/OwnerUnsavedChangesContext';
+import { useOwnerUnsavedChangesTracking } from '../hooks/useOwnerUnsavedChangesTracking';
 
 type Props = { restaurantId: string };
 type ProductForm = { name: string; description: string; price: string; categoryName: string };
@@ -41,18 +42,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
     }
   }
 
-  useEffect(() => {
-    const markDirty = (event: Event) => {
-      const target = event.target;
-      if (target instanceof Element && target.closest('.restaurant-menu-page')) setUnsavedChanges(true);
-    };
-    document.addEventListener('input', markDirty, true);
-    document.addEventListener('change', markDirty, true);
-    return () => {
-      document.removeEventListener('input', markDirty, true);
-      document.removeEventListener('change', markDirty, true);
-    };
-  }, [setUnsavedChanges]);
+  useOwnerUnsavedChangesTracking('.restaurant-menu-page');
 
   useEffect(() => { void loadMenu(); }, [restaurantId]);
 
