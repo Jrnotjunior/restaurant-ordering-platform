@@ -331,16 +331,6 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
           <p className="website-customization-help" style={{ marginTop: 8 }}>Customize your restaurant's branding, homepage content, and visible customer-facing sections. These settings affect this restaurant only.</p>
         </div>
 
-        <div className="website-customization-card website-customization-preview-launch-card">
-          <div>
-            <h2>Website Preview</h2>
-            <p className="website-customization-help">Open a draggable mobile preview to see the customer website while you customize it.</p>
-          </div>
-          <button type="button" className="button button-primary" onClick={openLivePreview}>
-            See Live Preview
-          </button>
-        </div>
-
         {showLivePreview ? (
           <div
             className={`website-customization-phone website-customization-phone-floating${previewDragging ? ' is-dragging' : ''}`}
