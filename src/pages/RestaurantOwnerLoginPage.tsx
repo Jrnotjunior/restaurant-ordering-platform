@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
 import { supabase } from '../services/supabaseClient';
+import { getCurrentCustomerRestaurant } from '../modules/customer/customerAuthService';
 
 export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: boolean }) {
   const { user, accountType, staffRole, loading: authLoading, signOut, error: authError } = useRestaurantOwnerAuth();
@@ -25,6 +26,7 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
 
     async function verifyCustomerRegistration() {
       try {
+        const restaurant = await getCurrentCustomerRestaurant();
         // The database profile, not Google metadata or local storage, is the
         // final authority for customer registration.
         const { data: profileId, error: lookupError } = await client.rpc('get_my_customer_profile_id', {
