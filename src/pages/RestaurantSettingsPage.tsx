@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { MapboxDeliveryLocationPicker, type MapboxDeliveryAddress } from '../components/MapboxDeliveryLocationPicker';
 import { PayMongoLiveOnboardingCard } from '../components/PayMongoLiveOnboardingCard';
+import { useOwnerUnsavedChanges } from '../contexts/OwnerUnsavedChangesContext';
 
 type Props = {
   restaurantId: string;
@@ -189,6 +190,7 @@ function normalizeHours(value: unknown): OperatingHours {
 }
 
 export function RestaurantSettingsPage({ restaurantId }: Props) {
+  const { setUnsavedChanges } = useOwnerUnsavedChanges();
   const [address, setAddress] = useState('');
   const [hours, setHours] = useState<OperatingHours>(DEFAULT_HOURS);
   const [vatRegistered, setVatRegistered] = useState(false);
@@ -484,6 +486,19 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     setError('');
   }
 
+  useEffect(() => {
+    const markDirty = (event: Event) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest('.restaurant-settings-page')) setUnsavedChanges(true);
+    };
+    document.addEventListener('input', markDirty, true);
+    document.addEventListener('change', markDirty, true);
+    return () => {
+      document.removeEventListener('input', markDirty, true);
+      document.removeEventListener('change', markDirty, true);
+    };
+  }, [setUnsavedChanges]);
+
   async function saveSettings() {
     if (!supabase) {
       setError('Supabase is not configured.');
@@ -562,6 +577,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
       setHours(savedHours);
       setMessage('Store settings saved successfully.');
+      setUnsavedChanges(false);
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Unable to save store settings.');
     } finally {
