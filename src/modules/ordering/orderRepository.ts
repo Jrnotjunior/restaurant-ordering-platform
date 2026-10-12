@@ -226,7 +226,7 @@ export async function getOrderStatus(orderId: string): Promise<TrackedOrder> {
   const createdAtRows = await supabaseRpc<{ created_at: string | null }>('get_customer_order_created_at', {
     p_order_id: orderId,
   }).catch(() => []);
-  const createdAt = (createdAtRows[0] as { created_at?: string | null } | undefined)?.created_at ?? null;
+  const createdAt = createdAtRows[0]?.created_at ?? null;
 
   return {
     orderId: row.order_id,
