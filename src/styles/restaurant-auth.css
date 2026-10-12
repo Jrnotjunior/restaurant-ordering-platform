@@ -430,3 +430,18 @@
   grid-row:1;
   min-width:0;
 }
+
+/* Sign-in password recovery link sits directly beneath the password field. */
+.restaurant-owner-auth-form .restaurant-auth-forgot-password-row{
+  display:flex;
+  justify-content:flex-end;
+  margin:2px 0 8px;
+  font-size:13px;
+  line-height:1.4;
+}
+.restaurant-owner-auth-form .restaurant-auth-forgot-password-row a{
+  color:inherit;
+  font-weight:600;
+  text-decoration:underline;
+  text-underline-offset:2px;
+}
