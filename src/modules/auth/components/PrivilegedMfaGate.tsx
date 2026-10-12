@@ -77,9 +77,15 @@ export function PrivilegedMfaGate({ children }: { children: ReactNode }) {
     }
   }
 
-  if (authLoading || gate.kind === 'loading') {
-    if (!user && !authLoading) return <>{children}</>;
-    if (user && accountType === 'customer' && gate.kind === 'loading' && !authLoading) return <>{children}</>;
+  // The auth provider initializes on a full page load, including when a
+  // customer opens an order-tracking URL with a query parameter. Do not put a
+  // global security screen over the public storefront while session restoration
+  // is pending. Protected owner/staff routes still enforce their own auth guards,
+  // and once a privileged role is resolved this gate enforces MFA before access.
+  if (authLoading) return <>{children}</>;
+
+  if (gate.kind === 'loading') {
+    if (!user || accountType === 'customer') return <>{children}</>;
     return <main className="restaurant-owner-auth-page"><section className="restaurant-owner-auth-card"><p>Checking account security…</p></section></main>;
   }
 
