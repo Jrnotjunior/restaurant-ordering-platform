@@ -8,8 +8,10 @@ import {
   type StaffAccount,
   type StaffRole,
 } from '../modules/employees/employeeService';
+import { useOwnerUnsavedChanges } from '../contexts/OwnerUnsavedChangesContext';
 
 export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string }) {
+  const { setUnsavedChanges } = useOwnerUnsavedChanges();
   const [staff, setStaff] = useState<StaffAccount[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffAccount | null>(null);
@@ -30,6 +32,19 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    const markDirty = (event: Event) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest('.restaurant-employees-page')) setUnsavedChanges(true);
+    };
+    document.addEventListener('input', markDirty, true);
+    document.addEventListener('change', markDirty, true);
+    return () => {
+      document.removeEventListener('input', markDirty, true);
+      document.removeEventListener('change', markDirty, true);
+    };
+  }, [setUnsavedChanges]);
 
   useEffect(() => { void loadStaff(); }, [restaurantId]);
 
@@ -73,6 +88,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
 
     try {
       await createEmployee(restaurantId, { name, preferredName, mobileNumber, email, role });
+      setUnsavedChanges(false);
       formElement.reset();
       setShowForm(false);
       await loadStaff();
@@ -102,6 +118,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
     setError('');
     try {
       await updateEmployee(restaurantId, editingStaff.id, { name, preferredName, mobileNumber });
+      setUnsavedChanges(false);
       setEditingStaff(null);
       await loadStaff();
     } catch (updateError) {
