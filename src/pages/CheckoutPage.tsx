@@ -618,6 +618,15 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
             }} /><span className="order-type-content"><strong>{type.label}</strong></span></label>)}
           </div></fieldset>
 
+          {orderType === 'pickup' && restaurantPickupPoint && (
+            <section className="checkout-section checkout-pickup-location" aria-label="Restaurant pickup location">
+              <p className="eyebrow">Pickup location</p>
+              <h2>{restaurant.name}</h2>
+              <p>{restaurantPickupPoint}</p>
+              <span>Please collect your order from this restaurant address.</span>
+            </section>
+          )}
+
           <fieldset className="checkout-section"><legend>Customer information</legend>{customerProfileError && <p className="checkout-error" role="alert">{customerProfileError}</p>}<div className="checkout-fields">
             <label><span>First name</span><input type="text" value={customerProfileLoading ? '' : firstName} onChange={(event) => setFirstName(event.target.value)} autoComplete="given-name" required />{/[0-9]/.test(firstName) && <span className="checkout-field-error" role="alert">First name must not contain numbers.</span>}</label>
             <label><span>Last name</span><input type="text" value={customerProfileLoading ? '' : lastName} onChange={(event) => setLastName(event.target.value)} autoComplete="family-name" required />{/[0-9]/.test(lastName) && <span className="checkout-field-error" role="alert">Last name must not contain numbers.</span>}</label>
