@@ -19,8 +19,8 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
     const authenticatedUser = user;
 
     // Owners and staff are authorized through their database-backed tenant records.
-    // Customer Google authentication is not sufficient by itself: a customer
-    // must have a complete customer_profiles record for this restaurant.
+    // Customer authentication is not sufficient by itself: a customer must
+    // have a complete customer_profiles record for this restaurant.
     if (accountType !== 'customer') return;
 
     let cancelled = false;
@@ -28,8 +28,7 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
     async function verifyCustomerRegistration() {
       try {
         const restaurant = await getCurrentCustomerRestaurant();
-        // The database profile, not Google metadata or local storage, is the
-        // final authority for customer registration.
+        // The database profile is the final authority for customer registration.
         const { data: profileId, error: lookupError } = await client.rpc('get_my_customer_profile_id', {
           p_restaurant_id: restaurant.id,
         });
