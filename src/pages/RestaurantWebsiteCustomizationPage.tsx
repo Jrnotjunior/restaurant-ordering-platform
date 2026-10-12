@@ -468,37 +468,6 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
           </div>
         </div>
 
-        <div className="website-customization-card">
-          <h2>Website style</h2>
-          <p className="website-customization-help">Choose a ready-made style for your website.</p>
-          <div className="website-customization-style-grid">
-            {([
-              ['classic', 'Classic', 'Clean and familiar'],
-              ['modern', 'Modern', 'Simple and contemporary'],
-              ['elegant', 'Elegant', 'Refined and premium'],
-              ['warm', 'Warm', 'Friendly and welcoming']
-            ] as const).map(([key, label, description]) => (
-              <button
-                type="button"
-                key={key}
-                className={"website-customization-style-card" + (websiteStyle === key ? ' is-selected' : '')}
-                onClick={() => {
-                  setWebsiteStyle(key);
-                  setWebsiteTheme(WEBSITE_STYLE_PRESETS[key]);
-                  setMessage('');
-                  setError('');
-                }}
-                disabled={loading || saving}
-              >
-                <span className={"website-customization-style-sample website-customization-style-sample-" + key} />
-                <strong>{label}</strong>
-                <small>{description}</small>
-              </button>
-            ))}
-          </div>
-        </div>
-
-
 
         <div className="website-customization-actions-bar">
           <button className="button button-primary" type="submit" disabled={loading || saving}>{saving ? 'Saving…' : 'Save Customizations'}</button>
