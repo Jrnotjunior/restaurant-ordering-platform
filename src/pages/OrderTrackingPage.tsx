@@ -225,12 +225,12 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
   }
 
   function openStoreLocation() {
-    if (!storeAddress) return;
-    const hasSavedCoordinates = order.storeLatitude !== null && order.storeLongitude !== null
-      && Number.isFinite(order.storeLatitude) && Number.isFinite(order.storeLongitude);
-    const query = hasSavedCoordinates
-      ? `${order.storeLatitude},${order.storeLongitude}`
-      : storeAddress;
+    if (!storeAddress || !order) return;
+    const latitude = order.storeLatitude;
+    const longitude = order.storeLongitude;
+    const hasSavedCoordinates = latitude != null && longitude != null
+      && Number.isFinite(latitude) && Number.isFinite(longitude);
+    const query = hasSavedCoordinates ? `${latitude},${longitude}` : storeAddress;
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank', 'noopener,noreferrer');
   }
 
