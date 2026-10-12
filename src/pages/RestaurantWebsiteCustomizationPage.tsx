@@ -438,7 +438,9 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
               ['productCard', 'Product card color', websiteTheme.colors.productCard ?? websiteTheme.colors.surface],
               ['text', 'Font color', websiteTheme.colors.text],
               ['primary', 'Primary button color', websiteTheme.colors.primary],
+              ['primaryText', 'Primary button font color', websiteTheme.colors.primaryText],
               ['secondary', 'Secondary button color', websiteTheme.colors.secondary],
+              ['secondaryText', 'Secondary button font color', websiteTheme.colors.secondaryText],
             ] as const).map(([key, label, value]) => (
               <label className="website-customization-color-setting" key={key}>
                 <span>{label}</span>
