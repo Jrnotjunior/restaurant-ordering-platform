@@ -91,6 +91,8 @@ export type TrackedOrder = {
   restaurantId: string;
   restaurantName: string;
   storeAddress: string | null;
+  storeLatitude: number | null;
+  storeLongitude: number | null;
   operatingHours: Record<string, { isOpen: boolean; open: string; close: string }> | null;
   orderType: 'delivery' | 'pickup' | 'dine_in';
   pickupMethod: 'customer' | 'third_party_courier' | null;
@@ -228,14 +230,18 @@ export async function getOrderStatus(orderId: string): Promise<TrackedOrder> {
   }).catch(() => []);
   const createdAt = createdAtRows[0]?.created_at ?? null;
   let storeAddress = row.store_address ?? null;
+  let storeLatitude: number | null = null;
+  let storeLongitude: number | null = null;
   let operatingHours = row.operating_hours ?? null;
   if (supabase) {
     const { data: restaurantSettings } = await supabase
       .from('restaurants')
-      .select('store_address, operating_hours')
+      .select('store_address, operating_hours, delivery_location_latitude, delivery_location_longitude')
       .eq('id', row.restaurant_id)
       .maybeSingle();
     storeAddress = restaurantSettings?.store_address ?? storeAddress;
+    storeLatitude = restaurantSettings?.delivery_location_latitude == null ? null : Number(restaurantSettings.delivery_location_latitude);
+    storeLongitude = restaurantSettings?.delivery_location_longitude == null ? null : Number(restaurantSettings.delivery_location_longitude);
     operatingHours = restaurantSettings?.operating_hours ?? operatingHours;
   }
 
@@ -246,6 +252,8 @@ export async function getOrderStatus(orderId: string): Promise<TrackedOrder> {
     restaurantId: row.restaurant_id,
     restaurantName: row.restaurant_name,
     storeAddress,
+    storeLatitude,
+    storeLongitude,
     operatingHours,
     orderType: row.order_type,
     pickupMethod: row.pickup_method ?? null,
