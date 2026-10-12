@@ -227,13 +227,15 @@ export async function getOrderStatus(orderId: string): Promise<TrackedOrder> {
     p_order_id: orderId,
   }).catch(() => []);
   const createdAt = createdAtRows[0]?.created_at ?? null;
+  let storeAddress = row.store_address ?? null;
   let operatingHours = row.operating_hours ?? null;
   if (supabase) {
     const { data: restaurantSettings } = await supabase
       .from('restaurants')
-      .select('operating_hours')
+      .select('store_address, operating_hours')
       .eq('id', row.restaurant_id)
       .maybeSingle();
+    storeAddress = restaurantSettings?.store_address ?? storeAddress;
     operatingHours = restaurantSettings?.operating_hours ?? operatingHours;
   }
 
@@ -243,7 +245,7 @@ export async function getOrderStatus(orderId: string): Promise<TrackedOrder> {
     createdAt,
     restaurantId: row.restaurant_id,
     restaurantName: row.restaurant_name,
-    storeAddress: row.store_address ?? null,
+    storeAddress,
     operatingHours,
     orderType: row.order_type,
     pickupMethod: row.pickup_method ?? null,
