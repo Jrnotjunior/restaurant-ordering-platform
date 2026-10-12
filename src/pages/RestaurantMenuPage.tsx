@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { createProduct, deleteProduct, getMenu, getOrCreateCategory, saveProductImage, setProductAvailability, updateProduct, uploadProductImage } from '../modules/products/productService';
 import type { RestaurantCategory, RestaurantProduct } from '../types/menu';
+import { useOwnerUnsavedChanges } from '../contexts/OwnerUnsavedChangesContext';
 
 type Props = { restaurantId: string };
 type ProductForm = { name: string; description: string; price: string; categoryName: string };
@@ -9,6 +10,7 @@ type ProductForm = { name: string; description: string; price: string; categoryN
 const emptyForm: ProductForm = { name: '', description: '', price: '', categoryName: '' };
 
 export function RestaurantMenuPage({ restaurantId }: Props) {
+  const { setUnsavedChanges } = useOwnerUnsavedChanges();
   const [categories, setCategories] = useState<RestaurantCategory[]>([]);
   const [products, setProducts] = useState<RestaurantProduct[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -38,6 +40,19 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    const markDirty = (event: Event) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest('.restaurant-menu-page')) setUnsavedChanges(true);
+    };
+    document.addEventListener('input', markDirty, true);
+    document.addEventListener('change', markDirty, true);
+    return () => {
+      document.removeEventListener('input', markDirty, true);
+      document.removeEventListener('change', markDirty, true);
+    };
+  }, [setUnsavedChanges]);
 
   useEffect(() => { void loadMenu(); }, [restaurantId]);
 
@@ -94,6 +109,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
     setForm(emptyForm);
     setImageFile(null);
     setImagePreview('');
+    setUnsavedChanges(false);
   }
 
   function handleImageChange(file: File | undefined) {
@@ -142,6 +158,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
       }
 
       await loadMenu();
+      setUnsavedChanges(false);
       setSavingForm(false);
       closeProductModal();
     } catch (err) {
