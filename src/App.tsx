@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { RestaurantProvider } from './components/RestaurantProvider';
 import { RestaurantOwnerAuthProvider, useRestaurantOwnerAuth } from './components/RestaurantOwnerAuthProvider';
 import { PrivilegedMfaGate } from './modules/auth/components/PrivilegedMfaGate';
@@ -90,92 +90,6 @@ function AppContent() {
   const [restaurant, setRestaurant] = useState<RestaurantConfig>(defaultRestaurant);
   const [route, setRoute] = useState(() => normalizeHashRoute(window.location.hash || ''));
   const { user, loading: authLoading, error: authError } = useRestaurantOwnerAuth();
-  const hasUnsavedEditsRef = useRef(false);
-  const lastKnownHashRef = useRef(window.location.hash || '');
-
-  useEffect(() => {
-    const warning = 'You have unsaved changes. If you leave this page, your changes may be lost.';
-    const markEdited = (event: Event) => {
-      const target = event.target;
-      if (!(target instanceof HTMLElement)) return;
-      if (target.matches('input, textarea, select, [contenteditable="true"]')) {
-        hasUnsavedEditsRef.current = true;
-      }
-    };
-
-    const handleSubmit = () => {
-      // A form submission usually represents the page's save/create/update action.
-      hasUnsavedEditsRef.current = false;
-    };
-
-    const handleClick = (event: MouseEvent) => {
-      if (!hasUnsavedEditsRef.current || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-
-      const actionButton = target.closest('button, input[type="submit"], input[type="button"]');
-      if (actionButton) {
-        const label = (actionButton.textContent || (actionButton instanceof HTMLInputElement ? actionButton.value : '')).trim().toLowerCase();
-        if (/^(save|save changes|save customizations|update|update .*|create|create .*|submit|confirm|place order|complete order|add product|add employee)$/.test(label)) {
-          // Treat explicit save/submit actions as the user's acknowledgement
-          // that they are committing the edits before continuing.
-          hasUnsavedEditsRef.current = false;
-          return;
-        }
-      }
-
-      const link = target.closest('a[href]');
-      if (!(link instanceof HTMLAnchorElement) || (link.target && link.target !== '_self') || link.hasAttribute('download')) return;
-      const destination = new URL(link.href, window.location.href);
-      if (destination.origin !== window.location.origin) return;
-      const currentRoute = window.location.pathname + window.location.search + window.location.hash;
-      const nextRoute = destination.pathname + destination.search + destination.hash;
-      if (nextRoute === currentRoute) return;
-
-      if (!window.confirm(warning + '\\n\\nDo you want to leave without saving?')) {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-      } else {
-        hasUnsavedEditsRef.current = false;
-      }
-    };
-
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (!hasUnsavedEditsRef.current) return;
-      event.preventDefault();
-      event.returnValue = warning;
-    };
-
-    const handleHashChange = () => {
-      const nextHash = window.location.hash || '';
-      if (hasUnsavedEditsRef.current && nextHash !== lastKnownHashRef.current) {
-        const shouldLeave = window.confirm(warning + '\\n\\nDo you want to leave without saving?');
-        if (!shouldLeave) {
-          window.history.replaceState(null, '', window.location.pathname + window.location.search + lastKnownHashRef.current);
-          return;
-        }
-        hasUnsavedEditsRef.current = false;
-      }
-      lastKnownHashRef.current = nextHash;
-    };
-
-    document.addEventListener('input', markEdited, true);
-    document.addEventListener('change', markEdited, true);
-    document.addEventListener('submit', handleSubmit, true);
-    document.addEventListener('click', handleClick, true);
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    window.addEventListener('hashchange', handleHashChange);
-    return () => {
-      document.removeEventListener('input', markEdited, true);
-      document.removeEventListener('change', markEdited, true);
-      document.removeEventListener('submit', handleSubmit, true);
-      document.removeEventListener('click', handleClick, true);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.removeEventListener('hashchange', handleHashChange);
-    };
-  }, []);
-
   useEffect(() => {
     const favicon = restaurant.storefront.faviconUrl?.trim();
     const iconLinks = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]'));
