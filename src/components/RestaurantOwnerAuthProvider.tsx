@@ -105,15 +105,10 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
 
       if (!mounted) return;
 
-      const { data } = client.auth.onAuthStateChange((_event, session) => {
+      const { data } = client.auth.onAuthStateChange((event, session) => {
         const currentUser = session?.user ?? null;
+        const previousUserId = user?.id ?? null;
         setUser(currentUser);
-        // Clear the previous user's role context immediately so the MFA gate
-        // cannot reuse a stale customer/owner/staff classification during a
-        // cross-account sign-in transition.
-        setRestaurant(null);
-        setAccountType(null);
-        setStaffRole(null);
 
         if (!currentUser) {
           setRestaurant(null);
@@ -121,6 +116,17 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
           setStaffRole(null);
           setError('');
           return;
+        }
+
+        // Supabase emits TOKEN_REFRESHED during normal session maintenance.
+        // Keep the already-resolved role context for the same user so the MFA
+        // gate does not flash its security-check screen during routine refreshes.
+        // Real account transitions still clear the old context immediately.
+        const isSameUserTokenRefresh = event === 'TOKEN_REFRESHED' && previousUserId === currentUser.id;
+        if (!isSameUserTokenRefresh) {
+          setRestaurant(null);
+          setAccountType(null);
+          setStaffRole(null);
         }
 
         void loadAccountContext(currentUser).catch((accountError) => {
