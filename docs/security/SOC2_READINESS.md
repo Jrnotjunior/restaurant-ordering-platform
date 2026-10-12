@@ -142,6 +142,12 @@ Never claim SOC 2 compliance based on this tracker. Repository state is not proo
 - Live `pg_get_functiondef` confirms the deployed input guards. This is input-shape hardening, not a replacement for rate limiting or protection against accidental leakage of valid bearer references. Payment reference enumeration/rate limiting, integration tests, and guest order tracking token redesign remain outstanding.
 
 
+### Additional guest-tracking rider identity redaction — 2026-10-12
+- Applied a live replacement of `get_order_status_by_id(uuid)` so anonymous callers receive NULL for rider name as well as rider phone and delivery-failure detail. Authenticated behavior is preserved.
+- Verified the live function definition contains all three anonymous redaction expressions.
+- Migration committed as `supabase/migrations/20261012223000_redact_rider_name_from_guest_order_tracking.sql`, commit `925522a1a31a2edc29d7d9d6290001d38e6e988b`.
+- This reduces disclosure but does not fix UUID-as-bearer access; the dedicated high-entropy guest tracking token redesign and end-to-end tests remain open.
+
 ### Guest tracking data minimization — 2026-10-12
 - Added migration `supabase/migrations/20261012213000_redact_private_fields_from_guest_order_tracking.sql`, commit `c00ff52e608f24927462790d575d85e174530a32`, and applied it successfully to live Supabase.
 - Live function definition inspected after deployment: anonymous calls to `get_order_status_by_id(uuid)` now receive NULL for rider phone and delivery-failure detail. Authenticated calls preserve existing field behavior, subject to the function's existing customer ownership check.
