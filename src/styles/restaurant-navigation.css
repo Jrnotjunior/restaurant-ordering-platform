@@ -280,3 +280,12 @@
 .restaurant-owner-brand-logo{width:36px;height:36px;flex:0 0 36px;display:block;object-fit:contain;border-radius:6px}
 .restaurant-owner-brand>span:last-child{min-width:0;overflow:hidden}
 .restaurant-owner-brand strong{overflow-wrap:anywhere}
+
+
+/* Owner sidebar customer-support placeholder; destination will be configured later. */
+.restaurant-owner-sidebar{display:flex;flex-direction:column}
+.restaurant-owner-sidebar-support{margin-top:auto;padding-top:14px;border-top:1px solid rgba(255,255,255,.1)}
+.restaurant-owner-sidebar-support-button{width:100%;min-height:44px;display:flex;align-items:center;gap:13px;padding:0 13px;border:0;border-radius:9px;background:transparent;color:#aebbd0;font-family:inherit;font-size:13px;font-weight:600;line-height:1.25;text-align:left;opacity:.9}
+.restaurant-owner-sidebar-support-button svg{width:19px;height:19px;flex:0 0 auto}
+.restaurant-owner-sidebar-support-button:disabled{cursor:default}
+@media(max-width:900px){.restaurant-owner-sidebar-support-button{justify-content:center;padding:0}.restaurant-owner-sidebar-support-button span{display:none}}
