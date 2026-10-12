@@ -301,11 +301,10 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
               <div>
                 <p className="order-rider-label">Pickup location</p>
                 <h2>{order.restaurantName}</h2>
-                <p className="order-pickup-location-message">{order.status === 'completed' ? 'Pick up your order here' : 'Your pickup location'}</p>
               </div>
               <span className="order-rider-status">Store</span>
             </div>
-            <p className="order-pickup-location-message">{order.status === 'completed' ? 'Your order is complete. Please collect it from this address:' : 'Your order will be ready for collection at this restaurant address. Check the order status below before heading over.'}</p>
+            <p className="order-pickup-location-message">{order.status === 'completed' ? 'Order completed. Pickup address:' : 'Collect your order here when it is ready.'}</p>
             <strong className="order-pickup-address">{storeAddress}</strong>
             {formatOperatingHours().length > 0 && (
               <div className="order-pickup-hours">
