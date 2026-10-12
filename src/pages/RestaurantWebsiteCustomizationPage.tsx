@@ -253,6 +253,10 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-phone-toolbar button{border:1px solid rgba(255,255,255,.2);background:#1f2937;color:#fff;border-radius:5px;padding:3px 7px;font:inherit;font-size:10px;cursor:pointer}
         .website-customization-phone-toolbar button:last-child{font-size:15px;line-height:1;padding:1px 7px}
         .website-customization-card h2{margin:0 0 8px}
+        .website-customization-section-heading{display:flex;align-items:center;justify-content:space-between;gap:20px}
+        .website-customization-section-heading>div{min-width:0}
+        .website-customization-inline-preview{flex:0 0 auto;white-space:nowrap}
+        @media(max-width:600px){.website-customization-section-heading{align-items:flex-start;flex-direction:column}.website-customization-inline-preview{width:100%}}
         .website-customization-help{margin:0;color:#64748b;line-height:1.6}
         .website-customization-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}
         .website-customization-field{display:grid;gap:7px;font-weight:600;font-size:14px}
@@ -422,8 +426,15 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         </div>
 
         <div className="website-customization-card">
-          <h2>Website Colors</h2>
-          <p className="website-customization-help">Choose colors for each part of your customer-facing store. Changes update the preview immediately and are saved per restaurant.</p>
+          <div className="website-customization-section-heading">
+            <div>
+              <h2>Website Colors</h2>
+              <p className="website-customization-help">Choose colors for each part of your customer-facing store. Changes update the preview immediately and are saved per restaurant.</p>
+            </div>
+            <button type="button" className="button button-primary website-customization-inline-preview" onClick={openLivePreview}>
+              See Live Preview
+            </button>
+          </div>
           <div className="website-customization-color-settings">
             {([
               ['background', 'Page background', websiteTheme.colors.background],
