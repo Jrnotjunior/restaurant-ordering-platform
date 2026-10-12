@@ -121,6 +121,11 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
 
         if (!cancelled && profileId) {
           setVerifiedCustomerId(authenticatedUser.id);
+          // Customers should land directly on the storefront menu after
+          // successful authentication and registration verification.
+          if (window.location.hash === '#account') {
+            window.location.hash = '';
+          }
         }
       } catch (verificationError) {
         if (cancelled) return;
@@ -193,38 +198,6 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
     );
   }
 
-  if (user && accountType && !submitting && (accountType !== 'customer' || verifiedCustomerId === user.id)) {
-    return (
-      <main className="restaurant-owner-auth-page">
-        <section className="restaurant-owner-auth-card" aria-labelledby="account-signed-in-title">
-          <p className="eyebrow">Your account</p>
-          <h1 id="account-signed-in-title">You're signed in</h1>
-          <p>{user.email ?? 'Your account is active.'}</p>
-          {authError && <div className="restaurant-dashboard-error" role="alert">{authError}</div>}
-          <nav aria-label="Account links" className="restaurant-owner-auth-form">
-            <a className="button button-primary" href="#order-history">View order history</a>
-            <a className="button" href="#saved-address">Saved addresses</a>
-            <a className="button" href="#">Back to menu</a>
-          </nav>
-          <button
-            className="button"
-            type="button"
-            onClick={() => {
-              setSubmitting(true);
-              void signOut()
-                .then(() => { window.location.hash = '#account'; })
-                .catch((err) => setError(err instanceof Error ? err.message : 'Unable to sign out.'))
-                .finally(() => setSubmitting(false));
-            }}
-            disabled={submitting}
-          >
-            {submitting ? 'Signing out…' : 'Sign out'}
-          </button>
-          {error && <div className="restaurant-dashboard-error" role="alert">{error}</div>}
-        </section>
-      </main>
-    );
-  }
 
   return (
     <main className="restaurant-owner-auth-page">
