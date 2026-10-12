@@ -104,7 +104,7 @@ export function CustomerSignUpPage() {
         )}
 
 
-        <form onSubmit={(event) => void handleSubmit(event)} noValidate>
+        <form className="restaurant-owner-auth-form" onSubmit={(event) => void handleSubmit(event)} noValidate>
           <div className="customer-signup-name-row">
             <label>
               First name
