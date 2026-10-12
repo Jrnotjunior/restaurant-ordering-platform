@@ -490,11 +490,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       return;
     }
 
-    if (!address.trim()) {
-      setError('Enter the restaurant store address.');
-      return;
-    }
-
     const parsedVatRate = Number(vatRate);
     const parsedBaseFee = Number(deliveryBaseFee);
     const parsedDistanceIncrement = Number(deliveryDistanceIncrementMeters);
@@ -530,7 +525,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       const { error: saveError } = await supabase
         .from('restaurants')
         .update({
-          store_address: address.trim(),
           operating_hours: normalizedHours,
           ordering_enabled: orderingEnabled,
           tax_vat_registered: vatRegistered,
@@ -674,21 +668,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       {message && <div className="restaurant-shipping-message is-success" role="status">{message}</div>}
 
       <form className="restaurant-settings-form" onSubmit={(event) => { event.preventDefault(); setShowSaveConfirmation(true); }}>
-        <div className="restaurant-settings-card">
-          <h2>Store address</h2>
-          <p className="restaurant-settings-help">This address is shown to customers for pickup orders. It is stored per restaurant, so the platform can be reused by different restaurant owners.</p>
-          <label className="restaurant-settings-field">
-            <span>Full store address</span>
-            <input
-              type="text"
-              value={address}
-              onChange={(event) => { setAddress(event.target.value); setMessage(''); setError(''); }}
-              disabled={loading || saving}
-              required
-            />
-          </label>
-        </div>
-
         <div className="restaurant-settings-card">
           <h2>Delivery pricing</h2>
           <p className="restaurant-settings-help">Delivery fees are calculated automatically from the restaurant to the customer's confirmed Google Maps location. You no longer need to configure Barangays and individual shipping fees.</p>
