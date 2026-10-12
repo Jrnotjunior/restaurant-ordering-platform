@@ -408,3 +408,25 @@
 .customer-password-requirements li.is-met{color:#15803d}
 .customer-password-requirements li.is-met .customer-password-requirement-check{border-color:#15803d;background:#15803d}
 @media(max-width:420px){.customer-password-requirements{grid-template-columns:1fr}}
+
+/* Keep the consent checkbox inline beside its text in the customer signup form. */
+.restaurant-owner-auth-card .restaurant-owner-auth-form .customer-personal-info-consent{
+  display:grid!important;
+  grid-template-columns:17px minmax(0,1fr)!important;
+  grid-template-rows:auto!important;
+  align-items:start!important;
+  column-gap:9px!important;
+}
+.restaurant-owner-auth-card .restaurant-owner-auth-form .customer-personal-info-consent input[type="checkbox"]{
+  grid-column:1;
+  grid-row:1;
+  width:17px!important;
+  height:17px!important;
+  min-width:17px!important;
+  margin:2px 0 0!important;
+}
+.restaurant-owner-auth-card .restaurant-owner-auth-form .customer-personal-info-consent span{
+  grid-column:2;
+  grid-row:1;
+  min-width:0;
+}
