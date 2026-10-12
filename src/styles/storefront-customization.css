@@ -6,7 +6,7 @@
   overflow:hidden;
   border-radius:var(--radius-lg);
   margin-bottom:32px;
-  background:var(--color-hero, var(--color-primary));
+  background:var(--color-hero, transparent);
   background-size:cover;
   background-position:center;
   color:var(--color-primary-text);
