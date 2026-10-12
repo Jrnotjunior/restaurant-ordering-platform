@@ -140,6 +140,10 @@ Deno.serve(async (request) => {
         data: {
           invitation_type: "tenant_owner",
           tenant_invitation_id: invitation.id,
+          restaurant_name: "Web2Table",
+          invitation_role: "a restaurant owner",
+          account_setup: "your restaurant account",
+          invitation_label: "RESTAURANT OWNER INVITATION",
         },
       },
     );
