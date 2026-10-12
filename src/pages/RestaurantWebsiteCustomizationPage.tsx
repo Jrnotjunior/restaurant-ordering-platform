@@ -241,7 +241,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-live-hero h3{font-size:25px;line-height:1.08;margin:7px 0 8px}
         .website-customization-live-hero p{margin:0;font-size:13px;line-height:1.5}
         .website-customization-live-disabled{margin:12px;padding:22px;text-align:center;border:1px dashed;font-size:12px}
-        .website-customization-live-section{margin:12px;padding:12px;border:1px solid;border-color:inherit;border-radius:9px;display:flex;justify-content:space-between;gap:8px;font-size:12px}
+        .website-customization-live-section{margin:12px;padding:12px;border:1px solid;border-color:inherit;border-radius:9px;display:flex;justify-content:space-between;gap:8px;font-size:12px}\n        .website-customization-live-buttons{display:flex;gap:8px;margin:12px}\n        .website-customization-live-buttons button{flex:1;border:1px solid transparent;border-radius:8px;padding:10px 6px;font:inherit;font-size:11px;font-weight:700}
         .website-customization-live-footer{padding:14px;border-top:1px solid;text-align:center;font-size:10px}
         .website-customization-live-footer-powered-by{display:inline-flex;align-items:center;justify-content:center;gap:5px;margin-top:8px;color:inherit;text-decoration:none;font-size:9px;opacity:.8}
         .website-customization-live-footer-powered-logo{display:inline-flex;align-items:center;gap:4px;font-weight:800}
@@ -292,7 +292,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-phone-screen::-webkit-scrollbar{display:none}
         .website-customization-branding-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(220px,.6fr);gap:24px;margin-top:18px;align-items:start}
         .website-customization-subheading{display:block;font-size:13px;font-weight:700;color:#475569;margin-bottom:8px}
-        .website-customization-color-control{display:flex;align-items:center;gap:10px}
+        .website-customization-color-control{display:flex;align-items:center;gap:10px}\n        .website-customization-color-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:18px}\n        .website-customization-color-setting{display:grid;gap:8px;padding:14px;border:1px solid #e2e8f0;border-radius:10px}\n        .website-customization-color-setting>span{font-size:14px;font-weight:700}\n        @media(max-width:700px){.website-customization-color-settings{grid-template-columns:1fr}}
         .website-customization-color-control input[type="color"]{width:48px;height:40px;padding:3px;border:1px solid #dbe2ea;border-radius:8px;cursor:pointer}
         .website-customization-color-control span{font-size:13px;font-weight:700;color:#0f172a}
         .website-customization-field-hint{display:block;margin-top:5px;color:#64748b;font-size:12px}
@@ -354,7 +354,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
                 fontFamily: websiteTheme.fontBody
               }}
             >
-              <div className="website-customization-live-nav" style={{ borderBottomColor: websiteTheme.colors.border }}>
+              <div className="website-customization-live-nav" style={{ backgroundColor: websiteTheme.colors.header ?? websiteTheme.colors.background, color: websiteTheme.colors.text, borderBottomColor: websiteTheme.colors.border }}>
                 <div className="website-customization-live-brand">
                   {logoUrl ? <img src={logoUrl} alt="" /> : <span className="website-customization-live-logo-fallback" style={{ background: websiteTheme.colors.primary, color: websiteTheme.colors.primaryText }}>🍴</span>}
                   <strong style={{ fontFamily: websiteTheme.fontHeading }}>{restaurantName}</strong>
@@ -364,7 +364,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
 <div
                   className="website-customization-live-hero"
                   style={{
-                    backgroundColor: websiteTheme.colors.surface,
+                    backgroundColor: websiteTheme.colors.hero ?? websiteTheme.colors.surface,
                     backgroundImage: storefront.hero.imageUrl ? `linear-gradient(rgba(0,0,0,.38),rgba(0,0,0,.38)), url("${storefront.hero.imageUrl}")` : undefined,
                     color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.text,
                     borderColor: websiteTheme.colors.border,
@@ -376,9 +376,9 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
                   {restaurantTagline ? <p>{restaurantTagline}</p> : null}
                 </div>
 
-              <div className="website-customization-live-section"><strong>Menu</strong><span style={{ color: websiteTheme.colors.muted }}>Restaurant menu and categories</span></div>
+              <div className="website-customization-live-section" style={{ backgroundColor: websiteTheme.colors.productCard ?? websiteTheme.colors.surface, color: websiteTheme.colors.text }}><strong>Popular items</strong><span style={{ color: websiteTheme.colors.muted }}>Restaurant menu and categories</span></div>\n              <div className="website-customization-live-buttons"><button type="button" style={{ backgroundColor: websiteTheme.colors.primary, color: websiteTheme.colors.primaryText, borderColor: websiteTheme.colors.primary }}>Primary button</button><button type="button" style={{ backgroundColor: websiteTheme.colors.secondary, color: websiteTheme.colors.secondaryText, borderColor: websiteTheme.colors.border }}>Secondary button</button></div>
 
-              <div className="website-customization-live-footer" style={{ borderTopColor: websiteTheme.colors.border, color: websiteTheme.colors.muted }}>
+              <div className="website-customization-live-footer" style={{ backgroundColor: websiteTheme.colors.footer ?? websiteTheme.colors.background, borderTopColor: websiteTheme.colors.border, color: websiteTheme.colors.muted }}>
                 <div>{`© ${new Date().getFullYear()} All rights reserved.`}</div>
                 <a className="website-customization-live-footer-powered-by" href="https://web2table.com" target="_blank" rel="noreferrer" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
                   <span>Powered by</span>
@@ -423,6 +423,48 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
               </div>
               <small className="website-customization-field-hint">Used for buttons and important accents.</small>
             </label>
+          </div>
+        </div>
+
+        <div className="website-customization-card">
+          <h2>Website Colors</h2>
+          <p className="website-customization-help">Choose colors for each part of your customer-facing store. Changes update the preview immediately and are saved per restaurant.</p>
+          <div className="website-customization-color-settings">
+            {([
+              ['background', 'Page background', websiteTheme.colors.background],
+              ['header', 'Header color', websiteTheme.colors.header ?? websiteTheme.colors.background],
+              ['footer', 'Footer color', websiteTheme.colors.footer ?? websiteTheme.colors.background],
+              ['hero', 'Hero section color', websiteTheme.colors.hero ?? websiteTheme.colors.surface],
+              ['productCard', 'Product card color', websiteTheme.colors.productCard ?? websiteTheme.colors.surface],
+              ['text', 'Font color', websiteTheme.colors.text],
+              ['primary', 'Primary button color', websiteTheme.colors.primary],
+              ['secondary', 'Secondary button color', websiteTheme.colors.secondary],
+            ] as const).map(([key, label, value]) => (
+              <label className="website-customization-color-setting" key={key}>
+                <span>{label}</span>
+                <div className="website-customization-color-control">
+                  <input
+                    type="color"
+                    value={value}
+                    disabled={loading || saving}
+                    onChange={(event) => {
+                      const color = event.target.value;
+                      setWebsiteTheme((current) => ({
+                        ...current,
+                        colors: {
+                          ...current.colors,
+                          [key]: color,
+                          ...(key === 'primary' ? { primaryHover: color } : {}),
+                        }
+                      }));
+                      setMessage('');
+                      setError('');
+                    }}
+                  />
+                  <span>{value.toUpperCase()}</span>
+                </div>
+              </label>
+            ))}
           </div>
         </div>
 
