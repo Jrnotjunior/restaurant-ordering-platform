@@ -61,6 +61,9 @@ export function OwnerUnsavedChangesProvider({ children }: { children: ReactNode 
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
+      } else {
+        dirtyRef.current = false;
+        setDirty(false);
       }
     };
     document.addEventListener('click', handleLinkClick, true);
