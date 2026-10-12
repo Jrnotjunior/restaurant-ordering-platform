@@ -121,12 +121,13 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
           return;
         }
 
-        // Token refreshes do not change a user's account role. Reusing the
-        // already-resolved context avoids repeating owner/staff profile queries
-        // and prevents the privileged MFA gate from flashing during refreshes.
-        // Only skip the lookup when the refreshed session belongs to the same
-        // user whose context is already resolved.
-        if (event === 'TOKEN_REFRESHED' && resolvedUserIdRef.current === currentUser.id) {
+        // Supabase emits auth-state events during MFA enrollment/verification
+        // as well as ordinary token refreshes. Those events can keep the same
+        // authenticated user; clearing the role context here briefly makes the
+        // shared gateway remount and can send staff back to sign-in. Preserve
+        // the already-resolved context for the same user and only resolve again
+        // when the authenticated identity actually changes.
+        if (resolvedUserIdRef.current === currentUser.id) {
           setError('');
           return;
         }
