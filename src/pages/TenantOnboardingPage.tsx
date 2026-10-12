@@ -124,10 +124,10 @@ export function TenantOnboardingPage() {
         <p className="eyebrow">Tenant access</p>
         <h1 id="tenant-onboarding-title">Set up your owner account.</h1>
         <p className="tenant-onboarding-intro">
-          {restaurantName || 'Your restaurant'} is ready. Your email invitation verifies your identity, so you do not need to create a password.
+          {restaurantName || 'Your restaurant'} is ready. Your invitation has verified your email and your password has been saved. Finish linking your owner account, then complete authenticator verification before accessing your dashboard.
         </p>
         <p><strong>Email:</strong> {user.email ?? invitation.email}</p>
-        <p>You will sign in using a one-time email code and complete authenticator verification before accessing your dashboard.</p>
+        <p>For future sign-ins, use your email and password, then verify with your authenticator app.</p>
         {error && <div className="tenant-onboarding-error" role="alert">{error}</div>}
         <button className="tenant-onboarding-submit" type="button" onClick={() => void finishOwnerSetup()} disabled={saving}>
           {saving ? 'Finishing setup…' : 'Finish setup'}
