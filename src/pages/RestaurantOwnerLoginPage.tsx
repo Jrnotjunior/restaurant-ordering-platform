@@ -64,11 +64,18 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
         if (lookupError) throw lookupError;
 
         if (!cancelled && !profileId) {
+          // Deny access and ask the trusted server to delete an Auth identity
+          // that has no registered customer, owner, staff, or pending invite.
+          // The server independently checks all application roles before deletion.
+          const { error: cleanupError } = await client.functions.invoke('reject-unregistered-customer');
           await client.auth.signOut();
+
           if (!cancelled) {
             window.sessionStorage.setItem(
               'restaurant-ordering-auth-feedback',
-              'This account is not yet registered. Please create your customer account before signing in.',
+              cleanupError
+                ? 'This account is not registered. Access was denied, but automatic account cleanup could not be confirmed. Please contact support.'
+                : 'This account is not yet registered. Please create your customer account before signing in.',
             );
             window.location.hash = '#signup';
           }
@@ -76,11 +83,17 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
         }
       } catch (verificationError) {
         if (cancelled) return;
+        // Fail closed. The server deletes only identities that have no
+        // registered customer profile, staff/owner role, system-admin access,
+        // or pending tenant invitation; otherwise it preserves the identity.
+        const { error: cleanupError } = await client.functions.invoke('reject-unregistered-customer');
+        await client.auth.signOut();
         window.sessionStorage.setItem(
           'restaurant-ordering-auth-feedback',
-          'We could not verify this customer account. Please create an account or try signing in again.',
+          cleanupError
+            ? 'We could not verify this account. Access was denied, but automatic account cleanup could not be confirmed. Please contact support.'
+            : 'We could not verify this customer account. Please create an account or try signing in again.',
         );
-        await client.auth.signOut();
         if (!cancelled) window.location.hash = '#signup';
       }
     }
