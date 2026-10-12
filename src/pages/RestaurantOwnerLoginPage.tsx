@@ -14,6 +14,7 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
     if (authLoading || !user || !accountType || !supabase) return;
     // Capture the narrowed client so TypeScript can safely use it inside the async closure.
     const client = supabase;
+    const authenticatedUser = user;
 
     // Owners and staff are authorized through their database-backed tenant records.
     // Customer Google authentication is not sufficient by itself: a customer
@@ -84,7 +85,7 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
         }
 
         if (!cancelled && profileId) {
-          setVerifiedCustomerId(user.id);
+          setVerifiedCustomerId(authenticatedUser.id);
         }
       } catch (verificationError) {
         if (cancelled) return;
