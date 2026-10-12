@@ -229,6 +229,16 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
               );
             })}
           </nav>
+          <div className="restaurant-owner-sidebar-support">
+            <button type="button" className="restaurant-owner-sidebar-support-button" disabled title="Support contact details will be added soon">
+              <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M4 13v-1a8 8 0 0 1 16 0v1" />
+                <path d="M4 12h3v6H5a2 2 0 0 1-2-2v-2a2 2 0 0 1 1-2ZM20 12h-3v6h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-1-2Z" />
+                <path d="M17 19a5 5 0 0 1-5 2" />
+              </svg>
+              <span>Contact Customer Support</span>
+            </button>
+          </div>
         </aside>
         <header className="restaurant-owner-topbar">
           <div className="restaurant-owner-topbar-status"><span /> <div><strong>Live</strong><small>System Online</small></div></div>
