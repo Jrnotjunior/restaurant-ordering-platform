@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { RestaurantProvider } from './components/RestaurantProvider';
+import { OwnerUnsavedChangesProvider } from './contexts/OwnerUnsavedChangesContext';
 import { RestaurantOwnerAuthProvider, useRestaurantOwnerAuth } from './components/RestaurantOwnerAuthProvider';
 import { PrivilegedMfaGate } from './modules/auth/components/PrivilegedMfaGate';
 import { ThemeProvider } from './components/ThemeProvider';
@@ -400,6 +401,7 @@ function AppContent() {
     return <OwnerRestaurantGuard>{(ownerRestaurant) => (
       <RestaurantProvider restaurant={ownerRestaurant}>
         <ThemeProvider restaurant={ownerRestaurant}>
+          <OwnerUnsavedChangesProvider>
           <RestaurantLayout hideChrome role="owner" ownerDashboard>
             {isRestaurantOrdersPage ? (
                 <RestaurantModuleGuard restaurantId={ownerRestaurant.id!} anyOf={['self_ordering', 'dispatch_delivery']}>
@@ -429,6 +431,7 @@ function AppContent() {
                 </RestaurantModuleGuard>
               ) : <RestaurantSalesPage restaurantId={ownerRestaurant.id!} role="owner" />}
           </RestaurantLayout>
+          </OwnerUnsavedChangesProvider>
         </ThemeProvider>
       </RestaurantProvider>
     )}</OwnerRestaurantGuard>;
