@@ -22,6 +22,10 @@ function applyTheme(theme: RestaurantTheme) {
   root.style.setProperty('--color-text', theme.colors.text);
   root.style.setProperty('--color-muted', theme.colors.muted);
   root.style.setProperty('--color-border', theme.colors.border);
+  root.style.setProperty('--color-header', theme.colors.header ?? theme.colors.background);
+  root.style.setProperty('--color-footer', theme.colors.footer ?? theme.colors.background);
+  root.style.setProperty('--color-hero', theme.colors.hero ?? theme.colors.surface);
+  root.style.setProperty('--color-product-card', theme.colors.productCard ?? theme.colors.surface);
   root.style.setProperty('--color-success', theme.colors.success);
   root.style.setProperty('--color-warning', theme.colors.warning);
   root.style.setProperty('--color-error', theme.colors.error);
