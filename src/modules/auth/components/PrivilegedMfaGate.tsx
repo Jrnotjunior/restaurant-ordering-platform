@@ -82,10 +82,11 @@ export function PrivilegedMfaGate({ children }: { children: ReactNode }) {
   // global security screen over the public storefront while session restoration
   // is pending. Protected owner/staff routes still enforce their own auth guards,
   // and once a privileged role is resolved this gate enforces MFA before access.
-  if (authLoading) return <>{children}</>;
-
-  if (gate.kind === 'loading') {
-    if (!user || accountType === 'customer') return <>{children}</>;
+  // The MFA gate is global, but the security-check screen should only ever
+  // be visible to a confirmed privileged account. Public/customer navigation
+  // must not flash this screen while the session or role is being resolved.
+  if (authLoading || gate.kind === 'loading') {
+    if (!user || accountType === 'customer' || !isPrivileged) return <>{children}</>;
     return <main className="restaurant-owner-auth-page"><section className="restaurant-owner-auth-card"><p>Checking account security…</p></section></main>;
   }
 
