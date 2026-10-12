@@ -415,3 +415,18 @@
   margin:12px auto 0;
   padding-inline:24px;
 }
+
+/* MFA verification actions: keep both buttons compact and centered. */
+.privileged-mfa-card .restaurant-owner-auth-form .privileged-mfa-submit{
+  display:block;
+  width:min(320px,100%);
+  min-width:0;
+  justify-self:center;
+  margin-inline:auto;
+}
+.privileged-mfa-card .privileged-mfa-signout{
+  display:block;
+  width:fit-content;
+  min-width:120px;
+  margin:12px auto 0;
+}
