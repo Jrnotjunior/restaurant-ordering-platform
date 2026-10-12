@@ -105,8 +105,10 @@ export function RestaurantEmployeeInvitePage() {
           <a className="button button-primary" href={appBaseUrl()}>Back to restaurant</a>
         </> : accepted ? <>
           <p>Your invitation for <strong>{email}</strong> has been accepted. No password is needed.</p>
-          <p>Your staff invitation has been accepted. Sign in with your invited account, then complete authenticator setup before accessing staff tools.</p>
-          <a className="button button-primary" href={appBaseUrl() + '#staff-login'}>Continue to staff sign in</a>
+          <p>Your staff invitation has been accepted. Continue to staff sign in to set up your authenticator before accessing staff tools. No password setup is required in this invitation flow.</p>
+          <div className="modal-actions" style={{ display: 'flex', justifyContent: 'center' }}>
+            <a className="button button-primary" href={appBaseUrl() + '#staff-login'}>Continue to staff sign in</a>
+          </div>
           <p className="restaurant-auth-switch">Role: {role || 'Restaurant staff'}</p>
         </> : <>
           <p>Accept your invitation to activate your restaurant team account.</p>
