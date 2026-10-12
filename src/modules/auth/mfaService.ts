@@ -28,9 +28,14 @@ export async function getPrivilegedMfaState(client: SupabaseClient): Promise<Mfa
     if (error) throw error;
   }
 
+  // Supabase requires authenticator friendly names to be unique per user.
+  // A previous interrupted enrollment may leave the name reserved briefly,
+  // even after an unverified factor is removed. Use a unique label so setup
+  // can recover instead of trapping the user on the security-error screen.
+  const friendlyName = `Web2Table authenticator ${new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14)}`;
   const { data: enrollment, error: enrollmentError } = await client.auth.mfa.enroll({
     factorType: 'totp',
-    friendlyName: 'Web2Table authenticator',
+    friendlyName,
   });
   if (enrollmentError) throw enrollmentError;
 
