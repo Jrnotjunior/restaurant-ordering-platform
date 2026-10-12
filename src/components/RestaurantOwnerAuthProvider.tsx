@@ -13,6 +13,7 @@ type RestaurantOwnerAuthValue = {
   restaurant: OwnerRestaurant | null;
   accountType: AccountType | null;
   staffRole: string | null;
+  staffRestaurantId: string | null;
   loading: boolean;
   error: string;
   signOut: () => Promise<void>;
@@ -26,6 +27,7 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
   const [restaurant, setRestaurant] = useState<OwnerRestaurant | null>(null);
   const [accountType, setAccountType] = useState<AccountType | null>(null);
   const [staffRole, setStaffRole] = useState<string | null>(null);
+  const [staffRestaurantId, setStaffRestaurantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const resolvedUserIdRef = useRef<string | null>(null);
@@ -35,6 +37,7 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
       setRestaurant(null);
       setAccountType(null);
       setStaffRole(null);
+      setStaffRestaurantId(null);
       return;
     }
 
@@ -42,6 +45,7 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
     setRestaurant(context.restaurant);
     setAccountType(context.accountType);
     setStaffRole(context.staffRole);
+    setStaffRestaurantId(context.staffRestaurantId);
   }
 
   useEffect(() => {
@@ -70,6 +74,7 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
           setRestaurant(null);
           setAccountType(null);
           setStaffRole(null);
+          setStaffRestaurantId(null);
           if (userError.name !== 'AuthSessionMissingError') {
             setError(userError.message);
           }
@@ -88,6 +93,8 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
               setRestaurant(null);
               setAccountType(null);
               setStaffRole(null);
+            setStaffRestaurantId(null);
+            setStaffRestaurantId(null);
               setError(accountError instanceof Error ? accountError.message : 'Unable to load your account details. Please retry.');
             } else if (mounted) {
               throw accountError;
@@ -190,12 +197,13 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
       restaurant,
       accountType,
       staffRole,
+      staffRestaurantId,
       loading,
       error,
       signOut,
       refreshRestaurant,
     }),
-    [user, restaurant, accountType, staffRole, loading, error],
+    [user, restaurant, accountType, staffRole, staffRestaurantId, loading, error],
   );
 
   return (
