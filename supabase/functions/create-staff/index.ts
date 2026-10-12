@@ -11,11 +11,11 @@ const {data:userData,error:userError}=await userClient.auth.getUser(token);if(us
 const body=await req.json(), restaurantId=String(body.restaurantId??"").trim(), name=String(body.name??"").trim(), preferredName=String(body.preferredName??name).trim(), mobileNumber=String(body.mobileNumber??"").trim(), email=String(body.email??"").trim().toLowerCase(), role=String(body.role??"").trim();
 if(!restaurantId||!name||!preferredName||!mobileNumber||!email||!["cashier","kitchen","dispatcher","rider"].includes(role))return json({error:"Employee name, mobile number, email, role, and restaurant are required."},400);
 if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return json({error:"Please enter a valid employee email address."},400);
-const {data:restaurant,error:restaurantError}=await admin.from("restaurants").select("id").eq("id",restaurantId).eq("owner_id",userData.user.id).eq("is_active",true).maybeSingle();if(restaurantError)throw restaurantError;if(!restaurant)return json({error:"You are not authorized to add employees to this restaurant."},403);
+const {data:restaurant,error:restaurantError}=await admin.from("restaurants").select("id,name").eq("id",restaurantId).eq("owner_id",userData.user.id).eq("is_active",true).maybeSingle();if(restaurantError)throw restaurantError;if(!restaurant)return json({error:"You are not authorized to add employees to this restaurant."},403);
 const {data:existing,error:existingError}=await admin.from("restaurant_staff").select("id,role,is_active").eq("restaurant_id",restaurantId).ilike("email",email).maybeSingle();if(existingError)throw existingError;if(existing)return json({error:"An employee with this email already exists for this restaurant."},409);
 if(role==="kitchen"||role==="dispatcher"){const {data:shared,error:sharedError}=await admin.from("restaurant_staff").select("id").eq("restaurant_id",restaurantId).eq("role",role).eq("is_active",true).maybeSingle();if(sharedError)throw sharedError;if(shared)return json({error:`This restaurant already has an active ${role} account.`},409);}
 
-const {data:inviteData,error:inviteError}=await admin.auth.admin.inviteUserByEmail(email,{data:{invitation_type:"employee_staff",role,restaurant_id:restaurantId,name,mobile_number:mobileNumber}});
+const {data:inviteData,error:inviteError}=await admin.auth.admin.inviteUserByEmail(email,{data:{invitation_type:"employee_staff",role,restaurant_id:restaurantId,restaurant_name:restaurant.name,name,mobile_number:mobileNumber}});
 if(inviteError) return json({error:inviteError.message},400);
 if(!inviteData.user) return json({error:"Supabase did not return the invited Auth user."},500);
 const authUserId=inviteData.user.id;
