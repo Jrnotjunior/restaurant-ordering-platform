@@ -188,7 +188,7 @@ export function OwnerRestaurantGuard({ children }: { children: (restaurant: Rest
 }
 
 export function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen' | 'dispatcher'; children: (restaurant: RestaurantConfig) => ReactNode }) {
-  const { user, loading: authLoading } = useRestaurantOwnerAuth();
+  const { user, staffRole, staffRestaurantId, loading: authLoading } = useRestaurantOwnerAuth();
   const [checking, setChecking] = useState(true);
   const [allowed, setAllowed] = useState(false);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
@@ -201,29 +201,14 @@ export function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen'
       if (authLoading) return;
       if (!user || !supabase) { if (mounted) setChecking(false); return; }
 
-      const { data: staffRows, error } = await supabase
-        .from('restaurant_staff')
-        .select('restaurant_id,role')
-        .eq('auth_user_id', user.id)
-        .eq('is_active', true)
-        .order('created_at', { ascending: true })
-        .limit(1);
-      const data = staffRows?.[0] ?? null;
-      if (!mounted) return;
-      if (error) {
-        console.error('Unable to verify staff access.', error);
-        setRoleCheckError(true);
-        setChecking(false);
-        return;
-      }
-      if (data?.role === role && data.restaurant_id) {
-        setRestaurantId(data.restaurant_id);
+      // Use the MFA-safe account context resolved by the shared gateway.
+      // Direct restaurant_staff reads are restricted by the privileged MFA RLS
+      // policy and can incorrectly bounce a valid staff user out of their workspace.
+      if (staffRole === role && staffRestaurantId) {
+        setRestaurantId(staffRestaurantId);
         setAllowed(true);
       } else {
-        // A signed-in employee who opens another staff workspace should return
-        // to their verified workspace, not the generic account/sign-in route.
-        // This preserves the current Auth session and avoids a misleading login redirect.
-        const destination = staffRouteForRole(data?.role) ?? '#account';
+        const destination = staffRouteForRole(staffRole) ?? '#account';
         setRedirecting(true);
         if (window.location.hash !== destination) window.location.hash = destination;
       }
@@ -231,7 +216,7 @@ export function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen'
     }
     void check();
     return () => { mounted = false; };
-  }, [role, user, authLoading]);
+  }, [role, user, staffRole, staffRestaurantId, authLoading]);
 
   if (authLoading) return <section className="restaurant-owner-auth-loading">Loading employee session…</section>;
   if (!user) return <RestaurantOwnerLoginPage />;
