@@ -133,7 +133,7 @@ export function CustomerSignUpPage() {
               <input type={showPassword ? 'text' : 'password'} autoComplete="new-password" minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH} value={password} onChange={(event) => setPassword(event.target.value)} onBlur={() => markTouched('password')} aria-invalid={shouldShow('password') && Boolean(fieldErrors.password)} required disabled={submitting} />
               <button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Hide password' : 'Show password'} disabled={submitting}>{showPassword ? 'Hide' : 'Show'}</button>
             </span>
-            <small>{getPasswordGuidance()}</small>
+            <small>{getPasswordGuidance(password).join(' · ')}</small>
             {fieldError('password')}
           </label>
           <label className="customer-personal-info-consent">
