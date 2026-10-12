@@ -193,7 +193,7 @@ export function TenantInviteLandingPage() {
         {error && <div className="error-banner">{error}</div>}
 
         {confirmationUrl || tokenHash || sessionReady || checkingSession || tenantFlow || genericInvitationFlow || (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) ? (
-          <div className="modal-actions">
+          <div className="modal-actions" style={{ display: 'flex', justifyContent: 'center' }}>
             <button className="button button-primary" type="button" onClick={() => void acceptInvitation()} disabled={accepting || checkingSession}>
               {accepting ? 'Opening secure access…' : checkingSession ? 'Checking invitation…' : tenantFlow ? 'Continue to restaurant' : 'Accept invitation'}
             </button>
