@@ -11,7 +11,11 @@ export function CustomerSignUpPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState(() => {
+    const feedback = window.sessionStorage.getItem('restaurant-ordering-auth-feedback') ?? '';
+    window.sessionStorage.removeItem('restaurant-ordering-auth-feedback');
+    return feedback;
+  });
   const [emailAlreadyRegistered, setEmailAlreadyRegistered] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
