@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { supabase } from '../services/supabaseClient';
 import {
@@ -28,6 +28,7 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
   const [staffRole, setStaffRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const resolvedUserIdRef = useRef<string | null>(null);
 
   async function loadAccountContext(currentUser: User | null) {
     if (!currentUser) {
@@ -64,6 +65,7 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
         if (!mounted) return;
 
         if (userError) {
+          resolvedUserIdRef.current = null;
           setUser(null);
           setRestaurant(null);
           setAccountType(null);
@@ -73,6 +75,7 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
           }
         } else {
           const currentUser = data.user ?? null;
+          resolvedUserIdRef.current = currentUser?.id ?? null;
           setUser(currentUser);
           try {
             await loadAccountContext(currentUser);
@@ -110,6 +113,7 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
         setUser(currentUser);
 
         if (!currentUser) {
+          resolvedUserIdRef.current = null;
           setRestaurant(null);
           setAccountType(null);
           setStaffRole(null);
@@ -117,16 +121,20 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
           return;
         }
 
-        // Supabase emits TOKEN_REFRESHED during normal session maintenance.
-        // Keep the already-resolved role context for the same user so the MFA
-        // gate does not flash its security-check screen during routine refreshes.
-        // Real account transitions still clear the old context immediately.
-        const isSameUserTokenRefresh = event === 'TOKEN_REFRESHED';
-        if (!isSameUserTokenRefresh) {
-          setRestaurant(null);
-          setAccountType(null);
-          setStaffRole(null);
+        // Token refreshes do not change a user's account role. Reusing the
+        // already-resolved context avoids repeating owner/staff profile queries
+        // and prevents the privileged MFA gate from flashing during refreshes.
+        // Only skip the lookup when the refreshed session belongs to the same
+        // user whose context is already resolved.
+        if (event === 'TOKEN_REFRESHED' && resolvedUserIdRef.current === currentUser.id) {
+          setError('');
+          return;
         }
+
+        resolvedUserIdRef.current = currentUser.id;
+        setRestaurant(null);
+        setAccountType(null);
+        setStaffRole(null);
 
         void loadAccountContext(currentUser).catch((accountError) => {
           if (mounted) {
