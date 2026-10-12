@@ -299,10 +299,6 @@
 .customer-signup-name-row>label{align-self:start;align-content:start}
 .customer-signup-name-row>label>input{height:42px;min-height:42px}
 
-.customer-google-signup-button{width:100%;min-height:46px;display:flex;align-items:center;justify-content:center;gap:11px;padding:11px 16px;border:1px solid #dbe2ea;border-radius:10px;background:#fff;color:#111827;font:inherit;font-size:14px;font-weight:650;cursor:pointer;transition:background .15s ease,border-color .15s ease}
-.customer-google-signup-button:hover{background:#f8fafc;border-color:#cbd5e1}
-.customer-google-signup-button:focus-visible{outline:2px solid #64748b;outline-offset:2px}
-.customer-google-signup-button:disabled{opacity:.6;cursor:not-allowed}
 .customer-signup-divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:#94a3b8;font-size:12px}
 .customer-signup-divider::before,.customer-signup-divider::after{content:"";height:1px;flex:1;background:#e2e8f0}
 
