@@ -99,14 +99,15 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
   }
 
   useEffect(() => {
-    const markDirty = () => setUnsavedChanges(true);
-    const root = document.querySelector('.restaurant-shipping-page');
-    if (!root) return;
-    root.addEventListener('input', markDirty);
-    root.addEventListener('change', markDirty);
+    const markDirty = (event: Event) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest('.restaurant-shipping-page')) setUnsavedChanges(true);
+    };
+    document.addEventListener('input', markDirty, true);
+    document.addEventListener('change', markDirty, true);
     return () => {
-      root.removeEventListener('input', markDirty);
-      root.removeEventListener('change', markDirty);
+      document.removeEventListener('input', markDirty, true);
+      document.removeEventListener('change', markDirty, true);
     };
   }, [setUnsavedChanges]);
 
