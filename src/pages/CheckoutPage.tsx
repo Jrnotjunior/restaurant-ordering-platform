@@ -74,7 +74,38 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
   const [redeemPoints, setRedeemPoints] = useState(false);
   const [loyaltyLoading, setLoyaltyLoading] = useState(false);
   const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
+  const [storeAddress, setStoreAddress] = useState('');
   const restaurantId = restaurant.id;
+
+  useEffect(() => {
+    if (!supabase || !restaurantId) {
+      setStoreAddress('');
+      return;
+    }
+
+    let mounted = true;
+    const client = supabase as NonNullable<typeof supabase>;
+
+    async function loadStorePickupAddress() {
+      const { data, error } = await client
+        .from('restaurants')
+        .select('store_address,location_text')
+        .eq('id', restaurantId)
+        .maybeSingle();
+
+      if (!mounted) return;
+      if (error) {
+        console.error('Unable to load restaurant pickup address.', error);
+        setStoreAddress('');
+        return;
+      }
+
+      setStoreAddress(String(data?.store_address ?? data?.location_text ?? '').trim());
+    }
+
+    void loadStorePickupAddress();
+    return () => { mounted = false; };
+  }, [restaurantId]);
 
   useEffect(() => {
     if (!supabase || !restaurantId) return;
@@ -335,7 +366,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
     };
   }, [restaurantId, user?.id]);
 
-  const restaurantPickupPoint = restaurant.locationText?.trim() ?? '';
+  const restaurantPickupPoint = storeAddress;
   const isDelivery = orderType === 'delivery';
 
   const subtotal = useMemo(() => items.reduce((total, item) => total + item.product.price * item.quantity, 0), [items]);
@@ -618,12 +649,14 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
             }} /><span className="order-type-content"><strong>{type.label}</strong></span></label>)}
           </div></fieldset>
 
-          {orderType === 'pickup' && restaurantPickupPoint && (
+          {orderType === 'pickup' && (
             <section className="checkout-section checkout-pickup-location" aria-label="Restaurant pickup location">
               <p className="eyebrow">Pickup location</p>
               <h2>{restaurant.name}</h2>
-              <p>{restaurantPickupPoint}</p>
-              <span>Please collect your order from this restaurant address.</span>
+              {restaurantPickupPoint
+                ? <p>{restaurantPickupPoint}</p>
+                : <p role="status">The restaurant has not configured a pickup address yet. Please contact the restaurant before placing your order.</p>}
+              {restaurantPickupPoint ? <span>Please collect your order from this restaurant address.</span> : null}
             </section>
           )}
 
