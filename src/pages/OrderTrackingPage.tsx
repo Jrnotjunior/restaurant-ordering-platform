@@ -237,10 +237,11 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
         {cancellationError ? <p className="checkout-error" role="alert">{cancellationError}</p> : null}
         {cancellationMessage ? <p className="checkout-success" role="status">{cancellationMessage}</p> : null}
 
-        <section className="order-tracking-details" aria-label="Order details and billing">
-          <div className="order-tracking-section-heading">
-            <div><p className="eyebrow">Your order</p><h2>Order details</h2></div>
-          </div>
+        <details className="order-tracking-details">
+          <summary className="order-tracking-section-heading">
+            <span className="order-details-title"><span className="eyebrow">Your order</span><strong>Order details</strong></span>
+            <span className="order-details-toggle">View details <span className="order-details-chevron" aria-hidden="true">⌄</span></span>
+          </summary>
           {order.items.length > 0 ? (
             <div className="order-tracking-items">
               {order.items.map((item) => (
@@ -264,7 +265,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
             <div className="order-tracking-billing-row is-total"><strong>Total paid / due</strong><strong>₱{order.total.toFixed(2)}</strong></div>
             <p className="order-tracking-payment-note">{order.paymentStatus === 'paid' ? 'Payment confirmed' : order.paymentStatus === 'refunded' ? 'Payment refunded' : order.paymentStatus === 'failed' ? 'Payment failed' : 'Payment pending'} · {order.paymentMethod === 'gcash' ? 'Online payment' : 'Cash'}</p>
           </div>
-        </section>
+        </details>
 
         {order.deliveryStatus === 'failed' ? (
           <div className="order-tracking-cancelled">
