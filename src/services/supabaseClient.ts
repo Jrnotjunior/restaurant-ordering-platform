@@ -27,38 +27,21 @@ function getRestaurantContextHeaders(): Record<string, string> {
 function getRestaurantAuthStorageKey(): string {
   if (typeof window === 'undefined') return 'restaurant-ordering-platform-auth';
 
-  // Keep a per-tab identifier in sessionStorage so independent restaurant
-  // workspaces in separate tabs do not share an authentication session.
-  const storageKey = 'restaurant-ordering-platform-tab-id';
-  let tabId = '';
+  // window.name belongs to the individual browser browsing context and
+  // survives refreshes. It gives each restaurant tab a distinct Supabase
+  // storage key and therefore a distinct Auth BroadcastChannel.
+  const existingTabId = window.name.startsWith('restaurant-ordering-tab:')
+    ? window.name.slice('restaurant-ordering-tab:'.length)
+    : '';
 
-  try {
-    tabId = window.sessionStorage.getItem(storageKey) ?? '';
+  const tabId = existingTabId || (
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2) + Date.now().toString(36)
+  );
 
-    // Migrate the previous window.name identifier when available so existing
-    // tabs can keep using their current Supabase auth storage key.
-    if (!tabId && window.name.startsWith('restaurant-ordering-tab:')) {
-      tabId = window.name.slice('restaurant-ordering-tab:'.length);
-    }
-
-    if (!tabId) {
-      tabId = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-        ? crypto.randomUUID()
-        : Math.random().toString(36).slice(2) + Date.now().toString(36);
-    }
-
-    window.sessionStorage.setItem(storageKey, tabId);
-  } catch {
-    // If storage is unavailable, use a stable-in-this-context fallback.
-    // The normal browser path above is expected to use sessionStorage.
-    const existingTabId = window.name.startsWith('restaurant-ordering-tab:')
-      ? window.name.slice('restaurant-ordering-tab:'.length)
-      : '';
-    tabId = existingTabId || (
-      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-        ? crypto.randomUUID()
-        : Math.random().toString(36).slice(2) + Date.now().toString(36)
-    );
+  if (!existingTabId) {
+    window.name = `restaurant-ordering-tab:${tabId}`;
   }
 
   return `restaurant-ordering-platform-auth:${tabId}`;
@@ -73,9 +56,7 @@ export const supabase = isSupabaseConfigured
         storageKey: getRestaurantAuthStorageKey(),
         // Persist the PKCE verifier and session in localStorage so Supabase
         // email-confirmation, invitation, and password-recovery callbacks work.
-        storage: window.localStorage,
-        // Tenant invitation callbacks are explicitly handled after a user click.
-        detectSessionInUrl: false,
+        storage: window.sessionStorage,
       },
       global: {
         headers: getRestaurantContextHeaders(),
