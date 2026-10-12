@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { supabase } from '../services/supabaseClient';
 import { getInvitationEntryUrl, resolveInvitationTypeFromMetadata } from '../modules/invitations/invitationResolver';
+import { getPasswordPolicyError, getPasswordGuidance, PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '../utils/passwordPolicy';
 
 export function TenantInviteLandingPage() {
   const params = useMemo(() => {
@@ -19,8 +20,23 @@ export function TenantInviteLandingPage() {
 
   async function redirectAfterAuthentication() {
     if (!supabase) return;
-    const { data } = await supabase.auth.getUser();
-    const invitationType = resolveInvitationTypeFromMetadata(data.user?.user_metadata);
+    const { data, error: userError } = await supabase.auth.getUser();
+    if (userError || !data.user) {
+      setError(userError?.message || 'We could not verify the invited account. Please open the invitation link again.');
+      setAccepting(false);
+      return;
+    }
+    const invitationType = resolveInvitationTypeFromMetadata(data.user.user_metadata);
+    if (invitationType === 'employee_staff') {
+      window.location.replace(getInvitationEntryUrl(invitationType));
+      return;
+    }
+    if (invitationType === 'tenant_owner' || tenantFlow) {
+      setInvitedEmail(data.user.email ?? '');
+      setPasswordSetupRequired(true);
+      setAccepting(false);
+      return;
+    }
     if (invitationType) {
       window.location.replace(getInvitationEntryUrl(invitationType));
       return;
@@ -48,6 +64,12 @@ export function TenantInviteLandingPage() {
   const [sessionReady, setSessionReady] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [error, setError] = useState('');
+  const [passwordSetupRequired, setPasswordSetupRequired] = useState(false);
+  const [invitedEmail, setInvitedEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
 
   useEffect(() => {
     if (!supabase) {
@@ -179,10 +201,49 @@ export function TenantInviteLandingPage() {
     setAccepting(false);
   }
 
+  async function saveOwnerPassword(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError('');
+    const policyError = getPasswordPolicyError(password);
+    if (policyError) { setError(policyError); return; }
+    if (password !== confirmPassword) { setError('The passwords do not match.'); return; }
+    if (!supabase) { setError('Authentication is temporarily unavailable. Please try again.'); return; }
+    setSavingPassword(true);
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user) throw new Error(userError?.message || 'Your invitation session has expired. Open the invitation email again.');
+      const { error: updateError } = await supabase.auth.updateUser({ password });
+      if (updateError) throw updateError;
+      window.location.replace(getInvitationEntryUrl('tenant_owner'));
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : 'Unable to save your password. Please try again.');
+    } finally {
+      setSavingPassword(false);
+    }
+  }
+
   return (
     <section className="restaurant-owner-auth-no-restaurant">
       <div className="restaurant-owner-auth-no-restaurant-card" style={{ maxWidth: 620, width: '100%' }}>
-        <p className="eyebrow">{genericInvitationFlow ? 'Invitation access' : 'Tenant access'}</p>
+        <p className="eyebrow">{passwordSetupRequired ? 'Secure owner setup' : genericInvitationFlow ? 'Invitation access' : 'Tenant access'}</p>
+        {passwordSetupRequired ? <>
+          <h1>Create your password.</h1>
+          <p>Invitation verified for <strong>{invitedEmail}</strong>. Create a password before setting up two-factor authentication.</p>
+          {error && <div className="error-banner" role="alert">{error}</div>}
+          <form className="restaurant-owner-auth-form" onSubmit={(event) => void saveOwnerPassword(event)}>
+            <label>New password
+              <span className="customer-password-input-row">
+                <input type={showPassword ? 'text' : 'password'} autoComplete="new-password" minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH} value={password} onChange={(event) => setPassword(event.target.value)} required disabled={savingPassword} />
+                <button className="customer-password-visibility" type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? 'Hide' : 'Show'}</button>
+              </span>
+              {password.length > 0 && <ul className="customer-password-requirements" aria-label="Password requirements">{getPasswordGuidance(password).map((item) => <li key={item.label} className={item.met ? 'is-met' : ''}><span className="customer-password-requirement-check" aria-hidden="true">{item.met ? '✓' : ''}</span><span>{item.label}</span></li>)}</ul>}
+            </label>
+            <label>Confirm password
+              <input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required disabled={savingPassword} />
+            </label>
+            <button className="button button-primary" type="submit" disabled={savingPassword || !password || !confirmPassword}>{savingPassword ? 'Saving password…' : 'Save password and continue'}</button>
+          </form>
+        </> : <>
         <h1>{tenantFlow ? 'Continue to your restaurant.' : 'You’re invited to Web2Table.'}</h1>
         <p>
           {tenantFlow
@@ -199,6 +260,7 @@ export function TenantInviteLandingPage() {
             </button>
           </div>
         ) : null}
+        </>}
       </div>
     </section>
   );
