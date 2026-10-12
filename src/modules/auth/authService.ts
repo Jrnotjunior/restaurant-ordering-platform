@@ -65,7 +65,7 @@ export async function initializeAuthSession(client: SupabaseClient) {
   if (typeof window !== 'undefined') {
     const url = new URL(window.location.href);
     // GitHub Pages hash routing can produce `#account#access_token=...`.
-    // Parse the OAuth parameters after the last hash separator so `account`
+    // Parse auth parameters after the last hash separator so `account`
     // does not become part of the access_token parameter name.
     const rawHash = url.hash.replace(/^#/, '');
     const authHash = rawHash.includes('#') ? rawHash.slice(rawHash.lastIndexOf('#') + 1) : rawHash;
@@ -103,10 +103,9 @@ export async function initializeAuthSession(client: SupabaseClient) {
       return;
     }
 
-    // Supabase may return OAuth credentials in the URL fragment depending on
-    // the provider/flow configuration. Session detection is disabled in the
-    // client so we must restore those credentials explicitly, just like the
-    // customer email-confirmation flow above.
+    // Supabase may return session credentials in the URL fragment for some
+    // auth callbacks. Session detection is disabled in the client, so restore
+    // those credentials explicitly, just like email-confirmation callbacks.
     if (accessToken && refreshToken) {
       const { error } = await client.auth.setSession({
         access_token: accessToken,
@@ -114,8 +113,8 @@ export async function initializeAuthSession(client: SupabaseClient) {
       });
 
       if (error) {
-        console.error('OAuth callback session restoration failed', error);
-        throw new Error(`Google sign-in returned, but Supabase could not restore the session: ${error.message}`);
+        console.error('Auth callback session restoration failed', error);
+        throw new Error(`Auth callback returned, but Supabase could not restore the session: ${error.message}`);
       } else {
         // Remove OAuth credentials from the address bar without dropping the
         // route that initiated authentication. In hash-routed deployments the
@@ -135,7 +134,7 @@ export async function initializeAuthSession(client: SupabaseClient) {
       const { error } = await client.auth.exchangeCodeForSession(code);
       if (error) {
         console.error('Auth callback code exchange failed', error);
-        throw new Error(`Google sign-in callback could not be completed: ${error.message}`);
+        throw new Error(`Auth callback could not be completed: ${error.message}`);
       } else {
         url.searchParams.delete('code');
         window.history.replaceState({}, document.title, url.toString());
