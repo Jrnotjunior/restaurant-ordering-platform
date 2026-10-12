@@ -139,7 +139,7 @@ export function CustomerSignUpPage() {
                 )}
               </button>
             </span>
-            <small>{getPasswordGuidance(password).join(' · ')}</small>
+            <small>{password.length > 0 ? getPasswordGuidance(password).join(' · ') : ''}</small>
             {fieldError('password')}
           </label>
           <label className="customer-personal-info-consent">
