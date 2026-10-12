@@ -200,7 +200,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
   }
 
   function formatStoreTime(value: string) {
-    const match = value.match(/^(\\d{1,2}):(\\d{2})/);
+    const match = value.match(/^(\d{1,2}):(\d{2})/);
     if (!match) return value;
     const hour = Number(match[1]);
     const minute = match[2];
@@ -210,7 +210,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
   }
 
   function getOrderDayHours() {
-    if (!operatingHours || !order.createdAt) return null;
+    if (!order || !operatingHours || !order.createdAt) return null;
     const date = new Date(order.createdAt);
     if (Number.isNaN(date.getTime())) return null;
     const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
