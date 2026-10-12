@@ -158,7 +158,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
         : 'Rider assigned';
   const storeAddress = order.storeAddress;
   const operatingHours = order.operatingHours;
-  const showPickupLocation = isPickup && order.status === 'completed' && Boolean(storeAddress);
+  const showPickupLocation = isPickup && !isCancelled && Boolean(storeAddress);
 
   async function cancelOrder() {
     if (!order || cancellingOrder) return;
@@ -300,11 +300,11 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
             <div className="order-pickup-location-header">
               <div>
                 <p className="order-rider-label">Pickup location</p>
-                <h2>Pick up your order here</h2>
+                <h2>{order.status === 'completed' ? 'Pick up your order here' : 'Your pickup location'}</h2>
               </div>
               <span className="order-rider-status">Store</span>
             </div>
-            <p className="order-pickup-location-message">Your order is complete. Please pick up your order at our store:</p>
+            <p className="order-pickup-location-message">{order.status === 'completed' ? 'Your order is complete. Please collect it from this address:' : 'Your order will be ready for collection at this restaurant address. Check the order status below before heading over.'}</p>
             <strong className="order-pickup-address">{storeAddress}</strong>
             {formatOperatingHours().length > 0 && (
               <div className="order-pickup-hours">
