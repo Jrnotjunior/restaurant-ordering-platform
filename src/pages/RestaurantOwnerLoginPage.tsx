@@ -64,6 +64,7 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
               data: {
                 first_name: signup.firstName!.trim(),
                 last_name: signup.lastName!.trim(),
+                phone: signup.phone!.trim(),
                 name: signup.firstName!.trim(),
               },
             });
