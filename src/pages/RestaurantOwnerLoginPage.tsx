@@ -8,6 +8,7 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
+  const [verifiedCustomerId, setVerifiedCustomerId] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading || !user || !accountType || !supabase) return;
@@ -81,6 +82,10 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
           }
           return;
         }
+
+        if (!cancelled && profileId) {
+          setVerifiedCustomerId(user.id);
+        }
       } catch (verificationError) {
         if (cancelled) return;
         // Fail closed. The server deletes only identities that have no
@@ -138,7 +143,21 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
   // OAuth redirects back to #account. This route must show the signed-in
   // state when Supabase has restored a session instead of always showing the
   // sign-in form, which previously made successful logins look unsuccessful.
-  if (user && !submitting) {
+  // A restored Google session is not enough: keep the account screen hidden
+  // until the current restaurant's customer profile has been verified.
+  const customerVerificationPending = Boolean(user && accountType === 'customer' && verifiedCustomerId !== user.id);
+
+  if (customerVerificationPending) {
+    return (
+      <main className="restaurant-owner-auth-page">
+        <section className="restaurant-owner-auth-card" aria-live="polite">
+          <p>Verifying your customer registration…</p>
+        </section>
+      </main>
+    );
+  }
+
+  if (user && !submitting && (accountType !== 'customer' || verifiedCustomerId === user.id)) {
     return (
       <main className="restaurant-owner-auth-page">
         <section className="restaurant-owner-auth-card" aria-labelledby="account-signed-in-title">
