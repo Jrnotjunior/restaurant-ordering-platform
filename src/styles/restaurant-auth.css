@@ -399,3 +399,19 @@
  .privileged-mfa-card ol{font-size:13px}
  .privileged-mfa-qr img{width:min(220px,100%)}
 }
+
+/* Compact and center the privileged MFA actions. */
+.privileged-mfa-card .restaurant-owner-auth-form .button{
+  width:fit-content;
+  min-width:220px;
+  max-width:100%;
+  justify-self:center;
+  padding-inline:28px;
+}
+.privileged-mfa-card>button.button{
+  display:block;
+  width:fit-content;
+  min-width:120px;
+  margin:12px auto 0;
+  padding-inline:24px;
+}
