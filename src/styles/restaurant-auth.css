@@ -397,3 +397,11 @@
 .customer-password-input-row button:focus-visible{outline:2px solid #111827;outline-offset:2px}
 .restaurant-owner-auth-form .customer-field-error{display:block;color:#b91c1c;font-size:12px;line-height:1.4}
 .restaurant-owner-auth-form label small:not(.customer-field-error){display:block;color:#64748b;font-size:12px;line-height:1.5;font-weight:400}
+
+.customer-password-input-row{position:relative;display:block}
+.restaurant-owner-auth-form .customer-password-input-row input{width:100%;padding-right:48px}
+.customer-password-input-row .customer-password-visibility{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:36px;height:36px;display:grid;place-items:center;padding:7px;border:0;border-radius:7px;background:transparent;color:#64748b;cursor:pointer}
+.customer-password-input-row .customer-password-visibility:hover{background:#f1f5f9;color:#111827}
+.customer-password-input-row .customer-password-visibility svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.customer-password-input-row .customer-password-visibility:focus-visible{outline:2px solid #111827;outline-offset:1px}
+.customer-password-input-row .customer-password-visibility:disabled{opacity:.5;cursor:not-allowed}
