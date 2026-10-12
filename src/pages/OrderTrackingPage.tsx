@@ -305,16 +305,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
               </div>
               <span className="order-rider-status">Store</span>
             </div>
-            <p className="order-pickup-location-message">{order.status === 'completed' ? 'Order completed. Pickup address:' : 'Collect your order here when it is ready.'}</p>
-            <strong className="order-pickup-address">{storeAddress}</strong>
-            {formatOperatingHours().length > 0 && (
-              <details className="order-pickup-hours-details">
-                <summary>Store hours <span aria-hidden="true">⌄</span></summary>
-                <div className="order-pickup-hours">
-                  {formatOperatingHours().map((entry) => <span key={entry.label}><strong>{entry.label}</strong><span>{entry.value}</span></span>)}
-                </div>
-              </details>
-            )}
+            <p className="order-pickup-location-message">{order.status === 'completed' ? 'Your order is complete.' : 'Collect your order here when it is ready.'}</p>
             <div className="order-rider-actions">
               <button className="button button-primary" type="button" onClick={openStoreLocation}>Open / Pin in Google Maps</button>
               <button className="button button-secondary" type="button" onClick={() => void copyStoreAddress()}>Copy Address</button>
