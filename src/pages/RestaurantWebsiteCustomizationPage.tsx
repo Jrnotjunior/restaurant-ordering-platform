@@ -36,9 +36,6 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
   const [showLivePreview, setShowLivePreview] = useState(false);
   const [previewPosition, setPreviewPosition] = useState({ x: 0, y: 0 });
   const [previewDragging, setPreviewDragging] = useState(false);
-  const savedCustomizationRef = useRef('');
-  const currentCustomization = JSON.stringify({ theme: websiteTheme, storefront });
-  const hasUnsavedChanges = !loading && savedCustomizationRef.current !== '' && currentCustomization !== savedCustomizationRef.current;
   const previewStageRef = useRef<HTMLDivElement>(null);
   const previewDragRef = useRef<{ active: boolean; startX: number; startY: number; originX: number; originY: number }>({
     active: false, startX: 0, startY: 0, originX: 0, originY: 0
@@ -92,7 +89,6 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         hero: { ...defaultRestaurant.storefront.hero, ...(customStorefront?.hero ?? {}) },
       };
       setStorefront(loadedStorefront);
-      savedCustomizationRef.current = JSON.stringify({ theme: loadedTheme, storefront: loadedStorefront });
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load website customization.');
     } finally {
@@ -102,37 +98,6 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
 
   useEffect(() => { void loadCustomization(); }, [restaurantId]);
 
-  useEffect(() => {
-    if (!hasUnsavedChanges) return;
-
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = '';
-    };
-    const handleInternalNavigation = (event: MouseEvent) => {
-      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      const link = target.closest('a[href]');
-      if (!(link instanceof HTMLAnchorElement)) return;
-      if (link.target && link.target !== '_self' || link.hasAttribute('download')) return;
-      const destination = new URL(link.href, window.location.href);
-      if (destination.origin !== window.location.origin || destination.href === window.location.href) return;
-      const shouldLeave = window.confirm('You have unsaved website customization changes. Leave this page and discard your changes?');
-      if (!shouldLeave) {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    document.addEventListener('click', handleInternalNavigation, true);
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      document.removeEventListener('click', handleInternalNavigation, true);
-    };
-  }, [hasUnsavedChanges]);
 
   useEffect(() => {
     const handlePointerMove = (event: PointerEvent) => {
@@ -255,7 +220,6 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .from('restaurant_website_customizations')
         .upsert({ restaurant_id: restaurantId, theme: websiteTheme, storefront }, { onConflict: 'restaurant_id' });
       if (saveError) throw saveError;
-      savedCustomizationRef.current = JSON.stringify({ theme: websiteTheme, storefront });
       setMessage('Website customization saved successfully.');
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Unable to save website customization.');
