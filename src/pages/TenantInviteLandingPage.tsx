@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { supabase } from '../services/supabaseClient';
 import { getInvitationEntryUrl, resolveInvitationTypeFromMetadata } from '../modules/invitations/invitationResolver';
@@ -201,7 +201,7 @@ export function TenantInviteLandingPage() {
     setAccepting(false);
   }
 
-  async function saveOwnerPassword(event: React.FormEvent<HTMLFormElement>) {
+  async function saveOwnerPassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
     const policyError = getPasswordPolicyError(password);
