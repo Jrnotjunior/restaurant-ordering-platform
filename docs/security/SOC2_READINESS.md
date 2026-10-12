@@ -152,3 +152,12 @@ Never claim SOC 2 compliance based on this tracker. Repository state is not proo
 - Added migration `supabase/migrations/20261012213000_redact_private_fields_from_guest_order_tracking.sql`, commit `c00ff52e608f24927462790d575d85e174530a32`, and applied it successfully to live Supabase.
 - Live function definition inspected after deployment: anonymous calls to `get_order_status_by_id(uuid)` now receive NULL for rider phone and delivery-failure detail. Authenticated calls preserve existing field behavior, subject to the function's existing customer ownership check.
 - This is an interim data-minimization measure, not a complete guest tracking authorization fix: guest tracking still treats the order UUID as a bearer credential and still returns other order details. End-to-end high-entropy guest tracking token design and checkout/payment-return integration remain outstanding.
+
+
+### Restaurant tax-settings RPC anonymous grant removal — 2026-10-12
+- Live catalog review found `get_restaurant_tax_settings(uuid)` was executable by `anon` despite its internal owner/active-cashier check and its intended authenticated-only use.
+- Applied a least-privilege grant migration: revoked `PUBLIC` and `anon` EXECUTE, retained `authenticated` and `postgres` EXECUTE.
+- Post-change live privilege checks confirmed `anon_exec=false`, `auth_exec=true`, and `postgres_exec=true`.
+- Migration committed as `supabase/migrations/20261012224000_restrict_restaurant_tax_settings_to_authenticated.sql`, commit `18a7b2648278ca2fb369a808a0f723b56c3618ec`.
+- A client-side authenticated workflow smoke test remains outstanding; this change does not affect anonymous public checkout RPCs.
+
