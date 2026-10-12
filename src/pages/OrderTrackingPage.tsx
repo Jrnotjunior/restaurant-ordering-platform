@@ -300,7 +300,8 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
             <div className="order-pickup-location-header">
               <div>
                 <p className="order-rider-label">Pickup location</p>
-                <h2>{order.status === 'completed' ? 'Pick up your order here' : 'Your pickup location'}</h2>
+                <h2>{order.restaurantName}</h2>
+                <p className="order-pickup-location-message">{order.status === 'completed' ? 'Pick up your order here' : 'Your pickup location'}</p>
               </div>
               <span className="order-rider-status">Store</span>
             </div>
