@@ -117,9 +117,15 @@ export async function initializeAuthSession(client: SupabaseClient) {
         console.error('OAuth callback session restoration failed', error);
         throw new Error(`Google sign-in returned, but Supabase could not restore the session: ${error.message}`);
       } else {
-        // Remove credentials from the address bar. The storefront then opens
-        // on its default menu route with the authenticated session retained.
-        url.hash = '';
+        // Remove OAuth credentials from the address bar without dropping the
+        // route that initiated authentication. In hash-routed deployments the
+        // redirect can look like "#account#access_token=..."; clearing the
+        // entire hash unmounts the account page before it can enforce the
+        // customer-registration requirement.
+        const route = rawHash.includes('#')
+          ? rawHash.slice(0, rawHash.lastIndexOf('#')).replace(/^#/, '')
+          : '';
+        url.hash = route ? `#${route}` : '';
         window.history.replaceState({}, document.title, url.toString());
       }
       return;
