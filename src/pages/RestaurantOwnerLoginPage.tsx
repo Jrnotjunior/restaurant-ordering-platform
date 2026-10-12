@@ -127,7 +127,7 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
         {staffOnly ? (
           <p>Restaurant team members should open the secure sign-in link from their invitation email. If your invitation has expired, ask your restaurant owner to send a new one.</p>
         ) : (
-          <form onSubmit={(event) => void handleEmailPasswordSignIn(event)}>
+          <form className="restaurant-owner-auth-form" onSubmit={(event) => void handleEmailPasswordSignIn(event)}>
             <label>
               Email address
               <input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required disabled={submitting} />
