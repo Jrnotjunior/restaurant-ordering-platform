@@ -369,3 +369,33 @@
   text-decoration:underline;
   text-underline-offset:2px;
 }
+
+
+/* Privileged MFA setup: comfortable width, readable type, and proper QR image rendering. */
+.privileged-mfa-page{padding:40px 24px}
+.privileged-mfa-card{width:min(560px,100%);padding:40px}
+.privileged-mfa-card .eyebrow{margin:0 0 12px;color:#b42318;font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.privileged-mfa-card h1{max-width:100%;margin:0 0 14px;font-size:clamp(30px,4vw,40px);line-height:1.12;letter-spacing:-.025em;overflow-wrap:normal}
+.privileged-mfa-card>p:not(.eyebrow){margin:0 0 22px;color:#475569;font-size:15px;line-height:1.65}
+.privileged-mfa-card ol{margin:0 0 24px;padding-left:23px;color:#334155;font-size:14px;line-height:1.65}
+.privileged-mfa-card li+li{margin-top:8px}
+.privileged-mfa-qr{display:flex;justify-content:center;align-items:center;width:100%;margin:22px auto 24px}
+.privileged-mfa-qr img{display:block;width:min(240px,100%);height:auto;aspect-ratio:1;object-fit:contain;padding:12px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-sizing:border-box}
+.privileged-mfa-card details{margin:0 0 24px;padding:14px 16px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc}
+.privileged-mfa-card details summary{color:#1f2937;font-size:14px;font-weight:700;cursor:pointer}
+.privileged-mfa-card details p{margin:12px 0 8px;color:#64748b;font-size:13px;line-height:1.55}
+.privileged-mfa-uri{display:block;max-width:100%;padding:10px 12px;border-radius:8px;background:#eef2f7;color:#334155;font-size:12px;line-height:1.6;overflow-wrap:anywhere;word-break:break-word;white-space:normal;user-select:all}
+.privileged-mfa-form{display:grid;gap:12px}
+.privileged-mfa-card .restaurant-owner-auth-form{gap:12px;margin-top:6px}
+.privileged-mfa-card .restaurant-owner-auth-form label{gap:8px;font-size:14px}
+.privileged-mfa-card .restaurant-owner-auth-form input{min-height:48px;padding:13px 14px;font-size:16px;letter-spacing:.08em}
+.privileged-mfa-card .restaurant-owner-auth-form .button{min-height:48px;margin-top:2px}
+.privileged-mfa-card>.button{min-height:44px;margin-top:12px;padding:11px 18px;border-radius:10px}
+.privileged-mfa-card [role="alert"]{color:#b42318;font-size:13px;line-height:1.5}
+@media(max-width:640px){
+ .privileged-mfa-page{align-items:flex-start;padding:20px 14px}
+ .privileged-mfa-card{padding:26px 22px;border-radius:16px}
+ .privileged-mfa-card h1{font-size:clamp(29px,8vw,36px)}
+ .privileged-mfa-card ol{font-size:13px}
+ .privileged-mfa-qr img{width:min(220px,100%)}
+}
