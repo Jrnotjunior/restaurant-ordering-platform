@@ -19,6 +19,7 @@ export type AuthAccountContext = {
   restaurant: OwnerRestaurant | null;
   accountType: AccountType;
   staffRole: string | null;
+  staffRestaurantId: string | null;
 };
 
 export async function resolveAccountContext(currentUser: User | null): Promise<AuthAccountContext> {
@@ -27,6 +28,7 @@ export async function resolveAccountContext(currentUser: User | null): Promise<A
       restaurant: null,
       accountType: 'customer',
       staffRole: null,
+      staffRestaurantId: null,
     };
   }
 
