@@ -234,10 +234,6 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank', 'noopener,noreferrer');
   }
 
-  async function copyStoreAddress() {
-    if (!storeAddress || !navigator.clipboard) return;
-    await navigator.clipboard.writeText(storeAddress);
-  }
 
   return (
     <section className="order-tracking-page">
@@ -343,7 +339,6 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
             )}
             <div className="order-rider-actions">
               <button className="button button-primary" type="button" onClick={openStoreLocation}>Open / Pin in Google Maps</button>
-              <button className="button button-secondary" type="button" onClick={() => void copyStoreAddress()}>Copy Address</button>
             </div>
           </section>
         )}
