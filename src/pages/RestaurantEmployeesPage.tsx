@@ -9,6 +9,7 @@ import {
   type StaffRole,
 } from '../modules/employees/employeeService';
 import { useOwnerUnsavedChanges } from '../contexts/OwnerUnsavedChangesContext';
+import { useOwnerUnsavedChangesTracking } from '../hooks/useOwnerUnsavedChangesTracking';
 
 export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string }) {
   const { setUnsavedChanges } = useOwnerUnsavedChanges();
@@ -33,18 +34,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
     }
   }
 
-  useEffect(() => {
-    const markDirty = (event: Event) => {
-      const target = event.target;
-      if (target instanceof Element && target.closest('.restaurant-employees-page')) setUnsavedChanges(true);
-    };
-    document.addEventListener('input', markDirty, true);
-    document.addEventListener('change', markDirty, true);
-    return () => {
-      document.removeEventListener('input', markDirty, true);
-      document.removeEventListener('change', markDirty, true);
-    };
-  }, [setUnsavedChanges]);
+  useOwnerUnsavedChangesTracking('.restaurant-employees-page');
 
   useEffect(() => { void loadStaff(); }, [restaurantId]);
 
