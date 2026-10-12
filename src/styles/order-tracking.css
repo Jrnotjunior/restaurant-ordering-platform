@@ -82,3 +82,13 @@
 .checkout-pickup-location p:not(.eyebrow){margin:.35rem 0;color:var(--color-text)}
 .checkout-pickup-location>span{display:block;margin-top:.4rem;color:var(--color-muted);font-size:.9rem}
 .order-pickup-location-card{margin-top:1rem}
+
+
+.order-tracking-details > summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; list-style: none; }
+.order-tracking-details > summary::-webkit-details-marker { display: none; }
+.order-details-title { display: grid; gap: .3rem; }
+.order-details-title .eyebrow { margin: 0; }
+.order-details-title strong { font-family: var(--font-heading); font-size: 1.25rem; }
+.order-details-toggle { display: inline-flex; align-items: center; gap: .4rem; color: var(--color-muted); font-size: .85rem; white-space: nowrap; }
+.order-details-chevron { display: inline-block; font-size: 1.1rem; transition: transform .2s ease; }
+.order-tracking-details[open] .order-details-chevron { transform: rotate(180deg); }
