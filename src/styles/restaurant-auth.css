@@ -388,3 +388,12 @@
 
 /* Friendly sign-in introduction, matching the customer account creation page. */
 .restaurant-owner-auth-card .restaurant-login-description{margin:0 0 26px!important;color:#64748b;font-size:16px;line-height:1.6}
+
+
+/* Customer email/password forms: preserve the shared auth design system. */
+.customer-password-input-row{display:flex;align-items:stretch;gap:8px;min-width:0}
+.customer-password-input-row input{flex:1;min-width:0}
+.customer-password-input-row button{flex:0 0 auto;border:1px solid #dbe2ea;border-radius:10px;padding:0 12px;background:#fff;color:#111827;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.customer-password-input-row button:focus-visible{outline:2px solid #111827;outline-offset:2px}
+.restaurant-owner-auth-form .customer-field-error{display:block;color:#b91c1c;font-size:12px;line-height:1.4}
+.restaurant-owner-auth-form label small:not(.customer-field-error){display:block;color:#64748b;font-size:12px;line-height:1.5;font-weight:400}
