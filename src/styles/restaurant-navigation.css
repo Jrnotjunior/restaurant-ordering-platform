@@ -276,3 +276,7 @@
 .restaurant-navigation-row .restaurant-account-menu {
   z-index: 10001;
 }
+
+.restaurant-owner-brand-logo{width:36px;height:36px;flex:0 0 36px;display:block;object-fit:contain;border-radius:6px}
+.restaurant-owner-brand>span:last-child{min-width:0;overflow:hidden}
+.restaurant-owner-brand strong{overflow-wrap:anywhere}
