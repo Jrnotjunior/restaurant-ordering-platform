@@ -66,14 +66,20 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
         if (!cancelled && !profileId) {
           await client.auth.signOut();
           if (!cancelled) {
-            setError('No registered customer account was found for this Google account. Please create an account first.');
+            window.sessionStorage.setItem(
+              'restaurant-ordering-auth-feedback',
+              'This account is not yet registered. Please create your customer account before signing in.',
+            );
             window.location.hash = '#signup';
           }
           return;
         }
       } catch (verificationError) {
         if (cancelled) return;
-        setError(verificationError instanceof Error ? verificationError.message : 'Unable to verify your customer registration.');
+        window.sessionStorage.setItem(
+          'restaurant-ordering-auth-feedback',
+          'We could not verify this customer account. Please create an account or try signing in again.',
+        );
         await client.auth.signOut();
         if (!cancelled) window.location.hash = '#signup';
       }
