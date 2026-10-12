@@ -87,6 +87,7 @@ export type DeliveryStatus = 'assigned' | 'delivering' | 'out_for_delivery' | 'a
 export type TrackedOrder = {
   orderId: string;
   orderNumber: string;
+  createdAt: string | null;
   restaurantId: string;
   restaurantName: string;
   storeAddress: string | null;
@@ -222,9 +223,15 @@ export async function getOrderStatus(orderId: string): Promise<TrackedOrder> {
   const row = rows[0];
   if (!row) throw new Error('Order not found. Please check the order number.');
 
+  const createdAtRows = await supabaseRpc<{ created_at: string | null }>('get_customer_order_created_at', {
+    p_order_id: orderId,
+  }).catch(() => []);
+  const createdAt = (createdAtRows[0] as { created_at?: string | null } | undefined)?.created_at ?? null;
+
   return {
     orderId: row.order_id,
     orderNumber: row.order_number,
+    createdAt,
     restaurantId: row.restaurant_id,
     restaurantName: row.restaurant_name,
     storeAddress: row.store_address ?? null,
