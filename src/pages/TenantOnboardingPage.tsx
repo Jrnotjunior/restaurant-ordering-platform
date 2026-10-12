@@ -56,23 +56,36 @@ export function TenantOnboardingPage() {
   }, [authLoading, user?.id, authError]);
 
   async function finishOwnerSetup() {
-    if (!supabase) return;
+    if (!supabase) {
+      setError('Authentication is unavailable. Please refresh the page and try again.');
+      return;
+    }
+
     setSaving(true);
     setError('');
-    const { data: setupData, error: setupError } = await supabase.rpc('complete_tenant_owner_setup');
-    if (setupError) {
-      setError(setupError.message);
+
+    try {
+      const { data: setupData, error: setupError } = await supabase.rpc('complete_tenant_owner_setup');
+
+      if (setupError) {
+        setError(setupError.message);
+        return;
+      }
+
+      const setup = Array.isArray(setupData) ? setupData[0] : setupData;
+      if (!setup?.restaurant_id) {
+        setError('Setup could not confirm your restaurant. Please contact the System Administrator before trying again.');
+        return;
+      }
+
+      // Remove invitation callback/query parameters and force the app to resolve
+      // the authenticated owner route instead of remaining on the onboarding page.
+      window.location.replace(`${window.location.pathname}#restaurant/owner`);
+    } catch (setupError) {
+      setError(setupError instanceof Error ? setupError.message : 'Unable to finish setup. Please try again.');
+    } finally {
       setSaving(false);
-      return;
     }
-    const setup = Array.isArray(setupData) ? setupData[0] : setupData;
-    if (!setup?.restaurant_id) {
-      setError('Account setup completed, but the restaurant could not be confirmed.');
-      setSaving(false);
-      return;
-    }
-    window.history.replaceState({}, document.title, window.location.pathname);
-    window.location.hash = '#restaurant/owner';
   }
 
   if (authLoading || loading) {
