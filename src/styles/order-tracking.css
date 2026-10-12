@@ -75,3 +75,10 @@
 .order-tracking-billing-row.is-discount > :last-child { color: var(--color-text); }
 .order-tracking-billing-row.is-total { margin-top: .2rem; padding-top: .85rem; border-top: 1px solid var(--color-border); color: var(--color-text); font-size: 1.05rem; }
 .order-tracking-payment-note { margin: 0; color: var(--color-muted); font-size: .85rem; }
+
+
+/* Tenant-specific pickup location shown before checkout and while tracking. */
+.checkout-pickup-location h2{margin:.25rem 0 .5rem;font-size:1.05rem}
+.checkout-pickup-location p:not(.eyebrow){margin:.35rem 0;color:var(--color-text)}
+.checkout-pickup-location>span{display:block;margin-top:.4rem;color:var(--color-muted);font-size:.9rem}
+.order-pickup-location-card{margin-top:1rem}
