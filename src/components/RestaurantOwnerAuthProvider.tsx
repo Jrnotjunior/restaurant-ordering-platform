@@ -80,15 +80,15 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
           try {
             await loadAccountContext(currentUser);
           } catch (accountError) {
-            // A tenant/account-profile lookup failure must not erase a valid
-            // Supabase session. Keep the user authenticated and fall back to
-            // customer context so the account icon does not send them back
-            // to sign-in just because a role lookup failed.
+            // A role lookup failure must never silently downgrade a privileged
+            // user to customer context. Keep the session, leave the role
+            // unresolved, and show the actual lookup error so the shared
+            // gateway cannot incorrectly run customer-registration checks.
             if (mounted && currentUser) {
               setRestaurant(null);
-              setAccountType('customer');
+              setAccountType(null);
               setStaffRole(null);
-              setError(accountError instanceof Error ? accountError.message : 'Unable to load your account details.');
+              setError(accountError instanceof Error ? accountError.message : 'Unable to load your account details. Please retry.');
             } else if (mounted) {
               throw accountError;
             }
@@ -136,12 +136,17 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
         setAccountType(null);
         setStaffRole(null);
 
-        void loadAccountContext(currentUser).catch((accountError) => {
+        void loadAccountContext(currentUser).then(() => {
+          if (mounted) setError('');
+        }).catch((accountError) => {
           if (mounted) {
+            setRestaurant(null);
+            setAccountType(null);
+            setStaffRole(null);
             setError(
               accountError instanceof Error
                 ? accountError.message
-                : 'Unable to load your account.',
+                : 'Unable to load your account. Please retry.',
             );
           }
         });
