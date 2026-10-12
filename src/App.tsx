@@ -117,8 +117,9 @@ function AppContent() {
       if (actionButton) {
         const label = (actionButton.textContent || (actionButton instanceof HTMLInputElement ? actionButton.value : '')).trim().toLowerCase();
         if (/^(save|save changes|save customizations|update|update .*|create|create .*|submit|confirm|place order|complete order|add product|add employee)$/.test(label)) {
-          // Let the action run; if it succeeds, the ensuing page/form state will
-          // continue normally. Do not intercept a save button as navigation.
+          // Treat explicit save/submit actions as the user's acknowledgement
+          // that they are committing the edits before continuing.
+          hasUnsavedEditsRef.current = false;
           return;
         }
       }
