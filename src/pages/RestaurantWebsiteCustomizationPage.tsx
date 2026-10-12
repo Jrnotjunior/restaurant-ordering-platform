@@ -241,10 +241,12 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-live-hero h3{font-size:25px;line-height:1.08;margin:7px 0 8px}
         .website-customization-live-hero p{margin:0;font-size:13px;line-height:1.5}
         .website-customization-live-disabled{margin:12px;padding:22px;text-align:center;border:1px dashed;font-size:12px}
-        .website-customization-live-section{margin:12px;padding:12px;border:1px solid;border-color:inherit;border-radius:9px;display:flex;justify-content:space-between;gap:8px;font-size:12px}\n        .website-customization-live-buttons{display:flex;gap:8px;margin:12px}\n        .website-customization-live-buttons button{flex:1;border:1px solid transparent;border-radius:8px;padding:10px 6px;font:inherit;font-size:11px;font-weight:700}
-        .website-customization-live-footer{padding:14px;border-top:1px solid;text-align:center;font-size:10px}
+        .website-customization-live-section{margin:12px;padding:12px;border:1px solid;border-color:inherit;border-radius:9px;display:flex;justify-content:space-between;gap:8px;font-size:12px}
+        .website-customization-live-buttons{display:flex;gap:8px;margin:12px}
+        .website-customization-live-buttons button{flex:1;border:1px solid transparent;border-radius:8px;padding:10px 6px;font:inherit;font-size:11px;font-weight:700}
+        .website-customization-live-footer{padding:14px;border-top:1px solid;text-align:center;font-size:10px;min-height:54px}
         .website-customization-live-footer-powered-by{display:inline-flex;align-items:center;justify-content:center;gap:5px;margin-top:8px;color:inherit;text-decoration:none;font-size:9px;opacity:.8}
-        .website-customization-live-footer-powered-logo{display:inline-flex;align-items:center;gap:4px;font-weight:800}
+        .website-customization-live-footer-powered-logo{display:block;width:88px;max-width:100%;height:20px;object-fit:contain;object-position:left center;flex:0 0 auto}
         .website-customization-live-footer-powered-mark{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:4px;font-size:8px;font-weight:900}
         .website-customization-phone-toolbar{height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 6px 0 9px;box-sizing:border-box;color:#fff;font-size:11px;font-weight:800}
         .website-customization-phone-toolbar>div{display:flex;gap:4px}
@@ -292,7 +294,11 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-phone-screen::-webkit-scrollbar{display:none}
         .website-customization-branding-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(220px,.6fr);gap:24px;margin-top:18px;align-items:start}
         .website-customization-subheading{display:block;font-size:13px;font-weight:700;color:#475569;margin-bottom:8px}
-        .website-customization-color-control{display:flex;align-items:center;gap:10px}\n        .website-customization-color-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:18px}\n        .website-customization-color-setting{display:grid;gap:8px;padding:14px;border:1px solid #e2e8f0;border-radius:10px}\n        .website-customization-color-setting>span{font-size:14px;font-weight:700}\n        @media(max-width:700px){.website-customization-color-settings{grid-template-columns:1fr}}
+        .website-customization-color-control{display:flex;align-items:center;gap:10px}
+        .website-customization-color-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:18px}
+        .website-customization-color-setting{display:grid;gap:8px;padding:14px;border:1px solid #e2e8f0;border-radius:10px}
+        .website-customization-color-setting>span{font-size:14px;font-weight:700}
+        @media(max-width:700px){.website-customization-color-settings{grid-template-columns:1fr}}
         .website-customization-color-control input[type="color"]{width:48px;height:40px;padding:3px;border:1px solid #dbe2ea;border-radius:8px;cursor:pointer}
         .website-customization-color-control span{font-size:13px;font-weight:700;color:#0f172a}
         .website-customization-field-hint{display:block;margin-top:5px;color:#64748b;font-size:12px}
@@ -376,7 +382,8 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
                   {restaurantTagline ? <p>{restaurantTagline}</p> : null}
                 </div>
 
-              <div className="website-customization-live-section" style={{ backgroundColor: websiteTheme.colors.productCard ?? websiteTheme.colors.surface, color: websiteTheme.colors.text }}><strong>Popular items</strong><span style={{ color: websiteTheme.colors.muted }}>Restaurant menu and categories</span></div>\n              <div className="website-customization-live-buttons"><button type="button" style={{ backgroundColor: websiteTheme.colors.primary, color: websiteTheme.colors.primaryText, borderColor: websiteTheme.colors.primary }}>Primary button</button><button type="button" style={{ backgroundColor: websiteTheme.colors.secondary, color: websiteTheme.colors.secondaryText, borderColor: websiteTheme.colors.border }}>Secondary button</button></div>
+              <div className="website-customization-live-section" style={{ backgroundColor: websiteTheme.colors.productCard ?? websiteTheme.colors.surface, color: websiteTheme.colors.text }}><strong>Popular items</strong><span style={{ color: websiteTheme.colors.muted }}>Restaurant menu and categories</span></div>
+              <div className="website-customization-live-buttons"><button type="button" style={{ backgroundColor: websiteTheme.colors.primary, color: websiteTheme.colors.primaryText, borderColor: websiteTheme.colors.primary }}>Primary button</button><button type="button" style={{ backgroundColor: websiteTheme.colors.secondary, color: websiteTheme.colors.secondaryText, borderColor: websiteTheme.colors.border }}>Secondary button</button></div>
 
               <div className="website-customization-live-footer" style={{ backgroundColor: websiteTheme.colors.footer ?? websiteTheme.colors.background, borderTopColor: websiteTheme.colors.border, color: websiteTheme.colors.muted }}>
                 <div>{`© ${new Date().getFullYear()} All rights reserved.`}</div>
