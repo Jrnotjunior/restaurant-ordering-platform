@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { getLoyaltyProgramSettings, saveLoyaltyProgramSettings } from '../modules/loyalty/loyaltyService';
+import { useOwnerUnsavedChanges } from '../contexts/OwnerUnsavedChangesContext';
 
 type Props = { restaurantId: string };
 
 export function RestaurantLoyaltyPage({ restaurantId }: Props) {
+  const { setUnsavedChanges } = useOwnerUnsavedChanges();
   const [enabled, setEnabled] = useState(false);
   const [threshold, setThreshold] = useState('500');
   const [points, setPoints] = useState('5');
@@ -32,6 +34,19 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    const markDirty = (event: Event) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest('.restaurant-shipping-page')) setUnsavedChanges(true);
+    };
+    document.addEventListener('input', markDirty, true);
+    document.addEventListener('change', markDirty, true);
+    return () => {
+      document.removeEventListener('input', markDirty, true);
+      document.removeEventListener('change', markDirty, true);
+    };
+  }, [setUnsavedChanges]);
 
   useEffect(() => { void loadSettings(); }, [restaurantId]);
 
@@ -70,6 +85,7 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
         redemptionAmount: parsedRedemptionAmount,
       });
       setMessage('Loyalty settings saved successfully.');
+      setUnsavedChanges(false);
       await loadSettings();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Unable to save loyalty settings.');
