@@ -242,6 +242,17 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-live-hero p{margin:0;font-size:13px;line-height:1.5}
         .website-customization-live-disabled{margin:12px;padding:22px;text-align:center;border:1px dashed;font-size:12px}
         .website-customization-live-section{margin:12px;padding:12px;border:1px solid;border-color:inherit;border-radius:9px;display:flex;justify-content:space-between;gap:8px;font-size:12px}
+        .website-customization-live-product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px}
+        .website-customization-live-product-card{min-width:0;overflow:hidden;border:1px solid;border-radius:10px;background:var(--product-card-bg,#fff)}
+        .website-customization-live-product-image{height:88px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f1f5f9,#e2e8f0);font-size:32px}
+        .website-customization-live-product-content{padding:9px}
+        .website-customization-live-product-name{font-size:11px;font-weight:800;line-height:1.3;margin:0 0 4px}
+        .website-customization-live-product-description{font-size:9px;line-height:1.4;margin:0 0 7px}
+        .website-customization-live-product-bottom{display:flex;align-items:center;justify-content:space-between;gap:4px;font-size:10px;font-weight:800}
+        .website-customization-live-product-add{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;font-size:15px;line-height:1}
+        .website-customization-live-footer{padding:8px 12px;border-top:1px solid;text-align:center;font-size:9px;min-height:0}
+        .website-customization-live-footer-powered-by{display:inline-flex;align-items:center;justify-content:center;gap:5px;margin-top:5px;color:inherit;text-decoration:none;font-size:8px;opacity:.8}
+        .website-customization-live-footer-powered-logo{display:block;width:54px;max-width:100%;height:14px;object-fit:contain;object-position:left center;flex:0 0 auto}
         .website-customization-live-buttons{display:flex;gap:8px;margin:12px}
         .website-customization-live-buttons button{flex:1;border:1px solid transparent;border-radius:8px;padding:10px 6px;font:inherit;font-size:11px;font-weight:700}
         .website-customization-live-footer{padding:14px;border-top:1px solid;text-align:center;font-size:10px;min-height:54px}
@@ -376,7 +387,25 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
                   {restaurantTagline ? <p>{restaurantTagline}</p> : null}
                 </div>
 
-              <div className="website-customization-live-section" style={{ backgroundColor: websiteTheme.colors.productCard ?? websiteTheme.colors.surface, color: websiteTheme.colors.text }}><strong>Popular items</strong><span style={{ color: websiteTheme.colors.muted }}>Restaurant menu and categories</span></div>
+              <div className="website-customization-live-section" style={{ backgroundColor: websiteTheme.colors.productCard ?? websiteTheme.colors.surface, color: websiteTheme.colors.text, borderColor: websiteTheme.colors.border }}><strong>Popular items</strong><span style={{ color: websiteTheme.colors.muted }}>Customer favorites</span></div>
+              <div className="website-customization-live-product-grid">
+                <article className="website-customization-live-product-card" style={{ borderColor: websiteTheme.colors.border, backgroundColor: websiteTheme.colors.productCard ?? websiteTheme.colors.surface, color: websiteTheme.colors.text }}>
+                  <div className="website-customization-live-product-image" aria-hidden="true">🍔</div>
+                  <div className="website-customization-live-product-content">
+                    <p className="website-customization-live-product-name">Classic Burger</p>
+                    <p className="website-customization-live-product-description" style={{ color: websiteTheme.colors.muted }}>Grilled beef, lettuce &amp; house sauce</p>
+                    <div className="website-customization-live-product-bottom"><span>₱249</span><span className="website-customization-live-product-add" style={{ backgroundColor: websiteTheme.colors.primary, color: websiteTheme.colors.primaryText }}>+</span></div>
+                  </div>
+                </article>
+                <article className="website-customization-live-product-card" style={{ borderColor: websiteTheme.colors.border, backgroundColor: websiteTheme.colors.productCard ?? websiteTheme.colors.surface, color: websiteTheme.colors.text }}>
+                  <div className="website-customization-live-product-image" aria-hidden="true">🍕</div>
+                  <div className="website-customization-live-product-content">
+                    <p className="website-customization-live-product-name">Margherita Pizza</p>
+                    <p className="website-customization-live-product-description" style={{ color: websiteTheme.colors.muted }}>Tomato, mozzarella &amp; fresh basil</p>
+                    <div className="website-customization-live-product-bottom"><span>₱329</span><span className="website-customization-live-product-add" style={{ backgroundColor: websiteTheme.colors.primary, color: websiteTheme.colors.primaryText }}>+</span></div>
+                  </div>
+                </article>
+              </div>
               <div className="website-customization-live-buttons"><button type="button" style={{ backgroundColor: websiteTheme.colors.primary, color: websiteTheme.colors.primaryText, borderColor: websiteTheme.colors.primary }}>Primary button</button><button type="button" style={{ backgroundColor: websiteTheme.colors.secondary, color: websiteTheme.colors.secondaryText, borderColor: websiteTheme.colors.border }}>Secondary button</button></div>
 
               <div className="website-customization-live-footer" style={{ backgroundColor: websiteTheme.colors.footer ?? websiteTheme.colors.background, borderTopColor: websiteTheme.colors.border, color: websiteTheme.colors.muted }}>
