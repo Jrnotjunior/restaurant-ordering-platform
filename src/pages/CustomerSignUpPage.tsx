@@ -139,7 +139,16 @@ export function CustomerSignUpPage() {
                 )}
               </button>
             </span>
-            <small>{password.length > 0 ? getPasswordGuidance(password).join(' · ') : ''}</small>
+            {password.length > 0 && (
+              <ul className="customer-password-requirements" aria-label="Password requirements">
+                {getPasswordGuidance(password).map((requirement) => (
+                  <li key={requirement.label} className={requirement.met ? 'is-met' : ''}>
+                    <span className="customer-password-requirement-check" aria-hidden="true">{requirement.met ? '✓' : ''}</span>
+                    <span>{requirement.label}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
             {fieldError('password')}
           </label>
           <label className="customer-personal-info-consent">
