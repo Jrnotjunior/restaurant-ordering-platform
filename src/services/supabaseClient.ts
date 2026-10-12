@@ -27,9 +27,8 @@ function getRestaurantContextHeaders(): Record<string, string> {
 function getRestaurantAuthStorageKey(): string {
   if (typeof window === 'undefined') return 'restaurant-ordering-platform-auth';
 
-  // Keep the per-tab identifier in sessionStorage. Unlike window.name, this
-  // storage is scoped to this origin and survives the cross-domain Google
-  // OAuth round trip when the browser returns to this tab.
+  // Keep a per-tab identifier in sessionStorage so independent restaurant
+  // workspaces in separate tabs do not share an authentication session.
   const storageKey = 'restaurant-ordering-platform-tab-id';
   let tabId = '';
 
@@ -72,8 +71,8 @@ export const supabase = isSupabaseConfigured
         // This prevents Store Owner, Cashier, Kitchen, and Dispatcher tabs
         // from broadcasting their sign-in state to one another.
         storageKey: getRestaurantAuthStorageKey(),
-        // Keep the per-tab key, but persist its PKCE verifier and session in localStorage.
-        // This avoids losing the OAuth verifier/session during provider redirects.
+        // Persist the PKCE verifier and session in localStorage so Supabase
+        // email-confirmation, invitation, and password-recovery callbacks work.
         storage: window.localStorage,
         // Tenant invitation callbacks are explicitly handled after a user click.
         detectSessionInUrl: false,
