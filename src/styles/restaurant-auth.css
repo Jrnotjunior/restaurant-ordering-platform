@@ -303,84 +303,8 @@
 .customer-signup-divider::before,.customer-signup-divider::after{content:"";height:1px;flex:1;background:#e2e8f0}
 
 
-/* Customer Google sign-up: consistent, polished field styling */
-.customer-google-name-row {
-  margin: 4px 0 0;
-  gap: 14px;
-}
-.customer-google-name-row > label {
-  display: grid;
-  gap: 7px;
-  min-width: 0;
-  color: #1f2937;
-  font-size: 13px;
-  font-weight: 650;
-  line-height: 1.35;
-}
-.customer-google-name-row input {
-  display: block;
-  width: 100%;
-  min-width: 0;
-  height: 44px;
-  box-sizing: border-box;
-  padding: 11px 12px;
-  border: 1px solid #cbd5e1;
-  border-radius: 9px;
-  background: #fff;
-  color: #0f172a;
-  font: inherit;
-  font-weight: 400;
-  outline: none;
-  transition: border-color .15s ease, box-shadow .15s ease;
-}
-.customer-google-name-row input:hover { border-color: #94a3b8; }
-.customer-google-name-row input:focus {
-  border-color: #64748b;
-  box-shadow: 0 0 0 3px rgba(100,116,139,.14);
-}
-.customer-google-name-row input:disabled { background: #f8fafc; cursor: not-allowed; }
-.customer-google-name-hint {
-  margin: 8px 0 14px !important;
-  color: #64748b !important;
-  font-size: 12px;
-  line-height: 1.5;
-}
-.customer-google-signup-button {
-  min-height: 46px;
-  border-color: #cbd5e1;
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 650;
-}
-.customer-google-signup-button:hover {
-  background: #f8fafc;
-  border-color: #94a3b8;
-}
-.customer-google-name-row + .customer-google-name-hint + .customer-google-signup-button { margin-top: 0; }
 .restaurant-owner-auth-card .customer-personal-info-consent { margin: 4px 0 16px; }
 .restaurant-owner-auth-card > .customer-field-error { margin: -10px 0 14px; }
-@media(max-width:420px) {
-  .customer-google-name-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .customer-google-name-row input { height: 42px; padding: 10px; }
-}
-@media(max-width:350px) {
-  .customer-google-name-row { grid-template-columns: 1fr; gap: 12px; }
-}
-
-
-/* Keep privacy consent visually separated from the customer name fields. */
-.restaurant-owner-auth-card .customer-google-name-row {
-  margin-bottom: 12px;
-}
-.restaurant-owner-auth-card .customer-personal-info-consent {
-  margin: 12px 0 18px;
-  align-items: flex-start;
-  gap: 9px;
-}
-.restaurant-owner-auth-card .customer-personal-info-consent input[type="checkbox"] {
-  flex: 0 0 auto;
-  margin-top: 2px;
-}
 
 /* Friendly sign-in introduction, matching the customer account creation page. */
 .restaurant-owner-auth-card .restaurant-login-description{margin:0 0 26px!important;color:#64748b;font-size:16px;line-height:1.6}
