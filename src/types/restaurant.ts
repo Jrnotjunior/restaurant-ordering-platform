@@ -28,6 +28,10 @@ export type RestaurantTheme = {
     success: string;
     warning: string;
     error: string;
+    header?: string;
+    footer?: string;
+    hero?: string;
+    productCard?: string;
   };
 };
 
