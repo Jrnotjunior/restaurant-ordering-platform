@@ -1,5 +1,5 @@
 import type { SupabaseClient, User } from '@supabase/supabase-js';
-import { supabaseGet } from '../../services/supabaseClient';
+import { supabaseRpc } from '../../services/supabaseClient';
 
 export type AccountType = 'owner' | 'staff' | 'customer';
 
@@ -30,35 +30,17 @@ export async function resolveAccountContext(currentUser: User | null): Promise<A
     };
   }
 
-  const ownerRows = await supabaseGet<OwnerRestaurant>('restaurants', {
-    select: 'id,slug,name,tagline,logo_url,location_text,contact_number,email,is_active',
-    owner_id: `eq.${currentUser.id}`,
-    is_active: 'eq.true',
-    limit: '1',
-  });
+  // Role discovery must work before MFA is completed. The database RPC is
+  // scoped to auth.uid() and returns only this user's account context; RLS
+  // remains in force for subsequent restaurant/staff data access.
+  const rows = await supabaseRpc<AuthAccountContext>('resolve_my_account_context', {});
+  const context = rows[0];
 
-  const ownerRestaurant = ownerRows[0] ?? null;
-
-  if (ownerRestaurant) {
-    return {
-      restaurant: ownerRestaurant,
-      accountType: 'owner',
-      staffRole: null,
-    };
+  if (!context || !['owner', 'staff', 'customer'].includes(context.accountType)) {
+    throw new Error('Supabase did not return a valid account context. Please retry.');
   }
 
-  const staffRows = await supabaseGet<{ restaurant_id: string; role: string }>('restaurant_staff', {
-    select: 'restaurant_id,role',
-    auth_user_id: `eq.${currentUser.id}`,
-    is_active: 'eq.true',
-    limit: '1',
-  });
-
-  return {
-    restaurant: null,
-    accountType: staffRows[0] ? 'staff' : 'customer',
-    staffRole: staffRows[0]?.role ?? null,
-  };
+  return context;
 }
 
 export async function initializeAuthSession(client: SupabaseClient) {
