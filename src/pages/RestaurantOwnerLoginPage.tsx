@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
 import { supabase } from '../services/supabaseClient';
 
@@ -63,7 +63,7 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
     return () => { cancelled = true; };
   }, [authLoading, user?.id, accountType]);
 
-  async function handleEmailPasswordSignIn(event: React.FormEvent<HTMLFormElement>) {
+  async function handleEmailPasswordSignIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
     if (!supabase) {
