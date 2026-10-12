@@ -6,7 +6,7 @@
   overflow:hidden;
   border-radius:var(--radius-lg);
   margin-bottom:32px;
-  background:linear-gradient(135deg,var(--color-primary),var(--color-primary-hover));
+  background:var(--color-hero, var(--color-primary));
   background-size:cover;
   background-position:center;
   color:var(--color-primary-text);
