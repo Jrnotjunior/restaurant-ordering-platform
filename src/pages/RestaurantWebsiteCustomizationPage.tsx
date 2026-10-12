@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type Poi
 import { defaultRestaurant } from '../config/defaultRestaurant';
 import { supabase } from '../services/supabaseClient';
 import { RestaurantFaviconSettings } from '../components/RestaurantFaviconSettings';
+import { useOwnerUnsavedChanges } from '../contexts/OwnerUnsavedChangesContext';
 import type { RestaurantStorefront, RestaurantTheme } from '../types/restaurant';
 
 type Props = { restaurantId: string };
@@ -21,6 +22,7 @@ function themeMatchesStyle(theme: RestaurantTheme, style: WebsiteStyle) {
 }
 
 export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
+  const { setUnsavedChanges } = useOwnerUnsavedChanges();
   const [logoUrl, setLogoUrl] = useState('');
   const [restaurantName, setRestaurantName] = useState(defaultRestaurant.name);
   const [restaurantTagline, setRestaurantTagline] = useState(defaultRestaurant.tagline);
@@ -95,6 +97,18 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    const markDirty = () => setUnsavedChanges(true);
+    const root = document.querySelector('.restaurant-shipping-page');
+    if (!root) return;
+    root.addEventListener('input', markDirty);
+    root.addEventListener('change', markDirty);
+    return () => {
+      root.removeEventListener('input', markDirty);
+      root.removeEventListener('change', markDirty);
+    };
+  }, [setUnsavedChanges]);
 
   useEffect(() => { void loadCustomization(); }, [restaurantId]);
 
@@ -221,6 +235,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .upsert({ restaurant_id: restaurantId, theme: websiteTheme, storefront }, { onConflict: 'restaurant_id' });
       if (saveError) throw saveError;
       setMessage('Website customization saved successfully.');
+      setUnsavedChanges(false);
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Unable to save website customization.');
     } finally {
