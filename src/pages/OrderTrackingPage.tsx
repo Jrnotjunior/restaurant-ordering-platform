@@ -199,6 +199,31 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
       .filter((entry): entry is { label: string; value: string } => Boolean(entry));
   }
 
+  function formatStoreTime(value: string) {
+    const match = value.match(/^(\\d{1,2}):(\\d{2})/);
+    if (!match) return value;
+    const hour = Number(match[1]);
+    const minute = match[2];
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}:${minute} ${period}`;
+  }
+
+  function getOrderDayHours() {
+    if (!operatingHours || !order.createdAt) return null;
+    const date = new Date(order.createdAt);
+    if (Number.isNaN(date.getTime())) return null;
+    const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dayKey = dayKeys[date.getDay()];
+    const hours = operatingHours[dayKey];
+    if (!hours) return null;
+    const dayLabel = dayKey.charAt(0).toUpperCase() + dayKey.slice(1);
+    const value = hours.isOpen
+      ? `${formatStoreTime(hours.open)} – ${formatStoreTime(hours.close)}`
+      : 'Closed';
+    return { dayLabel, value };
+  }
+
   function openStoreLocation() {
     if (!storeAddress) return;
     const query = encodeURIComponent(storeAddress);
@@ -306,6 +331,12 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
               <span className="order-rider-status">Store</span>
             </div>
             <p className="order-pickup-location-message">{order.status === 'completed' ? 'Your order is complete.' : 'Collect your order here when it is ready.'}</p>
+            {getOrderDayHours() && (
+              <p className="order-pickup-hours-summary">
+                <strong>Store hours · {getOrderDayHours()?.dayLabel}</strong>
+                <span>{getOrderDayHours()?.value}</span>
+              </p>
+            )}
             <div className="order-rider-actions">
               <button className="button button-primary" type="button" onClick={openStoreLocation}>Open / Pin in Google Maps</button>
               <button className="button button-secondary" type="button" onClick={() => void copyStoreAddress()}>Copy Address</button>
