@@ -107,7 +107,6 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
 
       const { data } = client.auth.onAuthStateChange((event, session) => {
         const currentUser = session?.user ?? null;
-        const previousUserId = user?.id ?? null;
         setUser(currentUser);
 
         if (!currentUser) {
@@ -122,7 +121,7 @@ export function RestaurantOwnerAuthProvider({ children }: { children: ReactNode 
         // Keep the already-resolved role context for the same user so the MFA
         // gate does not flash its security-check screen during routine refreshes.
         // Real account transitions still clear the old context immediately.
-        const isSameUserTokenRefresh = event === 'TOKEN_REFRESHED' && previousUserId === currentUser.id;
+        const isSameUserTokenRefresh = event === 'TOKEN_REFRESHED';
         if (!isSameUserTokenRefresh) {
           setRestaurant(null);
           setAccountType(null);
