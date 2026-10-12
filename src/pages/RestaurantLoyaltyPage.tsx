@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getLoyaltyProgramSettings, saveLoyaltyProgramSettings } from '../modules/loyalty/loyaltyService';
 import { useOwnerUnsavedChanges } from '../contexts/OwnerUnsavedChangesContext';
+import { useOwnerUnsavedChangesTracking } from '../hooks/useOwnerUnsavedChangesTracking';
 
 type Props = { restaurantId: string };
 
@@ -35,18 +36,7 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
     }
   }
 
-  useEffect(() => {
-    const markDirty = (event: Event) => {
-      const target = event.target;
-      if (target instanceof Element && target.closest('.restaurant-shipping-page')) setUnsavedChanges(true);
-    };
-    document.addEventListener('input', markDirty, true);
-    document.addEventListener('change', markDirty, true);
-    return () => {
-      document.removeEventListener('input', markDirty, true);
-      document.removeEventListener('change', markDirty, true);
-    };
-  }, [setUnsavedChanges]);
+  useOwnerUnsavedChangesTracking('.restaurant-shipping-page');
 
   useEffect(() => { void loadSettings(); }, [restaurantId]);
 
