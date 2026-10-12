@@ -60,16 +60,32 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
             // label. The canonical first/last-name fields remain in the
             // customer profile; Auth metadata stores first_name and last_name
             // separately, and uses first_name only for the display label.
+            const firstName = signup.firstName!.trim();
+            const lastName = signup.lastName!.trim();
+            const phone = signup.phone!.trim();
             const { error: metadataError } = await client.auth.updateUser({
               data: {
-                first_name: signup.firstName!.trim(),
-                last_name: signup.lastName!.trim(),
-                phone: signup.phone!.trim(),
-                name: signup.firstName!.trim(),
+                first_name: firstName,
+                last_name: lastName,
+                phone,
+                // Supabase Auth's Users table displays the metadata "name"
+                // value. Never use the Google provider's app label here.
+                name: firstName,
+                display_name: firstName,
               },
             });
             if (metadataError) {
-              console.error('Customer profile was saved, but Auth display metadata could not be updated.', metadataError);
+              // Do not silently mark registration complete when the Auth
+              // display metadata failed to persist.
+              throw new Error(`Customer profile was saved, but customer Auth metadata could not be updated: ${metadataError.message}`);
+            }
+            const { data: refreshedUser, error: refreshError } = await client.auth.getUser();
+            if (refreshError || !refreshedUser.user ||
+                refreshedUser.user.user_metadata?.name !== firstName ||
+                refreshedUser.user.user_metadata?.first_name !== firstName ||
+                refreshedUser.user.user_metadata?.last_name !== lastName ||
+                refreshedUser.user.user_metadata?.phone !== phone) {
+              throw new Error('Customer registration was saved, but Auth name and phone metadata could not be verified. Please try signing in again.');
             }
             window.localStorage.removeItem(storageKey);
           }
