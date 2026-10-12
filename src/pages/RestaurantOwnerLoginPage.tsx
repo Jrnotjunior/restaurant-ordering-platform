@@ -137,7 +137,7 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
               <input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required disabled={submitting} />
             </label>
             <p className="restaurant-auth-switch"><a href="#forgot-password">Forgot password?</a></p>
-            <button className="customer-google-signup-button" type="submit" disabled={submitting}>{submitting ? 'Signing in…' : 'Sign in with email'}</button>
+            <button className="button" type="submit" disabled={submitting}>{submitting ? 'Signing in…' : 'Sign in'}</button>
           </form>
         )}
 
