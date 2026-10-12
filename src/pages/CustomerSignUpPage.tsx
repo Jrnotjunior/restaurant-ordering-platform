@@ -147,7 +147,7 @@ export function CustomerSignUpPage() {
             <span>I agree to the use of my personal information for account creation and order-related services. <a href="#privacy">Privacy Notice</a>.</span>
           </label>
           {fieldError('consent')}
-          <button className="customer-google-signup-button" type="submit" disabled={submitting}>{submitting ? 'Creating account…' : 'Create account'}</button>
+          <button className="button" type="submit" disabled={submitting}>{submitting ? 'Creating account…' : 'Create account'}</button>
         </form>
 
         <p className="restaurant-auth-switch">
