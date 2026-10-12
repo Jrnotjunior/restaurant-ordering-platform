@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { DeliveryNavigation } from '../components/DeliveryNavigation';
 import { CustomerContactActions } from '../components/CustomerContactActions';
-import { supabase } from '../services/supabaseClient';
+import { supabase, supabaseRpc } from '../services/supabaseClient';
 
 type DeliveryStatus = 'assigned' | 'delivering' | 'arrived' | 'delivered' | 'failed';
 
@@ -161,18 +161,19 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
     setError('');
 
     try {
-      const { error: statusError } = await supabase.rpc('rider_update_delivery_status', {
+      // Use the shared REST RPC helper so the apikey header is explicitly
+      // attached to this request, alongside the current rider access token.
+      await supabaseRpc('rider_update_delivery_status', {
         p_order_id: delivery.id,
         p_next_status: nextStatus,
         p_failure_reason: nextStatus === 'failed' ? failedReason ?? null : null,
       });
-      if (statusError) throw statusError;
 
       setDelivery((current) => current ? { ...current, status: nextStatus } : current);
       setStatusIndex(statusIndexFor(nextStatus));
       setSlideValue(0);
     } catch (statusError) {
-      setError(statusError instanceof Error ? statusError.message : 'Unable to update delivery status.');
+      setError(statusError instanceof Error ? statusError.message : (statusError && typeof statusError === 'object' && 'message' in statusError ? String(statusError.message) : 'Unable to update delivery status.'));
     } finally {
       setSavingStatus(false);
     }
