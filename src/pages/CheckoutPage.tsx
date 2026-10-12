@@ -244,59 +244,15 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
       try {
         let profile = await getMyCustomerProfile(currentRestaurantId);
 
-        // A Google sign-in from the regular Sign In page does not carry the
-        // customer-signup marker. When an authenticated user reaches customer
-        // checkout, ensure their own profile exists for this restaurant.
-        // The RPC enforces auth.uid() and the current restaurant tenant, so
-        // this cannot create a profile for another user or another restaurant.
+        // Customer names and phone are supplied by the email/password signup
+        // flow and stored in Supabase Auth metadata. Prefer the existing database
+        // profile whenever it already contains valid customer details.
         const metadata = currentUser.user_metadata ?? {};
-        const metadataFirstName = String(metadata.first_name ?? metadata.given_name ?? '').trim();
-        const metadataLastName = String(metadata.last_name ?? metadata.family_name ?? '').trim();
-        const combinedMetadataName = String(metadata.full_name ?? metadata.name ?? '').trim();
-        const combinedNameParts = combinedMetadataName.split(/\s+/).filter(Boolean);
+        let firstName = String(metadata.first_name ?? '').trim();
+        let lastName = String(metadata.last_name ?? '').trim();
         const phone = String(metadata.phone ?? '').trim() || null;
 
-        // The Google signup form collects the name before OAuth and stores it
-        // temporarily so the exact customer-provided names survive the redirect.
-        // Only accept this pending data for the same restaurant and for a short
-        // window; never derive a customer's name from their email address.
-        let pendingSignup: { restaurantId?: string; firstName?: string; lastName?: string; createdAt?: number } | null = null;
-        try {
-          const rawPendingSignup = window.localStorage.getItem('restaurant-ordering-google-customer-signup');
-          if (rawPendingSignup) pendingSignup = JSON.parse(rawPendingSignup);
-        } catch {
-          window.localStorage.removeItem('restaurant-ordering-google-customer-signup');
-        }
-        const pendingSignupIsValid = Boolean(
-          pendingSignup
-          && pendingSignup.restaurantId === currentRestaurantId
-          && typeof pendingSignup.createdAt === 'number'
-          && Date.now() - pendingSignup.createdAt < 30 * 60 * 1000
-          && pendingSignup.createdAt <= Date.now()
-          && pendingSignup.firstName?.trim()
-          && pendingSignup.lastName?.trim(),
-        );
-        if (pendingSignup && !pendingSignupIsValid) {
-          window.localStorage.removeItem('restaurant-ordering-google-customer-signup');
-          pendingSignup = null;
-        }
-
-        let firstName = pendingSignupIsValid
-          ? String(pendingSignup?.firstName ?? '').trim()
-          : metadataFirstName;
-        let lastName = pendingSignupIsValid
-          ? String(pendingSignup?.lastName ?? '').trim()
-          : metadataLastName;
-
-        // If Google provides only a full name, use it only when it has a clear
-        // first/remaining-name split. Do not guess from the email prefix.
-        if ((!firstName || !lastName) && combinedNameParts.length > 1) {
-          if (!firstName) firstName = combinedNameParts[0];
-          if (!lastName) lastName = combinedNameParts.slice(1).join(' ');
-        }
-
-        // Create missing profiles or repair legacy profiles that were populated
-        // from email-derived names. Prefer the customer's pre-OAuth names.
+        // Create missing profiles or repair legacy profiles with invalid names.
         if (!profile || /[0-9]/.test(profile.firstName ?? '') || /[0-9]/.test(profile.lastName ?? '')) {
           if (profile && !/[0-9]/.test(profile.firstName ?? '') && !/[0-9]/.test(profile.lastName ?? '')) {
             firstName = profile.firstName!.trim();
@@ -313,7 +269,6 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
             p_phone: phone ?? profile?.phone ?? null,
           });
           if (createProfileError) throw createProfileError;
-          window.localStorage.removeItem('restaurant-ordering-google-customer-signup');
           profile = await getMyCustomerProfile(currentRestaurantId);
         }
 
