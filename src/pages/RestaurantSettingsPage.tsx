@@ -3,6 +3,7 @@ import { supabase } from '../services/supabaseClient';
 import { MapboxDeliveryLocationPicker, type MapboxDeliveryAddress } from '../components/MapboxDeliveryLocationPicker';
 import { PayMongoLiveOnboardingCard } from '../components/PayMongoLiveOnboardingCard';
 import { useOwnerUnsavedChanges } from '../contexts/OwnerUnsavedChangesContext';
+import { useOwnerUnsavedChangesTracking } from '../hooks/useOwnerUnsavedChangesTracking';
 
 type Props = {
   restaurantId: string;
@@ -486,18 +487,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     setError('');
   }
 
-  useEffect(() => {
-    const markDirty = (event: Event) => {
-      const target = event.target;
-      if (target instanceof Element && target.closest('.restaurant-settings-page')) setUnsavedChanges(true);
-    };
-    document.addEventListener('input', markDirty, true);
-    document.addEventListener('change', markDirty, true);
-    return () => {
-      document.removeEventListener('input', markDirty, true);
-      document.removeEventListener('change', markDirty, true);
-    };
-  }, [setUnsavedChanges]);
+  useOwnerUnsavedChangesTracking('.restaurant-settings-page');
 
   async function saveSettings() {
     if (!supabase) {
