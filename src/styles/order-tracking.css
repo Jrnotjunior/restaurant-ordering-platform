@@ -92,3 +92,6 @@
 .order-details-toggle { display: inline-flex; align-items: center; gap: .4rem; color: var(--color-muted); font-size: .85rem; white-space: nowrap; }
 .order-details-chevron { display: inline-block; font-size: 1.1rem; transition: transform .2s ease; }
 .order-tracking-details[open] .order-details-chevron { transform: rotate(180deg); }
+
+.order-pickup-hours-summary { display: flex; flex-direction: column; gap: .2rem; margin: .35rem 0 .75rem; color: var(--color-muted); font-size: .88rem; }
+.order-pickup-hours-summary strong { color: var(--color-text); font-weight: 600; }
