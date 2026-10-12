@@ -108,8 +108,8 @@ export function PrivilegedMfaGate({ children }: { children: ReactNode }) {
   }
 
   return (
-    <main className="restaurant-owner-auth-page">
-      <section className="restaurant-owner-auth-card" aria-labelledby="privileged-mfa-title">
+    <main className="restaurant-owner-auth-page privileged-mfa-page">
+      <section className="restaurant-owner-auth-card privileged-mfa-card" aria-labelledby="privileged-mfa-title">
         <p className="eyebrow">Required account security</p>
         <h1 id="privileged-mfa-title">{gate.kind === 'enroll' ? 'Set up two-factor authentication' : 'Verify it’s you'}</h1>
         {gate.kind === 'enroll' ? (
@@ -120,7 +120,7 @@ export function PrivilegedMfaGate({ children }: { children: ReactNode }) {
               <li>Scan the QR code below. If scanning is unavailable, manually add the setup key using the URI shown below.</li>
               <li>Enter the six-digit code from the app to finish setup.</li>
             </ol>
-            {gate.qrCode ? <div className="privileged-mfa-qr" aria-label="Authenticator setup QR code" dangerouslySetInnerHTML={{ __html: gate.qrCode }} /> : null}
+            {gate.qrCode ? <div className="privileged-mfa-qr"><img src={gate.qrCode} alt="Scan this QR code with your authenticator app" /></div> : null}
             <details>
               <summary>Can’t scan the QR code?</summary>
               <p>Copy this setup URI into an authenticator app that supports manual setup:</p>
