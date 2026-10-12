@@ -50,7 +50,13 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
 
     if (!unsubscribe) setRealtimeStatus('error');
 
+    // Keep dispatch fresh even if a Realtime event is missed or the channel drops.
+    const refreshInterval = window.setInterval(() => {
+      void loadDispatchData();
+    }, 15000);
+
     return () => {
+      window.clearInterval(refreshInterval);
       unsubscribe?.();
     };
   }, [restaurantId]);
