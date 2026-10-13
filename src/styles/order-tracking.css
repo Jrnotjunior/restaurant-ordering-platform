@@ -51,6 +51,7 @@
 .order-pickup-location-card--compact{justify-items:center;text-align:center;gap:.65rem;padding:1.25rem 1rem}
 .order-pickup-location-card--compact .order-rider-label{margin:0;font-size:.72rem;letter-spacing:.1em;font-weight:750}
 .order-pickup-location-card--compact h2{margin:0;font-family:var(--font-heading);font-size:1.15rem;line-height:1.35}
+.order-pickup-hours-summary--centered{align-items:center;text-align:center;margin:.1rem 0 .25rem;gap:.15rem}
 .order-pickup-map-button{display:inline-flex;align-items:center;justify-content:center;min-width:190px;max-width:100%;margin:.25rem auto 0;text-align:center}
 
 .order-pickup-location-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
