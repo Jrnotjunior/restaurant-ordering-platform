@@ -270,7 +270,7 @@ Deno.serve(async (request) => {
 
     let emailSent = !reusedExistingAccount;
     if (reusedExistingAccount) {
-      const configuredRedirectBase = Deno.env.get("APP_URL") ?? Deno.env.get("SITE_URL") ?? "";
+      const configuredRedirectBase = Deno.env.get("APP_URL") ?? Deno.env.get("SITE_URL") ?? "https://jrnotjunior.github.io";
       const redirectBase = configuredRedirectBase.endsWith("/") ? configuredRedirectBase.slice(0, -1) : configuredRedirectBase;
       if (!redirectBase) {
         return jsonResponse({
