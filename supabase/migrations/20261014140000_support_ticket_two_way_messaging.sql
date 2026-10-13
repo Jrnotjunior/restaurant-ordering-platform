@@ -1,4 +1,6 @@
 -- Two-way support-ticket messaging with strict tenant and admin boundaries.
+-- The existing ticket-number trigger requires sequence USAGE for authenticated inserts.
+GRANT USAGE ON SEQUENCE public.restaurant_support_request_number_seq TO authenticated;
 create table if not exists public.support_ticket_messages (
   id uuid primary key default gen_random_uuid(),
   ticket_id uuid not null references public.restaurant_support_requests(id) on delete cascade,
