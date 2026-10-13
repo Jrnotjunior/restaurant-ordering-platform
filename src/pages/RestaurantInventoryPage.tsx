@@ -17,7 +17,7 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
   const [search, setSearch] = useState('');
   const [expandedAdjustmentId, setExpandedAdjustmentId] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<{ name: string; category: string; threshold: string }>({ name: '', category: 'Ingredients', threshold: '0' });
+  const [editForm, setEditForm] = useState<{ name: string; category: string; unit: string; threshold: string }>({ name: '', category: 'Ingredients', unit: 'pcs', threshold: '0' });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -86,20 +86,26 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
     setError(''); setNotice('');
     setExpandedAdjustmentId(null);
     setEditingItemId(item.id);
-    setEditForm({ name: item.name, category: item.category, threshold: String(item.low_stock_threshold) });
+    setEditForm({ name: item.name, category: item.category, unit: item.unit, threshold: String(item.low_stock_threshold) });
   }
 
   async function saveItemEdits(item: InventoryItem) {
     if (!supabase) { setError('Supabase is not configured.'); return; }
     const name = editForm.name.trim();
     const threshold = Number(editForm.threshold);
-    if (!name || !Number.isFinite(threshold) || threshold < 0) {
-      setError('Enter a valid item name and a non-negative low-stock level.'); return;
+    if (!name || !editForm.unit.trim() || !Number.isFinite(threshold) || threshold < 0) {
+      setError('Enter a valid item name, stock unit, and non-negative low-stock level.'); return;
     }
-    const duplicate = items.find((candidate) => candidate.id !== item.id && candidate.name.trim().toLocaleLowerCase() === name.toLocaleLowerCase() && candidate.unit === item.unit);
-    if (duplicate) { setError(`Another inventory item already uses the name “${name}” with unit ${item.unit}.`); return; }
+    const duplicate = items.find((candidate) => candidate.id !== item.id && candidate.name.trim().toLocaleLowerCase() === name.toLocaleLowerCase() && candidate.unit === editForm.unit);
+    if (duplicate) { setError(`Another inventory item already uses the name “${name}” with unit ${editForm.unit}.`); return; }
     setSaving(true); setError(''); setNotice('');
     try {
+      if (editForm.unit !== item.unit) {
+        const { error: unitError } = await supabase.rpc('restaurant_change_inventory_unit', {
+          p_item_id: item.id, p_new_unit: editForm.unit,
+        });
+        if (unitError) throw unitError;
+      }
       const { error: updateError } = await supabase.from('restaurant_inventory_items').update({
         name, category: editForm.category.trim() || 'Other', low_stock_threshold: threshold,
       }).eq('id', item.id).eq('restaurant_id', restaurantId);
@@ -255,9 +261,10 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
           {editingItemId===item.id && <tr className="inventory-edit-row" key={`${item.id}-edit`}><td colSpan={6}><div className="inventory-edit-grid">
             <label>Item name<input required maxLength={120} value={editForm.name} onChange={(event)=>setEditForm((current)=>({...current,name:event.target.value}))}/></label>
             <label>Category<select value={editForm.category} onChange={(event)=>setEditForm((current)=>({...current,category:event.target.value}))}><option>Ingredients</option><option>Packaging</option><option>Beverages</option><option>Cleaning</option><option>Supplies</option><option>Other</option></select></label>
-            <label>Low-stock level ({item.unit})<input required type="number" min="0" step="0.001" value={editForm.threshold} onChange={(event)=>setEditForm((current)=>({...current,threshold:event.target.value}))}/></label>
+            <label>Stock unit<select required value={editForm.unit} onChange={(event)=>setEditForm((current)=>({...current,unit:event.target.value}))}><option value="g">g (grams)</option><option value="kg">kg (kilograms)</option><option value="mg">mg (milligrams)</option><option value="ml">ml (millilitres)</option><option value="L">L (litres)</option><option value="pcs">pcs (pieces)</option><option value="pack">pack</option><option value="bottle">bottle</option><option value="box">box</option><option value="bag">bag</option><option value="can">can</option><option value="portion">portion</option><option value="roll">roll</option></select></label>
+            <label>Low-stock level ({editForm.unit})<input required type="number" min="0" step="0.001" value={editForm.threshold} onChange={(event)=>setEditForm((current)=>({...current,threshold:event.target.value}))}/></label>
             <div className="inventory-edit-actions"><button className="inventory-button primary" type="button" disabled={saving} onClick={()=>void saveItemEdits(item)}>{saving?'Saving…':'Save changes'}</button><button className="inventory-button" type="button" disabled={saving} onClick={()=>setEditingItemId(null)}>Cancel</button></div>
-          </div><p className="inventory-muted" style={{margin:'8px 0 0'}}>Stock unit is {item.unit}. Unit changes are disabled to protect existing recipe quantities and stock history.</p></td></tr>}
+          </div><p className="inventory-muted" style={{margin:'8px 0 0'}}>Changing between compatible units (such as kg and g) converts current stock, the low-stock level, and recipe quantities automatically. Historical stock movements keep the unit recorded at the time.</p></td></tr>}
           {expandedAdjustmentId===item.id && <tr className="inventory-adjust-row" key={`${item.id}-adjust`}><td colSpan={6}><div className="inventory-adjust">
             <label>Quantity change<input type="number" step="0.001" value={adjustments[item.id]?.quantity ?? ''} onChange={(event)=>setAdjustments((current)=>({...current,[item.id]:{quantity:event.target.value,reason:current[item.id]?.reason??''}}))} placeholder="+5 or −2"/></label>
             <label>Reason for adjustment<input value={adjustments[item.id]?.reason ?? ''} maxLength={240} onChange={(event)=>setAdjustments((current)=>({...current,[item.id]:{quantity:current[item.id]?.quantity??'',reason:event.target.value}}))} placeholder="e.g. Stock received, used, or wasted"/></label>
