@@ -15,6 +15,7 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
   const [form, setForm] = useState<ItemForm>(emptyForm);
   const [adjustments, setAdjustments] = useState<Record<string, { quantity: string; reason: string }>>({});
   const [search, setSearch] = useState('');
+  const [expandedAdjustmentId, setExpandedAdjustmentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -44,7 +45,7 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
   }, [items, search]);
   const outOfStockItems = items.filter((item) => Number(item.quantity_on_hand) <= 0);
   const lowStockItems = items.filter((item) => Number(item.quantity_on_hand) > 0 && Number(item.quantity_on_hand) <= Number(item.low_stock_threshold));
-  const totalUnits = items.reduce((sum, item) => sum + Number(item.quantity_on_hand), 0);
+  const healthyStockItems = items.length - lowStockItems.length - outOfStockItems.length;
 
   async function addItem(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(''); setNotice('');
@@ -55,6 +56,8 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
     if (!name || !form.unit.trim() || !Number.isFinite(quantity) || quantity < 0 || !Number.isFinite(threshold) || threshold < 0) {
       setError('Enter a name, valid unit, and non-negative stock and low-stock threshold.'); return;
     }
+    const duplicate = items.find((item) => item.name.trim().toLocaleLowerCase() === name.toLocaleLowerCase() && item.unit === form.unit);
+    if (duplicate) { setError(`“${name}” already exists with stock unit ${form.unit}. Update the existing item instead of creating a duplicate.`); return; }
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -95,6 +98,7 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
       });
       if (adjustError) throw adjustError;
       setAdjustments((current) => ({ ...current, [item.id]: { quantity: '', reason: '' } }));
+      setExpandedAdjustmentId(null);
       setNotice(`Stock updated for ${item.name}.`);
       await loadInventory();
     } catch (adjustError) {
@@ -153,6 +157,18 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
       .inventory-table th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted,#64748b)}
       .inventory-table .inventory-item-name{font-weight:700}
       .inventory-actions-cell{width:64px;text-align:center!important;vertical-align:middle!important}
+      .inventory-table th{white-space:nowrap}
+      .inventory-stock-value{font-weight:700;font-variant-numeric:tabular-nums}
+      .inventory-item-meta{display:block;margin-top:4px}
+      .inventory-expand-button{white-space:nowrap}
+      .inventory-adjust-row td{background:var(--surface-muted,#f8fafc);padding:14px}
+      .inventory-adjust-row .inventory-adjust{grid-template-columns:minmax(110px,160px) minmax(180px,1fr) auto;max-width:620px;min-width:0;align-items:end}
+      .inventory-adjust-row .inventory-adjust label{font-size:12px}
+      .inventory-adjust-row .inventory-adjust input{min-height:38px}
+      .inventory-adjust-row .inventory-adjust-actions{display:flex;gap:8px}
+      .inventory-toolbar h2{font-size:18px}
+      .inventory-panel-subtitle{margin:-5px 0 16px;color:var(--muted,#64748b);font-size:13px}
+      .inventory-empty{padding:28px 16px;text-align:center;color:var(--muted,#64748b)}
       .inventory-delete-button{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;padding:0;border:1px solid #fecaca;border-radius:9px;background:#fff;color:#b91c1c;cursor:pointer}
       .inventory-delete-button:hover{background:#fef2f2;border-color:#f87171}
       .inventory-delete-button:focus-visible{outline:2px solid var(--color-primary,#111827);outline-offset:2px}
@@ -175,9 +191,9 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
       <div className="inventory-card"><small>Tracked items</small><strong>{items.length}</strong></div>
       <div className="inventory-card"><small>Low-stock items</small><strong>{lowStockItems.length}</strong></div>
       <div className="inventory-card"><small>Out of stock</small><strong>{outOfStockItems.length}</strong></div>
-      <div className="inventory-card"><small>Total units across items</small><strong>{numberFormat.format(totalUnits)}</strong></div>
+      <div className="inventory-card"><small>Healthy stock</small><strong>{healthyStockItems}</strong></div>
     </div>
-    <section className="inventory-panel"><h2>Add ingredient or supply</h2>
+    <section className="inventory-panel"><h2>Add inventory item</h2><p className="inventory-panel-subtitle">Add an ingredient or supply with its stock unit and restock threshold.</p>
       <form className="inventory-form" onSubmit={(event) => void addItem(event)}>
         <div className="inventory-form-grid">
           <label>Item name<input required maxLength={120} placeholder="e.g. Chicken breast" value={form.name} onChange={(event)=>setForm((current)=>({...current,name:event.target.value}))}/></label>
@@ -189,10 +205,27 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
         <div style={{marginTop:12}}><button className="inventory-button primary" type="submit" disabled={saving}>{saving?'Saving…':'Add inventory item'}</button></div>
       </form>
     </section>
-    <section className="inventory-panel"><div className="inventory-toolbar"><h2 style={{margin:0}}>Stock on hand</h2><input className="inventory-search" type="search" placeholder="Search items or categories" value={search} onChange={(event)=>setSearch(event.target.value)}/></div>
-      {loading ? <p>Loading inventory…</p> : <div className="inventory-table-wrap"><table className="inventory-table"><thead><tr><th>Item</th><th>Category</th><th>Stock</th><th>Low-stock level</th><th>Status</th><th>Adjust stock</th><th>Actions</th></tr></thead><tbody>
-        {visibleItems.map((item)=><tr key={item.id}><td><div className="inventory-item-name">{item.name}</div><span className="inventory-muted">Updated {dateTime(item.updated_at)}</span></td><td>{item.category}</td><td>{numberFormat.format(Number(item.quantity_on_hand))} {item.unit}</td><td>{numberFormat.format(Number(item.low_stock_threshold))} {item.unit}</td><td><span className={`inventory-badge${Number(item.quantity_on_hand)<=0?' out':Number(item.quantity_on_hand)<=Number(item.low_stock_threshold)?' low':''}`}>{Number(item.quantity_on_hand)<=0?'Out of stock':Number(item.quantity_on_hand)<=Number(item.low_stock_threshold)?'Low stock':'In stock'}</span></td><td><div className="inventory-adjust"><label>Change (+/−)<input type="number" step="0.001" value={adjustments[item.id]?.quantity ?? ''} onChange={(event)=>setAdjustments((current)=>({...current,[item.id]:{quantity:event.target.value,reason:current[item.id]?.reason??''}}))} placeholder="+5 / -2"/></label><label>Reason<input value={adjustments[item.id]?.reason ?? ''} maxLength={240} onChange={(event)=>setAdjustments((current)=>({...current,[item.id]:{quantity:current[item.id]?.quantity??'',reason:event.target.value}}))} placeholder="Received, used, waste…"/></label><button className="inventory-button primary" type="button" disabled={saving} onClick={()=>void adjustStock(item)}>Save</button></div></td><td className="inventory-actions-cell"><button className="inventory-delete-button" type="button" disabled={saving} onClick={()=>void deleteItem(item)} aria-label={`Delete ${item.name}`} title={`Delete ${item.name}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg></button></td></tr>)}
-        {!visibleItems.length && <tr><td colSpan={7}>{items.length?'No inventory items match your search.':'No inventory items yet. Add ingredients and supplies above to get started.'}</td></tr>}
+    <section className="inventory-panel"><div className="inventory-toolbar"><div><h2 style={{margin:0}}>Stock on hand</h2><p className="inventory-panel-subtitle" style={{margin:"5px 0 0"}}>{visibleItems.length} of {items.length} inventory items</p></div><input className="inventory-search" type="search" aria-label="Search inventory" placeholder="Search items or categories" value={search} onChange={(event)=>setSearch(event.target.value)}/></div>
+      {loading ? <p>Loading inventory…</p> : <div className="inventory-table-wrap"><table className="inventory-table"><thead><tr><th>Item</th><th>Category</th><th>Stock on hand</th><th>Low-stock level</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+        {visibleItems.map((item)=><>
+          <tr key={item.id}>
+            <td><div className="inventory-item-name">{item.name}</div><span className="inventory-muted inventory-item-meta">Updated {dateTime(item.updated_at)}</span></td>
+            <td>{item.category}</td>
+            <td><span className="inventory-stock-value">{numberFormat.format(Number(item.quantity_on_hand))} {item.unit}</span></td>
+            <td>{numberFormat.format(Number(item.low_stock_threshold))} {item.unit}</td>
+            <td><span className={`inventory-badge${Number(item.quantity_on_hand)<=0?' out':Number(item.quantity_on_hand)<=Number(item.low_stock_threshold)?' low':''}`}>{Number(item.quantity_on_hand)<=0?'Out of stock':Number(item.quantity_on_hand)<=Number(item.low_stock_threshold)?'Low stock':'In stock'}</span></td>
+            <td className="inventory-actions-cell"><div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:8}}>
+              <button className="inventory-button inventory-expand-button" type="button" disabled={saving} aria-expanded={expandedAdjustmentId===item.id} onClick={()=>setExpandedAdjustmentId((current)=>current===item.id?null:item.id)}>{expandedAdjustmentId===item.id?'Close':'Adjust stock'}</button>
+              <button className="inventory-delete-button" type="button" disabled={saving} onClick={()=>void deleteItem(item)} aria-label={`Delete ${item.name}`} title={`Delete ${item.name}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg></button>
+            </div></td>
+          </tr>
+          {expandedAdjustmentId===item.id && <tr className="inventory-adjust-row" key={`${item.id}-adjust`}><td colSpan={6}><div className="inventory-adjust">
+            <label>Quantity change<input type="number" step="0.001" value={adjustments[item.id]?.quantity ?? ''} onChange={(event)=>setAdjustments((current)=>({...current,[item.id]:{quantity:event.target.value,reason:current[item.id]?.reason??''}}))} placeholder="+5 or −2"/></label>
+            <label>Reason for adjustment<input value={adjustments[item.id]?.reason ?? ''} maxLength={240} onChange={(event)=>setAdjustments((current)=>({...current,[item.id]:{quantity:current[item.id]?.quantity??'',reason:event.target.value}}))} placeholder="e.g. Stock received, used, or wasted"/></label>
+            <div className="inventory-adjust-actions"><button className="inventory-button primary" type="button" disabled={saving} onClick={()=>void adjustStock(item)}>{saving?'Saving…':'Save'}</button></div>
+          </div><p className="inventory-muted" style={{margin:'8px 0 0'}}>Use a positive number for stock received and a negative number for stock used or wasted. Unit: {item.unit}.</p></td></tr>}
+        </>)}
+        {!visibleItems.length && <tr><td colSpan={6} className="inventory-empty">{items.length?'No inventory items match your search.':'No inventory items yet. Add your first ingredient or supply above.'}</td></tr>}
       </tbody></table></div>}
     </section>
     <section className="inventory-panel"><h2>Recent stock movements</h2><p className="inventory-muted">The latest 50 recorded additions, usage, waste, and other stock adjustments.</p>
