@@ -474,6 +474,39 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         </div>
 
         <div className="website-customization-card">
+          <h2>Social Media Links</h2>
+          <p className="website-customization-help">Add your restaurant's Facebook, Instagram, and TikTok profile URLs. These links appear in the Follow Us section of your customer-facing website footer. Leave a field blank to show that network as unavailable.</p>
+          <div className="website-customization-grid">
+            {([
+              ['facebook', 'Facebook URL', 'https://www.facebook.com/your-restaurant'],
+              ['instagram', 'Instagram URL', 'https://www.instagram.com/your-restaurant'],
+              ['tiktok', 'TikTok URL', 'https://www.tiktok.com/@your-restaurant'],
+            ] as const).map(([key, label, placeholder]) => (
+              <label className="website-customization-field" key={key}>
+                <span>{label}</span>
+                <input
+                  type="text"
+                  inputMode="url"
+                  autoComplete="url"
+                  placeholder={placeholder}
+                  value={storefront.socialLinks?.[key] ?? ''}
+                  disabled={loading || saving}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setStorefront((current) => ({
+                      ...current,
+                      socialLinks: { ...current.socialLinks, [key]: value }
+                    }));
+                    setMessage('');
+                    setError('');
+                  }}
+                />
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="website-customization-card">
           <div className="website-customization-section-heading">
             <div>
               <h2>Website Colors</h2>
