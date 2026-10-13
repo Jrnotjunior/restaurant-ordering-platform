@@ -530,6 +530,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       const { error: saveError } = await supabase
         .from('restaurants')
         .update({
+          store_address: address.trim() || null,
           operating_hours: normalizedHours,
           ordering_enabled: orderingEnabled,
           tax_vat_registered: vatRegistered,
@@ -548,13 +549,17 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
       const { data: savedRow, error: verifyError } = await supabase
         .from('restaurants')
-        .select('operating_hours')
+        .select('store_address,operating_hours')
         .eq('id', restaurantId)
         .single();
 
       if (verifyError) throw verifyError;
 
       const savedHours = normalizeHours(savedRow?.operating_hours);
+      const savedAddress = savedRow?.store_address ?? '';
+      if (savedAddress !== (address.trim() || '')) {
+        throw new Error('The store address was not stored correctly. Please try again.');
+      }
       const mismatchedDay = DAYS.find((day) =>
         savedHours[day.key].open !== normalizedHours[day.key].open ||
         savedHours[day.key].close !== normalizedHours[day.key].close ||
@@ -565,6 +570,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         throw new Error(`The ${mismatchedDay.label} operating hours were not stored correctly. Please try again.`);
       }
 
+      setAddress(savedAddress);
       setHours(savedHours);
       setMessage('Store settings saved successfully.');
       setUnsavedChanges(false);
@@ -684,6 +690,21 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       {message && <div className="owner-feedback-toast is-success" role="status"><span className="owner-feedback-toast-icon" aria-hidden="true">✓</span><div><strong>Changes saved</strong><p>{message}</p></div></div>}
 
       <form className="restaurant-settings-form" onSubmit={(event) => { event.preventDefault(); setShowSaveConfirmation(true); }}>
+        <div className="restaurant-settings-card">
+          <h2>Store address</h2>
+          <p className="restaurant-settings-help">Enter the full address customers and pickup couriers should use to find your store. This address powers the pickup location's Google Maps link and Copy Address action.</p>
+          <label className="restaurant-settings-field" style={{ marginTop: 16 }}>
+            <span>Full store address</span>
+            <input
+              type="text"
+              value={address}
+              onChange={(event) => { setAddress(event.target.value); setMessage(''); setError(''); }}
+              placeholder="Building, street, barangay, city, province, postal code"
+              autoComplete="street-address"
+              disabled={loading || saving}
+            />
+          </label>
+        </div>
         <div className="restaurant-settings-card">
           <h2>Store status</h2>
           <p className="restaurant-settings-help">Operating hours automatically control the normal opening and closing schedule. Use this switch when you need to manually close the store outside that schedule.</p>
