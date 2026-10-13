@@ -325,6 +325,12 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
           <section className="order-pickup-location-card order-pickup-location-card--compact" aria-label="Store pickup location">
             <p className="order-rider-label">PICKUP LOCATION</p>
             <h2>{order.restaurantName}</h2>
+            {getOrderDayHours() && (
+              <p className="order-pickup-hours-summary order-pickup-hours-summary--centered">
+                <strong>Store hours · {getOrderDayHours()?.dayLabel}</strong>
+                <span>{getOrderDayHours()?.value}</span>
+              </p>
+            )}
             <button className="button button-primary order-pickup-map-button" type="button" onClick={openStoreLocation}>
               Open in Google Maps
             </button>
