@@ -138,19 +138,19 @@ export function RestaurantRecipesPage({ restaurantId }: Props) {
     <section style={{padding:18,border:'1px solid var(--border,#e2e8f0)',borderRadius:14,background:'var(--surface,#fff)'}}>
       <h2 style={{margin:'0 0 6px',fontSize:18}}>Configured recipes</h2>
       <p style={{margin:'0 0 16px',fontSize:13,color:'var(--muted,#64748b)'}}>Each menu product has its own ingredient list.</p>
-      {loading ? <p>Loading…</p> : recipes.length === 0 ? <p>No recipe links yet. Add an ingredient above to configure your first menu product.</p> : <div style={{display:'grid',gap:14}}>
+      {loading ? <p>Loading…</p> : recipes.length === 0 ? <p>No recipe links yet. Add an ingredient above to configure your first menu product.</p> : <div style={{display:'grid',gap:8}}>
         {products.filter(product=>recipes.some(recipe=>recipe.product_id===product.id)).map(product=>{
           const productRecipes=recipes.filter(recipe=>recipe.product_id===product.id);
-          return <section key={product.id} style={{border:'1px solid var(--border,#e2e8f0)',borderRadius:11,overflow:'hidden'}}>
-            <header style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,padding:'12px 14px',background:'var(--subtle,#f8fafc)',borderBottom:'1px solid var(--border,#e2e8f0)'}}>
-              <strong>{product.name}</strong><span style={{fontSize:12,color:'var(--muted,#64748b)'}}>{productRecipes.length} ingredient{productRecipes.length===1?'':'s'}</span>
-            </header>
-            <div style={{overflowX:'auto'}}><table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}><thead><tr>{['Ingredient','Quantity per product','Current stock',''].map(x=><th key={x} style={thStyle}>{x}</th>)}</tr></thead><tbody>{productRecipes.map(recipe=>{
+          return <details key={product.id} style={{border:'1px solid var(--border,#e2e8f0)',borderRadius:11,overflow:'hidden',background:'var(--surface,#fff)'}}>
+            <summary style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,padding:'13px 14px',background:'var(--subtle,#f8fafc)',cursor:'pointer',listStylePosition:'inside'}}>
+              <span style={{fontWeight:650}}>{product.name}</span><span style={{fontSize:12,color:'var(--muted,#64748b)',marginLeft:'auto',whiteSpace:'nowrap'}}>{productRecipes.length} ingredient{productRecipes.length===1?'':'s'}</span>
+            </summary>
+            <div style={{overflowX:'auto',borderTop:'1px solid var(--border,#e2e8f0)'}}><table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}><thead><tr>{['Ingredient','Quantity per product','Current stock',''].map(x=><th key={x} style={thStyle}>{x}</th>)}</tr></thead><tbody>{productRecipes.map(recipe=>{
               const item=itemMap.get(recipe.inventory_item_id);
               const amount=Number(recipe.quantity_per_product);
               return <tr key={recipe.id}><td style={tdStyle}>{item?.name ?? 'Inventory item unavailable'}</td><td style={tdStyle}>{amount.toLocaleString('en-PH',{maximumFractionDigits:3})} {recipe.quantity_unit ?? item?.unit ?? ''}</td><td style={tdStyle}>{item ? Number(item.quantity_on_hand).toLocaleString('en-PH',{maximumFractionDigits:3})+' '+item.unit : '—'}</td><td style={tdStyle}><button type="button" disabled={saving} onClick={()=>void removeRecipe(recipe)} style={buttonStyle}>Remove</button></td></tr>;
             })}</tbody></table></div>
-          </section>;
+          </details>;
         })}
       </div>}
     </section>
