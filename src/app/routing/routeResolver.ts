@@ -9,6 +9,8 @@ export type AppRouteContext = {
   isCustomerPasswordResetPage: boolean;
   isCustomerForgotPasswordPage: boolean;
   isPrivacyPage: boolean;
+  isTermsPage: boolean;
+  isRefundsPage: boolean;
   isCheckoutPage: boolean;
   trackOrderNumber: string | null;
   isRestaurantOrdersPage: boolean;
@@ -55,6 +57,8 @@ export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' |
   const isCustomerPasswordResetPage = searchParams.get('customer-password-reset') === '1';
   const isCustomerForgotPasswordPage = route === '#forgot-password';
   const isPrivacyPage = route === '#privacy';
+  const isTermsPage = route === '#terms';
+  const isRefundsPage = route === '#refunds';
   const isCheckoutPage = route === '#checkout';
   const trackOrderNumber = searchParams.get('trackOrder');
 
@@ -142,6 +146,8 @@ export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' |
     isCustomerPasswordResetPage,
     isCustomerForgotPasswordPage,
     isPrivacyPage,
+    isTermsPage,
+    isRefundsPage,
     isCheckoutPage,
     trackOrderNumber,
     isRestaurantOrdersPage,
