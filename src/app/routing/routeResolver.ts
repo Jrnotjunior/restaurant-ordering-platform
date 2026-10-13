@@ -70,6 +70,7 @@ export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' |
   const isRestaurantSalesPage = route === '#restaurant/sales';
   const isRestaurantBusinessReportsPage = route === '#restaurant/business-reports';
   const isRestaurantInventoryPage = route === '#restaurant/inventory';
+  const isRestaurantRecipesPage = route === '#restaurant/recipes';
   const isCashierSalesPage = route === '#restaurant/cashier-sales';
   const isCashierPosPage = route === '#restaurant/cashier-pos';
   const isRestaurantDeliveryDispatchPage = route === '#restaurant/delivery-dispatch';
