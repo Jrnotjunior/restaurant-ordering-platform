@@ -17,6 +17,7 @@ export type AppRouteContext = {
   isRestaurantMenuPage: boolean;
   isRestaurantSalesPage: boolean;
   isRestaurantBusinessReportsPage: boolean;
+  isRestaurantInventoryPage: boolean;
   isCashierSalesPage: boolean;
   isCashierPosPage: boolean;
   isRestaurantDeliveryDispatchPage: boolean;
@@ -67,6 +68,7 @@ export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' |
   const isRestaurantMenuPage = route === '#restaurant/menu';
   const isRestaurantSalesPage = route === '#restaurant/sales';
   const isRestaurantBusinessReportsPage = route === '#restaurant/business-reports';
+  const isRestaurantInventoryPage = route === '#restaurant/inventory';
   const isCashierSalesPage = route === '#restaurant/cashier-sales';
   const isCashierPosPage = route === '#restaurant/cashier-pos';
   const isRestaurantDeliveryDispatchPage = route === '#restaurant/delivery-dispatch';
@@ -130,6 +132,7 @@ export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' |
     isRestaurantMenuPage ||
     isRestaurantSalesPage ||
     isRestaurantBusinessReportsPage ||
+    isRestaurantInventoryPage ||
     isRestaurantDeliveryDispatchPage ||
     isRestaurantSettingsPage ||
     isRestaurantWebsiteCustomizationPage ||
@@ -157,6 +160,7 @@ export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' |
     isRestaurantMenuPage,
     isRestaurantSalesPage,
     isRestaurantBusinessReportsPage,
+    isRestaurantInventoryPage,
     isCashierSalesPage,
     isCashierPosPage,
     isRestaurantDeliveryDispatchPage,
