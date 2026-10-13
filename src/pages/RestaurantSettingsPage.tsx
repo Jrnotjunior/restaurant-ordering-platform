@@ -192,7 +192,6 @@ function normalizeHours(value: unknown): OperatingHours {
 
 export function RestaurantSettingsPage({ restaurantId }: Props) {
   const { setUnsavedChanges } = useOwnerUnsavedChanges();
-  const [storeName, setStoreName] = useState('');
   const [address, setAddress] = useState('');
   const [hours, setHours] = useState<OperatingHours>(DEFAULT_HOURS);
   const [vatRegistered, setVatRegistered] = useState(false);
@@ -237,12 +236,11 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     try {
       const { data, error: loadError } = await supabase
         .from('restaurants')
-        .select('name,store_address,location_text,ordering_enabled,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate,cash_on_delivery_enabled,automatic_rider_assignment_enabled,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,delivery_location_latitude,delivery_location_longitude')
+        .select('store_address,location_text,ordering_enabled,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate,cash_on_delivery_enabled,automatic_rider_assignment_enabled,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,delivery_location_latitude,delivery_location_longitude')
          .eq('id', restaurantId)
         .single();
 
       if (loadError) throw loadError;
-      setStoreName(data?.name ?? '');
       setAddress(data?.store_address ?? data?.location_text ?? '');
       setHours(normalizeHours(data?.operating_hours));
       setOrderingEnabled(data?.ordering_enabled !== false);
@@ -532,7 +530,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       const { error: saveError } = await supabase
         .from('restaurants')
         .update({
-          name: storeName.trim(),
           store_address: address.trim() || null,
           operating_hours: normalizedHours,
           ordering_enabled: orderingEnabled,
@@ -552,18 +549,14 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
       const { data: savedRow, error: verifyError } = await supabase
         .from('restaurants')
-        .select('name,store_address,operating_hours')
+        .select('store_address,operating_hours')
         .eq('id', restaurantId)
         .single();
 
       if (verifyError) throw verifyError;
 
       const savedHours = normalizeHours(savedRow?.operating_hours);
-      const savedName = savedRow?.name ?? '';
       const savedAddress = savedRow?.store_address ?? '';
-      if (savedName !== storeName.trim()) {
-        throw new Error('The store name was not stored correctly. Please try again.');
-      }
       if (savedAddress !== (address.trim() || '')) {
         throw new Error('The store address was not stored correctly. Please try again.');
       }
@@ -577,7 +570,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         throw new Error(`The ${mismatchedDay.label} operating hours were not stored correctly. Please try again.`);
       }
 
-      setStoreName(savedName);
       setAddress(savedAddress);
       setHours(savedHours);
       setMessage('Store settings saved successfully.');
@@ -698,22 +690,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       {message && <div className="owner-feedback-toast is-success" role="status"><span className="owner-feedback-toast-icon" aria-hidden="true">✓</span><div><strong>Changes saved</strong><p>{message}</p></div></div>}
 
       <form className="restaurant-settings-form" onSubmit={(event) => { event.preventDefault(); setShowSaveConfirmation(true); }}>
-        <div className="restaurant-settings-card">
-          <h2>Store name</h2>
-          <p className="restaurant-settings-help">This is the business name customers see in the pickup location on their order-tracking page.</p>
-          <label className="restaurant-settings-field" style={{ marginTop: 16 }}>
-            <span>Business name</span>
-            <input
-              type="text"
-              value={storeName}
-              onChange={(event) => { setStoreName(event.target.value); setMessage(''); setError(''); }}
-              placeholder="Your restaurant or branch name"
-              autoComplete="organization"
-              disabled={loading || saving}
-              required
-            />
-          </label>
-        </div>
         <div className="restaurant-settings-card">
           <h2>Store address</h2>
           <p className="restaurant-settings-help">Enter the full address customers and pickup couriers should use to find your store. This address powers the pickup location's Google Maps link and Copy Address action.</p>
