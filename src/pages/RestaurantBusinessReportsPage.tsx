@@ -1,0 +1,246 @@
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { getRestaurantSales } from '../modules/sales/salesService';
+import type { RestaurantOrder } from '../modules/ordering/orderService';
+import { supabase } from '../services/supabaseClient';
+
+type Props = { restaurantId: string };
+type ExpenseCategory = 'ingredients' | 'payroll' | 'rent' | 'utilities' | 'packaging' | 'delivery' | 'marketing' | 'maintenance' | 'supplies' | 'other';
+type Expense = { id: string; expense_date: string; category: ExpenseCategory; description: string; amount: number | string; created_at: string };
+type Tab = 'overview' | 'expenses' | 'tax';
+
+const CATEGORIES: { value: ExpenseCategory; label: string }[] = [
+  { value: 'ingredients', label: 'Ingredients & food' }, { value: 'payroll', label: 'Payroll' },
+  { value: 'rent', label: 'Rent' }, { value: 'utilities', label: 'Utilities' },
+  { value: 'packaging', label: 'Packaging' }, { value: 'delivery', label: 'Delivery costs' },
+  { value: 'marketing', label: 'Marketing' }, { value: 'maintenance', label: 'Maintenance' },
+  { value: 'supplies', label: 'Supplies' }, { value: 'other', label: 'Other' },
+];
+const peso = (amount: number) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount);
+const todayKey = () => {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? '';
+  return `${get('year')}-${get('month')}-${get('day')}`;
+};
+const monthStart = () => `${todayKey().slice(0, 7)}-01`;
+const csvEscape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+function downloadCsv(filename: string, rows: unknown[][]) {
+  const csv = rows.map((row) => row.map(csvEscape).join(',')).join('\r\n');
+  const url = URL.createObjectURL(new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' }));
+  const link = document.createElement('a');
+  link.href = url; link.download = filename; link.click();
+  URL.revokeObjectURL(url);
+}
+
+export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
+  const [tab, setTab] = useState<Tab>('overview');
+  const [orders, setOrders] = useState<RestaurantOrder[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [fromDate, setFromDate] = useState(monthStart);
+  const [toDate, setToDate] = useState(todayKey);
+  const [expenseDate, setExpenseDate] = useState(todayKey);
+  const [expenseCategory, setExpenseCategory] = useState<ExpenseCategory>('ingredients');
+  const [expenseDescription, setExpenseDescription] = useState('');
+  const [expenseAmount, setExpenseAmount] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+
+  async function loadData() {
+    if (!supabase) { setError('Supabase is not configured.'); setLoading(false); return; }
+    setLoading(true); setError('');
+    try {
+      const [sales, expenseResult] = await Promise.all([
+        getRestaurantSales(restaurantId),
+        supabase.from('restaurant_business_expenses').select('id,expense_date,category,description,amount,created_at').eq('restaurant_id', restaurantId).order('expense_date', { ascending: false }).limit(2000),
+      ]);
+      if (expenseResult.error) throw expenseResult.error;
+      setOrders(sales);
+      setExpenses((expenseResult.data ?? []) as Expense[]);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Unable to load business reports. Apply the business expenses database migration if this is the first setup.');
+    } finally { setLoading(false); }
+  }
+
+  useEffect(() => { void loadData(); }, [restaurantId]);
+
+  const rangeOrders = useMemo(() => orders.filter((order) => {
+    const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(order.createdAt));
+    return date >= fromDate && date <= toDate;
+  }), [orders, fromDate, toDate]);
+  const completedOrders = useMemo(() => rangeOrders.filter((order) => order.status === 'completed'), [rangeOrders]);
+  const rangeExpenses = useMemo(() => expenses.filter((expense) => expense.expense_date >= fromDate && expense.expense_date <= toDate), [expenses, fromDate, toDate]);
+  const totalSales = completedOrders.reduce((sum, order) => sum + order.total, 0);
+  const discounts = completedOrders.reduce((sum, order) => sum + (order.discountAmount ?? 0) + (order.loyaltyDiscountAmount ?? 0), 0);
+  const taxSales = completedOrders.reduce((sum, order) => sum + (order.taxNetSales ?? 0), 0);
+  const outputVat = completedOrders.reduce((sum, order) => sum + (order.taxVatAmount ?? 0), 0);
+  const totalExpenses = rangeExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+  const estimatedOperatingResult = totalSales - totalExpenses;
+  const vatConfiguredOrders = completedOrders.filter((order) => order.taxVatRegistered).length;
+
+  async function addExpense(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setError(''); setNotice('');
+    if (!supabase) { setError('Supabase is not configured.'); return; }
+    const amount = Number(expenseAmount);
+    if (!expenseDescription.trim() || !Number.isFinite(amount) || amount <= 0) { setError('Enter an expense description and an amount greater than zero.'); return; }
+    setSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error: insertError } = await supabase.from('restaurant_business_expenses').insert({
+        restaurant_id: restaurantId, expense_date: expenseDate, category: expenseCategory,
+        description: expenseDescription.trim(), amount, created_by: user?.id ?? null,
+      });
+      if (insertError) throw insertError;
+      setExpenseDescription(''); setExpenseAmount('');
+      setNotice('Expense saved.');
+      await loadData();
+      setTab('expenses');
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : 'Unable to save expense. Check that the expense-tracking migration has been applied.');
+    } finally { setSaving(false); }
+  }
+
+  async function deleteExpense(id: string) {
+    if (!supabase || !window.confirm('Delete this expense record?')) return;
+    setError(''); setNotice('');
+    const { error: deleteError } = await supabase.from('restaurant_business_expenses').delete().eq('id', id).eq('restaurant_id', restaurantId);
+    if (deleteError) { setError(deleteError.message); return; }
+    setExpenses((current) => current.filter((expense) => expense.id !== id));
+    setNotice('Expense deleted.');
+  }
+
+  function exportSales() {
+    downloadCsv(`sales-report-${fromDate}-to-${toDate}.csv`, [
+      ['Order number','Order date','Status','Order type','Payment method','Payment status','Order total PHP','Discounts PHP','Net sales per order record PHP','Taxable sales PHP','VAT amount PHP','VAT-exempt sales PHP','VAT registered on order'],
+      ...rangeOrders.map((order) => [order.orderNumber, order.createdAt, order.status, order.orderType, order.paymentMethod, order.paymentStatus, order.total, (order.discountAmount ?? 0) + (order.loyaltyDiscountAmount ?? 0), order.taxNetSales ?? '', order.taxVatableSales ?? '', order.taxVatAmount ?? '', order.taxVatExemptSales ?? '', order.taxVatRegistered ? 'Yes' : 'No']),
+    ]);
+  }
+
+  function exportTaxSupport() {
+    downloadCsv(`tax-support-sales-${fromDate}-to-${toDate}.csv`, [
+      ['Tax-support sales detail (not an official tax return or invoice)',''],
+      ['Period start', fromDate], ['Period end', toDate],
+      ['Report generated', new Date().toISOString()],
+      ['Note','Values are exported from recorded order tax fields; consult an accountant and verify current BIR requirements. Missing tax fields are left blank rather than estimated.'],
+      [],
+      ['Order number','Transaction date','Order status','Payment status','Gross order amount PHP','Discount amount PHP','Recorded net sales PHP','Recorded vatable sales PHP','Recorded VAT amount PHP','Recorded VAT-exempt sales PHP','VAT registered on order'],
+      ...rangeOrders.map((order) => [order.orderNumber, order.createdAt, order.status, order.paymentStatus, order.total, (order.discountAmount ?? 0) + (order.loyaltyDiscountAmount ?? 0), order.taxNetSales ?? '', order.taxVatableSales ?? '', order.taxVatAmount ?? '', order.taxVatExemptSales ?? '', order.taxVatRegistered ? 'Yes' : 'No']),
+      [],
+      ['Completed orders in period', completedOrders.length], ['Completed order totals PHP', totalSales],
+      ['Recorded net sales total PHP', completedOrders.reduce((sum, order) => sum + (order.taxNetSales ?? 0), 0)],
+      ['Recorded VAT total PHP', outputVat],
+    ]);
+  }
+
+  function exportExpenses() {
+    downloadCsv(`expenses-${fromDate}-to-${toDate}.csv`, [
+      ['Expense date','Category','Description','Amount PHP'],
+      ...rangeExpenses.map((expense) => [expense.expense_date, CATEGORIES.find((item) => item.value === expense.category)?.label ?? expense.category, expense.description, Number(expense.amount)]),
+      ['Total expenses PHP','','', totalExpenses],
+    ]);
+  }
+
+  return (
+    <section className="restaurant-page restaurant-business-reports">
+      <style>{`
+        .restaurant-business-reports{display:grid;gap:20px;max-width:1240px}
+        .business-reports-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+        .business-reports-header h1{margin:0 0 6px;font-size:clamp(24px,3vw,32px);letter-spacing:-.03em}
+        .business-reports-header p{margin:0;color:var(--muted,#64748b);max-width:720px;line-height:1.5}
+        .business-reports-range,.business-reports-form-grid{display:flex;align-items:end;gap:12px;flex-wrap:wrap}
+        .business-reports-range label,.business-reports-form label{display:grid;gap:6px;font-size:13px;font-weight:650;color:var(--text,#202938)}
+        .business-reports-range input,.business-reports-form input,.business-reports-form select{box-sizing:border-box;min-height:40px;border:1px solid var(--border,#dce2ea);border-radius:9px;padding:8px 10px;background:var(--surface,#fff);color:inherit;font:inherit}
+        .business-reports-tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--border,#e2e8f0);padding-bottom:10px}
+        .business-reports-tabs button,.business-reports-button{border:1px solid var(--border,#dce2ea);border-radius:9px;background:var(--surface,#fff);color:var(--text,#202938);padding:10px 14px;font:inherit;font-weight:650;cursor:pointer}
+        .business-reports-tabs button[aria-selected=true],.business-reports-button.primary{background:var(--color-primary,#111827);color:#fff;border-color:var(--color-primary,#111827)}
+        .business-reports-button:disabled{opacity:.55;cursor:wait}
+        .business-reports-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+        .business-reports-card,.business-reports-panel{border:1px solid var(--border,#e2e8f0);border-radius:14px;background:var(--surface,#fff);padding:17px;min-width:0}
+        .business-reports-card small{display:block;color:var(--muted,#64748b);font-size:12px;margin-bottom:9px}
+        .business-reports-card strong{font-size:clamp(17px,2vw,24px);letter-spacing:-.03em;overflow-wrap:anywhere}
+        .business-reports-panel h2{font-size:18px;margin:0 0 8px}
+        .business-reports-panel p{color:var(--muted,#64748b);font-size:13px;line-height:1.5}
+        .business-reports-table-wrap{overflow:auto}
+        .business-reports-table{width:100%;border-collapse:collapse;font-size:13px}
+        .business-reports-table th,.business-reports-table td{padding:11px 10px;border-bottom:1px solid var(--border,#e2e8f0);text-align:left;white-space:nowrap}
+        .business-reports-table th{color:var(--muted,#64748b);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+        .business-reports-table td.wrap{white-space:normal;min-width:140px}
+        .business-reports-form{display:grid;gap:14px}
+        .business-reports-form-grid>*{flex:1 1 180px}
+        .business-reports-notice{padding:12px 14px;border-radius:10px;background:#eff6ff;color:#1d4ed8;font-size:13px}
+        .business-reports-error{padding:12px 14px;border-radius:10px;background:#fef2f2;color:#991b1b;font-size:13px}
+        .business-reports-muted{color:var(--muted,#64748b);font-size:12px;line-height:1.5}
+        .business-reports-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+        @media(max-width:760px){.business-reports-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.business-reports-card,.business-reports-panel{padding:13px}.business-reports-range{align-items:stretch}.business-reports-range label{flex:1 1 130px}.business-reports-range input{width:100%}}
+      `}</style>
+      <header className="business-reports-header">
+        <div><h1>Business Reports</h1><p>Review sales performance, record operating expenses, and export transaction records for your accountant. Reports include only this restaurant's records.</p></div>
+        <div className="business-reports-range">
+          <label>From<input type="date" value={fromDate} max={toDate} onChange={(event) => setFromDate(event.target.value)} /></label>
+          <label>To<input type="date" value={toDate} min={fromDate} onChange={(event) => setToDate(event.target.value)} /></label>
+        </div>
+      </header>
+      <nav className="business-reports-tabs" role="tablist" aria-label="Business report sections">
+        {([['overview','Overview'],['expenses','Expenses & Profit'],['tax','Tax Reports']] as [Tab,string][]).map(([key,label]) => <button key={key} type="button" role="tab" aria-selected={tab===key} onClick={() => {setTab(key);setError('');setNotice('');}}>{label}</button>)}
+      </nav>
+      {error && <div className="business-reports-error" role="alert">{error}</div>}
+      {notice && <div className="business-reports-notice" role="status">{notice}</div>}
+      {loading ? <div className="business-reports-panel">Loading business data…</div> : <>
+        {tab === 'overview' && <>
+          <div className="business-reports-cards">
+            <div className="business-reports-card"><small>Completed sales</small><strong>{peso(totalSales)}</strong></div>
+            <div className="business-reports-card"><small>Completed orders</small><strong>{completedOrders.length}</strong></div>
+            <div className="business-reports-card"><small>Average order value</small><strong>{peso(completedOrders.length ? totalSales / completedOrders.length : 0)}</strong></div>
+            <div className="business-reports-card"><small>Recorded expenses</small><strong>{peso(totalExpenses)}</strong></div>
+          </div>
+          <section className="business-reports-panel"><h2>Sales by day</h2><p>Completed orders only. Cancelled and incomplete orders are not included in sales totals.</p>
+            <div className="business-reports-table-wrap"><table className="business-reports-table"><thead><tr><th>Date</th><th>Completed orders</th><th>Sales</th></tr></thead><tbody>
+              {Array.from(new Set(completedOrders.map((order) => new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(order.createdAt))))).sort((a,b)=>b.localeCompare(a)).map((date) => {
+                const dayOrders = completedOrders.filter((order) => new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(order.createdAt)) === date);
+                return <tr key={date}><td>{date}</td><td>{dayOrders.length}</td><td>{peso(dayOrders.reduce((sum,order)=>sum+order.total,0))}</td></tr>;
+              })}
+              {!completedOrders.length && <tr><td colSpan={3}>No completed orders in this period.</td></tr>}
+            </tbody></table></div>
+            <div className="business-reports-actions"><button className="business-reports-button primary" type="button" onClick={exportSales}>Export sales CSV</button></div>
+          </section>
+        </>}
+        {tab === 'expenses' && <>
+          <div className="business-reports-cards">
+            <div className="business-reports-card"><small>Completed sales</small><strong>{peso(totalSales)}</strong></div>
+            <div className="business-reports-card"><small>Recorded expenses</small><strong>{peso(totalExpenses)}</strong></div>
+            <div className="business-reports-card"><small>Estimated operating result</small><strong>{peso(estimatedOperatingResult)}</strong></div>
+            <div className="business-reports-card"><small>Expense entries</small><strong>{rangeExpenses.length}</strong></div>
+          </div>
+          <p className="business-reports-muted">Estimated operating result = completed order totals minus expenses entered here. This is not net profit or a tax calculation; ingredient costs, taxes, platform fees, and other unrecorded costs may be missing.</p>
+          <section className="business-reports-panel"><h2>Add an expense</h2><form className="business-reports-form" onSubmit={addExpense}>
+            <div className="business-reports-form-grid">
+              <label>Date<input type="date" value={expenseDate} required onChange={(event)=>setExpenseDate(event.target.value)} /></label>
+              <label>Category<select value={expenseCategory} onChange={(event)=>setExpenseCategory(event.target.value as ExpenseCategory)}>{CATEGORIES.map((item)=><option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
+              <label>Amount (₱)<input type="number" min="0.01" step="0.01" value={expenseAmount} required placeholder="0.00" onChange={(event)=>setExpenseAmount(event.target.value)} /></label>
+              <label>Description<input value={expenseDescription} required maxLength={240} placeholder="e.g. Fresh produce delivery" onChange={(event)=>setExpenseDescription(event.target.value)} /></label>
+            </div>
+            <div className="business-reports-actions"><button className="business-reports-button primary" type="submit" disabled={saving}>{saving?'Saving…':'Save expense'}</button><button className="business-reports-button" type="button" onClick={exportExpenses}>Export expenses CSV</button></div>
+          </form></section>
+          <section className="business-reports-panel"><h2>Expenses in selected period</h2><div className="business-reports-table-wrap"><table className="business-reports-table"><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th></th></tr></thead><tbody>
+            {rangeExpenses.map((expense)=><tr key={expense.id}><td>{expense.expense_date}</td><td>{CATEGORIES.find((item)=>item.value===expense.category)?.label ?? expense.category}</td><td className="wrap">{expense.description}</td><td>{peso(Number(expense.amount))}</td><td><button className="business-reports-button" type="button" onClick={()=>void deleteExpense(expense.id)}>Delete</button></td></tr>)}
+            {!rangeExpenses.length && <tr><td colSpan={5}>No expenses recorded for this period.</td></tr>}
+          </tbody></table></div></section>
+        </>}
+        {tab === 'tax' && <>
+          <div className="business-reports-cards">
+            <div className="business-reports-card"><small>Completed sales</small><strong>{peso(totalSales)}</strong></div>
+            <div className="business-reports-card"><small>Discounts recorded</small><strong>{peso(discounts)}</strong></div>
+            <div className="business-reports-card"><small>Recorded net sales</small><strong>{peso(taxSales)}</strong></div>
+            <div className="business-reports-card"><small>Recorded output VAT</small><strong>{peso(outputVat)}</strong></div>
+          </div>
+          <section className="business-reports-panel"><h2>Tax-support exports</h2>
+            <p>These files summarize order and tax fields already recorded by the platform. They are supporting records for review by your accountant, not official BIR invoices, books, returns, or confirmation that your business is tax-compliant. No tax rate is inferred when order tax data is missing.</p>
+            <p className="business-reports-muted">Orders with VAT registration recorded: {vatConfiguredOrders} of {completedOrders.length} completed orders in this period. Check your business registration and tax treatment with your accountant before relying on these totals.</p>
+            <div className="business-reports-actions"><button className="business-reports-button primary" type="button" onClick={exportTaxSupport}>Export tax-support CSV</button><button className="business-reports-button" type="button" onClick={exportSales}>Export detailed sales CSV</button></div>
+          </section>
+          <section className="business-reports-panel"><h2>Included in the export</h2><ul><li>Order number, date, status, and payment status</li><li>Recorded order amount and discounts</li><li>Recorded net sales, vatable sales, VAT amount, and VAT-exempt sales when available</li></ul><p>Tax status and amounts are taken from existing order records. Review data quality and applicable requirements before filing.</p></section>
+        </>}
+      </>}
+    </section>
+  );
+}
