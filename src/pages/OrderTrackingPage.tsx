@@ -322,24 +322,12 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
         )}
 
         {showPickupLocation && (
-          <section className="order-pickup-location-card" aria-label="Store pickup location">
-            <div className="order-pickup-location-header">
-              <div>
-                <p className="order-rider-label">Pickup location</p>
-                <h2>{order.restaurantName}</h2>
-              </div>
-              <span className="order-rider-status">Store</span>
-            </div>
-            <p className="order-pickup-location-message">{order.status === 'completed' ? 'Your order is complete.' : 'Collect your order here when it is ready.'}</p>
-            {getOrderDayHours() && (
-              <p className="order-pickup-hours-summary">
-                <strong>Store hours · {getOrderDayHours()?.dayLabel}</strong>
-                <span>{getOrderDayHours()?.value}</span>
-              </p>
-            )}
-            <div className="order-rider-actions">
-              <button className="button button-primary" type="button" onClick={openStoreLocation}>Open / Pin in Google Maps</button>
-            </div>
+          <section className="order-pickup-location-card order-pickup-location-card--compact" aria-label="Store pickup location">
+            <p className="order-rider-label">PICKUP LOCATION</p>
+            <h2>{order.restaurantName}</h2>
+            <button className="button button-primary order-pickup-map-button" type="button" onClick={openStoreLocation}>
+              Open in Google Maps
+            </button>
           </section>
         )}
 
