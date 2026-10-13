@@ -288,4 +288,38 @@
 .restaurant-owner-sidebar-support-button{width:100%;min-height:44px;display:flex;align-items:center;gap:13px;padding:0 13px;border:0;border-radius:9px;background:transparent;color:#aebbd0;font-family:inherit;font-size:13px;font-weight:600;line-height:1.25;text-align:left;opacity:.9}
 .restaurant-owner-sidebar-support-button svg{width:19px;height:19px;flex:0 0 auto}
 .restaurant-owner-sidebar-support-button:disabled{cursor:default}
+
+.restaurant-owner-sidebar-support-button{cursor:pointer;opacity:1;transition:background .15s ease,color .15s ease}
+.restaurant-owner-sidebar-support-button:hover{background:rgba(255,255,255,.07);color:#fff}
+.restaurant-support-overlay{position:fixed;inset:0;z-index:15000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(7,15,30,.62);backdrop-filter:blur(4px)}
+.restaurant-support-modal{width:min(100%,600px);max-height:min(90vh,850px);overflow:auto;box-sizing:border-box;padding:26px;border:1px solid #e2e8f0;border-radius:18px;background:#fff;color:#111827;box-shadow:0 28px 80px rgba(2,8,23,.3)}
+.restaurant-support-modal-header{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:22px}
+.restaurant-support-eyebrow{font-size:10px;letter-spacing:.12em;font-weight:800;color:#64748b}
+.restaurant-support-modal-header h2{margin:7px 0 6px;font-size:25px;line-height:1.2;letter-spacing:-.025em;color:#0f172a}
+.restaurant-support-modal-header p{margin:0;max-width:450px;color:#64748b;font-size:13px;line-height:1.55}
+.restaurant-support-close{width:34px;height:34px;flex:0 0 34px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;color:#64748b;font-size:23px;line-height:1;cursor:pointer}
+.restaurant-support-close:hover{background:#f8fafc;color:#0f172a}
+.restaurant-support-type-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:20px}
+.restaurant-support-type-grid button{display:flex;align-items:flex-start;gap:11px;padding:14px;border:1px solid #dbe2ea;border-radius:12px;background:#fff;color:#334155;text-align:left;cursor:pointer;transition:border-color .15s ease,background .15s ease,box-shadow .15s ease}
+.restaurant-support-type-grid button.is-selected{border-color:#0284c7;background:#f0f9ff;box-shadow:0 0 0 2px rgba(14,165,233,.12)}
+.restaurant-support-type-icon{width:28px;height:28px;flex:0 0 28px;display:grid;place-items:center;border-radius:9px;background:#e2e8f0;color:#334155;font-weight:800}
+.restaurant-support-type-grid button.is-selected .restaurant-support-type-icon{background:#bae6fd;color:#075985}
+.restaurant-support-type-grid strong,.restaurant-support-type-grid small{display:block}
+.restaurant-support-type-grid strong{font-size:13px;font-weight:750}
+.restaurant-support-type-grid small{margin-top:4px;color:#64748b;font-size:11px;line-height:1.45}
+.restaurant-support-field{display:grid;gap:7px;margin-top:15px;color:#334155;font-size:12px;font-weight:750}
+.restaurant-support-field input,.restaurant-support-field textarea,.restaurant-support-field select{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;color:#0f172a;font:inherit;font-size:13px;font-weight:400;outline:none}
+.restaurant-support-field textarea{resize:vertical;min-height:120px;line-height:1.5}
+.restaurant-support-field input:focus,.restaurant-support-field textarea:focus,.restaurant-support-field select:focus{border-color:#0284c7;box-shadow:0 0 0 3px rgba(14,165,233,.14)}
+.restaurant-support-feedback{margin:14px 0 0;padding:11px 13px;border:1px solid;border-radius:10px;font-size:12px;line-height:1.5}
+.restaurant-support-feedback.is-error{border-color:#fecaca;background:#fef2f2;color:#991b1b}
+.restaurant-support-feedback.is-success{border-color:#bbf7d0;background:#f0fdf4;color:#166534}
+.restaurant-support-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:24px;padding-top:18px;border-top:1px solid #e2e8f0}
+.restaurant-support-actions button{min-height:42px;padding:10px 16px;border:1px solid;border-radius:10px;font:inherit;font-size:13px;font-weight:750;cursor:pointer}
+.restaurant-support-actions button:disabled{opacity:.6;cursor:wait}
+.restaurant-support-secondary{border-color:#cbd5e1!important;background:#fff;color:#334155}
+.restaurant-support-primary{border-color:#0369a1!important;background:#0369a1;color:#fff}
+.restaurant-support-primary:hover{background:#075985}
+@media(max-width:560px){.restaurant-support-overlay{padding:10px;align-items:flex-end}.restaurant-support-modal{max-height:92vh;padding:20px;border-radius:18px 18px 12px 12px}.restaurant-support-type-grid{grid-template-columns:1fr}.restaurant-support-modal-header h2{font-size:22px}}
+
 @media(max-width:900px){.restaurant-owner-sidebar-support-button{justify-content:center;padding:0}.restaurant-owner-sidebar-support-button span{display:none}}
