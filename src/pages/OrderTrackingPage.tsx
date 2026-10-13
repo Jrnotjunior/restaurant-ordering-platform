@@ -40,6 +40,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
   const [cancellingOrder, setCancellingOrder] = useState(false);
   const [cancellationError, setCancellationError] = useState('');
   const [cancellationMessage, setCancellationMessage] = useState('');
+  const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
 
   useEffect(() => {
     if (!supabase) return;
@@ -160,11 +161,15 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
   const operatingHours = order.operatingHours;
   const showPickupLocation = isPickup && !isCancelled && Boolean(storeAddress);
 
-  async function cancelOrder() {
+  function cancelOrder() {
     if (!order || cancellingOrder) return;
-    const confirmed = window.confirm('Cancel this unpaid cash order? This cannot be undone.');
-    if (!confirmed) return;
+    setCancellationError('');
+    setShowCancelConfirmation(true);
+  }
 
+  async function confirmCancelOrder() {
+    if (!order || cancellingOrder) return;
+    setShowCancelConfirmation(false);
     setCancellingOrder(true);
     setCancellationError('');
     setCancellationMessage('');
@@ -286,6 +291,26 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
           {cancellationError ? <p className="checkout-error" role="alert">{cancellationError}</p> : null}
           {cancellationMessage ? <p className="checkout-success" role="status">{cancellationMessage}</p> : null}
         </details>
+
+        {showCancelConfirmation ? (
+          <div className="order-cancel-modal-backdrop" role="presentation" onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !cancellingOrder) setShowCancelConfirmation(false);
+          }}>
+            <section className="order-cancel-modal" role="dialog" aria-modal="true" aria-labelledby="order-cancel-modal-title" aria-describedby="order-cancel-modal-description">
+              <div className="order-cancel-modal-icon" aria-hidden="true">!</div>
+              <h2 id="order-cancel-modal-title">Cancel this order?</h2>
+              <p id="order-cancel-modal-description">Are you sure you want to cancel this unpaid cash order? This action cannot be undone.</p>
+              <div className="order-cancel-modal-actions">
+                <button className="button order-cancel-modal-confirm" type="button" onClick={() => void confirmCancelOrder()} disabled={cancellingOrder}>
+                  {cancellingOrder ? 'Cancelling…' : 'Yes, cancel order'}
+                </button>
+                <button className="button order-cancel-modal-dismiss" type="button" onClick={() => setShowCancelConfirmation(false)} disabled={cancellingOrder}>
+                  Keep order
+                </button>
+              </div>
+            </section>
+          </div>
+        ) : null}
 
         {order.deliveryStatus === 'failed' ? (
           <div className="order-tracking-cancelled">
