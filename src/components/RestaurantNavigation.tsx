@@ -105,6 +105,14 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
   const [passwordError, setPasswordError] = useState('');
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [logoutSaving, setLogoutSaving] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
+  const [supportType, setSupportType] = useState<'incident' | 'change_request'>('incident');
+  const [supportSubject, setSupportSubject] = useState('');
+  const [supportDescription, setSupportDescription] = useState('');
+  const [supportImpact, setSupportImpact] = useState('normal');
+  const [supportSubmitting, setSupportSubmitting] = useState(false);
+  const [supportError, setSupportError] = useState('');
+  const [supportSuccess, setSupportSuccess] = useState('');
   const restaurant = useRestaurant();
   const [ownerModules, setOwnerModules] = useState<Record<string, boolean>>({});
   const [modulesLoading, setModulesLoading] = useState(role === 'owner');
@@ -230,7 +238,7 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
             })}
           </nav>
           <div className="restaurant-owner-sidebar-support">
-            <button type="button" className="restaurant-owner-sidebar-support-button" disabled title="Support contact details will be added soon">
+            <button type="button" className="restaurant-owner-sidebar-support-button" onClick={() => { setSupportOpen(true); setSupportError(''); setSupportSuccess(''); }}>
               <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M4 13v-1a8 8 0 0 1 16 0v1" />
                 <path d="M4 12h3v6H5a2 2 0 0 1-2-2v-2a2 2 0 0 1 1-2ZM20 12h-3v6h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-1-2Z" />
@@ -240,6 +248,69 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
             </button>
           </div>
         </aside>
+        {supportOpen ? (
+          <div className="restaurant-support-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !supportSubmitting) setSupportOpen(false); }}>
+            <section className="restaurant-support-modal" role="dialog" aria-modal="true" aria-labelledby="restaurant-support-title">
+              <div className="restaurant-support-modal-header">
+                <div>
+                  <span className="restaurant-support-eyebrow">OWNER SUPPORT</span>
+                  <h2 id="restaurant-support-title">How can we help?</h2>
+                  <p>Submit an incident if something isn't working, or a change request to suggest an improvement.</p>
+                </div>
+                <button className="restaurant-support-close" type="button" aria-label="Close support form" disabled={supportSubmitting} onClick={() => setSupportOpen(false)}>×</button>
+              </div>
+              <form onSubmit={async (event: FormEvent) => {
+                event.preventDefault();
+                setSupportError('');
+                setSupportSuccess('');
+                if (!supabase) { setSupportError('Support submission is temporarily unavailable. Please try again later.'); return; }
+                if (!supportSubject.trim() || !supportDescription.trim()) { setSupportError('Please complete the subject and description.'); return; }
+                setSupportSubmitting(true);
+                try {
+                  const { data: { user } } = await supabase.auth.getUser();
+                  const { error } = await supabase.from('restaurant_support_requests').insert({
+                    restaurant_id: restaurant.id,
+                    requester_user_id: user?.id ?? null,
+                    requester_email: user?.email ?? email ?? null,
+                    request_type: supportType,
+                    subject: supportSubject.trim(),
+                    description: supportDescription.trim(),
+                    impact: supportImpact,
+                    status: 'open',
+                  });
+                  if (error) throw error;
+                  setSupportSuccess('Your request has been submitted. Our support team will follow up.');
+                  setSupportSubject('');
+                  setSupportDescription('');
+                  setSupportType('incident');
+                  setSupportImpact('normal');
+                } catch (submitError) {
+                  setSupportError(submitError instanceof Error ? submitError.message : 'Unable to submit your request. Please try again.');
+                } finally {
+                  setSupportSubmitting(false);
+                }
+              }}>
+                <div className="restaurant-support-type-grid">
+                  <button type="button" className={supportType === 'incident' ? 'is-selected' : ''} onClick={() => setSupportType('incident')} disabled={supportSubmitting}>
+                    <span className="restaurant-support-type-icon" aria-hidden="true">!</span><span><strong>Incident</strong><small>Report a bug, outage, or something broken.</small></span>
+                  </button>
+                  <button type="button" className={supportType === 'change_request' ? 'is-selected' : ''} onClick={() => setSupportType('change_request')} disabled={supportSubmitting}>
+                    <span className="restaurant-support-type-icon" aria-hidden="true">↗</span><span><strong>Change request</strong><small>Request a new feature or improvement.</small></span>
+                  </button>
+                </div>
+                <label className="restaurant-support-field">Subject<input value={supportSubject} onChange={(event) => setSupportSubject(event.target.value)} maxLength={160} placeholder={supportType === 'incident' ? 'Briefly describe the issue' : 'What would you like to change?'} required /></label>
+                <label className="restaurant-support-field">Description<textarea value={supportDescription} onChange={(event) => setSupportDescription(event.target.value)} maxLength={5000} rows={5} placeholder={supportType === 'incident' ? 'What happened? Include steps to reproduce and what you expected.' : 'Describe the change, why it would help, and how you expect it to work.'} required /></label>
+                <label className="restaurant-support-field">Impact / priority<select value={supportImpact} onChange={(event) => setSupportImpact(event.target.value)}><option value="low">Low — minor inconvenience</option><option value="normal">Normal — standard request</option><option value="high">High — work is significantly affected</option><option value="critical">Critical — business operations blocked</option></select></label>
+                {supportError ? <p className="restaurant-support-feedback is-error" role="alert">{supportError}</p> : null}
+                {supportSuccess ? <p className="restaurant-support-feedback is-success" role="status">{supportSuccess}</p> : null}
+                <div className="restaurant-support-actions">
+                  <button type="button" className="restaurant-support-secondary" disabled={supportSubmitting} onClick={() => setSupportOpen(false)}>Cancel</button>
+                  <button type="submit" className="restaurant-support-primary" disabled={supportSubmitting}>{supportSubmitting ? 'Submitting…' : 'Submit request'}</button>
+                </div>
+              </form>
+            </section>
+          </div>
+        ) : null}
         <header className="restaurant-owner-topbar">
           <div className="restaurant-owner-topbar-status"><span /> <div><strong>Live</strong><small>System Online</small></div></div>
           <div className="restaurant-owner-topbar-divider" />
