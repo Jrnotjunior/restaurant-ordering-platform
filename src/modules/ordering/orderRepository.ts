@@ -236,7 +236,7 @@ export async function getOrderStatus(orderId: string): Promise<TrackedOrder> {
   if (supabase) {
     const { data: restaurantSettings } = await supabase
       .from('restaurants')
-      .select('store_address, operating_hours, delivery_location_latitude, delivery_location_longitude')
+      .select('name, store_address, operating_hours, delivery_location_latitude, delivery_location_longitude')
       .eq('id', row.restaurant_id)
       .maybeSingle();
     storeAddress = restaurantSettings?.store_address ?? storeAddress;
@@ -250,7 +250,7 @@ export async function getOrderStatus(orderId: string): Promise<TrackedOrder> {
     orderNumber: row.order_number,
     createdAt,
     restaurantId: row.restaurant_id,
-    restaurantName: row.restaurant_name,
+    restaurantName: restaurantSettings?.name?.trim() || row.restaurant_name,
     storeAddress,
     storeLatitude,
     storeLongitude,
