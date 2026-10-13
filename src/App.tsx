@@ -12,6 +12,7 @@ import { RestaurantOrdersPage } from './pages/RestaurantOrdersPage';
 import { RestaurantMenuPage } from './pages/RestaurantMenuPage';
 import { RestaurantSalesPage } from './pages/RestaurantSalesPage';
 import { RestaurantBusinessReportsPage } from './pages/RestaurantBusinessReportsPage';
+import { RestaurantInventoryPage } from './pages/RestaurantInventoryPage';
 import { RestaurantCashierPosPage } from './pages/RestaurantCashierPosPage';
 import { RestaurantDeliveryDispatchPage } from './pages/RestaurantDeliveryDispatchPage';
 import { RestaurantSettingsPage } from './pages/RestaurantSettingsPage';
@@ -65,6 +66,7 @@ function withBasePath(path: string) {
   if (path === '/restaurant/menu') return `${base}/#restaurant/menu`;
   if (path === '/restaurant/sales') return `${base}/#restaurant/sales`;
   if (path === '/restaurant/business-reports') return `${base}/#restaurant/business-reports`;
+  if (path === '/restaurant/inventory') return `${base}/#restaurant/inventory`;
   if (path === '/restaurant/riders') return `${base}/#restaurant/riders`;
   if (path === '/restaurant/delivery-dispatch') return `${base}/#restaurant/delivery-dispatch`;
   if (path === '/restaurant/settings') return `${base}/#restaurant/settings`;
@@ -431,6 +433,10 @@ function AppContent() {
               ) : isRestaurantBusinessReportsPage ? (
                 <RestaurantModuleGuard restaurantId={ownerRestaurant.id!} anyOf={['sales']}>
                   <RestaurantBusinessReportsPage restaurantId={ownerRestaurant.id!} />
+                </RestaurantModuleGuard>
+              ) : isRestaurantInventoryPage ? (
+                <RestaurantModuleGuard restaurantId={ownerRestaurant.id!} anyOf={['sales']}>
+                  <RestaurantInventoryPage restaurantId={ownerRestaurant.id!} />
                 </RestaurantModuleGuard>
               ) : isRestaurantSettingsPage ? <RestaurantSettingsPage restaurantId={ownerRestaurant.id!} />
               : isRestaurantWebsiteCustomizationPage ? (
