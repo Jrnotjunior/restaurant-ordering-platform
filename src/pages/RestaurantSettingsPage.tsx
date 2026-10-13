@@ -685,6 +685,71 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
       <form className="restaurant-settings-form" onSubmit={(event) => { event.preventDefault(); setShowSaveConfirmation(true); }}>
         <div className="restaurant-settings-card">
+          <h2>Store status</h2>
+          <p className="restaurant-settings-help">Operating hours automatically control the normal opening and closing schedule. Use this switch when you need to manually close the store outside that schedule.</p>
+          <label className="restaurant-settings-switch-row">
+            <span>{orderingEnabled ? 'Store is open' : 'Store is manually closed'}</span>
+            <span className="restaurant-settings-switch">
+              <input
+                type="checkbox"
+                checked={orderingEnabled}
+                disabled={loading || saving}
+                onChange={(event) => { setOrderingEnabled(event.target.checked); setMessage(''); setError(''); }}
+                aria-label="Manual store closure"
+              />
+              <span className="restaurant-settings-switch-track" aria-hidden="true">
+                <span className="restaurant-settings-switch-thumb" />
+              </span>
+            </span>
+          </label>
+          <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Turn it off to close ordering immediately. Turn it back on to return control to the automatic operating hours.</p>
+        </div>
+
+                <div className="restaurant-settings-card">
+          <h2>Operating hours</h2>
+          <p className="restaurant-settings-help">Set the hours customers can visit the store. {openDays} of 7 days are currently open.</p>
+          <div className="restaurant-settings-days">
+            <div className="restaurant-settings-hours-head" aria-hidden="true">
+              <span>Day</span>
+              <span>Opens</span>
+              <span>Closes</span>
+              <span>Status</span>
+            </div>
+            {DAYS.map((day) => {
+              const value = hours[day.key];
+              return (
+                <div className="restaurant-settings-day" key={day.key}>
+                  <span className="restaurant-settings-day-name">{day.label}</span>
+                  <TimePicker
+                    label={day.label + ' opening time'}
+                    value={value.open}
+                    disabled={!value.isOpen || loading || saving}
+                    onChange={(next) => updateDay(day.key, { open: next })}
+                  />
+                  <TimePicker
+                    label={day.label + ' closing time'}
+                    value={value.close}
+                    disabled={!value.isOpen || loading || saving}
+                    onChange={(next) => updateDay(day.key, { close: next })}
+                  />
+                  <label className="restaurant-settings-switch" aria-label={day.label + ' open'}>
+                    <input
+                      type="checkbox"
+                      checked={value.isOpen}
+                      disabled={loading || saving}
+                      onChange={(event) => updateDay(day.key, { isOpen: event.target.checked })}
+                    />
+                    <span className="restaurant-settings-switch-track" aria-hidden="true">
+                      <span className="restaurant-settings-switch-thumb" />
+                    </span>
+                  </label>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+                <div className="restaurant-settings-card">
           <h2>Delivery pricing</h2>
           <p className="restaurant-settings-help">Delivery fees are calculated automatically from the restaurant to the customer's confirmed Google Maps location. You no longer need to configure Barangays and individual shipping fees.</p>
           <div className="restaurant-delivery-pricing-grid">
@@ -713,64 +778,47 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           </div>
         </div>
 
-        <div className="restaurant-settings-card">
-          <h2>Store status</h2>
-          <p className="restaurant-settings-help">Operating hours automatically control the normal opening and closing schedule. Use this switch when you need to manually close the store outside that schedule.</p>
+                <div className="restaurant-settings-card">
+          <h2>Automatic Rider Assignment</h2>
+          <p className="restaurant-settings-help">Automatically assign a ready delivery order to an available rider. The system assigns ready delivery orders to an available rider using the restaurant's rider workload and delivery history.</p>
           <label className="restaurant-settings-switch-row">
-            <span>{orderingEnabled ? 'Store is open' : 'Store is manually closed'}</span>
+            <span>Auto-assign delivery orders</span>
             <span className="restaurant-settings-switch">
               <input
                 type="checkbox"
-                checked={orderingEnabled}
-                disabled={loading || saving}
-                onChange={(event) => { setOrderingEnabled(event.target.checked); setMessage(''); setError(''); }}
-                aria-label="Manual store closure"
+                checked={automaticRiderAssignmentEnabled}
+                disabled
+                aria-label="Automatic Rider Assignment status"
               />
               <span className="restaurant-settings-switch-track" aria-hidden="true">
                 <span className="restaurant-settings-switch-thumb" />
               </span>
             </span>
           </label>
-          <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Turn it off to close ordering immediately. Turn it back on to return control to the automatic operating hours.</p>
+          <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Controlled by the System Administrator. Contact the System Administrator to request a workflow change.</p>
         </div>
 
-        <div className="restaurant-settings-card">
-          <h2>Tax &amp; receipt settings</h2>
-          <p className="restaurant-settings-help">These settings control POS tax calculations. The selected settings are copied into each finalized POS order so historical receipts remain unchanged if you update the store later.</p>
-          <div className="restaurant-settings-tax-grid">
-            <label className="restaurant-settings-switch-row">
-              <span>VAT registered</span>
-              <span className="restaurant-settings-switch">
-                <input
-                  type="checkbox"
-                  checked={vatRegistered}
-                  disabled
-                  onChange={() => undefined}
-                />
-                <span className="restaurant-settings-switch-track" aria-hidden="true">
-                  <span className="restaurant-settings-switch-thumb" />
-                </span>
+                <div className="restaurant-settings-card">
+          <h2>Cash on Delivery</h2>
+          <p className="restaurant-settings-help">Allow customers to place delivery orders and pay in cash when the order is received. Turning this off requires delivery customers to use Online Payment.</p>
+          <label className="restaurant-settings-switch-row">
+            <span>Accept Cash on Delivery</span>
+            <span className="restaurant-settings-switch">
+              <input
+                type="checkbox"
+                checked={cashOnDeliveryEnabled}
+                disabled
+                aria-label="Cash on Delivery status"
+              />
+              <span className="restaurant-settings-switch-track" aria-hidden="true">
+                <span className="restaurant-settings-switch-thumb" />
               </span>
-            </label>
-            {vatRegistered && (
-              <>
-                <label className="restaurant-settings-field">
-                  <span>VAT rate (%)</span>
-                  <input type="number" min="0" max="100" step="0.01" value={vatRate} disabled onChange={() => undefined} />
-                </label>
-                <label className="restaurant-settings-toggle">
-                  <input type="checkbox" checked={pricesVatInclusive} disabled onChange={() => undefined} />
-                  Menu prices are VAT-inclusive
-                </label>
-              </>
-            )}
-          </div>
-          <p className="restaurant-settings-help" style={{ marginTop: 12 }}>Controlled by the System Administrator. Contact the System Administrator to request a tax configuration change.</p>
-          <p className="restaurant-settings-help" style={{ marginTop: 12 }}>For Senior Citizen/PWD transactions, the POS applies the 20% discount to the eligible VAT-exclusive share and removes the corresponding VAT when the restaurant is VAT-registered. Verify the restaurant’s actual BIR registration and pricing treatment before enabling VAT settings.</p>
+            </span>
+          </label>
+          <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Controlled by the System Administrator. Contact the System Administrator to request a workflow change.</p>
         </div>
 
-
-        <div className="restaurant-settings-card restaurant-paymongo-card">
+                <div className="restaurant-settings-card restaurant-paymongo-card">
           {paymongoError && <div className="restaurant-paymongo-error" role="alert">
             <strong>PayMongo connection error</strong>
             <span>{paymongoError}</span>
@@ -817,95 +865,44 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           <p className="restaurant-settings-help" style={{ marginTop: 12 }}>Test mode uses a PayMongo simulated merchant account, so no real identity verification is required. Production live payments will use the same restaurant-specific architecture with real merchant onboarding after the platform is ready for launch.</p>
         </div>
 
+                <PayMongoLiveOnboardingCard restaurantId={restaurantId} />
 
-
-        <PayMongoLiveOnboardingCard restaurantId={restaurantId} />
-
-        <div className="restaurant-settings-card">
-          <h2>Cash on Delivery</h2>
-          <p className="restaurant-settings-help">Allow customers to place delivery orders and pay in cash when the order is received. Turning this off requires delivery customers to use Online Payment.</p>
-          <label className="restaurant-settings-switch-row">
-            <span>Accept Cash on Delivery</span>
-            <span className="restaurant-settings-switch">
-              <input
-                type="checkbox"
-                checked={cashOnDeliveryEnabled}
-                disabled
-                aria-label="Cash on Delivery status"
-              />
-              <span className="restaurant-settings-switch-track" aria-hidden="true">
-                <span className="restaurant-settings-switch-thumb" />
+                <div className="restaurant-settings-card">
+          <h2>Tax &amp; receipt settings</h2>
+          <p className="restaurant-settings-help">These settings control POS tax calculations. The selected settings are copied into each finalized POS order so historical receipts remain unchanged if you update the store later.</p>
+          <div className="restaurant-settings-tax-grid">
+            <label className="restaurant-settings-switch-row">
+              <span>VAT registered</span>
+              <span className="restaurant-settings-switch">
+                <input
+                  type="checkbox"
+                  checked={vatRegistered}
+                  disabled
+                  onChange={() => undefined}
+                />
+                <span className="restaurant-settings-switch-track" aria-hidden="true">
+                  <span className="restaurant-settings-switch-thumb" />
+                </span>
               </span>
-            </span>
-          </label>
-          <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Controlled by the System Administrator. Contact the System Administrator to request a workflow change.</p>
-        </div>
-
-        <div className="restaurant-settings-card">
-          <h2>Automatic Rider Assignment</h2>
-          <p className="restaurant-settings-help">Automatically assign a ready delivery order to an available rider. The system assigns ready delivery orders to an available rider using the restaurant's rider workload and delivery history.</p>
-          <label className="restaurant-settings-switch-row">
-            <span>Auto-assign delivery orders</span>
-            <span className="restaurant-settings-switch">
-              <input
-                type="checkbox"
-                checked={automaticRiderAssignmentEnabled}
-                disabled
-                aria-label="Automatic Rider Assignment status"
-              />
-              <span className="restaurant-settings-switch-track" aria-hidden="true">
-                <span className="restaurant-settings-switch-thumb" />
-              </span>
-            </span>
-          </label>
-          <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Controlled by the System Administrator. Contact the System Administrator to request a workflow change.</p>
-        </div>
-
-        <div className="restaurant-settings-card">
-          <h2>Operating hours</h2>
-          <p className="restaurant-settings-help">Set the hours customers can visit the store. {openDays} of 7 days are currently open.</p>
-          <div className="restaurant-settings-days">
-            <div className="restaurant-settings-hours-head" aria-hidden="true">
-              <span>Day</span>
-              <span>Opens</span>
-              <span>Closes</span>
-              <span>Status</span>
-            </div>
-            {DAYS.map((day) => {
-              const value = hours[day.key];
-              return (
-                <div className="restaurant-settings-day" key={day.key}>
-                  <span className="restaurant-settings-day-name">{day.label}</span>
-                  <TimePicker
-                    label={day.label + ' opening time'}
-                    value={value.open}
-                    disabled={!value.isOpen || loading || saving}
-                    onChange={(next) => updateDay(day.key, { open: next })}
-                  />
-                  <TimePicker
-                    label={day.label + ' closing time'}
-                    value={value.close}
-                    disabled={!value.isOpen || loading || saving}
-                    onChange={(next) => updateDay(day.key, { close: next })}
-                  />
-                  <label className="restaurant-settings-switch" aria-label={day.label + ' open'}>
-                    <input
-                      type="checkbox"
-                      checked={value.isOpen}
-                      disabled={loading || saving}
-                      onChange={(event) => updateDay(day.key, { isOpen: event.target.checked })}
-                    />
-                    <span className="restaurant-settings-switch-track" aria-hidden="true">
-                      <span className="restaurant-settings-switch-thumb" />
-                    </span>
-                  </label>
-                </div>
-              );
-            })}
+            </label>
+            {vatRegistered && (
+              <>
+                <label className="restaurant-settings-field">
+                  <span>VAT rate (%)</span>
+                  <input type="number" min="0" max="100" step="0.01" value={vatRate} disabled onChange={() => undefined} />
+                </label>
+                <label className="restaurant-settings-toggle">
+                  <input type="checkbox" checked={pricesVatInclusive} disabled onChange={() => undefined} />
+                  Menu prices are VAT-inclusive
+                </label>
+              </>
+            )}
           </div>
+          <p className="restaurant-settings-help" style={{ marginTop: 12 }}>Controlled by the System Administrator. Contact the System Administrator to request a tax configuration change.</p>
+          <p className="restaurant-settings-help" style={{ marginTop: 12 }}>For Senior Citizen/PWD transactions, the POS applies the 20% discount to the eligible VAT-exclusive share and removes the corresponding VAT when the restaurant is VAT-registered. Verify the restaurant’s actual BIR registration and pricing treatment before enabling VAT settings.</p>
         </div>
 
-        <div className="restaurant-settings-actions">
+                <div className="restaurant-settings-actions">
           <button className="button button-primary" type="submit" disabled={loading || saving}>
             {saving ? 'Saving…' : 'Save Store Settings'}
           </button>
