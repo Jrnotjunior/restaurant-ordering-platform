@@ -29,7 +29,6 @@ function downloadSpreadsheet(filename: string, rows: unknown[][]) {
   const rowCount = rows.length;
   const navy = '17243A';
   const blue = '2563EB';
-  const paleBlue = 'EAF1FB';
   const paleGray = 'F4F6FA';
   const border = { style: 'thin', color: { rgb: 'D9E1EE' } };
   worksheet['!cols'] = Array.from({ length: columnCount }, (_, columnIndex) => {
@@ -58,7 +57,6 @@ function downloadSpreadsheet(filename: string, rows: unknown[][]) {
       const isHeader = headerRows.has(r);
       const isTitle = r === titleRow;
       const isTotal = firstCell(r).includes('total') || firstCell(r).includes('completed orders in period');
-      const isSection = r > 0 && rows[r].length > 1 && ['status', 'completed orders in period'].includes(firstCell(r)) && typeof rows[r][1] === 'number';
       target.s = {
         font: { name: 'Aptos', sz: isTitle ? 15 : 10, bold: isTitle || isHeader || isTotal, color: { rgb: isTitle || isHeader ? 'FFFFFF' : navy } },
         fill: { patternType: 'solid', fgColor: { rgb: isTitle ? navy : isHeader ? blue : isTotal ? 'E3F4E8' : (r % 2 === 0 ? 'FFFFFF' : paleGray) } },
