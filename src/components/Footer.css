@@ -92,9 +92,12 @@
   .site-footer-legal-title {
     display: block;
     width: 100%;
-    font-size: clamp(0.62rem, 2.2vw, 0.76rem);
+    max-width: 5.5rem;
+    margin-inline: auto;
+    font-size: clamp(0.68rem, 2.5vw, 0.76rem);
     line-height: 1.2;
     text-align: center;
+    white-space: normal;
     overflow-wrap: normal;
     word-break: normal;
     hyphens: none;
