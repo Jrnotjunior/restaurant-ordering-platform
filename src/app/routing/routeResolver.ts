@@ -18,6 +18,7 @@ export type AppRouteContext = {
   isRestaurantSalesPage: boolean;
   isRestaurantBusinessReportsPage: boolean;
   isRestaurantInventoryPage: boolean;
+  isRestaurantRecipesPage: boolean;
   isCashierSalesPage: boolean;
   isCashierPosPage: boolean;
   isRestaurantDeliveryDispatchPage: boolean;
