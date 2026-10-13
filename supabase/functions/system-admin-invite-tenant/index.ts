@@ -270,7 +270,8 @@ Deno.serve(async (request) => {
 
     let emailSent = !reusedExistingAccount;
     if (reusedExistingAccount) {
-      const redirectBase = (Deno.env.get("APP_URL") ?? Deno.env.get("SITE_URL") ?? "").replace(/\\/$/, "");
+      const configuredRedirectBase = Deno.env.get("APP_URL") ?? Deno.env.get("SITE_URL") ?? "";
+      const redirectBase = configuredRedirectBase.endsWith("/") ? configuredRedirectBase.slice(0, -1) : configuredRedirectBase;
       if (!redirectBase) {
         return jsonResponse({
           success: true,
