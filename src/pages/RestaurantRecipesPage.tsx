@@ -79,7 +79,12 @@ export function RestaurantRecipesPage({ restaurantId }: Props) {
     {notice && <div role="status" style={{padding:12,borderRadius:10,background:'#eff6ff',color:'#1d4ed8'}}>{notice}</div>}
     <section style={{padding:18,border:'1px solid var(--border,#e2e8f0)',borderRadius:14,background:'var(--surface,#fff)'}}>
       <h2 style={{margin:'0 0 12px',fontSize:18}}>Add ingredient to a menu product</h2>
-      {loading ? <p>Loading menu and inventory…</p> : products.length === 0 || inventory.length === 0 ? <p>Add menu products and inventory items first. Then return here to link them.</p> : <form onSubmit={(e)=>void addRecipe(e)} style={{display:'grid',gridTemplateColumns:'2fr 2fr 1fr auto',gap:10,alignItems:'end'}}>
+      {loading ? <p>Loading menu and inventory…</p> : products.length === 0 || inventory.length === 0 ? <div style={{display:'grid',gap:8}}>
+        {products.length === 0 && <p style={{margin:0}}>No menu products were found for this restaurant. Add a product in <strong>Products</strong>, then refresh this page.</p>}
+        {inventory.length === 0 && <p style={{margin:0}}>No inventory items were found for this restaurant. Add an ingredient in <strong>Inventory</strong>, then refresh this page.</p>}
+        <p style={{margin:0,fontSize:12,color:'var(--muted,#64748b)'}}>Loaded {products.length} menu product(s) and {inventory.length} inventory item(s).</p>
+        <div><button type="button" disabled={saving || loading} onClick={()=>void load()} style={buttonStyle}>Refresh menu and inventory</button></div>
+      </div> : <form onSubmit={(e)=>void addRecipe(e)} style={{display:'grid',gridTemplateColumns:'2fr 2fr 1fr auto',gap:10,alignItems:'end'}}>
         <label style={{display:'grid',gap:6,fontSize:13}}>Menu product<select required value={productId} onChange={(e)=>setProductId(e.target.value)} style={fieldStyle}>{products.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
         <label style={{display:'grid',gap:6,fontSize:13}}>Ingredient / supply<select required value={itemId} onChange={(e)=>setItemId(e.target.value)} style={fieldStyle}>{inventory.map(i=><option key={i.id} value={i.id}>{i.name} ({i.unit})</option>)}</select></label>
         <label style={{display:'grid',gap:6,fontSize:13}}>Quantity per product<input required type="number" min="0.001" step="0.001" value={quantity} onChange={(e)=>setQuantity(e.target.value)} style={fieldStyle}/></label>
