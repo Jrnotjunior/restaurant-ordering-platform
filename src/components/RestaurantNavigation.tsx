@@ -189,7 +189,7 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
       });
     const channel = client.channel('restaurant-support-ticket-list-' + restaurant.id)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'restaurant_support_requests', filter: 'restaurant_id=eq.' + restaurant.id }, () => {
-        void supabase.from('restaurant_support_requests').select('id,request_number,subject,status,created_at,updated_at').eq('restaurant_id', restaurant.id).order('created_at', { ascending: false })
+        void client.from('restaurant_support_requests').select('id,request_number,subject,status,created_at,updated_at').eq('restaurant_id', restaurant.id).order('created_at', { ascending: false })
           .then(({ data }) => { if (active && data) setSupportTickets(data as OwnerSupportTicket[]); });
       }).subscribe();
     return () => { active = false; void client.removeChannel(channel); };
@@ -215,7 +215,7 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
     const channel = client.channel('restaurant-support-messages-' + selectedSupportTicketId)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_ticket_messages', filter: 'ticket_id=eq.' + selectedSupportTicketId }, () => { void loadMessages(); })
       .subscribe();
-    return () => { active = false; void supabase.removeChannel(channel); };
+    return () => { active = false; void client.removeChannel(channel); };
   }, [supportOpen, supportView, selectedSupportTicketId]);
 
   async function sendSupportReply(event: FormEvent<HTMLFormElement>) {
