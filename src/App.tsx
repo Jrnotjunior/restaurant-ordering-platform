@@ -68,6 +68,7 @@ function withBasePath(path: string) {
   if (path === '/restaurant/sales') return `${base}/#restaurant/sales`;
   if (path === '/restaurant/business-reports') return `${base}/#restaurant/business-reports`;
   if (path === '/restaurant/inventory') return `${base}/#restaurant/inventory`;
+  if (path === '/restaurant/recipes') return `${base}/#restaurant/recipes`;
   if (path === '/restaurant/riders') return `${base}/#restaurant/riders`;
   if (path === '/restaurant/delivery-dispatch') return `${base}/#restaurant/delivery-dispatch`;
   if (path === '/restaurant/settings') return `${base}/#restaurant/settings`;
