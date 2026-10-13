@@ -131,7 +131,7 @@ export function RestaurantRecipesPage({ restaurantId }: Props) {
         <label style={{display:'grid',gap:6,fontSize:13}}>Menu product<select required value={productId} onChange={(e)=>setProductId(e.target.value)} style={fieldStyle}>{products.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
         <label style={{display:'grid',gap:6,fontSize:13}}>Ingredient / supply<select required value={itemId} onChange={(e)=>{const id=e.target.value;setItemId(id);const selected=inventory.find(i=>i.id===id);if(selected)setQuantityUnit(defaultRecipeUnit(selected.unit));}} style={fieldStyle}>{inventory.map(i=><option key={i.id} value={i.id}>{i.name} (stock in {i.unit})</option>)}</select></label>
         <label style={{display:'grid',gap:6,fontSize:13}}>Quantity per product<div style={{display:'grid',gridTemplateColumns:'minmax(70px,1fr) minmax(90px,1fr)',gap:6}}><input aria-label="Quantity per product" required type="number" min="0.001" step="0.001" value={quantity} onChange={(e)=>setQuantity(e.target.value)} style={fieldStyle}/><select aria-label="Recipe measurement unit" value={quantityUnit} onChange={(e)=>setQuantityUnit(e.target.value)} style={fieldStyle}>{(inventory.find(i=>i.id===itemId)?optionsForUnit(inventory.find(i=>i.id===itemId)!.unit):['g']).map(unit=><option key={unit} value={unit}>{measurements[unitKey(unit)]?.label ?? unit}</option>)}</select></div></label>
-        <button type="submit" disabled={saving} style={buttonStyle}>{saving?'Saving…':'Save link'}</button>
+        <button type="submit" disabled={saving} style={primaryButtonStyle}>{saving?'Saving…':'Save link'}</button>
       </form>}
       <p style={{fontSize:12,color:'var(--muted,#64748b)',lineHeight:1.5,marginBottom:0}}>Choose the measurement that is easiest for your kitchen. For example, enter 200 g even when stock is tracked in kg; the system converts it automatically. Saving the same product + ingredient pair updates its quantity.</p>
     </section>
@@ -160,5 +160,6 @@ export function RestaurantRecipesPage({ restaurantId }: Props) {
 
 const fieldStyle: CSSProperties = {width:'100%',boxSizing:'border-box',minHeight:40,border:'1px solid var(--border,#dce2ea)',borderRadius:9,padding:'8px 10px',background:'var(--surface,#fff)',color:'inherit',font:'inherit'};
 const buttonStyle: React.CSSProperties = {border:'1px solid var(--border,#dce2ea)',borderRadius:9,padding:'9px 12px',background:'var(--surface,#fff)',color:'var(--text,#202938)',font:'inherit',fontWeight:650,cursor:'pointer'};
+const primaryButtonStyle: React.CSSProperties = {...buttonStyle,border:'1px solid var(--primary-color,var(--primary,#2563eb))',background:'var(--primary-color,var(--primary,#2563eb))',color:'#fff'};
 const thStyle: React.CSSProperties = {padding:'11px 10px',borderBottom:'1px solid var(--border,#e2e8f0)',textAlign:'left',fontSize:11,textTransform:'uppercase',color:'var(--muted,#64748b)'};
 const tdStyle: React.CSSProperties = {padding:'11px 10px',borderBottom:'1px solid var(--border,#e2e8f0)',textAlign:'left',verticalAlign:'top'};
