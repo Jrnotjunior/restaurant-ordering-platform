@@ -238,6 +238,17 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
     <section className="restaurant-page restaurant-shipping-page">
       <style>{`
         .website-customization-form{display:grid;gap:22px}
+        .website-customization-notice{display:flex;align-items:flex-start;gap:12px;margin:0 0 18px;padding:14px 16px;border:1px solid;border-radius:12px;font-size:14px;line-height:1.5;box-shadow:0 2px 8px rgba(15,23,42,.035);animation:websiteNoticeIn .18s ease-out}
+        .website-customization-notice-icon{width:24px;height:24px;flex:0 0 24px;display:grid;place-items:center;border-radius:50%;font-size:13px;font-weight:800}
+        .website-customization-notice-content{min-width:0;flex:1}
+        .website-customization-notice-title{display:block;margin:0 0 2px;font-size:13px;font-weight:750;letter-spacing:.01em}
+        .website-customization-notice-message{margin:0;font-size:13px}
+        .website-customization-notice.is-success{background:#f0fdf4;border-color:#bbf7d0;color:#166534}
+        .website-customization-notice.is-success .website-customization-notice-icon{background:#dcfce7;color:#15803d}
+        .website-customization-notice.is-error{background:#fff7f7;border-color:#fecaca;color:#991b1b}
+        .website-customization-notice.is-error .website-customization-notice-icon{background:#fee2e2;color:#b91c1c}
+        @keyframes websiteNoticeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+        @media(prefers-reduced-motion:reduce){.website-customization-notice{animation:none}}
         .website-customization-header{padding:24px;border:1px solid #e1e5eb;border-radius:14px;background:#fff}
         .website-customization-card{padding:24px;border:1px solid #e1e5eb;border-radius:14px;background:#fff}
         .website-customization-live-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid}
@@ -340,8 +351,24 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         @media(max-width:700px){.website-customization-branding-grid,.website-customization-style-grid{grid-template-columns:1fr}.website-customization-grid,.website-customization-toggle-grid,.website-customization-live-section-grid{grid-template-columns:1fr}.website-customization-preview-launch-card{align-items:flex-start;flex-direction:column}.website-customization-phone{width:320px;height:650px}.website-customization-live-hero h3{font-size:24px}.website-customization-actions-bar .button{width:100%}}
       `}</style>
 
-      {error ? <div className="restaurant-shipping-message is-error" role="alert">{error}</div> : null}
-      {message ? <div className="restaurant-shipping-message is-success" role="status">{message}</div> : null}
+      {error ? (
+        <div className="website-customization-notice is-error" role="alert">
+          <span className="website-customization-notice-icon" aria-hidden="true">!</span>
+          <div className="website-customization-notice-content">
+            <strong className="website-customization-notice-title">Couldn't complete that action</strong>
+            <p className="website-customization-notice-message">{error}</p>
+          </div>
+        </div>
+      ) : null}
+      {message ? (
+        <div className="website-customization-notice is-success" role="status">
+          <span className="website-customization-notice-icon" aria-hidden="true">✓</span>
+          <div className="website-customization-notice-content">
+            <strong className="website-customization-notice-title">Changes saved</strong>
+            <p className="website-customization-notice-message">{message}</p>
+          </div>
+        </div>
+      ) : null}
 
       <form className="website-customization-form" onSubmit={(event: FormEvent) => { event.preventDefault(); setShowSaveConfirmation(true); }}>
         <div className="website-customization-header">
