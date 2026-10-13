@@ -3,6 +3,7 @@ import { loadOwnerStats, type OwnerStats } from '../modules/sales/salesService';
 import { supabase } from '../services/supabaseClient';
 
 export type RestaurantRole = 'owner' | 'cashier' | 'kitchen' | 'dispatcher';
+type InventoryAlertItem = { id: string; name: string; unit: string; quantity_on_hand: number | string; low_stock_threshold: number | string };
 
 const roleInfo = {
   owner: { eyebrow: 'Restaurant owner', title: 'Owner Dashboard', description: 'Manage your restaurant, team, products, orders, and operations.' },
@@ -22,6 +23,8 @@ function OwnerDashboard({ restaurantName, restaurantId }: { restaurantName?: str
   const [stats, setStats] = useState<OwnerStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [inventoryItems, setInventoryItems] = useState<InventoryAlertItem[]>([]);
+  const [inventoryLoading, setInventoryLoading] = useState(true);
 
   useEffect(() => {
     if (!restaurantId) return;
@@ -51,6 +54,34 @@ function OwnerDashboard({ restaurantName, restaurantId }: { restaurantName?: str
     };
   }, [restaurantId]);
 
+  useEffect(() => {
+    if (!restaurantId || !supabase) { setInventoryLoading(false); return; }
+    let mounted = true;
+    const loadInventoryAlerts = async () => {
+      const { data, error: inventoryError } = await supabase
+        .from('restaurant_inventory_items')
+        .select('id,name,unit,quantity_on_hand,low_stock_threshold')
+        .eq('restaurant_id', restaurantId)
+        .order('name');
+      if (!mounted) return;
+      if (inventoryError) {
+        console.error('Unable to load inventory alerts.', inventoryError);
+      } else {
+        setInventoryItems((data ?? []) as InventoryAlertItem[]);
+      }
+      setInventoryLoading(false);
+    };
+    void loadInventoryAlerts();
+    const channel = supabase.channel(`owner-inventory-alerts:${restaurantId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'restaurant_inventory_items', filter: `restaurant_id=eq.${restaurantId}` }, () => { void loadInventoryAlerts(); })
+      .subscribe();
+    return () => { mounted = false; void supabase.removeChannel(channel); };
+  }, [restaurantId]);
+
+  const outOfStockItems = inventoryItems.filter((item) => Number(item.quantity_on_hand) <= 0);
+  const lowStockItems = inventoryItems.filter((item) => Number(item.quantity_on_hand) > 0 && Number(item.quantity_on_hand) <= Number(item.low_stock_threshold));
+  const alertItems = [...outOfStockItems, ...lowStockItems];
+
   const statCards = useMemo(() => [
     { label: 'Today\'s Sales', value: loading ? '—' : `₱${(stats?.sales ?? 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}` },
   ], [loading, stats]);
@@ -66,6 +97,23 @@ function OwnerDashboard({ restaurantName, restaurantId }: { restaurantName?: str
             <strong>{card.value}</strong>
           </article>
         ))}
+      </section>
+
+      <section className="restaurant-owner-dashboard-chart" aria-label="Inventory alerts">
+        <div className="restaurant-owner-dashboard-chart-heading">
+          <div><p className="eyebrow">Stock monitoring</p><h2>Inventory alerts</h2></div>
+          <a href="#restaurant/inventory">Manage inventory →</a>
+        </div>
+        {inventoryLoading ? <div className="restaurant-owner-dashboard-chart-empty">Checking stock levels…</div> : alertItems.length ? (
+          <div style={{display:'grid',gap:8}}>
+            {outOfStockItems.map((item) => <div key={item.id} style={{display:'flex',justifyContent:'space-between',gap:12,alignItems:'center',padding:'10px 12px',borderRadius:10,background:'#fef2f2',color:'#991b1b'}}>
+              <strong>{item.name}</strong><span>Out of stock · {Number(item.quantity_on_hand)} {item.unit}</span>
+            </div>)}
+            {lowStockItems.map((item) => <div key={item.id} style={{display:'flex',justifyContent:'space-between',gap:12,alignItems:'center',padding:'10px 12px',borderRadius:10,background:'#fffbeb',color:'#92400e'}}>
+              <strong>{item.name}</strong><span>Low stock · {Number(item.quantity_on_hand)} {item.unit} left (level {Number(item.low_stock_threshold)} {item.unit})</span>
+            </div>)}
+          </div>
+        ) : <div className="restaurant-owner-dashboard-chart-empty">{inventoryItems.length ? 'All tracked items have sufficient stock.' : 'No inventory items yet. Add ingredients and low-stock levels in Inventory to start receiving alerts.'}</div>}
       </section>
 
       <section className="restaurant-owner-dashboard-chart">
