@@ -40,6 +40,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
   const [cancellingOrder, setCancellingOrder] = useState(false);
   const [cancellationError, setCancellationError] = useState('');
   const [cancellationMessage, setCancellationMessage] = useState('');
+  const [addressCopied, setAddressCopied] = useState(false);
 
   useEffect(() => {
     if (!supabase) return;
@@ -225,13 +226,28 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
   }
 
   function openStoreLocation() {
-    if (!storeAddress || !order) return;
-    const latitude = order.storeLatitude;
-    const longitude = order.storeLongitude;
-    const hasSavedCoordinates = latitude != null && longitude != null
-      && Number.isFinite(latitude) && Number.isFinite(longitude);
-    const query = hasSavedCoordinates ? `${latitude},${longitude}` : storeAddress;
-    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank', 'noopener,noreferrer');
+    if (!storeAddress) return;
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(storeAddress)}`, '_blank', 'noopener,noreferrer');
+  }
+
+  async function copyStoreAddress() {
+    if (!storeAddress) return;
+    try {
+      await navigator.clipboard.writeText(storeAddress);
+    } catch {
+      const input = document.createElement('textarea');
+      input.value = storeAddress;
+      input.setAttribute('readonly', '');
+      input.style.position = 'fixed';
+      input.style.opacity = '0';
+      document.body.appendChild(input);
+      input.select();
+      const copied = document.execCommand('copy');
+      input.remove();
+      if (!copied) throw new Error('Copy failed');
+    }
+    setAddressCopied(true);
+    window.setTimeout(() => setAddressCopied(false), 2000);
   }
 
 
@@ -331,9 +347,14 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
                 <span>{getOrderDayHours()?.value}</span>
               </p>
             )}
-            <button className="button button-primary order-pickup-map-button" type="button" onClick={openStoreLocation}>
-              Open in Google Maps
-            </button>
+            <div className="order-pickup-location-actions">
+              <button className="button button-primary order-pickup-map-button" type="button" onClick={openStoreLocation}>
+                Open in Google Maps
+              </button>
+              <button className="button button-secondary order-pickup-copy-button" type="button" onClick={() => void copyStoreAddress()}>
+                {addressCopied ? 'Address Copied' : 'Copy Address'}
+              </button>
+            </div>
           </section>
         )}
 
