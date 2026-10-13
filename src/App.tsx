@@ -11,6 +11,7 @@ import { OrderTrackingPage } from './pages/OrderTrackingPage';
 import { RestaurantOrdersPage } from './pages/RestaurantOrdersPage';
 import { RestaurantMenuPage } from './pages/RestaurantMenuPage';
 import { RestaurantSalesPage } from './pages/RestaurantSalesPage';
+import { RestaurantBusinessReportsPage } from './pages/RestaurantBusinessReportsPage';
 import { RestaurantCashierPosPage } from './pages/RestaurantCashierPosPage';
 import { RestaurantDeliveryDispatchPage } from './pages/RestaurantDeliveryDispatchPage';
 import { RestaurantSettingsPage } from './pages/RestaurantSettingsPage';
@@ -63,6 +64,7 @@ function withBasePath(path: string) {
   if (path === '/restaurant/orders') return `${base}/#restaurant/orders`;
   if (path === '/restaurant/menu') return `${base}/#restaurant/menu`;
   if (path === '/restaurant/sales') return `${base}/#restaurant/sales`;
+  if (path === '/restaurant/business-reports') return `${base}/#restaurant/business-reports`;
   if (path === '/restaurant/riders') return `${base}/#restaurant/riders`;
   if (path === '/restaurant/delivery-dispatch') return `${base}/#restaurant/delivery-dispatch`;
   if (path === '/restaurant/settings') return `${base}/#restaurant/settings`;
@@ -253,6 +255,7 @@ function AppContent() {
     isRestaurantOrdersPage,
     isRestaurantMenuPage,
     isRestaurantSalesPage,
+    isRestaurantBusinessReportsPage,
     isCashierSalesPage,
     isCashierPosPage,
     isRestaurantDeliveryDispatchPage,
@@ -424,6 +427,10 @@ function AppContent() {
               ) : isRestaurantSalesPage ? (
                 <RestaurantModuleGuard restaurantId={ownerRestaurant.id!} anyOf={['sales']}>
                   <RestaurantSalesPage restaurantId={ownerRestaurant.id!} role="owner" />
+                </RestaurantModuleGuard>
+              ) : isRestaurantBusinessReportsPage ? (
+                <RestaurantModuleGuard restaurantId={ownerRestaurant.id!} anyOf={['sales']}>
+                  <RestaurantBusinessReportsPage restaurantId={ownerRestaurant.id!} />
                 </RestaurantModuleGuard>
               ) : isRestaurantSettingsPage ? <RestaurantSettingsPage restaurantId={ownerRestaurant.id!} />
               : isRestaurantWebsiteCustomizationPage ? (
