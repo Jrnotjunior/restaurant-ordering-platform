@@ -438,6 +438,8 @@ function AppContent() {
                 <RestaurantModuleGuard restaurantId={ownerRestaurant.id!} anyOf={['sales']}>
                   <RestaurantBusinessReportsPage restaurantId={ownerRestaurant.id!} />
                 </RestaurantModuleGuard>
+              ) : isRestaurantRecipesPage ? (
+                <RestaurantModuleGuard restaurantId={ownerRestaurant.id!} anyOf={['sales']}><RestaurantRecipesPage restaurantId={ownerRestaurant.id!} /></RestaurantModuleGuard>
               ) : isRestaurantInventoryPage ? (
                 <RestaurantModuleGuard restaurantId={ownerRestaurant.id!} anyOf={['sales']}>
                   <RestaurantInventoryPage restaurantId={ownerRestaurant.id!} />
