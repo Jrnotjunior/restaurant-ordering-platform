@@ -11,6 +11,9 @@ type NavigationItem = {
   icon: 'dashboard' | 'orders' | 'products' | 'riders' | 'shipping' | 'sales' | 'dispatch' | 'settings' | 'loyalty' | 'customization';
 };
 
+type OwnerSupportTicket = { id: string; request_number: string | null; subject: string; status: string; created_at: string; updated_at: string };
+type OwnerSupportMessage = { id: string; ticket_id: string; sender_user_id: string; message: string; visibility: 'public' | 'internal'; created_at: string };
+
 const ownerNavigationItems: NavigationItem[] = [
   { label: 'Dashboard', href: '#restaurant/owner', icon: 'dashboard' },
   { label: 'Orders', href: '#restaurant/orders', icon: 'orders' },
@@ -116,6 +119,14 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
   const [supportSubmitting, setSupportSubmitting] = useState(false);
   const [supportError, setSupportError] = useState('');
   const [supportSuccess, setSupportSuccess] = useState('');
+  const [supportView, setSupportView] = useState<'new' | 'requests'>('new');
+  const [supportTickets, setSupportTickets] = useState<OwnerSupportTicket[]>([]);
+  const [supportInboxLoading, setSupportInboxLoading] = useState(false);
+  const [selectedSupportTicketId, setSelectedSupportTicketId] = useState<string | null>(null);
+  const [supportMessages, setSupportMessages] = useState<OwnerSupportMessage[]>([]);
+  const [supportMessagesLoading, setSupportMessagesLoading] = useState(false);
+  const [supportReply, setSupportReply] = useState('');
+  const [supportReplySending, setSupportReplySending] = useState(false);
   const restaurant = useRestaurant();
   const [ownerModules, setOwnerModules] = useState<Record<string, boolean>>({});
   const [modulesLoading, setModulesLoading] = useState(role === 'owner');
@@ -154,6 +165,75 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
       setDisplayName(name || user?.email?.split('@')[0] || 'Restaurant Owner');
     });
   }, []);
+
+  useEffect(() => {
+    if (!supportOpen || supportView !== 'requests' || !supabase || !restaurant.id) return;
+    let active = true;
+    setSupportInboxLoading(true);
+    void supabase.from('restaurant_support_requests')
+      .select('id,request_number,subject,status,created_at,updated_at')
+      .eq('restaurant_id', restaurant.id)
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error) { setSupportError('Unable to load your support requests. Please try again.'); console.error('Support inbox load failed.', error); }
+        else {
+          const rows = (data ?? []) as OwnerSupportTicket[];
+          setSupportTickets(rows);
+          if (selectedSupportTicketId && !rows.some((row) => row.id === selectedSupportTicketId)) setSelectedSupportTicketId(null);
+        }
+        setSupportInboxLoading(false);
+      });
+    const channel = supabase.channel('restaurant-support-ticket-list-' + restaurant.id)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'restaurant_support_requests', filter: 'restaurant_id=eq.' + restaurant.id }, () => {
+        void supabase.from('restaurant_support_requests').select('id,request_number,subject,status,created_at,updated_at').eq('restaurant_id', restaurant.id).order('created_at', { ascending: false })
+          .then(({ data }) => { if (active && data) setSupportTickets(data as OwnerSupportTicket[]); });
+      }).subscribe();
+    return () => { active = false; void supabase.removeChannel(channel); };
+  }, [supportOpen, supportView, restaurant.id, selectedSupportTicketId]);
+
+  useEffect(() => {
+    if (!supportOpen || supportView !== 'requests' || !selectedSupportTicketId || !supabase) { setSupportMessages([]); return; }
+    let active = true;
+    const loadMessages = async () => {
+      setSupportMessagesLoading(true);
+      const { data, error } = await supabase.from('support_ticket_messages')
+        .select('id,ticket_id,sender_user_id,message,visibility,created_at')
+        .eq('ticket_id', selectedSupportTicketId)
+        .eq('visibility', 'public')
+        .order('created_at', { ascending: true });
+      if (!active) return;
+      if (error) { setSupportError('Unable to load this conversation. Please try again.'); console.error('Support conversation load failed.', error); }
+      else setSupportMessages((data ?? []) as OwnerSupportMessage[]);
+      setSupportMessagesLoading(false);
+    };
+    void loadMessages();
+    const channel = supabase.channel('restaurant-support-messages-' + selectedSupportTicketId)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_ticket_messages', filter: 'ticket_id=eq.' + selectedSupportTicketId }, () => { void loadMessages(); })
+      .subscribe();
+    return () => { active = false; void supabase.removeChannel(channel); };
+  }, [supportOpen, supportView, selectedSupportTicketId]);
+
+  async function sendSupportReply(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!supabase || !selectedSupportTicketId || !supportReply.trim()) return;
+    setSupportReplySending(true); setSupportError('');
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      if (!user) throw new Error('Your session has expired. Please sign in again.');
+      const { error } = await supabase.from('support_ticket_messages').insert({
+        ticket_id: selectedSupportTicketId, sender_user_id: user.id, message: supportReply.trim(), visibility: 'public',
+      });
+      if (error) throw error;
+      setSupportReply('');
+      const { data } = await supabase.from('support_ticket_messages').select('id,ticket_id,sender_user_id,message,visibility,created_at').eq('ticket_id', selectedSupportTicketId).eq('visibility', 'public').order('created_at', { ascending: true });
+      if (data) setSupportMessages(data as OwnerSupportMessage[]);
+    } catch (e) {
+      const message = e && typeof e === 'object' && 'message' in e ? String((e as { message: unknown }).message) : 'Your reply could not be sent.';
+      setSupportError(message);
+    } finally { setSupportReplySending(false); }
+  }
 
   function openPasswordChange() {
     setAccountOpen(false);
@@ -245,7 +325,7 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
             })}
           </nav>
           <div className="restaurant-owner-sidebar-support">
-            <button type="button" className="restaurant-owner-sidebar-support-button" onClick={() => { setSupportOpen(true); setSupportError(''); setSupportSuccess(''); }}>
+            <button type="button" className="restaurant-owner-sidebar-support-button" onClick={() => { setSupportOpen(true); setSupportError(''); setSupportSuccess(''); setSupportView('new'); setSelectedSupportTicketId(null); }}>
               <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M4 13v-1a8 8 0 0 1 16 0v1" />
                 <path d="M4 12h3v6H5a2 2 0 0 1-2-2v-2a2 2 0 0 1 1-2ZM20 12h-3v6h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-1-2Z" />
@@ -266,6 +346,11 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
                 </div>
                 <button className="restaurant-support-close" type="button" aria-label="Close support form" disabled={supportSubmitting} onClick={() => setSupportOpen(false)}>×</button>
               </div>
+              <div className="restaurant-support-tabs" role="tablist" aria-label="Support options">
+                <button type="button" role="tab" aria-selected={supportView === 'new'} className={supportView === 'new' ? 'is-active' : ''} onClick={() => { setSupportView('new'); setSupportError(''); }}>New request</button>
+                <button type="button" role="tab" aria-selected={supportView === 'requests'} className={supportView === 'requests' ? 'is-active' : ''} onClick={() => { setSupportView('requests'); setSupportError(''); setSelectedSupportTicketId(null); }}>My requests</button>
+              </div>
+              {supportView === 'new' ? (
               <form onSubmit={async (event: FormEvent) => {
                 event.preventDefault();
                 setSupportError('');
@@ -343,6 +428,40 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
                   <button type="submit" className="restaurant-support-primary" disabled={supportSubmitting}>{supportSubmitting ? 'Submitting…' : 'Submit request'}</button>
                 </div>
               </form>
+              ) : (
+                <div className="restaurant-support-inbox">
+                  {supportError ? <p className="restaurant-support-feedback is-error" role="alert">{supportError}</p> : null}
+                  {selectedSupportTicketId ? (
+                    <div className="restaurant-support-thread">
+                      <button type="button" className="restaurant-support-back" onClick={() => { setSelectedSupportTicketId(null); setSupportError(''); }}>← All requests</button>
+                      {(() => { const ticket = supportTickets.find((item) => item.id === selectedSupportTicketId); return ticket ? <div className="restaurant-support-selected-ticket"><strong>{ticket.request_number || 'Support request'}</strong><span>{ticket.subject}</span><small>Status: {ticket.status.replace('_', ' ')}</small></div> : null; })()}
+                      <div className="restaurant-support-messages" aria-live="polite">
+                        {supportMessagesLoading ? <p>Loading conversation…</p> : supportMessages.length === 0 ? <p>No replies yet. You can send a message to support below.</p> : supportMessages.map((message) => (
+                          <article key={message.id} className={'restaurant-support-message ' + (message.sender_user_id === supportMessages[0]?.sender_user_id ? 'from-owner' : 'from-support')}>
+                            <div><strong>{message.sender_user_id === supportMessages[0]?.sender_user_id ? 'Restaurant' : 'Support team'}</strong><time>{new Date(message.created_at).toLocaleString()}</time></div>
+                            <p>{message.message}</p>
+                          </article>
+                        ))}
+                      </div>
+                      {(() => { const ticket = supportTickets.find((item) => item.id === selectedSupportTicketId); const closed = !ticket || ['resolved','closed','cancelled'].includes(ticket.status); return closed ? <p className="restaurant-support-feedback">This request is closed. Submit a new request if you need more help.</p> : (
+                        <form className="restaurant-support-reply-form" onSubmit={(event) => void sendSupportReply(event)}>
+                          <label className="restaurant-support-field">Reply to support<textarea value={supportReply} onChange={(event) => setSupportReply(event.target.value)} rows={3} maxLength={10000} required placeholder="Add more details or reply to support…" /></label>
+                          <button type="submit" className="restaurant-support-primary" disabled={supportReplySending || !supportReply.trim()}>{supportReplySending ? 'Sending…' : 'Send reply'}</button>
+                        </form>
+                      ); })()}
+                    </div>
+                  ) : (
+                    <div className="restaurant-support-request-list">
+                      {supportInboxLoading ? <p>Loading your requests…</p> : supportTickets.length === 0 ? <p>You haven't submitted any support requests yet.</p> : supportTickets.map((ticket) => (
+                        <button type="button" key={ticket.id} className="restaurant-support-request-row" onClick={() => { setSelectedSupportTicketId(ticket.id); setSupportError(''); }}>
+                          <span><strong>{ticket.request_number || 'Support request'}</strong><small>{ticket.subject}</small><time>{new Date(ticket.created_at).toLocaleDateString()}</time></span>
+                          <b className={'status-' + ticket.status}>{ticket.status.replace('_', ' ')}</b><span aria-hidden="true">›</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </section>
           </div>
         ) : null}
