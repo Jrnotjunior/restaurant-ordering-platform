@@ -104,3 +104,8 @@
 
 .order-pickup-hours-summary { display: flex; flex-direction: column; gap: .2rem; margin: .35rem 0 .75rem; color: var(--color-muted); font-size: .88rem; }
 .order-pickup-hours-summary strong { color: var(--color-text); font-weight: 600; }
+
+
+/* Keep the order cancellation action visually separated and centered below billing. */
+.order-tracking-cancel--details{display:flex;justify-content:center;margin:1rem 0 .25rem;padding-top:.9rem;border-top:1px solid var(--color-border, #e5e7eb)}
+.order-tracking-cancel--details .button{margin:0 auto}
