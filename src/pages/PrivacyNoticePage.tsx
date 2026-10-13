@@ -1,4 +1,5 @@
 export function PrivacyNoticePage() {
+  const restaurant = useRestaurant();
   return (
     <main className="restaurant-owner-auth-page">
       <article className="restaurant-owner-auth-card privacy-notice-card" aria-labelledby="privacy-notice-title">
@@ -7,15 +8,19 @@ export function PrivacyNoticePage() {
         <p className="eyebrow">Data Privacy</p>
         <h1 id="privacy-notice-title">Privacy Notice</h1>
         <p>
-          This notice explains how the restaurant ordering platform collects and processes
-          personal information when you create an account and use customer ordering services.
+          This notice explains how {restaurant.name} and the systems supporting its online
+          ordering storefront collect and process personal information when you create an
+          account or place an order.
         </p>
 
         <section className="privacy-notice-section">
           <h2>Who is responsible for your information?</h2>
           <p>
-            The restaurant operating this ordering platform is responsible for the customer
-            personal information processed through the service.
+            {restaurant.name} operates this storefront and is responsible for determining how
+            customer information is used for its restaurant business. Web2Table provides the
+            software platform and service providers may process information to support account,
+            ordering, payment, security, and operational functions. The parties' actual legal
+            roles depend on how the service is operated.
           </p>
         </section>
 
@@ -79,8 +84,17 @@ export function PrivacyNoticePage() {
           <h2>Questions or privacy requests</h2>
           <p>
             For questions about your personal information, privacy requests, or how your
-            information is handled, contact the restaurant operating this service.
+            information is handled, contact {restaurant.name} using the details below.
           </p>
+        </section>
+
+        <section className="privacy-notice-section">
+          <h2>Restaurant contact details</h2>
+          <p><strong>{restaurant.name}</strong></p>
+          {restaurant.locationText && <p>Address: {restaurant.locationText}</p>}
+          {restaurant.contactNumber && <p>Phone: {restaurant.contactNumber}</p>}
+          {restaurant.email && <p>Email: {restaurant.email}</p>}
+          {!restaurant.locationText && !restaurant.contactNumber && !restaurant.email && <p>The restaurant has not configured public contact details yet. Please use the contact method provided with your order confirmation.</p>}
         </section>
 
         <section className="privacy-notice-section privacy-notice-legal-note">
