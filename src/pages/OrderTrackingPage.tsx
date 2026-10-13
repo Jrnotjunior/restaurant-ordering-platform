@@ -263,16 +263,6 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
               ))}
             </div>
           ) : <p className="order-tracking-muted">Item details are unavailable for this order.</p>}
-          {isAuthenticatedCustomer && order.status === 'pending' && order.paymentMethod === 'cash' && order.paymentStatus === 'pending' ? (
-            <div className="order-tracking-cancel order-tracking-cancel--details">
-              <p>You can cancel this unpaid cash order before the restaurant confirms it.</p>
-              <button className="button" type="button" onClick={() => void cancelOrder()} disabled={cancellingOrder}>
-                {cancellingOrder ? 'Cancelling…' : 'Cancel order'}
-              </button>
-            </div>
-          ) : null}
-          {cancellationError ? <p className="checkout-error" role="alert">{cancellationError}</p> : null}
-          {cancellationMessage ? <p className="checkout-success" role="status">{cancellationMessage}</p> : null}
           <div className="order-tracking-billing">
             <h3>Billing summary</h3>
             <div className="order-tracking-billing-row"><span>Subtotal</span><span>₱{order.subtotal.toFixed(2)}</span></div>
@@ -286,6 +276,15 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
             <div className="order-tracking-billing-row is-total"><strong>Total paid / due</strong><strong>₱{order.total.toFixed(2)}</strong></div>
             <p className="order-tracking-payment-note">{order.paymentStatus === 'paid' ? 'Payment confirmed' : order.paymentStatus === 'refunded' ? 'Payment refunded' : order.paymentStatus === 'failed' ? 'Payment failed' : 'Payment pending'} · {order.paymentMethod === 'gcash' ? 'Online payment' : 'Cash'}</p>
           </div>
+          {isAuthenticatedCustomer && order.status === 'pending' && order.paymentMethod === 'cash' && order.paymentStatus === 'pending' ? (
+            <div className="order-tracking-cancel order-tracking-cancel--details">
+              <button className="button" type="button" onClick={() => void cancelOrder()} disabled={cancellingOrder}>
+                {cancellingOrder ? 'Cancelling…' : 'Cancel order'}
+              </button>
+            </div>
+          ) : null}
+          {cancellationError ? <p className="checkout-error" role="alert">{cancellationError}</p> : null}
+          {cancellationMessage ? <p className="checkout-success" role="status">{cancellationMessage}</p> : null}
         </details>
 
         {order.deliveryStatus === 'failed' ? (
