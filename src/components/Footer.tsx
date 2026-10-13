@@ -30,15 +30,15 @@ export function Footer() {
 
       <nav className="site-footer-legal" aria-label="Customer legal information">
         <a className="site-footer-legal-item" href="#privacy">
-          <span className="site-footer-legal-symbol" aria-hidden="true">◈</span>
+          <svg className="site-footer-legal-icon" viewBox="0 0 32 36" aria-hidden="true"><path d="M16 2 29 7v9c0 8-5.5 14-13 18C8.5 30 3 24 3 16V7L16 2Z" /></svg>
           <span className="site-footer-legal-title">Privacy Notice</span>
         </a>
         <a className="site-footer-legal-item" href="#terms">
-          <span className="site-footer-legal-symbol" aria-hidden="true">▤</span>
+          <svg className="site-footer-legal-icon" viewBox="0 0 32 36" aria-hidden="true"><path d="M6 2h14l8 8v24H6Z" /><path d="M20 2v9h8M11 18h12M11 24h12" /></svg>
           <span className="site-footer-legal-title">Terms &amp; Conditions</span>
         </a>
         <a className="site-footer-legal-item" href="#refunds">
-          <span className="site-footer-legal-symbol" aria-hidden="true">↻</span>
+          <svg className="site-footer-legal-icon" viewBox="0 0 36 36" aria-hidden="true"><path d="M29 13A13 13 0 0 0 6 10L3 14M3 6v8h8M7 23a13 13 0 0 0 23 3l3-4m0 8v-8h-8" /></svg>
           <span className="site-footer-legal-title">Refund &amp; Cancellation Policy</span>
         </a>
       </nav>
