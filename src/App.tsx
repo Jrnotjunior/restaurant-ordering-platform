@@ -25,6 +25,7 @@ import { CustomerSignUpPage } from './pages/CustomerSignUpPage';
 import { CustomerPasswordRecoveryPage } from './pages/CustomerPasswordRecoveryPage';
 import { CustomerEmailConfirmationPage } from './pages/CustomerEmailConfirmationPage';
 import { PrivacyNoticePage } from './pages/PrivacyNoticePage';
+import { CustomerPolicyPage } from './pages/CustomerPolicyPage';
 import { SavedAddressPage } from './pages/SavedAddressPage';
 import { CustomerOrderHistoryPage } from './pages/CustomerOrderHistoryPage';
 import { RiderDeliveryPage } from './pages/RiderDeliveryPage';
@@ -245,6 +246,8 @@ function AppContent() {
     isCustomerPasswordResetPage,
     isCustomerForgotPasswordPage,
     isPrivacyPage,
+    isTermsPage,
+    isRefundsPage,
     isCheckoutPage,
     trackOrderNumber,
     isRestaurantOrdersPage,
@@ -282,7 +285,9 @@ function AppContent() {
   if (isCustomerEmailConfirmationPage || new URLSearchParams(window.location.search).get('customer-confirmation') === '1') {
     return <CustomerEmailConfirmationPage />;
   }
-  if (isPrivacyPage) return <PrivacyNoticePage />;
+  if (isPrivacyPage) return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><PrivacyNoticePage /></ThemeProvider></RestaurantProvider>;
+  if (isTermsPage) return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><CustomerPolicyPage kind="terms" /></ThemeProvider></RestaurantProvider>;
+  if (isRefundsPage) return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><CustomerPolicyPage kind="refunds" /></ThemeProvider></RestaurantProvider>;
   if (route === '#saved-address') return <PublicCustomerRouteGuard><RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}><SavedAddressPage /></RestaurantLayout></ThemeProvider></RestaurantProvider></PublicCustomerRouteGuard>;
   if (route === '#order-history') return <PublicCustomerRouteGuard><RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}><CustomerOrderHistoryPage /></RestaurantLayout></ThemeProvider></RestaurantProvider></PublicCustomerRouteGuard>;
   if (isAccountPage) return <RestaurantOwnerLoginPage />;
