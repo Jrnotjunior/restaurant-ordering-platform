@@ -170,9 +170,10 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
 
   useEffect(() => {
     if (!supportOpen || supportView !== 'requests' || !supabase || !restaurant.id) return;
+    const client = supabase;
     let active = true;
     setSupportInboxLoading(true);
-    void supabase.from('restaurant_support_requests')
+    void client.from('restaurant_support_requests')
       .select('id,request_number,subject,status,created_at,updated_at')
       .eq('restaurant_id', restaurant.id)
       .order('created_at', { ascending: false })
@@ -186,20 +187,21 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
         }
         setSupportInboxLoading(false);
       });
-    const channel = supabase.channel('restaurant-support-ticket-list-' + restaurant.id)
+    const channel = client.channel('restaurant-support-ticket-list-' + restaurant.id)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'restaurant_support_requests', filter: 'restaurant_id=eq.' + restaurant.id }, () => {
         void supabase.from('restaurant_support_requests').select('id,request_number,subject,status,created_at,updated_at').eq('restaurant_id', restaurant.id).order('created_at', { ascending: false })
           .then(({ data }) => { if (active && data) setSupportTickets(data as OwnerSupportTicket[]); });
       }).subscribe();
-    return () => { active = false; void supabase.removeChannel(channel); };
+    return () => { active = false; void client.removeChannel(channel); };
   }, [supportOpen, supportView, restaurant.id, selectedSupportTicketId]);
 
   useEffect(() => {
     if (!supportOpen || supportView !== 'requests' || !selectedSupportTicketId || !supabase) { setSupportMessages([]); return; }
+    const client = supabase;
     let active = true;
     const loadMessages = async () => {
       setSupportMessagesLoading(true);
-      const { data, error } = await supabase.from('support_ticket_messages')
+      const { data, error } = await client.from('support_ticket_messages')
         .select('id,ticket_id,sender_user_id,message,visibility,created_at')
         .eq('ticket_id', selectedSupportTicketId)
         .eq('visibility', 'public')
@@ -210,7 +212,7 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
       setSupportMessagesLoading(false);
     };
     void loadMessages();
-    const channel = supabase.channel('restaurant-support-messages-' + selectedSupportTicketId)
+    const channel = client.channel('restaurant-support-messages-' + selectedSupportTicketId)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_ticket_messages', filter: 'ticket_id=eq.' + selectedSupportTicketId }, () => { void loadMessages(); })
       .subscribe();
     return () => { active = false; void supabase.removeChannel(channel); };
@@ -219,17 +221,18 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
   async function sendSupportReply(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!supabase || !selectedSupportTicketId || !supportReply.trim()) return;
+    const client = supabase;
     setSupportReplySending(true); setSupportError('');
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await client.auth.getUser();
       if (authError) throw authError;
       if (!user) throw new Error('Your session has expired. Please sign in again.');
-      const { error } = await supabase.from('support_ticket_messages').insert({
+      const { error } = await client.from('support_ticket_messages').insert({
         ticket_id: selectedSupportTicketId, sender_user_id: user.id, message: supportReply.trim(), visibility: 'public',
       });
       if (error) throw error;
       setSupportReply('');
-      const { data } = await supabase.from('support_ticket_messages').select('id,ticket_id,sender_user_id,message,visibility,created_at').eq('ticket_id', selectedSupportTicketId).eq('visibility', 'public').order('created_at', { ascending: true });
+      const { data } = await client.from('support_ticket_messages').select('id,ticket_id,sender_user_id,message,visibility,created_at').eq('ticket_id', selectedSupportTicketId).eq('visibility', 'public').order('created_at', { ascending: true });
       if (data) setSupportMessages(data as OwnerSupportMessage[]);
     } catch (e) {
       const message = e && typeof e === 'object' && 'message' in e ? String((e as { message: unknown }).message) : 'Your reply could not be sent.';
