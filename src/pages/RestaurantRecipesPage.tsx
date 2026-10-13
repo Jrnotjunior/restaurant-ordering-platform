@@ -136,8 +136,23 @@ export function RestaurantRecipesPage({ restaurantId }: Props) {
       <p style={{fontSize:12,color:'var(--muted,#64748b)',lineHeight:1.5,marginBottom:0}}>Choose the measurement that is easiest for your kitchen. For example, enter 200 g even when stock is tracked in kg; the system converts it automatically. Saving the same product + ingredient pair updates its quantity.</p>
     </section>
     <section style={{padding:18,border:'1px solid var(--border,#e2e8f0)',borderRadius:14,background:'var(--surface,#fff)'}}>
-      <h2 style={{margin:'0 0 12px',fontSize:18}}>Configured recipe ingredients</h2>
-      {loading ? <p>Loading…</p> : recipes.length === 0 ? <p>No recipe links yet.</p> : <div style={{overflowX:'auto'}}><table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}><thead><tr>{['Menu product','Ingredient','Quantity per product','Current stock',''].map(x=><th key={x} style={thStyle}>{x}</th>)}</tr></thead><tbody>{recipes.map(recipe=>{const item=itemMap.get(recipe.inventory_item_id);return <tr key={recipe.id}><td style={tdStyle}>{productMap.get(recipe.product_id) ?? 'Product unavailable'}</td><td style={tdStyle}>{item?.name ?? 'Inventory item unavailable'}</td><td style={tdStyle}>{Number(convertQuantity(Number(recipe.quantity_per_product), item?.unit ?? recipe.quantity_unit ?? 'pcs', recipe.quantity_unit ?? item?.unit ?? 'pcs')).toLocaleString('en-PH',{maximumFractionDigits:3})} {recipe.quantity_unit ?? item?.unit ?? ''}</td><td style={tdStyle}>{item ? Number(item.quantity_on_hand).toLocaleString('en-PH',{maximumFractionDigits:3})+' '+item.unit : '—'}</td><td style={tdStyle}><button type="button" disabled={saving} onClick={()=>void removeRecipe(recipe)} style={buttonStyle}>Remove</button></td></tr>})}</tbody></table></div>}
+      <h2 style={{margin:'0 0 6px',fontSize:18}}>Configured recipes</h2>
+      <p style={{margin:'0 0 16px',fontSize:13,color:'var(--muted,#64748b)'}}>Each menu product has its own ingredient list.</p>
+      {loading ? <p>Loading…</p> : recipes.length === 0 ? <p>No recipe links yet. Add an ingredient above to configure your first menu product.</p> : <div style={{display:'grid',gap:14}}>
+        {products.filter(product=>recipes.some(recipe=>recipe.product_id===product.id)).map(product=>{
+          const productRecipes=recipes.filter(recipe=>recipe.product_id===product.id);
+          return <section key={product.id} style={{border:'1px solid var(--border,#e2e8f0)',borderRadius:11,overflow:'hidden'}}>
+            <header style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,padding:'12px 14px',background:'var(--subtle,#f8fafc)',borderBottom:'1px solid var(--border,#e2e8f0)'}}>
+              <strong>{product.name}</strong><span style={{fontSize:12,color:'var(--muted,#64748b)'}}>{productRecipes.length} ingredient{productRecipes.length===1?'':'s'}</span>
+            </header>
+            <div style={{overflowX:'auto'}}><table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}><thead><tr>{['Ingredient','Quantity per product','Current stock',''].map(x=><th key={x} style={thStyle}>{x}</th>)}</tr></thead><tbody>{productRecipes.map(recipe=>{
+              const item=itemMap.get(recipe.inventory_item_id);
+              const amount=Number(recipe.quantity_per_product);
+              return <tr key={recipe.id}><td style={tdStyle}>{item?.name ?? 'Inventory item unavailable'}</td><td style={tdStyle}>{amount.toLocaleString('en-PH',{maximumFractionDigits:3})} {recipe.quantity_unit ?? item?.unit ?? ''}</td><td style={tdStyle}>{item ? Number(item.quantity_on_hand).toLocaleString('en-PH',{maximumFractionDigits:3})+' '+item.unit : '—'}</td><td style={tdStyle}><button type="button" disabled={saving} onClick={()=>void removeRecipe(recipe)} style={buttonStyle}>Remove</button></td></tr>;
+            })}</tbody></table></div>
+          </section>;
+        })}
+      </div>}
     </section>
     <p style={{fontSize:12,color:'var(--muted,#64748b)',lineHeight:1.5}}>Stock is deducted only once when an order changes to Completed. If any linked ingredient has insufficient stock, the completion update is rejected so the owner can correct the stock count or recipe first. Products without a recipe link do not deduct inventory.</p>
   </section>;
