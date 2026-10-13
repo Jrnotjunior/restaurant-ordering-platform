@@ -233,12 +233,14 @@ export async function getOrderStatus(orderId: string): Promise<TrackedOrder> {
   let storeLatitude: number | null = null;
   let storeLongitude: number | null = null;
   let operatingHours = row.operating_hours ?? null;
+  let restaurantName = row.restaurant_name;
   if (supabase) {
     const { data: restaurantSettings } = await supabase
       .from('restaurants')
       .select('name, store_address, operating_hours, delivery_location_latitude, delivery_location_longitude')
       .eq('id', row.restaurant_id)
       .maybeSingle();
+    restaurantName = restaurantSettings?.name?.trim() || restaurantName;
     storeAddress = restaurantSettings?.store_address ?? storeAddress;
     storeLatitude = restaurantSettings?.delivery_location_latitude == null ? null : Number(restaurantSettings.delivery_location_latitude);
     storeLongitude = restaurantSettings?.delivery_location_longitude == null ? null : Number(restaurantSettings.delivery_location_longitude);
@@ -250,7 +252,7 @@ export async function getOrderStatus(orderId: string): Promise<TrackedOrder> {
     orderNumber: row.order_number,
     createdAt,
     restaurantId: row.restaurant_id,
-    restaurantName: restaurantSettings?.name?.trim() || row.restaurant_name,
+    restaurantName,
     storeAddress,
     storeLatitude,
     storeLongitude,
