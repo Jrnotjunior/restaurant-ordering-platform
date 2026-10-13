@@ -40,6 +40,13 @@ export function Footer() {
         )}
       </nav>
 
+      <nav className="site-footer-legal" aria-label="Legal information">
+        <a href="https://web2table.io/privacy">Privacy Policy</a>
+        <a href="https://web2table.io/terms">Terms of Service</a>
+        <a href="https://web2table.io/refunds">Refund Policy</a>
+        <a href="https://web2table.io/consent">Consent</a>
+      </nav>
+
       <small>{`© ${new Date().getFullYear()} All rights reserved.`}</small>
 
       <a className="site-footer-powered-by" href="https://web2table.com" target="_blank" rel="noreferrer" aria-label="Powered by Web2Table">
