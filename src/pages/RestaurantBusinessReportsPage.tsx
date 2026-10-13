@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 import { getRestaurantSales } from '../modules/sales/salesService';
 import type { RestaurantOrder } from '../modules/ordering/orderService';
 import { supabase } from '../services/supabaseClient';
@@ -26,14 +26,61 @@ const monthStart = () => `${todayKey().slice(0, 7)}-01`;
 function downloadSpreadsheet(filename: string, rows: unknown[][]) {
   const worksheet = XLSX.utils.aoa_to_sheet(rows);
   const columnCount = rows.reduce((max, row) => Math.max(max, row.length), 0);
+  const rowCount = rows.length;
+  const navy = '17243A';
+  const blue = '2563EB';
+  const paleBlue = 'EAF1FB';
+  const paleGray = 'F4F6FA';
+  const border = { style: 'thin', color: { rgb: 'D9E1EE' } };
   worksheet['!cols'] = Array.from({ length: columnCount }, (_, columnIndex) => {
     const maxLength = rows.reduce((max, row) => {
       const value = row[columnIndex];
       return Math.max(max, value == null ? 0 : String(value).length);
     }, 0);
-    return { wch: Math.min(Math.max(maxLength + 2, 12), 52) };
+    return { wch: Math.min(Math.max(maxLength + 2, 13), 46) };
   });
-  worksheet['!rows'] = rows.map((row) => ({ hpt: row.some((value) => String(value ?? '').length > 90) ? 34 : 21 }));
+  worksheet['!rows'] = rows.map((row) => ({ hpt: row.some((value) => String(value ?? '').length > 90) ? 34 : 22 }));
+
+  const cell = (row: number, col: number) => worksheet[XLSX.utils.encode_cell({ r: row, c: col })];
+  const firstCell = (row: number) => String(rows[row]?.[0] ?? '').trim().toLowerCase();
+  const headerStarts = ['order number', 'expense date', 'tax-support sales detail', 'status'];
+  const headerRows = new Set<number>();
+  rows.forEach((row, index) => {
+    const first = String(row[0] ?? '').trim().toLowerCase();
+    if (headerStarts.some((header) => first === header || first.startsWith(header))) headerRows.add(index);
+  });
+  const titleRow = /^(payment reconciliation support report|tax-support sales detail)/i.test(String(rows[0]?.[0] ?? '')) ? 0 : -1;
+
+  for (let r = 0; r < rowCount; r += 1) {
+    for (let col = 0; col < columnCount; col += 1) {
+      const target = cell(r, col);
+      if (!target) continue;
+      const isHeader = headerRows.has(r);
+      const isTitle = r === titleRow;
+      const isTotal = firstCell(r).includes('total') || firstCell(r).includes('completed orders in period');
+      const isSection = r > 0 && rows[r].length > 1 && ['status', 'completed orders in period'].includes(firstCell(r)) && typeof rows[r][1] === 'number';
+      target.s = {
+        font: { name: 'Aptos', sz: isTitle ? 15 : 10, bold: isTitle || isHeader || isTotal, color: { rgb: isTitle || isHeader ? 'FFFFFF' : navy } },
+        fill: { patternType: 'solid', fgColor: { rgb: isTitle ? navy : isHeader ? blue : isTotal ? 'E3F4E8' : (r % 2 === 0 ? 'FFFFFF' : paleGray) } },
+        alignment: { vertical: 'center', wrapText: isTitle || String(target.v ?? '').length > 38 },
+        border: { bottom: border, top: isTitle ? { style: 'medium', color: { rgb: blue } } : border },
+      };
+      if (typeof target.v === 'number' && /php|amount|sales|total|fee|net|vat|discount|expense/i.test(String(rows[headerRows.size ? Math.max(0, r - 1) : 0]?.[col] ?? ''))) {
+        target.z = '#,##0.00;[Red](#,##0.00);-';
+      }
+    }
+  }
+
+  if (titleRow === 0 && rowCount > 1) {
+    worksheet['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: Math.max(1, columnCount - 1) } }];
+  }
+  const mainHeader = [...headerRows].find((row) => row >= 0);
+  if (mainHeader !== undefined && mainHeader + 1 < rowCount) {
+    worksheet['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: mainHeader, c: 0 }, e: { r: rowCount - 1, c: columnCount - 1 } }) };
+    worksheet['!freeze'] = { xSplit: 0, ySplit: mainHeader + 1 };
+  } else {
+    worksheet['!freeze'] = { xSplit: 0, ySplit: 1 };
+  }
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Report');
   XLSX.writeFile(workbook, filename, { compression: true });
