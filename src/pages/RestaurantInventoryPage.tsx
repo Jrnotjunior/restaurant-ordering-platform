@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { Fragment, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { supabase } from '../services/supabaseClient';
 
 type Props = { restaurantId: string };
@@ -207,7 +207,7 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
     </section>
     <section className="inventory-panel"><div className="inventory-toolbar"><div><h2 style={{margin:0}}>Stock on hand</h2><p className="inventory-panel-subtitle" style={{margin:"5px 0 0"}}>{visibleItems.length} of {items.length} inventory items</p></div><input className="inventory-search" type="search" aria-label="Search inventory" placeholder="Search items or categories" value={search} onChange={(event)=>setSearch(event.target.value)}/></div>
       {loading ? <p>Loading inventory…</p> : <div className="inventory-table-wrap"><table className="inventory-table"><thead><tr><th>Item</th><th>Category</th><th>Stock on hand</th><th>Low-stock level</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-        {visibleItems.map((item)=><>
+        {visibleItems.map((item)=><Fragment key={item.id}>
           <tr key={item.id}>
             <td><div className="inventory-item-name">{item.name}</div><span className="inventory-muted inventory-item-meta">Updated {dateTime(item.updated_at)}</span></td>
             <td>{item.category}</td>
@@ -224,7 +224,7 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
             <label>Reason for adjustment<input value={adjustments[item.id]?.reason ?? ''} maxLength={240} onChange={(event)=>setAdjustments((current)=>({...current,[item.id]:{quantity:current[item.id]?.quantity??'',reason:event.target.value}}))} placeholder="e.g. Stock received, used, or wasted"/></label>
             <div className="inventory-adjust-actions"><button className="inventory-button primary" type="button" disabled={saving} onClick={()=>void adjustStock(item)}>{saving?'Saving…':'Save'}</button></div>
           </div><p className="inventory-muted" style={{margin:'8px 0 0'}}>Use a positive number for stock received and a negative number for stock used or wasted. Unit: {item.unit}.</p></td></tr>}
-        </>)}
+        </Fragment>)}
         {!visibleItems.length && <tr><td colSpan={6} className="inventory-empty">{items.length?'No inventory items match your search.':'No inventory items yet. Add your first ingredient or supply above.'}</td></tr>}
       </tbody></table></div>}
     </section>
