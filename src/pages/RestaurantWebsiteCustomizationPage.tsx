@@ -284,9 +284,21 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-live-footer-powered-logo{display:block;width:54px;max-width:100%;height:14px;object-fit:contain;object-position:left center;flex:0 0 auto}
         .website-customization-live-buttons{display:flex;gap:8px;margin:12px}
         .website-customization-live-buttons button{flex:1;border:1px solid transparent;border-radius:8px;padding:10px 6px;font:inherit;font-size:11px;font-weight:700}
-        .website-customization-live-footer{padding:14px;border-top:1px solid;text-align:center;font-size:10px;min-height:54px}
-        .website-customization-live-footer-powered-by{display:inline-flex;align-items:center;justify-content:center;gap:5px;margin-top:8px;color:inherit;text-decoration:none;font-size:9px;opacity:.8}
-        .website-customization-live-footer-powered-logo{display:block;width:88px;max-width:100%;height:20px;object-fit:contain;object-position:left center;flex:0 0 auto}
+        .website-customization-live-footer{padding:12px 10px 10px;border-top:1px solid;text-align:center;font-size:10px;min-height:0}
+        .website-customization-live-footer-social{display:flex;flex-direction:column;align-items:center;gap:5px;padding:0 0 9px}
+        .website-customization-live-footer-social-heading{margin:0;font-size:11px;font-weight:700;line-height:1.2}
+        .website-customization-live-footer-socials{display:flex;align-items:center;justify-content:center;gap:7px}
+        .website-customization-live-footer-social-link{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;box-sizing:border-box;border:1px solid #e3e7ee;border-radius:50%;background:#fff}
+        .website-customization-live-footer-social-link.is-disabled{opacity:.42}
+        .website-customization-live-footer-social-link img{display:block;width:17px;height:17px;object-fit:contain}
+        .website-customization-live-footer-legal{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;padding:4px 0;border-top:1px solid #e5e8ee;border-bottom:1px solid #e5e8ee}
+        .website-customization-live-footer-legal-item{display:flex;min-width:0;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;padding:5px 3px;color:inherit;text-decoration:none;text-align:center}
+        .website-customization-live-footer-legal-item+.website-customization-live-footer-legal-item{border-left:1px solid #e5e8ee}
+        .website-customization-live-footer-legal-icon{display:block;width:14px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+        .website-customization-live-footer-legal-title{display:block;width:100%;max-width:74px;margin-inline:auto;font-size:8px;line-height:1.2;white-space:normal;overflow-wrap:normal;word-break:normal}
+        .website-customization-live-footer-bottom{display:flex;flex-direction:column;align-items:center;gap:5px;padding-top:8px}
+        .website-customization-live-footer-powered-by{display:inline-flex;align-items:center;justify-content:center;gap:5px;margin-top:0;color:inherit;text-decoration:none;font-size:9px;opacity:.8}
+        .website-customization-live-footer-powered-logo{display:block;width:70px;max-width:100%;height:16px;object-fit:contain;object-position:left center;flex:0 0 auto}
         .website-customization-live-footer-powered-mark{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:4px;font-size:8px;font-weight:900}
         .website-customization-phone-toolbar{height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 6px 0 9px;box-sizing:border-box;color:#fff;font-size:11px;font-weight:800}
         .website-customization-phone-toolbar>div{display:flex;gap:4px}
@@ -438,11 +450,47 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
               <div className="website-customization-live-buttons"><button type="button" style={{ backgroundColor: websiteTheme.colors.primary, color: websiteTheme.colors.primaryText, borderColor: websiteTheme.colors.primary }}>Primary button</button><button type="button" style={{ backgroundColor: websiteTheme.colors.secondary, color: websiteTheme.colors.secondaryText, borderColor: websiteTheme.colors.border }}>Secondary button</button></div>
 
               <div className="website-customization-live-footer" style={{ backgroundColor: websiteTheme.colors.footer ?? websiteTheme.colors.background, borderTopColor: websiteTheme.colors.border, color: websiteTheme.colors.muted }}>
-                <div>{`© ${new Date().getFullYear()} All rights reserved.`}</div>
-                <a className="website-customization-live-footer-powered-by" href="https://web2table.com" target="_blank" rel="noreferrer" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
-                  <span>Powered by</span>
-                  <img src="https://raw.githubusercontent.com/Jrnotjunior/restaurant-ordering-platform/main/web2table.png" alt="Web2Table" className="website-customization-live-footer-powered-logo" />
-                </a>
+                <section className="website-customization-live-footer-social" aria-label="Follow the restaurant">
+                  <h4 className="website-customization-live-footer-social-heading" style={{ color: websiteTheme.colors.text }}>Follow Us</h4>
+                  <nav className="website-customization-live-footer-socials" aria-label="Social media links">
+                    {([
+                      ['Facebook', storefront.socialLinks?.facebook, '/restaurant-ordering-platform/social-facebook.svg'],
+                      ['Instagram', storefront.socialLinks?.instagram, '/restaurant-ordering-platform/social-instagram.svg'],
+                      ['TikTok', storefront.socialLinks?.tiktok, '/restaurant-ordering-platform/social-tiktok.svg'],
+                    ] as const).map(([name, url, icon]) => (
+                      url ? (
+                        <a key={name} className="website-customization-live-footer-social-link" href={url} target="_blank" rel="noreferrer" aria-label={name} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
+                          <img src={icon} alt="" />
+                        </a>
+                      ) : (
+                        <span key={name} className="website-customization-live-footer-social-link is-disabled" aria-label={`${name} not configured`} aria-disabled="true">
+                          <img src={icon} alt="" />
+                        </span>
+                      )
+                    ))}
+                  </nav>
+                </section>
+                <nav className="website-customization-live-footer-legal" aria-label="Customer legal information">
+                  <a className="website-customization-live-footer-legal-item" href="#privacy" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
+                    <svg className="website-customization-live-footer-legal-icon" viewBox="0 0 32 36" aria-hidden="true"><path d="M16 2 29 7v9c0 8-5.5 14-13 18C8.5 30 3 24 3 16V7L16 2Z" /></svg>
+                    <span className="website-customization-live-footer-legal-title">Privacy Notice</span>
+                  </a>
+                  <a className="website-customization-live-footer-legal-item" href="#terms" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
+                    <svg className="website-customization-live-footer-legal-icon" viewBox="0 0 32 36" aria-hidden="true"><path d="M6 2h14l8 8v24H6Z" /><path d="M20 2v9h8M11 18h12M11 24h12" /></svg>
+                    <span className="website-customization-live-footer-legal-title">Terms &amp; Conditions</span>
+                  </a>
+                  <a className="website-customization-live-footer-legal-item" href="#refunds" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
+                    <svg className="website-customization-live-footer-legal-icon" viewBox="0 0 36 36" aria-hidden="true"><path d="M29 13A13 13 0 0 0 6 10L3 14M3 6v8h8M7 23a13 13 0 0 0 23 3l3-4m0 8v-8h-8" /></svg>
+                    <span className="website-customization-live-footer-legal-title">Refund &amp; Cancellation Policy</span>
+                  </a>
+                </nav>
+                <div className="website-customization-live-footer-bottom">
+                  <div>{`© ${new Date().getFullYear()} All rights reserved.`}</div>
+                  <a className="website-customization-live-footer-powered-by" href="https://web2table.io" target="_blank" rel="noreferrer" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
+                    <span>Powered by</span>
+                    <img src="https://raw.githubusercontent.com/Jrnotjunior/web2table.io/main/web2table.png" alt="Web2Table" className="website-customization-live-footer-powered-logo" />
+                  </a>
+                </div>
               </div>
             </div>
           </div>
