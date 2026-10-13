@@ -261,6 +261,7 @@ function AppContent() {
     isRestaurantSalesPage,
     isRestaurantBusinessReportsPage,
     isRestaurantInventoryPage,
+    isRestaurantRecipesPage,
     isCashierSalesPage,
     isCashierPosPage,
     isRestaurantDeliveryDispatchPage,
