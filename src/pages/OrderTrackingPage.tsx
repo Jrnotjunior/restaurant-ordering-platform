@@ -248,17 +248,6 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
         </div>
 
         <div className="order-tracking-total"><span>Total</span><strong>₱{Number(order.total).toFixed(2)}</strong></div>
-        {isAuthenticatedCustomer && order.status === 'pending' && order.paymentMethod === 'cash' && order.paymentStatus === 'pending' ? (
-          <div className="order-tracking-cancel">
-            <p>You can cancel this unpaid cash order before the restaurant confirms it.</p>
-            <button className="button" type="button" onClick={() => void cancelOrder()} disabled={cancellingOrder}>
-              {cancellingOrder ? 'Cancelling…' : 'Cancel order'}
-            </button>
-          </div>
-        ) : null}
-        {cancellationError ? <p className="checkout-error" role="alert">{cancellationError}</p> : null}
-        {cancellationMessage ? <p className="checkout-success" role="status">{cancellationMessage}</p> : null}
-
         <details className="order-tracking-details">
           <summary className="order-tracking-section-heading">
             <span className="order-details-title"><span className="eyebrow">Your order</span><strong>Order details</strong></span>
@@ -274,6 +263,16 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
               ))}
             </div>
           ) : <p className="order-tracking-muted">Item details are unavailable for this order.</p>}
+          {isAuthenticatedCustomer && order.status === 'pending' && order.paymentMethod === 'cash' && order.paymentStatus === 'pending' ? (
+            <div className="order-tracking-cancel order-tracking-cancel--details">
+              <p>You can cancel this unpaid cash order before the restaurant confirms it.</p>
+              <button className="button" type="button" onClick={() => void cancelOrder()} disabled={cancellingOrder}>
+                {cancellingOrder ? 'Cancelling…' : 'Cancel order'}
+              </button>
+            </div>
+          ) : null}
+          {cancellationError ? <p className="checkout-error" role="alert">{cancellationError}</p> : null}
+          {cancellationMessage ? <p className="checkout-success" role="status">{cancellationMessage}</p> : null}
           <div className="order-tracking-billing">
             <h3>Billing summary</h3>
             <div className="order-tracking-billing-row"><span>Subtotal</span><span>₱{order.subtotal.toFixed(2)}</span></div>
