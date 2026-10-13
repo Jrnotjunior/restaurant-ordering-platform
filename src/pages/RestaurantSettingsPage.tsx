@@ -224,6 +224,12 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [paymongoBusy, setPaymongoBusy] = useState(false);
   const [paymongoError, setPaymongoError] = useState('');
 
+  useEffect(() => {
+    if (!message) return;
+    const timeoutId = window.setTimeout(() => setMessage(''), 5000);
+    return () => window.clearTimeout(timeoutId);
+  }, [message]);
+
   async function loadSettings() {
     if (!supabase) {
       setError('Supabase is not configured.');
