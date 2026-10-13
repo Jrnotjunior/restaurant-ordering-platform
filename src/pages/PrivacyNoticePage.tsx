@@ -1,3 +1,5 @@
+import { useRestaurant } from '../components/RestaurantProvider';
+
 export function PrivacyNoticePage() {
   const restaurant = useRestaurant();
   return (
