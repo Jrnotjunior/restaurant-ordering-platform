@@ -127,6 +127,7 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
   const [supportMessagesLoading, setSupportMessagesLoading] = useState(false);
   const [supportReply, setSupportReply] = useState('');
   const [supportReplySending, setSupportReplySending] = useState(false);
+  const [supportCurrentUserId, setSupportCurrentUserId] = useState<string | null>(null);
   const restaurant = useRestaurant();
   const [ownerModules, setOwnerModules] = useState<Record<string, boolean>>({});
   const [modulesLoading, setModulesLoading] = useState(role === 'owner');
@@ -159,6 +160,7 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
     if (!supabase) return;
     void supabase.auth.getUser().then(({ data }) => {
       const user = data.user;
+      setSupportCurrentUserId(user?.id ?? null);
       const metadata = user?.user_metadata as Record<string, unknown> | undefined;
       const name = typeof metadata?.full_name === 'string' ? metadata.full_name : typeof metadata?.name === 'string' ? metadata.name : '';
       setEmail(user?.email ?? '');
@@ -437,8 +439,8 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
                       {(() => { const ticket = supportTickets.find((item) => item.id === selectedSupportTicketId); return ticket ? <div className="restaurant-support-selected-ticket"><strong>{ticket.request_number || 'Support request'}</strong><span>{ticket.subject}</span><small>Status: {ticket.status.replace('_', ' ')}</small></div> : null; })()}
                       <div className="restaurant-support-messages" aria-live="polite">
                         {supportMessagesLoading ? <p>Loading conversation…</p> : supportMessages.length === 0 ? <p>No replies yet. You can send a message to support below.</p> : supportMessages.map((message) => (
-                          <article key={message.id} className={'restaurant-support-message ' + (message.sender_user_id === supportMessages[0]?.sender_user_id ? 'from-owner' : 'from-support')}>
-                            <div><strong>{message.sender_user_id === supportMessages[0]?.sender_user_id ? 'Restaurant' : 'Support team'}</strong><time>{new Date(message.created_at).toLocaleString()}</time></div>
+                          <article key={message.id} className={'restaurant-support-message ' + (message.sender_user_id === supportCurrentUserId ? 'from-owner' : 'from-support')}>
+                            <div><strong>{message.sender_user_id === supportCurrentUserId ? 'You' : 'Support team'}</strong><time>{new Date(message.created_at).toLocaleString()}</time></div>
                             <p>{message.message}</p>
                           </article>
                         ))}
