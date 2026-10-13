@@ -13,6 +13,7 @@ import { RestaurantMenuPage } from './pages/RestaurantMenuPage';
 import { RestaurantSalesPage } from './pages/RestaurantSalesPage';
 import { RestaurantBusinessReportsPage } from './pages/RestaurantBusinessReportsPage';
 import { RestaurantInventoryPage } from './pages/RestaurantInventoryPage';
+import { RestaurantRecipesPage } from './pages/RestaurantRecipesPage';
 import { RestaurantCashierPosPage } from './pages/RestaurantCashierPosPage';
 import { RestaurantDeliveryDispatchPage } from './pages/RestaurantDeliveryDispatchPage';
 import { RestaurantSettingsPage } from './pages/RestaurantSettingsPage';
