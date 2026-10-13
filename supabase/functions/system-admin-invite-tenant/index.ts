@@ -120,6 +120,39 @@ Deno.serve(async (request) => {
       }, 409);
     }
 
+    // Reuse an existing Auth account when it has no restaurant yet. Auth invitations
+    // cannot be sent to an email that is already registered, so those accounts need
+    // a tenant invitation record plus a secure password-recovery access email.
+    let existingAuthUser: any = null;
+    for (let page = 1; page <= 20 && !existingAuthUser; page += 1) {
+      const { data: usersPage, error: usersError } = await adminClient.auth.admin.listUsers({ page, perPage: 500 });
+      if (usersError) throw usersError;
+      existingAuthUser = usersPage.users.find((user) => (user.email ?? "").toLowerCase() === email) ?? null;
+      if (usersPage.users.length < 500) break;
+    }
+
+    if (existingAuthUser) {
+      const { data: ownedRestaurant, error: ownedRestaurantError } = await adminClient
+        .from("restaurants")
+        .select("id")
+        .eq("owner_id", existingAuthUser.id)
+        .limit(1)
+        .maybeSingle();
+      if (ownedRestaurantError) throw ownedRestaurantError;
+      if (ownedRestaurant) {
+        return jsonResponse({
+          error: "This account already owns a restaurant. Use the existing restaurant's Owner settings instead of creating another tenant.",
+        }, 409);
+      }
+
+      const metadata = existingAuthUser.user_metadata ?? {};
+      if (metadata.invitation_type === "employee_staff") {
+        return jsonResponse({
+          error: "This email belongs to an existing staff account. Use a separate owner email or resolve the staff account first.",
+        }, 409);
+      }
+    }
+
     if (name.length < 2) return jsonResponse({ error: "Restaurant name is required for a new tenant." }, 400);
     if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
       return jsonResponse({ error: "Slug must use lowercase letters, numbers, and single hyphens." }, 400);
@@ -134,10 +167,15 @@ Deno.serve(async (request) => {
 
     if (invitationError) throw invitationError;
 
-    const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
-      email,
-      {
-        data: {
+    let invitedUserId: string;
+    let reusedExistingAccount = false;
+
+    if (existingAuthUser) {
+      invitedUserId = existingAuthUser.id;
+      reusedExistingAccount = true;
+      const { error: metadataError } = await adminClient.auth.admin.updateUserById(invitedUserId, {
+        user_metadata: {
+          ...(existingAuthUser.user_metadata ?? {}),
           invitation_type: "tenant_owner",
           tenant_invitation_id: invitation.id,
           restaurant_name: "Web2Table",
@@ -145,22 +183,38 @@ Deno.serve(async (request) => {
           account_setup: "your restaurant account",
           invitation_label: "RESTAURANT OWNER INVITATION",
         },
-      },
-    );
-
-    if (inviteError || !inviteData?.user?.id) {
-      const cleanedUp = await cleanupTenantInvitation(adminClient, invitation.id);
-      if (!cleanedUp) {
-        return jsonResponse({ error: "The invitation could not be sent and cleanup was incomplete. Please contact support before retrying." }, 500);
+      });
+      if (metadataError) {
+        await cleanupTenantInvitation(adminClient, invitation.id);
+        return jsonResponse({ error: "The existing account could not be prepared for tenant onboarding. Please try again or contact support." }, 400);
       }
-      return jsonResponse({ error: inviteError?.message ?? "Unable to send the tenant invitation email." }, 400);
+    } else {
+      const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
+        email,
+        {
+          data: {
+            invitation_type: "tenant_owner",
+            tenant_invitation_id: invitation.id,
+            restaurant_name: "Web2Table",
+            invitation_role: "a restaurant owner",
+            account_setup: "your restaurant account",
+            invitation_label: "RESTAURANT OWNER INVITATION",
+          },
+        },
+      );
+
+      if (inviteError || !inviteData?.user?.id) {
+        const cleanedUp = await cleanupTenantInvitation(adminClient, invitation.id);
+        if (!cleanedUp) {
+          return jsonResponse({ error: "The invitation could not be sent and cleanup was incomplete. Please contact support before retrying." }, 500);
+        }
+        return jsonResponse({ error: inviteError?.message ?? "Unable to send the tenant invitation email." }, 400);
+      }
+      invitedUserId = inviteData.user.id;
     }
 
-    const invitedUserId = inviteData.user.id;
-
-    // Bind the pending tenant invitation to the Auth user created by inviteUserByEmail().
-    // The onboarding RPC intentionally requires this exact user id so the invitation
-    // cannot be claimed by another account.
+    // Bind the invitation to the exact Auth account so it cannot be claimed by
+    // another account. Existing accounts are deliberately not deleted on failure.
     const { error: bindInvitationError } = await adminClient
       .from("tenant_invitations")
       .update({ auth_user_id: invitedUserId, updated_at: new Date().toISOString() })
@@ -168,7 +222,7 @@ Deno.serve(async (request) => {
       .eq("status", "pending");
 
     if (bindInvitationError) {
-      const cleanedUp = await cleanupTenantInvitation(adminClient, invitation.id, invitedUserId);
+      const cleanedUp = await cleanupTenantInvitation(adminClient, invitation.id, reusedExistingAccount ? undefined : invitedUserId);
       if (!cleanedUp) {
         return jsonResponse({ error: "The tenant invitation could not be finalized and cleanup was incomplete. Please contact support before retrying." }, 500);
       }
@@ -214,6 +268,36 @@ Deno.serve(async (request) => {
       },
     });
 
+    let emailSent = !reusedExistingAccount;
+    if (reusedExistingAccount) {
+      const redirectBase = (Deno.env.get("APP_URL") ?? Deno.env.get("SITE_URL") ?? "").replace(/\\/$/, "");
+      if (!redirectBase) {
+        return jsonResponse({
+          success: true,
+          invitation_id: invitation.id,
+          email,
+          restaurant_id: restaurant?.restaurant_id ?? null,
+          restaurant_name: name,
+          package_id: packageId,
+          status: "pending",
+          email_sent: false,
+          warning: "The restaurant was created for the existing account, but APP_URL or SITE_URL is not configured to send a secure access email. Ask the owner to sign in with their existing account.",
+          reused_existing_account: true,
+        });
+      }
+
+      const mailClient = createClient(supabaseUrl, publishableKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const { error: resetEmailError } = await mailClient.auth.resetPasswordForEmail(email, {
+        redirectTo: `${redirectBase}/?invitation=1&flow=tenant-owner`,
+      });
+      emailSent = !resetEmailError;
+      if (resetEmailError) {
+        console.error("Unable to send existing tenant account access email:", resetEmailError);
+      }
+    }
+
     return jsonResponse({
       success: true,
       invitation_id: invitation.id,
@@ -222,8 +306,10 @@ Deno.serve(async (request) => {
       restaurant_name: name,
       package_id: packageId,
       status: "pending",
-      email_sent: true,
-      delivery: "supabase_invite_email",
+      email_sent: emailSent,
+      reused_existing_account: reusedExistingAccount,
+      delivery: reusedExistingAccount ? "supabase_password_recovery_email" : "supabase_invite_email",
+      ...(emailSent ? {} : { warning: "The restaurant was created, but the secure access email could not be sent. The owner can sign in with their existing account; check the Auth email configuration before retrying." }),
     });
   } catch (error) {
     console.error("system-admin-invite-tenant error", error);
