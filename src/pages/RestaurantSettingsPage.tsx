@@ -586,6 +586,16 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       </div>
       <style>{`
         .restaurant-settings-grid{display:grid;gap:20px}
+        .owner-feedback-toast{position:fixed;top:22px;left:50%;transform:translateX(-50%);z-index:12000;width:min(520px,calc(100vw - 32px));box-sizing:border-box;display:flex;align-items:flex-start;gap:12px;padding:15px 18px;border:1px solid;border-radius:14px;box-shadow:0 14px 40px rgba(15,23,42,.18);font-size:14px;line-height:1.45;animation:ownerFeedbackToastIn .22s ease-out}
+        .owner-feedback-toast strong{display:block;margin:1px 0 3px;font-size:14px;font-weight:750}
+        .owner-feedback-toast p{margin:0;font-size:13px}
+        .owner-feedback-toast-icon{width:25px;height:25px;flex:0 0 25px;display:grid;place-items:center;border-radius:50%;font-size:13px;font-weight:800}
+        .owner-feedback-toast.is-success{background:#f0fdf4;border-color:#86efac;color:#166534}
+        .owner-feedback-toast.is-success .owner-feedback-toast-icon{background:#dcfce7;color:#15803d}
+        .owner-feedback-toast.is-error{background:#fff7f7;border-color:#fca5a5;color:#991b1b}
+        .owner-feedback-toast.is-error .owner-feedback-toast-icon{background:#fee2e2;color:#b91c1c}
+        @keyframes ownerFeedbackToastIn{from{opacity:0;transform:translate(-50%,-8px)}to{opacity:1;transform:translate(-50%,0)}}
+        @media(prefers-reduced-motion:reduce){.owner-feedback-toast{animation:none}}
         .restaurant-settings-theme-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}
         .restaurant-settings-theme-field{display:grid;gap:7px;font-weight:600;font-size:14px}
         .restaurant-settings-theme-field input[type=color]{width:100%;height:44px;padding:4px;border:1px solid #dbe2ea;border-radius:10px;background:#fff;cursor:pointer}
@@ -670,8 +680,8 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         @media(max-width:700px){.restaurant-settings-hours-head{display:none}.restaurant-settings-day{grid-template-columns:1fr 1fr;padding:12px}.restaurant-settings-day-name{grid-column:1/-1}.restaurant-settings-toggle{justify-content:flex-start}.restaurant-settings-actions .button{width:100%}}
       `}</style>
 
-      {error && <div className="restaurant-shipping-message is-error" role="alert">{error}</div>}
-      {message && <div className="restaurant-shipping-message is-success" role="status">{message}</div>}
+      {error && <div className="owner-feedback-toast is-error" role="alert"><span className="owner-feedback-toast-icon" aria-hidden="true">!</span><div><strong>Couldn't complete that action</strong><p>{error}</p></div></div>}
+      {message && <div className="owner-feedback-toast is-success" role="status"><span className="owner-feedback-toast-icon" aria-hidden="true">✓</span><div><strong>Changes saved</strong><p>{message}</p></div></div>}
 
       <form className="restaurant-settings-form" onSubmit={(event) => { event.preventDefault(); setShowSaveConfirmation(true); }}>
         <div className="restaurant-settings-card">
