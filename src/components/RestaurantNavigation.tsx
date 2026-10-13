@@ -19,6 +19,7 @@ const ownerNavigationItems: NavigationItem[] = [
   { label: 'Dispatch', href: '#restaurant/delivery-dispatch', icon: 'dispatch' },
   { label: 'Sales', href: '#restaurant/sales', icon: 'sales' },
   { label: 'Business Reports', href: '#restaurant/business-reports', icon: 'sales' },
+  { label: 'Inventory', href: '#restaurant/inventory', icon: 'products' },
   { label: 'Loyalty', href: '#restaurant/loyalty', icon: 'loyalty' },
   { label: 'Store Settings', href: '#restaurant/settings', icon: 'settings' },
   { label: 'Customize', href: '#restaurant/website-customization', icon: 'customization' },
@@ -216,6 +217,8 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
                         ? ['sales']
                         : item.href === '#restaurant/business-reports'
                           ? ['sales']
+                          : item.href === '#restaurant/inventory'
+                            ? ['sales']
                           : item.href === '#restaurant/loyalty'
                           ? ['loyalty']
                           : item.href === '#restaurant/website-customization'
