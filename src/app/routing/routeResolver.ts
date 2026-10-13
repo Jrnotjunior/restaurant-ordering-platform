@@ -164,6 +164,7 @@ export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' |
     isRestaurantSalesPage,
     isRestaurantBusinessReportsPage,
     isRestaurantInventoryPage,
+    isRestaurantRecipesPage,
     isCashierSalesPage,
     isCashierPosPage,
     isRestaurantDeliveryDispatchPage,
