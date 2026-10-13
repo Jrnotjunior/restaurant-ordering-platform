@@ -32,24 +32,20 @@ export function Footer() {
         <a className="site-footer-legal-item" href="#privacy">
           <span className="site-footer-legal-symbol" aria-hidden="true">◈</span>
           <span className="site-footer-legal-title">Privacy Notice</span>
-          <span className="site-footer-legal-description">How we collect and use your information.</span>
         </a>
         <a className="site-footer-legal-item" href="#terms">
           <span className="site-footer-legal-symbol" aria-hidden="true">▤</span>
           <span className="site-footer-legal-title">Terms &amp; Conditions</span>
-          <span className="site-footer-legal-description">Rules for using our ordering service.</span>
         </a>
         <a className="site-footer-legal-item" href="#refunds">
           <span className="site-footer-legal-symbol" aria-hidden="true">↻</span>
           <span className="site-footer-legal-title">Refund &amp; Cancellation Policy</span>
-          <span className="site-footer-legal-description">Information about cancellations, refunds, and order issues.</span>
         </a>
       </nav>
 
       <div className="site-footer-bottom">
         <div className="site-footer-copyright">
           <small>{`© ${new Date().getFullYear()} All rights reserved.`}</small>
-          <p>This site is operated by the restaurant and powered by Web2Table.</p>
         </div>
         <a className="site-footer-powered-by" href="https://web2table.com" target="_blank" rel="noreferrer" aria-label="Powered by Web2Table">
           <span>Powered by</span>
