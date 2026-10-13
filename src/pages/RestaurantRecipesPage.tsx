@@ -148,7 +148,10 @@ export function RestaurantRecipesPage({ restaurantId }: Props) {
             <div style={{overflowX:'auto',borderTop:'1px solid var(--border,#e2e8f0)'}}><table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}><thead><tr>{['Ingredient','Quantity per product','Current stock',''].map(x=><th key={x} style={thStyle}>{x}</th>)}</tr></thead><tbody>{productRecipes.map(recipe=>{
               const item=itemMap.get(recipe.inventory_item_id);
               const amount=Number(recipe.quantity_per_product);
-              return <tr key={recipe.id}><td style={tdStyle}>{item?.name ?? 'Inventory item unavailable'}</td><td style={tdStyle}>{amount.toLocaleString('en-PH',{maximumFractionDigits:3})} {recipe.quantity_unit ?? item?.unit ?? ''}</td><td style={tdStyle}>{item ? Number(item.quantity_on_hand).toLocaleString('en-PH',{maximumFractionDigits:3})+' '+item.unit : '—'}</td><td style={tdStyle}><button type="button" disabled={saving} onClick={()=>void removeRecipe(recipe)} style={buttonStyle}>Remove</button></td></tr>;
+              const displayUnit=recipe.quantity_unit ?? item?.unit ?? '';
+              let displayAmount=amount;
+              if (item && displayUnit) { try { displayAmount=convertQuantity(amount,item.unit,displayUnit); } catch { displayAmount=amount; } }
+              return <tr key={recipe.id}><td style={tdStyle}>{item?.name ?? 'Inventory item unavailable'}</td><td style={tdStyle}>{displayAmount.toLocaleString('en-PH',{maximumFractionDigits:3})} {displayUnit}</td><td style={tdStyle}>{item ? Number(item.quantity_on_hand).toLocaleString('en-PH',{maximumFractionDigits:3})+' '+item.unit : '—'}</td><td style={tdStyle}><button type="button" disabled={saving} onClick={()=>void removeRecipe(recipe)} style={buttonStyle}>Remove</button></td></tr>;
             })}</tbody></table></div>
           </details>;
         })}
