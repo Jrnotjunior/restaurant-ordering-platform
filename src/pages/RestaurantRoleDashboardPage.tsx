@@ -56,9 +56,10 @@ function OwnerDashboard({ restaurantName, restaurantId }: { restaurantName?: str
 
   useEffect(() => {
     if (!restaurantId || !supabase) { setInventoryLoading(false); return; }
+    const client = supabase;
     let mounted = true;
     const loadInventoryAlerts = async () => {
-      const { data, error: inventoryError } = await supabase
+      const { data, error: inventoryError } = await client
         .from('restaurant_inventory_items')
         .select('id,name,unit,quantity_on_hand,low_stock_threshold')
         .eq('restaurant_id', restaurantId)
@@ -72,10 +73,10 @@ function OwnerDashboard({ restaurantName, restaurantId }: { restaurantName?: str
       setInventoryLoading(false);
     };
     void loadInventoryAlerts();
-    const channel = supabase.channel(`owner-inventory-alerts:${restaurantId}`)
+    const channel = client.channel(`owner-inventory-alerts:${restaurantId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'restaurant_inventory_items', filter: `restaurant_id=eq.${restaurantId}` }, () => { void loadInventoryAlerts(); })
       .subscribe();
-    return () => { mounted = false; void supabase.removeChannel(channel); };
+    return () => { mounted = false; void client.removeChannel(channel); };
   }, [restaurantId]);
 
   const outOfStockItems = inventoryItems.filter((item) => Number(item.quantity_on_hand) <= 0);
