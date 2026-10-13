@@ -238,6 +238,16 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
     <section className="restaurant-page restaurant-shipping-page">
       <style>{`
         .website-customization-form{display:grid;gap:22px}
+        .owner-feedback-toast{position:fixed;top:22px;left:50%;transform:translateX(-50%);z-index:12000;width:min(520px,calc(100vw - 32px));box-sizing:border-box;display:flex;align-items:flex-start;gap:12px;padding:15px 18px;border:1px solid;border-radius:14px;box-shadow:0 14px 40px rgba(15,23,42,.18);font-size:14px;line-height:1.45;animation:ownerFeedbackToastIn .22s ease-out}
+        .owner-feedback-toast strong{display:block;margin:1px 0 3px;font-size:14px;font-weight:750}
+        .owner-feedback-toast p{margin:0;font-size:13px}
+        .owner-feedback-toast-icon{width:25px;height:25px;flex:0 0 25px;display:grid;place-items:center;border-radius:50%;font-size:13px;font-weight:800}
+        .owner-feedback-toast.is-success{background:#f0fdf4;border-color:#86efac;color:#166534}
+        .owner-feedback-toast.is-success .owner-feedback-toast-icon{background:#dcfce7;color:#15803d}
+        .owner-feedback-toast.is-error{background:#fff7f7;border-color:#fca5a5;color:#991b1b}
+        .owner-feedback-toast.is-error .owner-feedback-toast-icon{background:#fee2e2;color:#b91c1c}
+        @keyframes ownerFeedbackToastIn{from{opacity:0;transform:translate(-50%,-8px)}to{opacity:1;transform:translate(-50%,0)}}
+        @media(prefers-reduced-motion:reduce){.owner-feedback-toast{animation:none}}
         .website-customization-notice{display:flex;align-items:flex-start;gap:12px;margin:0 0 18px;padding:14px 16px;border:1px solid;border-radius:12px;font-size:14px;line-height:1.5;box-shadow:0 2px 8px rgba(15,23,42,.035);animation:websiteNoticeIn .18s ease-out}
         .website-customization-notice-icon{width:24px;height:24px;flex:0 0 24px;display:grid;place-items:center;border-radius:50%;font-size:13px;font-weight:800}
         .website-customization-notice-content{min-width:0;flex:1}
@@ -351,24 +361,8 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         @media(max-width:700px){.website-customization-branding-grid,.website-customization-style-grid{grid-template-columns:1fr}.website-customization-grid,.website-customization-toggle-grid,.website-customization-live-section-grid{grid-template-columns:1fr}.website-customization-preview-launch-card{align-items:flex-start;flex-direction:column}.website-customization-phone{width:320px;height:650px}.website-customization-live-hero h3{font-size:24px}.website-customization-actions-bar .button{width:100%}}
       `}</style>
 
-      {error ? (
-        <div className="website-customization-notice is-error" role="alert">
-          <span className="website-customization-notice-icon" aria-hidden="true">!</span>
-          <div className="website-customization-notice-content">
-            <strong className="website-customization-notice-title">Couldn't complete that action</strong>
-            <p className="website-customization-notice-message">{error}</p>
-          </div>
-        </div>
-      ) : null}
-      {message ? (
-        <div className="website-customization-notice is-success" role="status">
-          <span className="website-customization-notice-icon" aria-hidden="true">✓</span>
-          <div className="website-customization-notice-content">
-            <strong className="website-customization-notice-title">Changes saved</strong>
-            <p className="website-customization-notice-message">{message}</p>
-          </div>
-        </div>
-      ) : null}
+      {error ? <div className="owner-feedback-toast is-error" role="alert"><span className="owner-feedback-toast-icon" aria-hidden="true">!</span><div><strong>Couldn't complete that action</strong><p>{error}</p></div></div> : null}
+      {message ? <div className="owner-feedback-toast is-success" role="status"><span className="owner-feedback-toast-icon" aria-hidden="true">✓</span><div><strong>Changes saved</strong><p>{message}</p></div></div> : null}
 
       <form className="website-customization-form" onSubmit={(event: FormEvent) => { event.preventDefault(); setShowSaveConfirmation(true); }}>
         <div className="website-customization-header">
