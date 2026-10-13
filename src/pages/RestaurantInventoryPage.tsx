@@ -42,7 +42,8 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
     const query = search.trim().toLowerCase();
     return items.filter((item) => !query || item.name.toLowerCase().includes(query) || item.category.toLowerCase().includes(query));
   }, [items, search]);
-  const lowStockItems = items.filter((item) => Number(item.quantity_on_hand) <= Number(item.low_stock_threshold));
+  const outOfStockItems = items.filter((item) => Number(item.quantity_on_hand) <= 0);
+  const lowStockItems = items.filter((item) => Number(item.quantity_on_hand) > 0 && Number(item.quantity_on_hand) <= Number(item.low_stock_threshold));
   const totalUnits = items.reduce((sum, item) => sum + Number(item.quantity_on_hand), 0);
 
   async function addItem(event: FormEvent<HTMLFormElement>) {
@@ -107,7 +108,7 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
       .inventory-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
       .inventory-header h1{margin:0 0 6px;font-size:clamp(24px,3vw,32px);letter-spacing:-.03em}
       .inventory-header p{margin:0;color:var(--muted,#64748b);max-width:720px;line-height:1.5}
-      .inventory-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+      .inventory-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
       .inventory-card,.inventory-panel{min-width:0;padding:17px;border:1px solid var(--border,#e2e8f0);border-radius:14px;background:var(--surface,#fff)}
       .inventory-card small{display:block;color:var(--muted,#64748b);font-size:12px;margin-bottom:8px}
       .inventory-card strong{font-size:clamp(20px,2.5vw,28px);overflow-wrap:anywhere}
@@ -126,7 +127,7 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
       .inventory-table th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted,#64748b)}
       .inventory-table .inventory-item-name{font-weight:700}
       .inventory-badge{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:750;background:#dcfce7;color:#166534}
-      .inventory-badge.low{background:#fef3c7;color:#92400e}
+      .inventory-badge.low{background:#fef3c7;color:#92400e}.inventory-badge.out{background:#fee2e2;color:#991b1b}
       .inventory-adjust{display:grid;grid-template-columns:80px 140px auto;gap:6px;min-width:300px;align-items:end}
       .inventory-adjust label{font-size:11px}
       .inventory-message{padding:12px 14px;border-radius:10px;font-size:13px}
@@ -140,7 +141,8 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
     {notice && <div className="inventory-message notice" role="status">{notice}</div>}
     <div className="inventory-cards">
       <div className="inventory-card"><small>Tracked items</small><strong>{items.length}</strong></div>
-      <div className="inventory-card"><small>Items at or below low-stock level</small><strong>{lowStockItems.length}</strong></div>
+      <div className="inventory-card"><small>Low-stock items</small><strong>{lowStockItems.length}</strong></div>
+      <div className="inventory-card"><small>Out of stock</small><strong>{outOfStockItems.length}</strong></div>
       <div className="inventory-card"><small>Total units across items</small><strong>{numberFormat.format(totalUnits)}</strong></div>
     </div>
     <section className="inventory-panel"><h2>Add ingredient or supply</h2>
@@ -157,7 +159,7 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
     </section>
     <section className="inventory-panel"><div className="inventory-toolbar"><h2 style={{margin:0}}>Stock on hand</h2><input className="inventory-search" type="search" placeholder="Search items or categories" value={search} onChange={(event)=>setSearch(event.target.value)}/></div>
       {loading ? <p>Loading inventory…</p> : <div className="inventory-table-wrap"><table className="inventory-table"><thead><tr><th>Item</th><th>Category</th><th>Stock</th><th>Low-stock level</th><th>Status</th><th>Adjust stock</th></tr></thead><tbody>
-        {visibleItems.map((item)=><tr key={item.id}><td><div className="inventory-item-name">{item.name}</div><span className="inventory-muted">Updated {dateTime(item.updated_at)}</span></td><td>{item.category}</td><td>{numberFormat.format(Number(item.quantity_on_hand))} {item.unit}</td><td>{numberFormat.format(Number(item.low_stock_threshold))} {item.unit}</td><td><span className={`inventory-badge${Number(item.quantity_on_hand)<=Number(item.low_stock_threshold)?' low':''}`}>{Number(item.quantity_on_hand)<=Number(item.low_stock_threshold)?'Low stock':'In stock'}</span></td><td><div className="inventory-adjust"><label>Change (+/−)<input type="number" step="0.001" value={adjustments[item.id]?.quantity ?? ''} onChange={(event)=>setAdjustments((current)=>({...current,[item.id]:{quantity:event.target.value,reason:current[item.id]?.reason??''}}))} placeholder="+5 / -2"/></label><label>Reason<input value={adjustments[item.id]?.reason ?? ''} maxLength={240} onChange={(event)=>setAdjustments((current)=>({...current,[item.id]:{quantity:current[item.id]?.quantity??'',reason:event.target.value}}))} placeholder="Received, used, waste…"/></label><button className="inventory-button" type="button" disabled={saving} onClick={()=>void adjustStock(item)}>Save</button></div></td></tr>)}
+        {visibleItems.map((item)=><tr key={item.id}><td><div className="inventory-item-name">{item.name}</div><span className="inventory-muted">Updated {dateTime(item.updated_at)}</span></td><td>{item.category}</td><td>{numberFormat.format(Number(item.quantity_on_hand))} {item.unit}</td><td>{numberFormat.format(Number(item.low_stock_threshold))} {item.unit}</td><td><span className={`inventory-badge${Number(item.quantity_on_hand)<=0?' out':Number(item.quantity_on_hand)<=Number(item.low_stock_threshold)?' low':''}`}>{Number(item.quantity_on_hand)<=0?'Out of stock':Number(item.quantity_on_hand)<=Number(item.low_stock_threshold)?'Low stock':'In stock'}</span></td><td><div className="inventory-adjust"><label>Change (+/−)<input type="number" step="0.001" value={adjustments[item.id]?.quantity ?? ''} onChange={(event)=>setAdjustments((current)=>({...current,[item.id]:{quantity:event.target.value,reason:current[item.id]?.reason??''}}))} placeholder="+5 / -2"/></label><label>Reason<input value={adjustments[item.id]?.reason ?? ''} maxLength={240} onChange={(event)=>setAdjustments((current)=>({...current,[item.id]:{quantity:current[item.id]?.quantity??'',reason:event.target.value}}))} placeholder="Received, used, waste…"/></label><button className="inventory-button" type="button" disabled={saving} onClick={()=>void adjustStock(item)}>Save</button></div></td></tr>)}
         {!visibleItems.length && <tr><td colSpan={6}>{items.length?'No inventory items match your search.':'No inventory items yet. Add ingredients and supplies above to get started.'}</td></tr>}
       </tbody></table></div>}
     </section>
