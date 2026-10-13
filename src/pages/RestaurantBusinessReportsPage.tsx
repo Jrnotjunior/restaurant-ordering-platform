@@ -6,7 +6,7 @@ import { supabase } from '../services/supabaseClient';
 type Props = { restaurantId: string };
 type ExpenseCategory = 'ingredients' | 'payroll' | 'rent' | 'utilities' | 'packaging' | 'delivery' | 'marketing' | 'maintenance' | 'supplies' | 'other';
 type Expense = { id: string; expense_date: string; category: ExpenseCategory; description: string; amount: number | string; created_at: string };
-type Tab = 'overview' | 'expenses' | 'tax';
+type Tab = 'overview' | 'expenses' | 'payments' | 'tax';
 
 const CATEGORIES: { value: ExpenseCategory; label: string }[] = [
   { value: 'ingredients', label: 'Ingredients & food' }, { value: 'payroll', label: 'Payroll' },
@@ -77,6 +77,25 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
   const totalExpenses = rangeExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
   const estimatedOperatingResult = totalSales - totalExpenses;
   const vatConfiguredOrders = completedOrders.filter((order) => order.taxVatRegistered).length;
+  const paymentTotals = useMemo(() => {
+    const statuses = ['paid', 'pending', 'failed', 'refunded'] as const;
+    return statuses.map((status) => ({
+      status,
+      count: rangeOrders.filter((order) => order.paymentStatus === status).length,
+      amount: rangeOrders.filter((order) => order.paymentStatus === status).reduce((sum, order) => sum + order.total, 0),
+    }));
+  }, [rangeOrders]);
+  const paymentMethods = useMemo(() => {
+    const methods = ['cash', 'gcash'] as const;
+    return methods.map((method) => ({
+      method,
+      count: rangeOrders.filter((order) => order.paymentMethod === method).length,
+      paidAmount: rangeOrders.filter((order) => order.paymentMethod === method && order.paymentStatus === 'paid').reduce((sum, order) => sum + order.total, 0),
+      outstandingAmount: rangeOrders.filter((order) => order.paymentMethod === method && ['pending', 'failed'].includes(order.paymentStatus)).reduce((sum, order) => sum + order.total, 0),
+      providerFees: rangeOrders.filter((order) => order.paymentMethod === method && order.paymentStatus === 'paid').reduce((sum, order) => sum + (order.paymongoFee ?? 0), 0),
+      recordedNet: rangeOrders.filter((order) => order.paymentMethod === method && order.paymentStatus === 'paid').reduce((sum, order) => sum + (order.paymongoNetAmount ?? 0), 0),
+    }));
+  }, [rangeOrders]);
 
   async function addExpense(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(''); setNotice('');
@@ -132,6 +151,19 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
     ]);
   }
 
+  function exportPayments() {
+    downloadCsv(`payment-reconciliation-${fromDate}-to-${toDate}.csv`, [
+      ['Payment reconciliation support report (not a provider settlement statement)',''],
+      ['Period start', fromDate], ['Period end', toDate], ['Report generated', new Date().toISOString()],
+      ['Note','Amounts and statuses are from recorded order data. Verify GCash/PayMongo settlements and bank deposits against your payment-provider statements. Missing fee/net fields are left blank in detail rows.'],
+      [],
+      ['Order number','Order date','Order status','Payment method','Payment status','Order total PHP','Recorded provider payment method','PayMongo payment ID','PayMongo checkout session ID','Recorded PayMongo fee PHP','Recorded PayMongo net amount PHP'],
+      ...rangeOrders.map((order) => [order.orderNumber, order.createdAt, order.status, order.paymentMethod, order.paymentStatus, order.total, order.paymongoPaymentMethod ?? '', order.paymongoPaymentId ?? '', order.paymongoCheckoutSessionId ?? '', order.paymongoFee ?? '', order.paymongoNetAmount ?? '']),
+      [], ['Status','Order count','Order total PHP'],
+      ...paymentTotals.map((item) => [item.status, item.count, item.amount]),
+    ]);
+  }
+
   function exportExpenses() {
     downloadCsv(`expenses-${fromDate}-to-${toDate}.csv`, [
       ['Expense date','Category','Description','Amount PHP'],
@@ -181,7 +213,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
         </div>
       </header>
       <nav className="business-reports-tabs" role="tablist" aria-label="Business report sections">
-        {([['overview','Overview'],['expenses','Expenses & Profit'],['tax','Tax Reports']] as [Tab,string][]).map(([key,label]) => <button key={key} type="button" role="tab" aria-selected={tab===key} onClick={() => {setTab(key);setError('');setNotice('');}}>{label}</button>)}
+        {([['overview','Overview'],['expenses','Expenses & Profit'],['payments','Payments'],['tax','Tax Reports']] as [Tab,string][]).map(([key,label]) => <button key={key} type="button" role="tab" aria-selected={tab===key} onClick={() => {setTab(key);setError('');setNotice('');}}>{label}</button>)}
       </nav>
       {error && <div className="business-reports-error" role="alert">{error}</div>}
       {notice && <div className="business-reports-notice" role="status">{notice}</div>}
@@ -225,6 +257,34 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
             {rangeExpenses.map((expense)=><tr key={expense.id}><td>{expense.expense_date}</td><td>{CATEGORIES.find((item)=>item.value===expense.category)?.label ?? expense.category}</td><td className="wrap">{expense.description}</td><td>{peso(Number(expense.amount))}</td><td><button className="business-reports-button" type="button" onClick={()=>void deleteExpense(expense.id)}>Delete</button></td></tr>)}
             {!rangeExpenses.length && <tr><td colSpan={5}>No expenses recorded for this period.</td></tr>}
           </tbody></table></div></section>
+        </>}
+        {tab === 'payments' && <>
+          <div className="business-reports-cards">
+            <div className="business-reports-card"><small>Recorded as paid</small><strong>{peso(paymentTotals.find((item) => item.status === 'paid')?.amount ?? 0)}</strong></div>
+            <div className="business-reports-card"><small>Pending payment</small><strong>{peso(paymentTotals.find((item) => item.status === 'pending')?.amount ?? 0)}</strong></div>
+            <div className="business-reports-card"><small>Failed payment</small><strong>{peso(paymentTotals.find((item) => item.status === 'failed')?.amount ?? 0)}</strong></div>
+            <div className="business-reports-card"><small>Refunded orders</small><strong>{peso(paymentTotals.find((item) => item.status === 'refunded')?.amount ?? 0)}</strong></div>
+          </div>
+          <section className="business-reports-panel"><h2>Payment status summary</h2>
+            <p>All orders created in the selected date range are shown here, including orders that are not completed. “Paid” means the order record says paid; it does not independently confirm a provider settlement or bank deposit.</p>
+            <div className="business-reports-table-wrap"><table className="business-reports-table"><thead><tr><th>Recorded payment status</th><th>Orders</th><th>Order total</th></tr></thead><tbody>
+              {paymentTotals.map((item) => <tr key={item.status}><td>{item.status.charAt(0).toUpperCase() + item.status.slice(1)}</td><td>{item.count}</td><td>{peso(item.amount)}</td></tr>)}
+              {!rangeOrders.length && <tr><td colSpan={3}>No orders in this period.</td></tr>}
+            </tbody></table></div>
+          </section>
+          <section className="business-reports-panel"><h2>Payment method breakdown</h2>
+            <div className="business-reports-table-wrap"><table className="business-reports-table"><thead><tr><th>Method</th><th>Orders</th><th>Recorded paid total</th><th>Pending/failed total</th><th>Recorded provider fees</th><th>Recorded provider net</th></tr></thead><tbody>
+              {paymentMethods.map((item) => <tr key={item.method}><td>{item.method === 'gcash' ? 'GCash / online' : 'Cash'}</td><td>{item.count}</td><td>{peso(item.paidAmount)}</td><td>{peso(item.outstandingAmount)}</td><td>{item.method === 'gcash' ? peso(item.providerFees) : '—'}</td><td>{item.method === 'gcash' ? peso(item.recordedNet) : '—'}</td></tr>)}
+            </tbody></table></div>
+            <p className="business-reports-muted">Provider fees and net amounts are displayed only when recorded on the order. Zero may mean no value was recorded, not necessarily a zero-fee transaction. Refunded amounts are listed separately in the status summary.</p>
+            <div className="business-reports-actions"><button className="business-reports-button primary" type="button" onClick={exportPayments}>Export payment reconciliation CSV</button></div>
+          </section>
+          <section className="business-reports-panel"><h2>Orders to review</h2>
+            <div className="business-reports-table-wrap"><table className="business-reports-table"><thead><tr><th>Order</th><th>Date</th><th>Order status</th><th>Method</th><th>Payment status</th><th>Amount</th></tr></thead><tbody>
+              {rangeOrders.filter((order) => ['pending','failed','refunded'].includes(order.paymentStatus)).sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).map((order) => <tr key={order.orderId}><td>{order.orderNumber}</td><td>{order.createdAt.slice(0,10)}</td><td>{order.status}</td><td>{order.paymentMethod === 'gcash' ? 'GCash / online' : 'Cash'}</td><td>{order.paymentStatus}</td><td>{peso(order.total)}</td></tr>)}
+              {!rangeOrders.some((order) => ['pending','failed','refunded'].includes(order.paymentStatus)) && <tr><td colSpan={6}>No pending, failed, or refunded payment records in this period.</td></tr>}
+            </tbody></table></div>
+          </section>
         </>}
         {tab === 'tax' && <>
           <div className="business-reports-cards">
