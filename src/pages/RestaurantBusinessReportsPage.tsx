@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import * as XLSX from 'xlsx';
 import { getRestaurantSales } from '../modules/sales/salesService';
 import type { RestaurantOrder } from '../modules/ordering/orderService';
 import { supabase } from '../services/supabaseClient';
@@ -22,13 +23,20 @@ const todayKey = () => {
   return `${get('year')}-${get('month')}-${get('day')}`;
 };
 const monthStart = () => `${todayKey().slice(0, 7)}-01`;
-const csvEscape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-function downloadCsv(filename: string, rows: unknown[][]) {
-  const csv = rows.map((row) => row.map(csvEscape).join(',')).join('\r\n');
-  const url = URL.createObjectURL(new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' }));
-  const link = document.createElement('a');
-  link.href = url; link.download = filename; link.click();
-  URL.revokeObjectURL(url);
+function downloadSpreadsheet(filename: string, rows: unknown[][]) {
+  const worksheet = XLSX.utils.aoa_to_sheet(rows);
+  const columnCount = rows.reduce((max, row) => Math.max(max, row.length), 0);
+  worksheet['!cols'] = Array.from({ length: columnCount }, (_, columnIndex) => {
+    const maxLength = rows.reduce((max, row) => {
+      const value = row[columnIndex];
+      return Math.max(max, value == null ? 0 : String(value).length);
+    }, 0);
+    return { wch: Math.min(Math.max(maxLength + 2, 12), 52) };
+  });
+  worksheet['!rows'] = rows.map((row) => ({ hpt: row.some((value) => String(value ?? '').length > 90) ? 34 : 21 }));
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Report');
+  XLSX.writeFile(workbook, filename, { compression: true });
 }
 
 export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
@@ -129,14 +137,14 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
   }
 
   function exportSales() {
-    downloadCsv(`sales-report-${fromDate}-to-${toDate}.csv`, [
+    downloadSpreadsheet(`sales-report-${fromDate}-to-${toDate}.xlsx`, [
       ['Order number','Order date','Status','Order type','Payment method','Payment status','Order total PHP','Discounts PHP','Net sales per order record PHP','Taxable sales PHP','VAT amount PHP','VAT-exempt sales PHP','VAT registered on order'],
       ...rangeOrders.map((order) => [order.orderNumber, order.createdAt, order.status, order.orderType, order.paymentMethod, order.paymentStatus, order.total, (order.discountAmount ?? 0) + (order.loyaltyDiscountAmount ?? 0), order.taxNetSales ?? '', order.taxVatableSales ?? '', order.taxVatAmount ?? '', order.taxVatExemptSales ?? '', order.taxVatRegistered ? 'Yes' : 'No']),
     ]);
   }
 
   function exportTaxSupport() {
-    downloadCsv(`tax-support-sales-${fromDate}-to-${toDate}.csv`, [
+    downloadSpreadsheet(`tax-support-sales-${fromDate}-to-${toDate}.xlsx`, [
       ['Tax-support sales detail (not an official tax return or invoice)',''],
       ['Period start', fromDate], ['Period end', toDate],
       ['Report generated', new Date().toISOString()],
@@ -152,7 +160,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
   }
 
   function exportPayments() {
-    downloadCsv(`payment-reconciliation-${fromDate}-to-${toDate}.csv`, [
+    downloadSpreadsheet(`payment-reconciliation-${fromDate}-to-${toDate}.xlsx`, [
       ['Payment reconciliation support report (not a provider settlement statement)',''],
       ['Period start', fromDate], ['Period end', toDate], ['Report generated', new Date().toISOString()],
       ['Note','Amounts and statuses are from recorded order data. Verify GCash/PayMongo settlements and bank deposits against your payment-provider statements. Missing fee/net fields are left blank in detail rows.'],
@@ -165,7 +173,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
   }
 
   function exportExpenses() {
-    downloadCsv(`expenses-${fromDate}-to-${toDate}.csv`, [
+    downloadSpreadsheet(`expenses-${fromDate}-to-${toDate}.xlsx`, [
       ['Expense date','Category','Description','Amount PHP'],
       ...rangeExpenses.map((expense) => [expense.expense_date, CATEGORIES.find((item) => item.value === expense.category)?.label ?? expense.category, expense.description, Number(expense.amount)]),
       ['Total expenses PHP','','', totalExpenses],
