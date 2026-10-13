@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent, type CSSProperties } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { getMenu } from '../modules/products/productService';
 import type { RestaurantProduct } from '../types/menu';
@@ -95,7 +95,7 @@ export function RestaurantRecipesPage({ restaurantId }: Props) {
   </section>;
 }
 
-const fieldStyle: React.CSSProperties = {width:'100%',boxSizing:'border-box',minHeight:40,border:'1px solid var(--border,#dce2ea)',borderRadius:9,padding:'8px 10px',background:'var(--surface,#fff)',color:'inherit',font:'inherit'};
+const fieldStyle: CSSProperties = {width:'100%',boxSizing:'border-box',minHeight:40,border:'1px solid var(--border,#dce2ea)',borderRadius:9,padding:'8px 10px',background:'var(--surface,#fff)',color:'inherit',font:'inherit'};
 const buttonStyle: React.CSSProperties = {border:'1px solid var(--border,#dce2ea)',borderRadius:9,padding:'9px 12px',background:'var(--surface,#fff)',color:'var(--text,#202938)',font:'inherit',fontWeight:650,cursor:'pointer'};
 const thStyle: React.CSSProperties = {padding:'11px 10px',borderBottom:'1px solid var(--border,#e2e8f0)',textAlign:'left',fontSize:11,textTransform:'uppercase',color:'var(--muted,#64748b)'};
 const tdStyle: React.CSSProperties = {padding:'11px 10px',borderBottom:'1px solid var(--border,#e2e8f0)',textAlign:'left',verticalAlign:'top'};
