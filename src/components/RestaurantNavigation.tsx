@@ -271,28 +271,53 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
                 setSupportError('');
                 setSupportSuccess('');
                 if (!supabase) { setSupportError('Support submission is temporarily unavailable. Please try again later.'); return; }
+                if (!restaurant.id) { setSupportError('We could not identify your restaurant. Refresh the page and try again.'); return; }
                 if (!supportSubject.trim() || !supportDescription.trim()) { setSupportError('Please complete the subject and description.'); return; }
                 setSupportSubmitting(true);
                 try {
-                  const { data: { user } } = await supabase.auth.getUser();
+                  const { data: { user }, error: userError } = await supabase.auth.getUser();
+                  if (userError) throw userError;
+                  if (!user) {
+                    setSupportError('Your session has expired. Please sign in again and resubmit your request.');
+                    return;
+                  }
+
                   const { data: submittedRequest, error } = await supabase.from('restaurant_support_requests').insert({
                     restaurant_id: restaurant.id,
-                    requester_user_id: user?.id ?? null,
-                    requester_email: user?.email ?? email ?? null,
+                    requester_user_id: user.id,
+                    requester_email: user.email ?? email ?? null,
                     request_type: supportType,
                     subject: supportSubject.trim(),
                     description: supportDescription.trim(),
                     impact: supportImpact,
                     status: 'open',
                   }).select('request_number').single();
-                  if (error) throw error;
+
+                  if (error) {
+                    console.error('Support request submission failed.', {
+                      code: error.code,
+                      message: error.message,
+                      details: error.details,
+                      hint: error.hint,
+                      restaurantId: restaurant.id,
+                    });
+                    if (error.code === '42501' || error.code === 'PGRST301') {
+                      throw new Error('Your account could not submit a support request for this restaurant. Please refresh the page and sign in again. If the problem continues, contact support.');
+                    }
+                    throw new Error(error.message || 'The support request could not be saved. Please try again.');
+                  }
+
                   setSupportSuccess(`Your request ${submittedRequest?.request_number ?? ''} has been submitted. Our support team will follow up.`.trim());
                   setSupportSubject('');
                   setSupportDescription('');
                   setSupportType('incident');
                   setSupportImpact('normal');
                 } catch (submitError) {
-                  setSupportError(submitError instanceof Error ? submitError.message : 'Unable to submit your request. Please try again.');
+                  const message = submitError && typeof submitError === 'object' && 'message' in submitError
+                    ? String((submitError as { message?: unknown }).message || '')
+                    : submitError instanceof Error ? submitError.message : '';
+                  console.error('Unable to submit support request.', submitError);
+                  setSupportError(message || 'Unable to submit your request. Please try again.');
                 } finally {
                   setSupportSubmitting(false);
                 }
