@@ -128,6 +128,7 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
   const [supportMessages, setSupportMessages] = useState<OwnerSupportMessage[]>([]);
   const [supportMessagesLoading, setSupportMessagesLoading] = useState(false);
   const [supportReply, setSupportReply] = useState('');
+  const [supportReplyFiles, setSupportReplyFiles] = useState<File[]>([]);
   const [supportReplySending, setSupportReplySending] = useState(false);
   const [supportCurrentUserId, setSupportCurrentUserId] = useState<string | null>(null);
   const restaurant = useRestaurant();
@@ -229,11 +230,13 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
       const { data: { user }, error: authError } = await client.auth.getUser();
       if (authError) throw authError;
       if (!user) throw new Error('Your session has expired. Please sign in again.');
-      const { error } = await client.from('support_ticket_messages').insert({
+      const { data: sentMessage, error } = await client.from('support_ticket_messages').insert({
         ticket_id: selectedSupportTicketId, sender_user_id: user.id, message: supportReply.trim(), visibility: 'public',
-      });
+      }).select('id').single();
       if (error) throw error;
+      if (supportReplyFiles.length) await uploadRestaurantSupportAttachments(selectedSupportTicketId, supportReplyFiles, sentMessage.id);
       setSupportReply('');
+      setSupportReplyFiles([]);
       const { data } = await client.from('support_ticket_messages').select('id,ticket_id,sender_user_id,message,visibility,created_at').eq('ticket_id', selectedSupportTicketId).eq('visibility', 'public').order('created_at', { ascending: true });
       if (data) setSupportMessages(data as OwnerSupportMessage[]);
     } catch (e) {
@@ -459,6 +462,8 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
                       {(() => { const ticket = supportTickets.find((item) => item.id === selectedSupportTicketId); const closed = !ticket || ['resolved','closed','cancelled'].includes(ticket.status); return closed ? <p className="restaurant-support-feedback">This request is closed. Submit a new request if you need more help.</p> : (
                         <form className="restaurant-support-reply-form" onSubmit={(event) => void sendSupportReply(event)}>
                           <label className="restaurant-support-field">Reply to support<textarea value={supportReply} onChange={(event) => setSupportReply(event.target.value)} rows={3} maxLength={10000} required placeholder="Add more details or reply to support…" /></label>
+                          <label className="restaurant-support-field">Attachments (images, PDF, or text; up to 10 MB each)<input type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,text/plain" disabled={supportReplySending} onChange={(event) => setSupportReplyFiles(Array.from(event.target.files ?? []))} /></label>
+                          {supportReplyFiles.length ? <p className="restaurant-support-feedback">{supportReplyFiles.map((file) => file.name).join(', ')}</p> : null}
                           <button type="submit" className="restaurant-support-primary" disabled={supportReplySending || !supportReply.trim()}>{supportReplySending ? 'Sending…' : 'Send reply'}</button>
                         </form>
                       ); })()}
