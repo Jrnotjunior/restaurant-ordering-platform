@@ -28,7 +28,11 @@ export async function uploadRestaurantSupportAttachments(ticketId: string, files
       if (metadataError) throw metadataError;
     }
   } catch (error) {
-    if (uploadedPaths.length) await supabase.storage.from(BUCKET).remove(uploadedPaths);
+    if (uploadedPaths.length) {
+      // Remove metadata first so a failed multi-file upload cannot leave orphaned rows.
+      await supabase.from('support_ticket_attachments').delete().in('storage_path', uploadedPaths);
+      await supabase.storage.from(BUCKET).remove(uploadedPaths);
+    }
     throw error;
   }
 }
