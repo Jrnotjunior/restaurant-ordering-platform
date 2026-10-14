@@ -14,6 +14,7 @@ type NavigationItem = {
 
 type OwnerSupportTicket = { id: string; request_number: string | null; subject: string; status: string; created_at: string; updated_at: string };
 type OwnerSupportMessage = { id: string; ticket_id: string; sender_user_id: string; message: string; visibility: 'public' | 'internal'; created_at: string };
+type OwnerSupportAttachment = { id: string; message_id: string | null; storage_path: string; file_name: string; file_size: number; created_at: string };
 
 const ownerNavigationItems: NavigationItem[] = [
   { label: 'Dashboard', href: '#restaurant/owner', icon: 'dashboard' },
@@ -126,6 +127,8 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
   const [supportInboxLoading, setSupportInboxLoading] = useState(false);
   const [selectedSupportTicketId, setSelectedSupportTicketId] = useState<string | null>(null);
   const [supportMessages, setSupportMessages] = useState<OwnerSupportMessage[]>([]);
+  const [supportAttachments, setSupportAttachments] = useState<OwnerSupportAttachment[]>([]);
+  const [supportAttachmentUrls, setSupportAttachmentUrls] = useState<Record<string, string>>({});
   const [supportMessagesLoading, setSupportMessagesLoading] = useState(false);
   const [supportReply, setSupportReply] = useState('');
   const [supportReplyFiles, setSupportReplyFiles] = useState<File[]>([]);
@@ -199,7 +202,7 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
   }, [supportOpen, supportView, restaurant.id, selectedSupportTicketId]);
 
   useEffect(() => {
-    if (!supportOpen || supportView !== 'requests' || !selectedSupportTicketId || !supabase) { setSupportMessages([]); return; }
+    if (!supportOpen || supportView !== 'requests' || !selectedSupportTicketId || !supabase) { setSupportMessages([]); setSupportAttachments([]); setSupportAttachmentUrls({}); return; }
     const client = supabase;
     let active = true;
     const loadMessages = async () => {
@@ -211,7 +214,19 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
         .order('created_at', { ascending: true });
       if (!active) return;
       if (error) { setSupportError('Unable to load this conversation. Please try again.'); console.error('Support conversation load failed.', error); }
-      else setSupportMessages((data ?? []) as OwnerSupportMessage[]);
+      else {
+        setSupportMessages((data ?? []) as OwnerSupportMessage[]);
+        const { data: attachmentRows, error: attachmentError } = await client.from('support_ticket_attachments').select('id,message_id,storage_path,file_name,file_size,created_at').eq('ticket_id', selectedSupportTicketId).eq('visibility', 'public').order('created_at', { ascending: true });
+        if (!active) return;
+        if (attachmentError) console.error('Support attachment load failed.', attachmentError);
+        const safeAttachments = (attachmentRows ?? []) as OwnerSupportAttachment[];
+        setSupportAttachments(safeAttachments);
+        const signed = await Promise.all(safeAttachments.map(async attachment => {
+          const { data: urlData, error: urlError } = await client.storage.from('support-attachments').createSignedUrl(attachment.storage_path, 60);
+          return [attachment.id, urlError ? '' : urlData.signedUrl] as const;
+        }));
+        if (active) setSupportAttachmentUrls(Object.fromEntries(signed));
+      }
       setSupportMessagesLoading(false);
     };
     void loadMessages();
@@ -452,10 +467,12 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
                       <button type="button" className="restaurant-support-back" onClick={() => { setSelectedSupportTicketId(null); setSupportError(''); }}>← All requests</button>
                       {(() => { const ticket = supportTickets.find((item) => item.id === selectedSupportTicketId); return ticket ? <div className="restaurant-support-selected-ticket"><strong>{ticket.request_number || 'Support request'}</strong><span>{ticket.subject}</span><small>Status: {ticket.status.replace('_', ' ')}</small></div> : null; })()}
                       <div className="restaurant-support-messages" aria-live="polite">
+                        {supportAttachments.some(attachment => !attachment.message_id) ? <article className="restaurant-support-message from-support"><div><strong>Ticket attachments</strong></div><ul className="restaurant-support-attachments">{supportAttachments.filter(attachment => !attachment.message_id).map(attachment => <li key={attachment.id}>{supportAttachmentUrls[attachment.id] ? <a href={supportAttachmentUrls[attachment.id]} target="_blank" rel="noreferrer">{attachment.file_name}</a> : <span>{attachment.file_name} (unavailable)</span>} <small>{(attachment.file_size / 1024 / 1024).toFixed(2)} MB</small></li>)}</ul></article> : null}
                         {supportMessagesLoading ? <p>Loading conversation…</p> : supportMessages.length === 0 ? <p>No replies yet. You can send a message to support below.</p> : supportMessages.map((message) => (
                           <article key={message.id} className={'restaurant-support-message ' + (message.sender_user_id === supportCurrentUserId ? 'from-owner' : 'from-support')}>
                             <div><strong>{message.sender_user_id === supportCurrentUserId ? 'You' : 'Support team'}</strong><time>{new Date(message.created_at).toLocaleString()}</time></div>
                             <p>{message.message}</p>
+                            {supportAttachments.some(attachment => attachment.message_id === message.id) ? <ul className="restaurant-support-attachments">{supportAttachments.filter(attachment => attachment.message_id === message.id).map(attachment => <li key={attachment.id}>{supportAttachmentUrls[attachment.id] ? <a href={supportAttachmentUrls[attachment.id]} target="_blank" rel="noreferrer">{attachment.file_name}</a> : <span>{attachment.file_name} (unavailable)</span>} <small>{(attachment.file_size / 1024 / 1024).toFixed(2)} MB</small></li>)}</ul> : null}
                           </article>
                         ))}
                       </div>
