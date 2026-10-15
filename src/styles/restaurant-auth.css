@@ -475,3 +475,6 @@
 .privileged-mfa-card .privileged-mfa-signout{display:flex;width:min(120px,100%);min-height:44px;margin:12px auto 0;justify-content:center;border:1px solid #cbd5e1;border-radius:10px;background:#fff;color:#111827;font-weight:700}
 .privileged-mfa-card .privileged-mfa-signout:hover{background:#f8fafc}
 @media(max-width:640px){.privileged-mfa-card{padding:28px 22px;border-radius:16px}.privileged-mfa-card>h1{font-size:30px}}
+
+/* Keep the MFA Verify action compact and centered. */
+.privileged-mfa-card .privileged-mfa-submit{width:120px!important;max-width:120px;align-self:center}
