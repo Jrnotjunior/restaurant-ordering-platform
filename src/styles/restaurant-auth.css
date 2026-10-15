@@ -478,3 +478,16 @@
 
 /* Keep the MFA Verify action compact and centered. */
 .privileged-mfa-card .privileged-mfa-submit{width:120px!important;max-width:120px;align-self:center}
+
+/* Final override: prevent shared auth form button rules from stretching Verify. */
+main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-form button.privileged-mfa-submit{
+  display:block!important;
+  box-sizing:border-box!important;
+  width:120px!important;
+  min-width:120px!important;
+  max-width:120px!important;
+  flex:0 0 120px!important;
+  justify-self:center!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
