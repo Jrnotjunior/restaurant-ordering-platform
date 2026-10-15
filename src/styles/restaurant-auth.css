@@ -620,3 +620,9 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
 .restaurant-owner-auth-card > .restaurant-login-description {
   text-align: center !important;
 }
+
+/* Keep the sign-in button compact instead of stretching across the form. */
+.restaurant-owner-auth-form > .button {
+  width: min(100%, 220px) !important;
+  justify-self: center;
+}
