@@ -592,3 +592,15 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   .privileged-mfa-page .privileged-mfa-card{padding:30px 24px 32px!important}
   .privileged-mfa-page .privileged-mfa-card>h1{font-size:27px!important}
 }
+
+/* Preserve Restaurant Ordering Platform's original light auth palette while matching dashboard MFA layout. */
+.privileged-mfa-page{background:#f8fafc!important;color:#111827!important}
+.privileged-mfa-page .privileged-mfa-card{background:#fff!important;color:#111827!important;border-color:#e2e8f0!important;border-radius:20px!important;box-shadow:0 18px 50px rgba(15,23,42,.08)!important}
+.privileged-mfa-page .privileged-mfa-card>.eyebrow{color:#b91c1c!important}
+.privileged-mfa-page .privileged-mfa-card>h1{color:#111827!important}
+.privileged-mfa-page .privileged-mfa-card>p:not(.eyebrow){color:#475569!important}
+.privileged-mfa-page .privileged-mfa-card .restaurant-owner-auth-form label{color:#111827!important}
+.privileged-mfa-page .privileged-mfa-card .restaurant-owner-auth-form input{background:#fff!important;color:#111827!important;border-color:#dbe2ea!important}
+.privileged-mfa-page .privileged-mfa-card .restaurant-owner-auth-form input:focus{border-color:#111827!important}
+.privileged-mfa-page .privileged-mfa-card .privileged-mfa-submit{background:#dc2626!important;color:#fff!important}
+.privileged-mfa-page .privileged-mfa-card .privileged-mfa-submit:hover:not(:disabled){background:#b91c1c!important}
