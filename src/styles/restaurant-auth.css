@@ -609,3 +609,7 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
 .restaurant-owner-auth-form label{text-align:center!important}
 .restaurant-owner-auth-form input[type="email"],
 .restaurant-owner-auth-form input[type="password"]{text-align:center!important}
+
+/* Keep the password centered when revealed as text, with balanced space around the eye icon. */
+.restaurant-owner-auth-form .customer-password-input-row input[type="password"],
+.restaurant-owner-auth-form .customer-password-input-row input[type="text"]{text-align:center!important;padding-left:48px!important;padding-right:48px!important;}
