@@ -336,8 +336,8 @@
 
 /* Compact paperclip control for support attachments. */
 .restaurant-support-attach-icon{position:relative;display:inline-flex!important;align-items:center;justify-content:center;width:36px;height:36px;margin-top:4px!important;border:1px solid #cbd5e1;border-radius:9px;background:#f8fafc;color:#334155;cursor:pointer;transition:background .15s,border-color .15s}
-.restaurant-support-attach-icon:hover{background:#eaf5fc;border-color:#0284c7;color:#0369a1}
-.restaurant-support-attach-icon:focus-within{outline:2px solid #0284c7;outline-offset:2px}
+.restaurant-support-attach-icon:hover{background:#eaf5fc;border-color:#94a3b8;color:#334155}
+.restaurant-support-attach-icon:focus-within{outline:none;box-shadow:none}
 .restaurant-support-attach-icon input[type=file]{position:absolute!important;inset:0;width:100%!important;height:100%;opacity:0;cursor:pointer;padding:0!important;border:0!important}
 .restaurant-support-attach-tooltip{position:absolute;left:44px;top:50%;transform:translateY(-50%);display:none;white-space:nowrap;padding:5px 8px;border-radius:6px;background:#0f172a;color:#fff;font-size:11px;font-weight:600;z-index:5}
 .restaurant-support-attach-icon:hover .restaurant-support-attach-tooltip,.restaurant-support-attach-icon:focus-within .restaurant-support-attach-tooltip{display:block}
