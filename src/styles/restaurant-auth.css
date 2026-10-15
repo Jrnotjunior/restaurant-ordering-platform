@@ -626,3 +626,13 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   width: min(100%, 220px) !important;
   justify-self: center;
 }
+
+/* Compact sign-in CTA: override the form-wide full-width button rule. */
+.restaurant-owner-auth-form > button.button[type="submit"] {
+  width: 160px !important;
+  max-width: 160px !important;
+  min-width: 0 !important;
+  justify-self: center !important;
+  margin-inline: auto !important;
+  flex: 0 0 160px !important;
+}
