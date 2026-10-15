@@ -158,7 +158,7 @@ export function PrivilegedMfaGate({ children }: { children: ReactNode }) {
             required
             value={code}
             onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
-            placeholder="000000"
+            placeholder=""
             aria-describedby={message ? 'privileged-mfa-message' : undefined}
           />
           {message ? <p id="privileged-mfa-message" role="alert">{message}</p> : null}
