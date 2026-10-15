@@ -60,6 +60,21 @@ export function PrivilegedMfaGate({ children }: { children: ReactNode }) {
     return () => { cancelled = true; };
   }, [user?.id, accountType, appRole, authLoading, isPrivileged]);
 
+  useEffect(() => {
+    if (gate.kind !== 'enroll' && gate.kind !== 'challenge') return;
+    const timeout = window.setTimeout(() => {
+      void (async () => {
+        try {
+          await signOut();
+        } finally {
+          // Return to the normal sign-in flow after the one-minute MFA window expires.
+          window.location.reload();
+        }
+      })();
+    }, 60_000);
+    return () => window.clearTimeout(timeout);
+  }, [gate.kind, user?.id, signOut]);
+
   async function verifyCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!supabase || (gate.kind !== 'enroll' && gate.kind !== 'challenge')) return;
