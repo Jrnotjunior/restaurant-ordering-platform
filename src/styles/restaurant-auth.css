@@ -613,3 +613,10 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
 /* Keep the password centered when revealed as text, with balanced space around the eye icon. */
 .restaurant-owner-auth-form .customer-password-input-row input[type="password"],
 .restaurant-owner-auth-form .customer-password-input-row input[type="text"]{text-align:center!important;padding-left:48px!important;padding-right:48px!important;}
+
+/* Center the restaurant account-access heading and intro copy. */
+.restaurant-owner-auth-card > .eyebrow,
+.restaurant-owner-auth-card > h1,
+.restaurant-owner-auth-card > .restaurant-login-description {
+  text-align: center !important;
+}
