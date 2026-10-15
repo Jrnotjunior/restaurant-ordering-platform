@@ -451,3 +451,27 @@
   outline:3px solid rgba(59,130,246,.35);
   outline-offset:2px;
 }
+
+
+/* Privileged MFA verification: match the clean, light verification card used by the Ticket Dashboard. */
+.privileged-mfa-page{background:#f8fafc!important;color:#111827}
+.privileged-mfa-card{width:min(560px,100%);background:#fff;border:1px solid #dbe4ef;border-radius:20px;padding:40px;box-shadow:0 18px 50px rgba(15,23,42,.08)}
+.privileged-mfa-card>.eyebrow{text-align:center;color:#b91c1c}
+.privileged-mfa-card>h1{text-align:center;font-size:clamp(30px,5vw,40px);letter-spacing:-.035em;color:#111827}
+.privileged-mfa-card>p:not(.eyebrow){text-align:center;color:#475569;line-height:1.7}
+.privileged-mfa-card>ol{text-align:left;color:#475569;font-size:14px;line-height:1.7;padding-left:22px}
+.privileged-mfa-card .privileged-mfa-qr{display:flex;justify-content:center;margin:18px 0}
+.privileged-mfa-card .privileged-mfa-qr img{max-width:220px;border:1px solid #e2e8f0;border-radius:12px;padding:10px;background:#fff}
+.privileged-mfa-card details{margin:18px 0;color:#334155;font-size:13px}
+.privileged-mfa-card details p{color:#64748b;font-size:13px}
+.privileged-mfa-card .privileged-mfa-uri{display:block;overflow-wrap:anywhere;padding:12px;border:1px solid #e2e8f0;border-radius:9px;background:#f8fafc;color:#334155;user-select:all}
+.privileged-mfa-card .restaurant-owner-auth-form{margin-top:24px;gap:12px}
+.privileged-mfa-card .restaurant-owner-auth-form label{text-align:left;color:#111827;font-size:14px}
+.privileged-mfa-card .restaurant-owner-auth-form input{min-height:48px;border-color:#dbe2ea;border-radius:10px;background:#fff;color:#111827;font-size:16px;letter-spacing:.08em}
+.privileged-mfa-card .restaurant-owner-auth-form input:focus{border-color:#b91c1c;box-shadow:0 0 0 3px rgba(185,28,28,.1)}
+.privileged-mfa-card .privileged-mfa-submit{display:flex;width:min(120px,100%);min-height:48px;margin:2px auto 0;border:0;border-radius:10px;background:#7c818b;color:#fff;font-weight:700;box-shadow:none}
+.privileged-mfa-card .privileged-mfa-submit:not(:disabled){background:#dc2626}
+.privileged-mfa-card .privileged-mfa-submit:hover:not(:disabled){background:#b91c1c}
+.privileged-mfa-card .privileged-mfa-signout{display:flex;width:min(120px,100%);min-height:44px;margin:12px auto 0;justify-content:center;border:1px solid #cbd5e1;border-radius:10px;background:#fff;color:#111827;font-weight:700}
+.privileged-mfa-card .privileged-mfa-signout:hover{background:#f8fafc}
+@media(max-width:640px){.privileged-mfa-card{padding:28px 22px;border-radius:16px}.privileged-mfa-card>h1{font-size:30px}}
