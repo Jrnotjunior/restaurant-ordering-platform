@@ -300,15 +300,8 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
     return (
       <>
         <aside className="restaurant-owner-sidebar" aria-label="Restaurant management navigation">
-          <a className="restaurant-owner-brand" href="#restaurant/owner" aria-label={`${restaurant.name || 'Restaurant'} dashboard`}>
-            {restaurant.logoUrl ? (
-              <img className="restaurant-owner-brand-logo" src={restaurant.logoUrl} alt="" />
-            ) : (
-              <span className="restaurant-owner-brand-mark" aria-hidden="true">
-                {(restaurant.name || 'Restaurant').trim().split(/\s+/).slice(0, 2).map((word) => word.charAt(0)).join('').toUpperCase()}
-              </span>
-            )}
-            <span><strong>{restaurant.name || 'Restaurant'}</strong><small>{restaurant.tagline || ''}</small></span>
+          <a className="restaurant-owner-brand restaurant-owner-brand-name-only" href="#restaurant/owner" aria-label={`${restaurant.name || 'Restaurant'} dashboard`}>
+            <span><strong>{restaurant.name || 'Restaurant'}</strong></span>
           </a>
           <nav className="restaurant-owner-sidebar-nav">
             {ownerNavigationItems.map((item) => {
