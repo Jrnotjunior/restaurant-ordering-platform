@@ -80,7 +80,7 @@ Deno.serve(async (request) => {
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     const ownerName = typeof body.owner_name === "string" ? body.owner_name.trim() : "";
     const name = typeof body.name === "string" ? body.name.trim() : "";
-    const slug = typeof body.slug === "string" ? body.slug.trim().toLowerCase() : "";
+    let slug = "";
     const packageId = Number(body.package_id);
 
     if (ownerName.length < 2) return jsonResponse({ error: "Owner full name is required." }, 400);
@@ -157,9 +157,34 @@ Deno.serve(async (request) => {
     }
 
     if (name.length < 2) return jsonResponse({ error: "Restaurant name is required for a new tenant." }, 400);
-    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
-      return jsonResponse({ error: "Slug must use lowercase letters, numbers, and single hyphens." }, 400);
+
+    // Generate a URL-safe slug from the restaurant name, then choose the
+    // first available suffix so the administrator never has to invent one.
+    const baseSlug = name
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "restaurant";
+
+    const { data: existingSlugs, error: slugLookupError } = await adminClient
+      .from("restaurants")
+      .select("slug");
+    if (slugLookupError) throw slugLookupError;
+
+    const usedSlugs = new Set(
+      (existingSlugs ?? [])
+        .map((row: { slug: string | null }) => row.slug?.toLowerCase())
+        .filter((value: string | undefined): value is string => Boolean(value)),
+    );
+
+    slug = baseSlug;
+    let suffix = 2;
+    while (usedSlugs.has(slug)) {
+      slug = `${baseSlug}-${suffix}`;
+      suffix += 1;
     }
+
     if (!Number.isInteger(packageId) || packageId < 1) return jsonResponse({ error: "A valid restaurant package is required for a new tenant." }, 400);
 
     const { data: invitation, error: invitationError } = await adminClient
