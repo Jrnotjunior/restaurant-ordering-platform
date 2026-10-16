@@ -193,3 +193,15 @@
 .restaurant-payroll-page .payroll-period-group .payroll-run-card.is-selected{border-color:#0f766e;background:#f4faf8}
 .restaurant-payroll-page .payroll-period-group .payroll-run-main small{font-size:11px;color:var(--text-muted,#64748b)}
 @media(max-width:760px){.restaurant-payroll-page .payroll-period-group .payroll-run-card{grid-template-columns:minmax(0,1fr) auto}.restaurant-payroll-page .payroll-period-group .payroll-run-main{grid-column:1;grid-row:1}.restaurant-payroll-page .payroll-period-group .payroll-status{grid-column:2;grid-row:1}.restaurant-payroll-page .payroll-period-group .payroll-run-total{grid-column:1;grid-row:2}.restaurant-payroll-page .payroll-period-group .payroll-run-open{grid-column:2;grid-row:2}}
+
+
+/* Keep payroll run history compact so the selected payroll details stay prominent. */
+.restaurant-payroll-page .payroll-runs-panel{padding-bottom:12px}
+.restaurant-payroll-page .payroll-runs-compact-table table{width:100%;border-collapse:collapse}
+.restaurant-payroll-page .payroll-runs-compact-table th,.restaurant-payroll-page .payroll-runs-compact-table td{padding:8px 10px;font-size:12px;line-height:1.35;vertical-align:middle}
+.restaurant-payroll-page .payroll-runs-compact-table th{white-space:nowrap}
+.restaurant-payroll-page .payroll-runs-compact-table td strong{font-size:12px}
+.restaurant-payroll-page .payroll-runs-compact-table .payroll-status{padding:4px 7px;font-size:10px}
+.restaurant-payroll-page .payroll-runs-compact-table .payroll-run-row-selected{background:#f3faf8}
+.restaurant-payroll-page .payroll-runs-compact-table .payroll-inline-duplicate{display:block;margin-top:3px;color:#a33b22;font-size:10px;line-height:1.3}
+@media(max-width:680px){.restaurant-payroll-page .payroll-runs-compact-table{overflow-x:auto}.restaurant-payroll-page .payroll-runs-compact-table table{min-width:610px}.restaurant-payroll-page .payroll-runs-compact-table th,.restaurant-payroll-page .payroll-runs-compact-table td{padding:7px 8px}}
