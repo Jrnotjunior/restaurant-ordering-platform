@@ -235,9 +235,13 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
         .business-reports-range,.business-reports-form-grid{display:flex;align-items:end;gap:12px;flex-wrap:wrap}
         .business-reports-range label,.business-reports-form label{display:grid;gap:6px;font-size:13px;font-weight:650;color:var(--text,#202938)}
         .business-reports-range input,.business-reports-form input,.business-reports-form select{box-sizing:border-box;min-height:40px;border:1px solid var(--border,#dce2ea);border-radius:9px;padding:8px 10px;background:var(--surface,#fff);color:inherit;font:inherit}
-        .business-reports-tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--border,#e2e8f0);padding-bottom:10px}
-        .business-reports-tabs button,.business-reports-button{border:1px solid var(--border,#dce2ea);border-radius:9px;background:var(--surface,#fff);color:var(--text,#202938);padding:10px 14px;font:inherit;font-weight:650;cursor:pointer}
-        .business-reports-tabs button[aria-selected=true],.business-reports-button.primary{background:var(--color-primary,#111827);color:#fff;border-color:var(--color-primary,#111827)}
+        .business-reports-tabs{display:flex;gap:24px;flex-wrap:wrap;border-bottom:1px solid var(--border,#e2e8f0);padding-bottom:0}
+        .business-reports-tabs button{position:relative;appearance:none;border:0;border-radius:0;background:transparent;color:var(--muted,#64748b);padding:10px 0 12px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+        .business-reports-tabs button:hover{color:var(--text,#111827)}
+        .business-reports-tabs button[aria-selected=true]{background:transparent;color:var(--text,#111827);font-weight:750}
+        .business-reports-tabs button[aria-selected=true]::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--color-primary,#111827);border-radius:2px}
+        .business-reports-button{border:1px solid var(--border,#dce2ea);border-radius:9px;background:var(--surface,#fff);color:var(--text,#202938);padding:10px 14px;font:inherit;font-weight:650;cursor:pointer}
+        .business-reports-button.primary{background:var(--color-primary,#111827);color:#fff;border-color:var(--color-primary,#111827)}
         .business-reports-button:disabled{opacity:.55;cursor:wait}
         .business-reports-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
         .business-reports-card,.business-reports-panel{border:1px solid var(--border,#e2e8f0);border-radius:14px;background:var(--surface,#fff);padding:17px;min-width:0}
