@@ -1276,3 +1276,20 @@ textarea {
   line-height: 1.2;
   font-weight: 700;
 }
+
+/* Hide native number-field spinner arrows throughout the restaurant-owner workspace. */
+.restaurant-page input[type="number"],
+.restaurant-owner-layout input[type="number"],
+.restaurant-owner-dashboard input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.restaurant-page input[type="number"]::-webkit-inner-spin-button,
+.restaurant-page input[type="number"]::-webkit-outer-spin-button,
+.restaurant-owner-layout input[type="number"]::-webkit-inner-spin-button,
+.restaurant-owner-layout input[type="number"]::-webkit-outer-spin-button,
+.restaurant-owner-dashboard input[type="number"]::-webkit-inner-spin-button,
+.restaurant-owner-dashboard input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
