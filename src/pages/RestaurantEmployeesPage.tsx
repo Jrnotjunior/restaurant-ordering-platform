@@ -139,8 +139,8 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
             <h1>Employees</h1>
             <p>Manage your restaurant employees and their access to the management system.</p>
           </div>
-          <button className="button button-primary" type="button" onClick={() => setShowForm((current) => !current)}>
-            {showForm ? 'Close' : 'Add Employee'}
+          <button className="button button-primary" type="button" onClick={() => setShowForm(true)}>
+            Add Employee
           </button>
         </div>
 
