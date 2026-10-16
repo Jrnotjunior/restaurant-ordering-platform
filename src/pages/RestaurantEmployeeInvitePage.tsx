@@ -163,7 +163,7 @@ export function RestaurantEmployeeInvitePage() {
                 </button>
               </span>
             </label>
-            <button className="button button-primary" type="submit" disabled={savingPassword || !password || !confirmPassword}>{savingPassword ? 'Saving password…' : 'Save password and continue'}</button>
+            <button className="button button-primary" type="submit" disabled={savingPassword || !password || !confirmPassword}>{savingPassword ? 'Creating password…' : 'Create password'}</button>
           </form>
           <p className="restaurant-auth-switch">Role: {role || 'Restaurant staff'}</p>
         </> : accepted ? <>
