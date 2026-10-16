@@ -164,7 +164,7 @@ export function RestaurantLoyaltyCustomers({ restaurantId }: Props) {
             />
           </div>
           <button
-            className="button button-secondary restaurant-loyalty-export"
+            className="button button-secondary restaurant-export-button restaurant-loyalty-export"
             type="button"
             onClick={() => exportCustomers(filteredCustomers)}
             disabled={loading || filteredCustomers.length === 0}
