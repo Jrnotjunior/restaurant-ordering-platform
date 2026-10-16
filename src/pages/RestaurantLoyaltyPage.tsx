@@ -211,8 +211,8 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
         .restaurant-loyalty-rule-preview strong{color:var(--color-text);font-size:.95rem}
         .restaurant-loyalty-rule-preview small{color:var(--color-muted);font-size:.75rem;line-height:1.4}
         .restaurant-loyalty-redemption{display:grid;gap:18px;padding-top:6px;border-top:1px solid var(--color-border)}
-        .restaurant-loyalty-actions{display:flex;justify-content:flex-end}
-        @media(max-width:760px){.restaurant-loyalty-rule{grid-template-columns:1fr}.restaurant-loyalty-actions{justify-content:stretch}.restaurant-loyalty-actions .button{width:100%}}
+        .restaurant-loyalty-actions{display:flex;justify-content:flex-end}\n        .restaurant-loyalty-actions .button{min-height:36px;padding:8px 14px;font-size:.78rem;line-height:1.2;border-radius:10px}
+        @media(max-width:760px){.restaurant-loyalty-rule{grid-template-columns:1fr}.restaurant-loyalty-actions{justify-content:flex-end}.restaurant-loyalty-actions .button{width:auto}}
       `}</style>
       <RestaurantLoyaltyCustomers restaurantId={restaurantId} />
     </section>
