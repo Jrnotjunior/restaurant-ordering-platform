@@ -187,10 +187,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
               <div><p className="eyebrow">New employee</p><h2>Add employee</h2></div>
               <button className="restaurant-employee-modal-close" type="button" onClick={() => setShowForm(false)} disabled={saving} aria-label="Close">×</button>
             </div>
-            <div className="restaurant-employee-form-heading">
-              <div><p className="eyebrow">New employee</p><h2>Add employee</h2></div>
-              <p>Kitchen and Dispatcher are shared accounts. Rider accounts are also created through this employee invitation flow.</p>
-            </div>
+            <p className="restaurant-employee-form-help">Kitchen and Dispatcher are shared accounts. Rider accounts are also created through this employee invitation flow.</p>
             <div className="restaurant-employee-form-grid">
               <label>Full name<input name="name" type="text" placeholder="e.g. Juan Dela Cruz" required /></label>
               <label>Preferred name<input name="preferredName" type="text" placeholder="e.g. Juan" required /></label>
