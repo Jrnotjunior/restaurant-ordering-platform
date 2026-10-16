@@ -236,7 +236,7 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
     <section className="inventory-panel"><h2>Add inventory item</h2><p className="inventory-panel-subtitle">Add an ingredient or supply with its stock unit and restock threshold.</p>
       <form className="inventory-form" onSubmit={(event) => void addItem(event)}>
         <div className="inventory-form-grid">
-          <label>Item name<input required maxLength={120} placeholder="e.g. Chicken breast" value={form.name} onChange={(event)=>setForm((current)=>({...current,name:event.target.value}))}/></label>
+          <label>Item name<input required maxLength={120} value={form.name} onChange={(event)=>setForm((current)=>({...current,name:event.target.value}))}/></label>
           <label>Category<select value={form.category} onChange={(event)=>setForm((current)=>({...current,category:event.target.value}))}><option>Ingredients</option><option>Packaging</option><option>Beverages</option><option>Cleaning</option><option>Supplies</option><option>Other</option></select></label>
           <label>Stock unit<select required value={form.unit} onChange={(event)=>setForm((current)=>({...current,unit:event.target.value}))}><option value="g">g (grams)</option><option value="kg">kg (kilograms)</option><option value="mg">mg (milligrams)</option><option value="ml">ml (millilitres)</option><option value="L">L (litres)</option><option value="pcs">pcs (pieces)</option><option value="pack">pack</option><option value="bottle">bottle</option><option value="box">box</option><option value="bag">bag</option><option value="can">can</option><option value="portion">portion</option><option value="roll">roll</option></select></label>
           <label>Starting stock<input required type="number" min="0" step="0.001" value={form.quantity} onChange={(event)=>setForm((current)=>({...current,quantity:event.target.value}))}/></label>
@@ -245,7 +245,7 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
         <div style={{marginTop:12}}><button className="inventory-button primary restaurant-compact-action" type="submit" disabled={saving}>{saving?'Saving…':'Add inventory item'}</button></div>
       </form>
     </section>
-    <section className="inventory-panel"><div className="inventory-toolbar"><div><h2 style={{margin:0}}>Stock on hand</h2><p className="inventory-panel-subtitle" style={{margin:"5px 0 0"}}>{visibleItems.length} of {items.length} inventory items</p></div><input className="inventory-search" type="search" aria-label="Search inventory" placeholder="Search items or categories" value={search} onChange={(event)=>setSearch(event.target.value)}/></div>
+    <section className="inventory-panel"><div className="inventory-toolbar"><div><h2 style={{margin:0}}>Stock on hand</h2><p className="inventory-panel-subtitle" style={{margin:"5px 0 0"}}>{visibleItems.length} of {items.length} inventory items</p></div><input className="inventory-search" type="search" aria-label="Search inventory" value={search} onChange={(event)=>setSearch(event.target.value)}/></div>
       {loading ? <p>Loading inventory…</p> : <div className="inventory-table-wrap"><table className="inventory-table"><thead><tr><th>Item</th><th>Category</th><th>Stock on hand</th><th>Low-stock level</th><th>Status</th><th>Actions</th></tr></thead><tbody>
         {visibleItems.map((item)=><Fragment key={item.id}>
           <tr key={item.id}>
