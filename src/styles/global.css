@@ -1233,3 +1233,19 @@ textarea {
   line-height: 1.2 !important;
   font-weight: 700 !important;
 }
+
+/* Keep website customization and inventory actions compact and consistent. */
+.website-customization-inline-preview,
+.website-customization-logo-button,
+.inventory-button.restaurant-compact-action {
+  width: auto !important;
+  min-height: 32px !important;
+  padding: 6px 12px !important;
+  border-radius: 9px !important;
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  font-weight: 700 !important;
+}
+.website-customization-logo-button input {
+  padding: 0 !important;
+}
