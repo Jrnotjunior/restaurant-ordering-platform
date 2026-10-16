@@ -223,6 +223,21 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
       .inventory-muted{color:var(--muted,#64748b);font-size:12px;line-height:1.5}
       @media(max-width:850px){.inventory-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
       @media(max-width:560px){.inventory-cards{grid-template-columns:1fr}.inventory-form-grid{grid-template-columns:1fr}.inventory-search{max-width:none}}
+
+      .inventory-edit-modal-backdrop{position:fixed;inset:0;z-index:1100;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;background:rgba(15,23,42,.48);backdrop-filter:blur(3px)}
+      .inventory-edit-modal{width:min(560px,100%);max-height:calc(100vh - 40px);overflow:auto;padding:24px;box-sizing:border-box}
+      .inventory-edit-modal-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px}
+      .inventory-edit-modal-header h2{margin:3px 0 6px;font-size:20px}
+      .inventory-edit-modal-header p:last-child{margin:0;color:var(--muted,#64748b);font-size:13px;line-height:1.5}
+      .inventory-edit-eyebrow{margin:0;color:var(--muted,#64748b);font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+      .inventory-edit-modal-close{flex:0 0 auto;width:36px;height:36px;border:1px solid var(--border,#dce2ea);border-radius:50%;background:var(--surface,#fff);color:var(--text,#172033);font-size:23px;line-height:1;cursor:pointer}
+      .inventory-edit-modal-close:hover:not(:disabled){background:var(--surface-muted,#f3f4f6)}
+      .inventory-edit-modal-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+      .inventory-edit-modal-form label{display:grid;gap:6px;min-width:0;font-size:12px;font-weight:700;color:var(--text,#202938)}
+      .inventory-edit-modal-form input,.inventory-edit-modal-form select{width:100%;min-width:0;min-height:40px;box-sizing:border-box;border:1px solid var(--border,#dce2ea);border-radius:9px;padding:8px 10px;background:var(--surface,#fff);color:inherit;font:inherit}
+      .inventory-edit-modal-help{grid-column:1/-1;margin:0;color:var(--muted,#64748b);font-size:12px;line-height:1.55}
+      .inventory-edit-modal-actions{grid-column:1/-1;display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:6px}
+      @media(max-width:480px){.inventory-edit-modal{padding:18px}.inventory-edit-modal-form{grid-template-columns:minmax(0,1fr)}.inventory-edit-modal-help,.inventory-edit-modal-actions{grid-column:1}}
     `}</style>
     <header className="inventory-header"><div><h1>Inventory</h1><p>Track ingredients and supplies, record stock used or received, and spot items that need restocking. Inventory is separate from menu product availability.</p></div></header>
     {error && <div className="inventory-message error" role="alert">{error}</div>}
@@ -255,18 +270,11 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
             <td>{numberFormat.format(Number(item.low_stock_threshold))} {item.unit}</td>
             <td><span className={`inventory-badge${Number(item.quantity_on_hand)<=0?' out':Number(item.quantity_on_hand)<=Number(item.low_stock_threshold)?' low':''}`}>{Number(item.quantity_on_hand)<=0?'Out of stock':Number(item.quantity_on_hand)<=Number(item.low_stock_threshold)?'Low stock':'In stock'}</span></td>
             <td className="inventory-actions-cell"><div className="inventory-row-actions">
-              <button className="inventory-button restaurant-compact-action" type="button" disabled={saving} onClick={()=>startEditing(item)} aria-expanded={editingItemId===item.id}>Edit</button>
+              <button className="inventory-button restaurant-compact-action" type="button" disabled={saving} onClick={()=>startEditing(item)} aria-haspopup="dialog">Edit</button>
               <button className="inventory-button restaurant-compact-action inventory-expand-button" type="button" disabled={saving} aria-expanded={expandedAdjustmentId===item.id} onClick={()=>{setEditingItemId(null);setExpandedAdjustmentId((current)=>current===item.id?null:item.id)}}>{expandedAdjustmentId===item.id?'Close':'Adjust stock'}</button>
               <button className="inventory-delete-button" type="button" disabled={saving} onClick={()=>void deleteItem(item)} aria-label={`Delete ${item.name}`} title={`Delete ${item.name}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg></button>
             </div></td>
           </tr>
-          {editingItemId===item.id && <tr className="inventory-edit-row" key={`${item.id}-edit`}><td colSpan={6}><div className="inventory-edit-grid">
-            <label>Item name<input required maxLength={120} value={editForm.name} onChange={(event)=>setEditForm((current)=>({...current,name:event.target.value}))}/></label>
-            <label>Category<select value={editForm.category} onChange={(event)=>setEditForm((current)=>({...current,category:event.target.value}))}><option>Ingredients</option><option>Packaging</option><option>Beverages</option><option>Cleaning</option><option>Supplies</option><option>Other</option></select></label>
-            <label>Stock unit<select required value={editForm.unit} onChange={(event)=>setEditForm((current)=>({...current,unit:event.target.value}))}><option value="g">g (grams)</option><option value="kg">kg (kilograms)</option><option value="mg">mg (milligrams)</option><option value="ml">ml (millilitres)</option><option value="L">L (litres)</option><option value="pcs">pcs (pieces)</option><option value="pack">pack</option><option value="bottle">bottle</option><option value="box">box</option><option value="bag">bag</option><option value="can">can</option><option value="portion">portion</option><option value="roll">roll</option></select></label>
-            <label>Low-stock level ({editForm.unit})<input required type="number" min="0" step="0.001" value={editForm.threshold} onChange={(event)=>setEditForm((current)=>({...current,threshold:event.target.value}))}/></label>
-            <div className="inventory-edit-actions"><button className="inventory-button primary restaurant-compact-action" type="button" disabled={saving} onClick={()=>void saveItemEdits(item)}>{saving?'Saving…':'Save changes'}</button><button className="inventory-button" type="button" disabled={saving} onClick={()=>setEditingItemId(null)}>Cancel</button></div>
-          </div><p className="inventory-muted" style={{margin:'8px 0 0'}}>Changing between compatible units (such as kg and g) converts current stock, the low-stock level, and recipe quantities automatically. Historical stock movements keep the unit recorded at the time.</p></td></tr>}
           {expandedAdjustmentId===item.id && <tr className="inventory-adjust-row" key={`${item.id}-adjust`}><td colSpan={6}><div className="inventory-adjust">
             <label>Quantity change<input type="number" step="0.001" value={adjustments[item.id]?.quantity ?? ''} onChange={(event)=>setAdjustments((current)=>({...current,[item.id]:{quantity:event.target.value,reason:current[item.id]?.reason??''}}))} placeholder="+5 or −2"/></label>
             <label>Reason for adjustment<input value={adjustments[item.id]?.reason ?? ''} maxLength={240} onChange={(event)=>setAdjustments((current)=>({...current,[item.id]:{quantity:current[item.id]?.quantity??'',reason:event.target.value}}))} placeholder="e.g. Stock received, used, or wasted"/></label>
@@ -276,6 +284,19 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
         {!visibleItems.length && <tr><td colSpan={6} className="inventory-empty">{items.length?'No inventory items match your search.':'No inventory items yet. Add your first ingredient or supply above.'}</td></tr>}
       </tbody></table></div>}
     </section>
+    {editingItemId && items.find((item)=>item.id===editingItemId) && <div className="inventory-edit-modal-backdrop" role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget&&!saving)setEditingItemId(null);}}>
+      <section className="inventory-edit-modal restaurant-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="inventory-edit-title">
+        <div className="inventory-edit-modal-header"><div><p className="inventory-edit-eyebrow">Inventory item</p><h2 id="inventory-edit-title">Edit inventory item</h2><p>Update item details and its low-stock alert level.</p></div><button type="button" className="inventory-edit-modal-close" aria-label="Close edit dialog" disabled={saving} onClick={()=>setEditingItemId(null)}>×</button></div>
+        <form className="inventory-edit-modal-form" onSubmit={(event)=>{event.preventDefault();const item=items.find((candidate)=>candidate.id===editingItemId);if(item)void saveItemEdits(item);}}>
+          <label>Item name<input required maxLength={120} value={editForm.name} onChange={(event)=>setEditForm((current)=>({...current,name:event.target.value}))}/></label>
+          <label>Category<select value={editForm.category} onChange={(event)=>setEditForm((current)=>({...current,category:event.target.value}))}><option>Ingredients</option><option>Packaging</option><option>Beverages</option><option>Cleaning</option><option>Supplies</option><option>Other</option></select></label>
+          <label>Stock unit<select required value={editForm.unit} onChange={(event)=>setEditForm((current)=>({...current,unit:event.target.value}))}><option value="g">g (grams)</option><option value="kg">kg (kilograms)</option><option value="mg">mg (milligrams)</option><option value="ml">ml (millilitres)</option><option value="L">L (litres)</option><option value="pcs">pcs (pieces)</option><option value="pack">pack</option><option value="bottle">bottle</option><option value="box">box</option><option value="bag">bag</option><option value="can">can</option><option value="portion">portion</option><option value="roll">roll</option></select></label>
+          <label>Low-stock level ({editForm.unit})<input required type="number" min="0" step="0.001" value={editForm.threshold} onChange={(event)=>setEditForm((current)=>({...current,threshold:event.target.value}))}/></label>
+          <p className="inventory-edit-modal-help">Changing between compatible units (such as kg and g) converts current stock, the low-stock level, and recipe quantities automatically. Historical stock movements keep the unit recorded at the time.</p>
+          <div className="inventory-edit-modal-actions"><button className="inventory-button" type="button" disabled={saving} onClick={()=>setEditingItemId(null)}>Cancel</button><button className="inventory-button primary restaurant-compact-action" type="submit" disabled={saving}>{saving?'Saving…':'Save changes'}</button></div>
+        </form>
+      </section>
+    </div>}
     <section className="inventory-panel"><h2>Recent stock movements</h2><p className="inventory-muted">The latest 50 recorded additions, usage, waste, and other stock adjustments.</p>
       <div className="inventory-table-wrap"><table className="inventory-table"><thead><tr><th>Date</th><th>Item</th><th>Change</th><th>Reason</th></tr></thead><tbody>
         {movements.map((movement)=><tr key={movement.id}><td>{dateTime(movement.created_at)}</td><td>{movement.item_name}</td><td>{Number(movement.quantity_change)>0?'+':''}{numberFormat.format(Number(movement.quantity_change))} {movement.unit}</td><td>{movement.reason}</td></tr>)}
