@@ -78,7 +78,7 @@ export function RestaurantFaviconSettings({ restaurantId, faviconUrl, disabled =
           />
         </label>
         {faviconUrl ? (
-          <button type="button" className="button button-secondary" disabled={disabled || uploading} onClick={() => { setError(''); onChange(''); }}>
+          <button type="button" className="button button-secondary restaurant-compact-action" disabled={disabled || uploading} onClick={() => { setError(''); onChange(''); }}>
             Use default icon
           </button>
         ) : null}
