@@ -96,7 +96,7 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
             <p className="eyebrow">Customer rewards</p>
             <h2>Loyalty Program</h2>
             <p className="restaurant-shipping-help">
-              Set how registered customers earn points from eligible sales. Guest and walk-in orders do not earn points.
+              Registered customers can earn points on eligible online or in-person sales when their account is linked to the order. Customers without an account cannot earn points.
             </p>
           </div>
         </div>
