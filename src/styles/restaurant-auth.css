@@ -636,3 +636,18 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   margin-inline: auto !important;
   flex: 0 0 160px !important;
 }
+
+/* Final enforced palette for owner and staff MFA verification. */
+.privileged-mfa-page .privileged-mfa-card button.button-primary.privileged-mfa-submit,
+.privileged-mfa-page .privileged-mfa-card button.privileged-mfa-submit:not(:disabled) {
+  background: #374151 !important;
+  background-color: #374151 !important;
+  background-image: none !important;
+  color: #ffffff !important;
+}
+.privileged-mfa-page .privileged-mfa-card button.button-primary.privileged-mfa-submit:hover:not(:disabled),
+.privileged-mfa-page .privileged-mfa-card button.privileged-mfa-submit:hover:not(:disabled) {
+  background: #4b5563 !important;
+  background-color: #4b5563 !important;
+  background-image: none !important;
+}
