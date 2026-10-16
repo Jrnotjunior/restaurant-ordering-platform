@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, useContext } from 'react';
+import { createContext, type ReactNode, useContext, useEffect } from 'react';
 import type { RestaurantConfig } from '../types/restaurant';
 
 type RestaurantContextValue = RestaurantConfig;
@@ -11,6 +11,11 @@ type RestaurantProviderProps = {
 };
 
 export function RestaurantProvider({ restaurant, children }: RestaurantProviderProps) {
+  useEffect(() => {
+    const businessName = restaurant.name?.trim();
+    document.title = businessName || 'Web2Table';
+  }, [restaurant.name]);
+
   return (
     <RestaurantContext.Provider value={restaurant}>
       {children}
