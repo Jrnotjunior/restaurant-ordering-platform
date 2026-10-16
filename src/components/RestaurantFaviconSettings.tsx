@@ -68,7 +68,7 @@ export function RestaurantFaviconSettings({ restaurantId, faviconUrl, disabled =
         <div className="website-customization-logo-preview" aria-label="Favicon preview">
           {faviconUrl ? <img src={faviconUrl} alt="Restaurant favicon preview" /> : <span>Default icon</span>}
         </div>
-        <label className="button button-secondary website-customization-logo-button">
+        <label className="button button-secondary website-customization-logo-button restaurant-compact-action">
           {uploading ? 'Uploading…' : 'Choose favicon'}
           <input
             type="file"
