@@ -188,7 +188,7 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
               onClick={() => void handleSave()}
               disabled={loading || saving}
             >
-              {saving ? 'Saving…' : 'Save Loyalty Settings'}
+              {saving ? 'Saving…' : 'Save'}
             </button>
           </div>
         </div>
