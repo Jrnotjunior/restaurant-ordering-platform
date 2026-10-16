@@ -15,6 +15,46 @@ function formatPoints(value: number): string {
   return new Intl.NumberFormat().format(value);
 }
 
+function csvCell(value: string | number): string {
+  let text = String(value ?? '');
+  if (/^[=+@\\-\\t\\r]/.test(text)) text = `'${text}`;
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function exportCustomers(customers: RestaurantLoyaltyCustomer[]): void {
+  const headers = [
+    'Customer name',
+    'Email',
+    'Mobile number',
+    'Registration date',
+    'Available points',
+    'Lifetime points earned',
+    'Lifetime points redeemed',
+    'Last activity',
+  ];
+  const rows = customers.map((customer) => [
+    customer.name,
+    customer.email,
+    customer.phone ?? '',
+    customer.registeredAt,
+    customer.pointsBalance,
+    customer.lifetimePointsEarned,
+    customer.lifetimePointsRedeemed,
+    customer.lastActivityAt ?? '',
+  ]);
+  const csv = [headers, ...rows].map((row) => row.map(csvCell).join(',')).join('\\r\\n');
+  const blob = new Blob(['\\uFEFF', csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `web2table-loyalty-customers-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 export function RestaurantLoyaltyCustomers({ restaurantId }: Props) {
   const [customers, setCustomers] = useState<RestaurantLoyaltyCustomer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,14 +107,24 @@ export function RestaurantLoyaltyCustomers({ restaurantId }: Props) {
         </div>
 
         <div className="restaurant-loyalty-customer-toolbar">
-          <label htmlFor="restaurant-loyalty-customer-search">Search customers</label>
-          <input
-            id="restaurant-loyalty-customer-search"
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search by name, email, or mobile"
-          />
+          <div className="restaurant-loyalty-customer-search">
+            <label htmlFor="restaurant-loyalty-customer-search">Search customers</label>
+            <input
+              id="restaurant-loyalty-customer-search"
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search by name, email, or mobile"
+            />
+          </div>
+          <button
+            className="button button-primary restaurant-loyalty-export"
+            type="button"
+            onClick={() => exportCustomers(filteredCustomers)}
+            disabled={loading || filteredCustomers.length === 0}
+          >
+            Export CSV{search.trim() ? ` (${filteredCustomers.length})` : ''}
+          </button>
         </div>
 
         {error && <div className="restaurant-shipping-message is-error" role="alert">{error}</div>}
@@ -123,7 +173,7 @@ export function RestaurantLoyaltyCustomers({ restaurantId }: Props) {
         .restaurant-loyalty-customer-stats article{display:grid;gap:8px;min-width:0;padding:16px;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-background)}
         .restaurant-loyalty-customer-stats article span{color:var(--color-muted);font-size:.78rem}
         .restaurant-loyalty-customer-stats article strong{color:var(--color-text);font-size:1.35rem;font-weight:800}
-        .restaurant-loyalty-customer-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px}
+        .restaurant-loyalty-customer-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:0 0 12px}\n        .restaurant-loyalty-customer-search{display:grid;gap:6px;flex:1;min-width:0}\n        .restaurant-loyalty-export{min-height:40px;white-space:nowrap}\n        .restaurant-loyalty-export:disabled{opacity:.55;cursor:not-allowed}
         .restaurant-loyalty-customer-toolbar label{font-size:.82rem;font-weight:700;color:var(--color-text)}
         .restaurant-loyalty-customer-toolbar input{width:min(100%,320px);min-height:40px;padding:9px 12px;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-background);color:var(--color-text);font:inherit}
         .restaurant-loyalty-customer-toolbar input:focus{outline:2px solid color-mix(in srgb,var(--color-primary) 15%,transparent);border-color:var(--color-primary)}
@@ -136,7 +186,7 @@ export function RestaurantLoyaltyCustomers({ restaurantId }: Props) {
         .restaurant-loyalty-customer-table td:first-child span{margin-top:3px;color:var(--color-muted);font-size:.76rem;overflow-wrap:anywhere}
         .restaurant-loyalty-customer-empty{padding:24px 12px;text-align:center;color:var(--color-muted);font-size:.88rem}
         @media(max-width:900px){.restaurant-loyalty-customer-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
-        @media(max-width:560px){.restaurant-loyalty-customer-toolbar{align-items:stretch;flex-direction:column}.restaurant-loyalty-customer-toolbar input{width:100%;box-sizing:border-box}}
+        @media(max-width:560px){.restaurant-loyalty-customer-toolbar{align-items:stretch;flex-direction:column}.restaurant-loyalty-customer-toolbar input{width:100%;box-sizing:border-box}.restaurant-loyalty-export{width:100%}}
       `}</style>
     </section>
   );
