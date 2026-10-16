@@ -17,6 +17,7 @@ The restaurant ordering platform is being migrated from page-centered orchestrat
 - dispatch — delivery zones, shipping fees, dispatch workflow.
 - products — restaurant products and categories.
 - employees — staff invitations, employee roles, rider-as-employee behavior.
+- payroll — owner-only salary profiles, shift planning, payroll snapshots, payslips, and employment certificates.
 - sales — sales views and reporting.
 
 ## Dependency rule
@@ -94,3 +95,8 @@ Authentication invitations are treated as a dedicated module boundary. The appli
 Invitation type resolution lives in `src/modules/invitations/`. Individual invitation flows must not infer their type from generic Supabase callback parameters such as `token_hash` or `confirmation_url`.
 
 The hosted Supabase Invite User email template uses a generic callback based on `{{ .SiteURL }}` and `?invitation=1`. The application resolves the authenticated user's `invitation_type` metadata to route either to tenant onboarding or employee invitation setup. The email template must not hard-code a tenant-specific URL.
+
+
+## Payroll & HR boundary
+
+The payroll module owns salary profiles and salary-change history, shift assignments, payroll runs and line-item snapshots, and issued-document metadata. The owner page calls module services; database access stays in `src/modules/payroll/payrollService.ts`. Initial package entitlement is Full System only through the `payroll` module key. Monthly-paid staff retain their full monthly base rate and absences are entered as explicit deductions; daily-paid staff base earnings equal daily rate multiplied by days worked. Attendance is manual. Statutory deductions are not automated. Payslips and certificates use the browser print dialog and can be saved as PDFs.

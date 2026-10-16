@@ -9,7 +9,7 @@ export type RestaurantNavigationRole = 'owner' | 'cashier' | 'kitchen' | 'dispat
 type NavigationItem = {
   label: string;
   href: string;
-  icon: 'dashboard' | 'orders' | 'products' | 'riders' | 'shipping' | 'sales' | 'dispatch' | 'settings' | 'loyalty' | 'customization';
+  icon: 'dashboard' | 'orders' | 'products' | 'riders' | 'shipping' | 'sales' | 'dispatch' | 'settings' | 'loyalty' | 'customization' | 'payroll';
 };
 
 type OwnerSupportTicket = { id: string; request_number: string | null; subject: string; status: string; created_at: string; updated_at: string };
@@ -21,6 +21,7 @@ const ownerNavigationItems: NavigationItem[] = [
   { label: 'Orders', href: '#restaurant/orders', icon: 'orders' },
   { label: 'Products', href: '#restaurant/menu', icon: 'products' },
   { label: 'Employees', href: '#restaurant/employees', icon: 'riders' },
+  { label: 'Payroll & HR', href: '#restaurant/payroll', icon: 'payroll' },
   { label: 'Sales', href: '#restaurant/sales', icon: 'sales' },
   { label: 'Business Reports', href: '#restaurant/business-reports', icon: 'sales' },
   { label: 'Inventory', href: '#restaurant/inventory', icon: 'products' },
@@ -74,6 +75,7 @@ function NavigationIcon({ type }: { type: NavigationItem['icon'] }) {
   if (type === 'settings') {
     return <svg {...common}><path d="M12 3v2M12 19v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M3 12h2M19 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42" /><circle cx="12" cy="12" r="3.5" /></svg>;
   }
+  if (type === 'payroll') return <svg {...common}><rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/></svg>;
   if (type === 'customization') {
     return <svg {...common}><path d="M4 5.5h16M4 12h16M4 18.5h16" /><circle cx="9" cy="5.5" r="2" fill="currentColor" stroke="none" /><circle cx="15" cy="12" r="2" fill="currentColor" stroke="none" /><circle cx="11" cy="18.5" r="2" fill="currentColor" stroke="none" /></svg>;
   }
@@ -319,6 +321,8 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
                             ? ['sales']
                           : item.href === '#restaurant/loyalty'
                           ? ['loyalty']
+                          : item.href === '#restaurant/payroll'
+                            ? ['payroll']
                           : item.href === '#restaurant/website-customization'
                             ? ['website']
                             : [];
@@ -326,6 +330,7 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
               const shouldShow =
                 item.href === '#restaurant/owner' ||
                 item.href === '#restaurant/employees' ||
+                (item.href === '#restaurant/payroll' && ownerModules['payroll'] === true) ||
                 item.href === '#restaurant/settings' ||
                 requiredModules.length === 0 ||
                 requiredModules.some((moduleKey) => ownerModules[moduleKey] === true);

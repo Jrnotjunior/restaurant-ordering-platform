@@ -9,6 +9,7 @@ import './styles/restaurant-sales.css';
 import './styles/restaurant-auth.css';
 import './styles/restaurant-navigation.css';
 import './styles/restaurant-employees.css';
+import './styles/restaurant-payroll.css';
 import './styles/restaurant-employee-invite.css';
 import './styles/restaurant-role-dashboard.css';
 import './styles/restaurant-pos.css';
