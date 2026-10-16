@@ -511,7 +511,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
               <span className="website-customization-subheading">Logo</span>
               <div className="website-customization-logo-row">
                 <div className="website-customization-logo-preview">{logoUrl ? <img src={logoUrl} alt="Restaurant logo" /> : <span>No logo</span>}</div>
-                <label className="button button-secondary website-customization-logo-button">
+                <label className="button button-secondary website-customization-logo-button restaurant-compact-action">
                   {logoUploading ? 'Uploading…' : 'Choose logo'}
                   <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => void handleLogoChange(event)} disabled={loading || saving || logoUploading} />
                 </label>
