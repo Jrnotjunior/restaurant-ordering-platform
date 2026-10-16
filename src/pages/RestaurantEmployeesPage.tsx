@@ -255,7 +255,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
           <div className="restaurant-employee-modal-backdrop" role="presentation" onMouseDown={(event) => {
             if (event.target === event.currentTarget && !saving) setEditingStaff(null);
           }}>
-            <form className="restaurant-employee-modal restaurant-employee-edit-modal" onSubmit={(event) => void handleEdit(event)}>
+            <form className="restaurant-employee-modal restaurant-employee-edit-modal restaurant-edit-dialog" onSubmit={(event) => void handleEdit(event)}>
               <div className="restaurant-employee-modal-header"><div><p className="eyebrow">Edit employee</p><h2>Update employee details</h2></div><button className="restaurant-employee-modal-close" type="button" onClick={() => setEditingStaff(null)} disabled={saving} aria-label="Close">×</button></div>
               <div className="restaurant-employee-form-grid">
                 <label>Full name<input name="name" type="text" defaultValue={editingStaff.name} required /></label>
