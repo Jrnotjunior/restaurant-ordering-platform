@@ -1262,3 +1262,17 @@ textarea {
 .website-customization-logo-button input {
   padding: 0 !important;
 }
+
+
+/* Shared compact button sizing for restaurant-owner management screens. */
+.restaurant-page .button,
+.restaurant-page a.button,
+.restaurant-page .inventory-button {
+  box-sizing: border-box;
+  min-height: 32px;
+  padding: 6px 12px;
+  border-radius: 9px;
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 700;
+}
