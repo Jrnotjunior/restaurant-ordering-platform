@@ -470,8 +470,8 @@
 .privileged-mfa-card .restaurant-owner-auth-form input{min-height:48px;border-color:#dbe2ea;border-radius:10px;background:#fff;color:#111827;font-size:16px;letter-spacing:.08em}
 .privileged-mfa-card .restaurant-owner-auth-form input:focus{border-color:#b91c1c;box-shadow:0 0 0 3px rgba(185,28,28,.1)}
 .privileged-mfa-card .privileged-mfa-submit{display:flex;width:min(120px,100%);min-height:48px;margin:2px auto 0;border:0;border-radius:10px;background:#7c818b;color:#fff;font-weight:700;box-shadow:none}
-.privileged-mfa-card .privileged-mfa-submit:not(:disabled){background:#dc2626}
-.privileged-mfa-card .privileged-mfa-submit:hover:not(:disabled){background:#b91c1c}
+.privileged-mfa-card .privileged-mfa-submit:not(:disabled){background:#111827}
+.privileged-mfa-card .privileged-mfa-submit:hover:not(:disabled){background:#1f2937}
 .privileged-mfa-card .privileged-mfa-signout{display:flex;width:min(120px,100%);min-height:44px;margin:12px auto 0;justify-content:center;border:1px solid #cbd5e1;border-radius:10px;background:#fff;color:#111827;font-weight:700}
 .privileged-mfa-card .privileged-mfa-signout:hover{background:#f8fafc}
 @media(max-width:640px){.privileged-mfa-card{padding:28px 22px;border-radius:16px}.privileged-mfa-card>h1{font-size:30px}}
@@ -580,11 +580,11 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   padding:10px 18px!important;
   border:0!important;
   border-radius:9px!important;
-  background:#ed1c24!important;
+  background:#111827!important;
   color:#fff!important;
   box-shadow:none!important;
 }
-.privileged-mfa-page .privileged-mfa-card .privileged-mfa-submit:hover:not(:disabled){background:#d9151d!important}
+.privileged-mfa-page .privileged-mfa-card .privileged-mfa-submit:hover:not(:disabled){background:#1f2937!important}
 .privileged-mfa-page .privileged-mfa-card .privileged-mfa-submit:disabled{opacity:.55!important}
 .privileged-mfa-page .privileged-mfa-card .privileged-mfa-signout{display:none!important}
 .privileged-mfa-page .privileged-mfa-card #privileged-mfa-message{margin:0!important;color:#fca5a5!important;text-align:center!important}
@@ -602,8 +602,8 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
 .privileged-mfa-page .privileged-mfa-card .restaurant-owner-auth-form label{color:#111827!important}
 .privileged-mfa-page .privileged-mfa-card .restaurant-owner-auth-form input{background:#fff!important;color:#111827!important;border-color:#dbe2ea!important}
 .privileged-mfa-page .privileged-mfa-card .restaurant-owner-auth-form input:focus{border-color:#111827!important}
-.privileged-mfa-page .privileged-mfa-card .privileged-mfa-submit{background:#dc2626!important;color:#fff!important}
-.privileged-mfa-page .privileged-mfa-card .privileged-mfa-submit:hover:not(:disabled){background:#b91c1c!important}
+.privileged-mfa-page .privileged-mfa-card .privileged-mfa-submit{background:#111827!important;color:#fff!important}
+.privileged-mfa-page .privileged-mfa-card .privileged-mfa-submit:hover:not(:disabled){background:#1f2937!important}
  
 /* Center sign-in labels and typed email/password text. */
 .restaurant-owner-auth-form label{text-align:center!important}
