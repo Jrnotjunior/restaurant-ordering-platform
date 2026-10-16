@@ -341,7 +341,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
 
       {(editingProduct || isAddingProduct) && (
         <div className="restaurant-product-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !savingForm) closeProductModal(); }}>
-          <div className="restaurant-product-modal" role="dialog" aria-modal="true" aria-labelledby="product-modal-title">
+          <div className="restaurant-product-modal restaurant-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="product-modal-title">
             <button className="restaurant-product-modal-close" type="button" disabled={savingForm} onClick={closeProductModal}>×</button>
             <h2 id="product-modal-title">{isAddingProduct ? 'Add Product' : 'Edit Product'}</h2>
             <form className="restaurant-product-form" onSubmit={(event) => void saveProduct(event)}>
