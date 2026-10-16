@@ -26,12 +26,12 @@
           <p style="margin:0 0 28px 0;font-size:16px;line-height:26px;color:#444444;">{{ if eq .Data.invitation_type "system_admin" }}Accept your invitation to continue setting up your system administrator account.{{ else if eq .Data.invitation_type "tenant_owner" }}Accept your invitation to continue setting up your restaurant owner account.{{ else if eq .Data.invitation_type "employee_staff" }}Accept your invitation to continue setting up {{ .Data.account_setup }}.{{ else }}Accept your invitation to continue setting up your Web2Table account.{{ end }}</p>
           <table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 28px auto;">
             <tr><td align="center" bgcolor="#e53935" style="background-color:#e53935;border-radius:4px;">
-              <a href="{{ .SiteURL }}/?invitation=1&amp;token_hash={{ .TokenHash }}&amp;type=invite" target="_blank" style="display:inline-block;padding:15px 30px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:20px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:4px;">Accept Invitation</a>
+              <a href="{{ if eq .Data.invitation_type "system_admin" }}https://jrnotjunior.github.io/web2table-system-admin/?token_hash={{ .TokenHash }}&amp;type=invite{{ else }}{{ .SiteURL }}/?invitation=1&amp;token_hash={{ .TokenHash }}&amp;type=invite{{ end }}" target="_blank" style="display:inline-block;padding:15px 30px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:20px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:4px;">Accept Invitation</a>
             </td></tr>
           </table>
           <p style="margin:0 0 12px 0;font-size:13px;line-height:21px;color:#666666;">If the button doesn't work, copy and paste this link into your browser:</p>
           <p style="margin:0 0 28px 0;font-size:12px;line-height:21px;overflow-wrap:anywhere;word-break:break-word;">
-            <a href="{{ .SiteURL }}/?invitation=1&amp;token_hash={{ .TokenHash }}&amp;type=invite" target="_blank" style="color:#d32f2f;text-decoration:underline;overflow-wrap:anywhere;word-break:break-word;">Open your Web2Table invitation</a>
+            <a href="{{ if eq .Data.invitation_type "system_admin" }}https://jrnotjunior.github.io/web2table-system-admin/?token_hash={{ .TokenHash }}&amp;type=invite{{ else }}{{ .SiteURL }}/?invitation=1&amp;token_hash={{ .TokenHash }}&amp;type=invite{{ end }}" target="_blank" style="color:#d32f2f;text-decoration:underline;overflow-wrap:anywhere;word-break:break-word;">Open your Web2Table invitation</a>
           </p>
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background-color:#f8f8f8;border-left:3px solid #e53935;">
             <tr><td style="padding:16px 18px;">
