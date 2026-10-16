@@ -11,9 +11,9 @@ export function Footer() {
         <h2 className="site-footer-heading">Follow Us</h2>
         <nav className="site-footer-socials" aria-label="Social media links">
           {[
-            { name: 'Facebook', url: socialLinks?.facebook, icon: '/restaurant-ordering-platform/social-facebook.svg' },
-            { name: 'Instagram', url: socialLinks?.instagram, icon: '/restaurant-ordering-platform/social-instagram.svg' },
-            { name: 'TikTok', url: socialLinks?.tiktok, icon: '/restaurant-ordering-platform/social-tiktok.svg' },
+            { name: 'Facebook', url: socialLinks?.facebook, icon: `${import.meta.env.BASE_URL}social-facebook.svg` },
+            { name: 'Instagram', url: socialLinks?.instagram, icon: `${import.meta.env.BASE_URL}social-instagram.svg` },
+            { name: 'TikTok', url: socialLinks?.tiktok, icon: `${import.meta.env.BASE_URL}social-tiktok.svg` },
           ].map(({ name, url, icon }) =>
             url ? (
               <a key={name} className="site-footer-social-link" href={url} target="_blank" rel="noreferrer" aria-label={name}>
