@@ -26,6 +26,7 @@ export type AppRouteContext = {
   isRestaurantWebsiteCustomizationPage: boolean;
   isRestaurantLoyaltyPage: boolean;
   isRestaurantEmployeesPage: boolean;
+  isRestaurantPayrollPage: boolean;
   isCashierPage: boolean;
   isKitchenPage: boolean;
   isKitchenMenuPage: boolean;
@@ -78,6 +79,7 @@ export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' |
   const isRestaurantWebsiteCustomizationPage = route === '#restaurant/website-customization';
   const isRestaurantLoyaltyPage = route === '#restaurant/loyalty';
   const isRestaurantEmployeesPage = route === '#restaurant/employees';
+  const isRestaurantPayrollPage = route === '#restaurant/payroll';
   const isCashierPage = route === '#restaurant/cashier';
   const isKitchenPage = route === '#restaurant/kitchen';
   const isKitchenMenuPage = route === '#restaurant/kitchen-menu';
@@ -140,7 +142,8 @@ export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' |
     isRestaurantSettingsPage ||
     isRestaurantWebsiteCustomizationPage ||
     isRestaurantLoyaltyPage ||
-    isRestaurantEmployeesPage;
+    isRestaurantEmployeesPage ||
+    isRestaurantPayrollPage;
 
   const trackingMatch = route.match(/^#order\/(.+)$/);
 
@@ -172,6 +175,7 @@ export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' |
     isRestaurantWebsiteCustomizationPage,
     isRestaurantLoyaltyPage,
     isRestaurantEmployeesPage,
+    isRestaurantPayrollPage,
     isCashierPage,
     isKitchenPage,
     isKitchenMenuPage,
