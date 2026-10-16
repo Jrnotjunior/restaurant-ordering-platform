@@ -42,9 +42,9 @@ begin
       nullif(btrim(concat_ws(' ', cp.first_name, cp.last_name)), ''),
       nullif(btrim(u.raw_user_meta_data ->> 'name'), ''),
       'Customer'
-    ),
-    coalesce(u.email, ''),
-    cp.phone,
+    )::text,
+    coalesce(u.email::text, ''),
+    cp.phone::text,
     cp.created_at,
     coalesce(cla.points_balance, 0)::bigint,
     coalesce(sum(case when lt.transaction_type = 'earn' and lt.points > 0 then lt.points else 0 end), 0)::bigint,
