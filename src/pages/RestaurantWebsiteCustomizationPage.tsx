@@ -607,6 +607,27 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
 
 
         <div className="website-customization-actions-bar">
+          <button
+            className="button button-secondary restaurant-compact-action"
+            type="button"
+            disabled={loading || saving}
+            onClick={() => {
+              setWebsiteTheme((current) => ({
+                ...current,
+                colors: {
+                  ...defaultRestaurant.theme.colors,
+                  header: defaultRestaurant.theme.colors.header ?? defaultRestaurant.theme.colors.background,
+                  footer: defaultRestaurant.theme.colors.footer ?? defaultRestaurant.theme.colors.background,
+                  hero: defaultRestaurant.theme.colors.hero ?? defaultRestaurant.theme.colors.surface,
+                  productCard: defaultRestaurant.theme.colors.productCard ?? defaultRestaurant.theme.colors.surface,
+                },
+              }));
+              setMessage('');
+              setError('');
+            }}
+          >
+            Back to Default
+          </button>
           <button className="button button-primary restaurant-compact-action" type="submit" disabled={loading || saving}>{saving ? 'Saving…' : 'Save'}</button>
         </div>
       </form>
