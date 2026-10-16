@@ -242,6 +242,8 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
         .business-reports-tabs button[aria-selected=true]::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--color-primary,#111827);border-radius:2px}
         .business-reports-button{border:1px solid var(--border,#dce2ea);border-radius:9px;background:var(--surface,#fff);color:var(--text,#202938);padding:10px 14px;font:inherit;font-weight:650;cursor:pointer}
         .business-reports-button.primary{background:var(--color-primary,#111827);color:#fff;border-color:var(--color-primary,#111827)}
+        .business-reports-button.business-reports-export{background:var(--surface,#fff);color:var(--text,#202938);border-color:var(--border,#dce2ea)}
+        .business-reports-button.business-reports-export:hover:not(:disabled){background:var(--surface,#fff);color:var(--text,#202938);border-color:var(--border-strong,var(--border,#cbd5e1))}
         .business-reports-button:disabled{opacity:.55;cursor:wait}
         .business-reports-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
         .business-reports-card,.business-reports-panel{border:1px solid var(--border,#e2e8f0);border-radius:14px;background:var(--surface,#fff);padding:17px;min-width:0}
@@ -290,7 +292,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
               })}
               {!completedOrders.length && <tr><td colSpan={3}>No completed orders in this period.</td></tr>}
             </tbody></table></div>
-            <div className="business-reports-actions" style={{ justifyContent: 'flex-end' }}><button className="business-reports-button restaurant-compact-action" type="button" onClick={exportSales}>Export sales CSV</button></div>
+            <div className="business-reports-actions" style={{ justifyContent: 'flex-end' }}><button className="business-reports-button business-reports-export restaurant-compact-action" type="button" onClick={exportSales}>Export sales CSV</button></div>
           </section>
         </>}
         {tab === 'expenses' && <>
@@ -308,7 +310,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
               <label>Amount (₱)<input type="number" min="0.01" step="0.01" value={expenseAmount} required placeholder="0.00" onChange={(event)=>setExpenseAmount(event.target.value)} /></label>
               <label>Description<input value={expenseDescription} required maxLength={240} placeholder="e.g. Fresh produce delivery" onChange={(event)=>setExpenseDescription(event.target.value)} /></label>
             </div>
-            <div className="business-reports-actions" style={{ justifyContent: 'flex-end' }}><button className="business-reports-button primary restaurant-compact-action" type="submit" disabled={saving}>{saving?'Saving…':'Save'}</button><button className="business-reports-button restaurant-compact-action" type="button" onClick={exportExpenses}>Export expenses CSV</button></div>
+            <div className="business-reports-actions" style={{ justifyContent: 'flex-end' }}><button className="business-reports-button primary restaurant-compact-action" type="submit" disabled={saving}>{saving?'Saving…':'Save'}</button><button className="business-reports-button business-reports-export restaurant-compact-action" type="button" onClick={exportExpenses}>Export expenses CSV</button></div>
           </form></section>
           <section className="business-reports-panel"><h2>Expenses in selected period</h2><div className="business-reports-table-wrap"><table className="business-reports-table"><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th></th></tr></thead><tbody>
             {rangeExpenses.map((expense)=><tr key={expense.id}><td>{expense.expense_date}</td><td>{CATEGORIES.find((item)=>item.value===expense.category)?.label ?? expense.category}</td><td className="wrap">{expense.description}</td><td>{peso(Number(expense.amount))}</td><td><button className="business-reports-button" type="button" onClick={()=>void deleteExpense(expense.id)}>Delete</button></td></tr>)}
@@ -334,7 +336,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
               {paymentMethods.map((item) => <tr key={item.method}><td>{item.method === 'gcash' ? 'GCash / online' : 'Cash'}</td><td>{item.count}</td><td>{peso(item.paidAmount)}</td><td>{peso(item.outstandingAmount)}</td><td>{item.method === 'gcash' ? peso(item.providerFees) : '—'}</td><td>{item.method === 'gcash' ? peso(item.recordedNet) : '—'}</td></tr>)}
             </tbody></table></div>
             <p className="business-reports-muted">Provider fees and net amounts are displayed only when recorded on the order. Zero may mean no value was recorded, not necessarily a zero-fee transaction. Refunded amounts are listed separately in the status summary.</p>
-            <div className="business-reports-actions" style={{ justifyContent: 'flex-end' }}><button className="business-reports-button restaurant-compact-action" type="button" onClick={exportPayments}>Export payment reconciliation CSV</button></div>
+            <div className="business-reports-actions" style={{ justifyContent: 'flex-end' }}><button className="business-reports-button business-reports-export restaurant-compact-action" type="button" onClick={exportPayments}>Export payment reconciliation CSV</button></div>
           </section>
           <section className="business-reports-panel"><h2>Orders to review</h2>
             <div className="business-reports-table-wrap"><table className="business-reports-table"><thead><tr><th>Order</th><th>Date</th><th>Order status</th><th>Method</th><th>Payment status</th><th>Amount</th></tr></thead><tbody>
@@ -353,7 +355,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
           <section className="business-reports-panel"><h2>Tax-support exports</h2>
             <p>These files summarize order and tax fields already recorded by the platform. They are supporting records for review by your accountant, not official BIR invoices, books, returns, or confirmation that your business is tax-compliant. No tax rate is inferred when order tax data is missing.</p>
             <p className="business-reports-muted">Orders with VAT registration recorded: {vatConfiguredOrders} of {completedOrders.length} completed orders in this period. Check your business registration and tax treatment with your accountant before relying on these totals.</p>
-            <div className="business-reports-actions" style={{ justifyContent: 'flex-end' }}><button className="business-reports-button restaurant-compact-action" type="button" onClick={exportTaxSupport}>Export tax-support CSV</button><button className="business-reports-button restaurant-compact-action" type="button" onClick={exportSales}>Export detailed sales CSV</button></div>
+            <div className="business-reports-actions" style={{ justifyContent: 'flex-end' }}><button className="business-reports-button business-reports-export restaurant-compact-action" type="button" onClick={exportTaxSupport}>Export tax-support CSV</button><button className="business-reports-button business-reports-export restaurant-compact-action" type="button" onClick={exportSales}>Export detailed sales CSV</button></div>
           </section>
           <section className="business-reports-panel"><h2>Included in the export</h2><ul><li>Order number, date, status, and payment status</li><li>Recorded order amount and discounts</li><li>Recorded net sales, vatable sales, VAT amount, and VAT-exempt sales when available</li></ul><p>Tax status and amounts are taken from existing order records. Review data quality and applicable requirements before filing.</p></section>
         </>}
