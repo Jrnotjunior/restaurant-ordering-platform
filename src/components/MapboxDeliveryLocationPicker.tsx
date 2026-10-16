@@ -279,7 +279,7 @@ export function MapboxDeliveryLocationPicker({
             aria-label={variant === 'restaurant' ? 'Search the restaurant address' : 'Search your delivery address'}
           />
           <button
-            className="button button-secondary"
+            className="button button-secondary restaurant-compact-action"
             type="button"
             onClick={() => void searchAddresses()}
             disabled={disabled || loading || searching || !searchQuery.trim()}
@@ -310,7 +310,7 @@ export function MapboxDeliveryLocationPicker({
       <div className="delivery-location-map" ref={mapContainerRef} aria-label="Delivery location map" />
 
       <div className="delivery-location-map-actions">
-        <button className="button button-secondary" type="button" onClick={useCurrentLocation} disabled={disabled || loading || locating}>
+        <button className="button button-secondary restaurant-compact-action" type="button" onClick={useCurrentLocation} disabled={disabled || loading || locating}>
           {locating ? 'Finding your location…' : 'Use my current location'}
         </button>
         <span>{variant === 'restaurant' ? 'Move the pin or tap the map to set the restaurant location.' : 'Drag the pin or tap the map to adjust it.'}</span>
