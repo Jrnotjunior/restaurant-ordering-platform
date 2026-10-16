@@ -607,7 +607,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
 
 
         <div className="website-customization-actions-bar">
-          <button className="button button-primary" type="submit" disabled={loading || saving}>{saving ? 'Saving…' : 'Save Customizations'}</button>
+          <button className="button button-primary restaurant-compact-action" type="submit" disabled={loading || saving}>{saving ? 'Saving…' : 'Save Customizations'}</button>
         </div>
       </form>
 
