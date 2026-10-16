@@ -219,7 +219,7 @@ export function RestaurantLoyaltyCustomers({ restaurantId }: Props) {
         .restaurant-loyalty-customer-stats article{display:grid;gap:8px;min-width:0;padding:16px;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-background)}
         .restaurant-loyalty-customer-stats article span{color:var(--color-muted);font-size:.78rem}
         .restaurant-loyalty-customer-stats article strong{color:var(--color-text);font-size:1.35rem;font-weight:800}
-        .restaurant-loyalty-customer-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:0 0 12px}\n        .restaurant-loyalty-customer-search{display:grid;gap:6px;flex:1;min-width:0}\n        .restaurant-loyalty-export{min-height:40px;white-space:nowrap}\n        .restaurant-loyalty-export:disabled{opacity:.55;cursor:not-allowed}
+        .restaurant-loyalty-customer-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:0 0 12px}\n        .restaurant-loyalty-customer-search{display:grid;gap:6px;flex:1;min-width:0}\n        .restaurant-loyalty-export{min-height:32px;padding:6px 12px;font-size:.75rem;line-height:1.2;border-radius:10px;white-space:nowrap}\n        .restaurant-loyalty-export:disabled{opacity:.55;cursor:not-allowed}
         .restaurant-loyalty-customer-toolbar label{font-size:.82rem;font-weight:700;color:var(--color-text)}
         .restaurant-loyalty-customer-toolbar input{width:min(100%,320px);min-height:40px;padding:9px 12px;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-background);color:var(--color-text);font:inherit}
         .restaurant-loyalty-customer-toolbar input:focus{outline:2px solid color-mix(in srgb,var(--color-primary) 15%,transparent);border-color:var(--color-primary)}
@@ -232,7 +232,7 @@ export function RestaurantLoyaltyCustomers({ restaurantId }: Props) {
         .restaurant-loyalty-customer-table td:first-child span{margin-top:3px;color:var(--color-muted);font-size:.76rem;overflow-wrap:anywhere}
         .restaurant-loyalty-customer-empty{padding:24px 12px;text-align:center;color:var(--color-muted);font-size:.88rem}
         @media(max-width:900px){.restaurant-loyalty-customer-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
-        @media(max-width:560px){.restaurant-loyalty-customer-toolbar{align-items:stretch;flex-direction:column}.restaurant-loyalty-customer-toolbar input{width:100%;box-sizing:border-box}.restaurant-loyalty-export{width:100%}}
+        @media(max-width:560px){.restaurant-loyalty-customer-toolbar{align-items:stretch;flex-direction:column}.restaurant-loyalty-customer-toolbar input{width:100%;box-sizing:border-box}.restaurant-loyalty-export{width:auto;align-self:flex-start}}
       `}</style>
     </section>
   );
