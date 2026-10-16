@@ -183,7 +183,7 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
 
           <div className="restaurant-loyalty-actions">
             <button
-              className="button button-primary"
+              className="button button-primary restaurant-compact-action"
               type="button"
               onClick={() => void handleSave()}
               disabled={loading || saving}
