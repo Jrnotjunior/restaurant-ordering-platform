@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   createEmployee,
+  createPayrollOnlyEmployee,
   getEmployees,
   roleLabels,
   setEmployeeActive,
@@ -15,6 +16,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
   const { setUnsavedChanges } = useOwnerUnsavedChanges();
   const [staff, setStaff] = useState<StaffAccount[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [showPayrollOnlyForm, setShowPayrollOnlyForm] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffAccount | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -46,7 +48,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
       || employee.preferredName.toLowerCase().includes(query)
       || employee.mobileNumber.toLowerCase().includes(query)
       || employee.email.toLowerCase().includes(query)
-      || roleLabels[employee.role].toLowerCase().includes(query)
+      || (roleLabels[employee.role] || employee.role).toLowerCase().includes(query)
     );
   }, [staff, searchEmployee]);
 
@@ -139,9 +141,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
             <h1>Employees</h1>
             <p>Manage your restaurant employees and their access to the management system.</p>
           </div>
-          <button className="button button-primary restaurant-compact-action" type="button" onClick={() => setShowForm(true)}>
-            Add Employee
-          </button>
+          <div className="restaurant-employee-header-actions"><button className="button button-secondary restaurant-compact-action" type="button" onClick={() => setShowPayrollOnlyForm(true)}>Add employee without login</button><button className="button button-primary restaurant-compact-action" type="button" onClick={() => setShowForm(true)}>Add Employee account</button></div>
         </div>
 
         <div className="restaurant-employees-search">
@@ -172,6 +172,35 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
 
         {error ? <div className="restaurant-employees-error" role="alert">{error}</div> : null}
         {confirmation ? <div className="restaurant-employees-success" role="status" aria-live="polite">{confirmation}</div> : null}
+
+        {showPayrollOnlyForm ? (
+          <div className="restaurant-employee-modal-backdrop" role="presentation" onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !saving) setShowPayrollOnlyForm(false);
+          }}>
+            <form className="restaurant-employee-modal restaurant-employee-edit-modal" onSubmit={async (event) => {
+              event.preventDefault();
+              const form = new FormData(event.currentTarget);
+              const name = String(form.get('name') || '').trim();
+              const role = String(form.get('role') || 'dining');
+              if (!name) { setError('Enter the employee name.'); return; }
+              setSaving(true); setError(''); setConfirmation('');
+              try {
+                await createPayrollOnlyEmployee(restaurantId, { name, role });
+                setUnsavedChanges(false); setShowPayrollOnlyForm(false); setConfirmation('Employee added without a login account.'); await loadStaff();
+              } catch (saveError) {
+                setError(saveError instanceof Error ? saveError.message : 'Unable to add employee.');
+              } finally { setSaving(false); }
+            }}>
+              <div className="restaurant-employee-modal-header"><div><p className="eyebrow">Payroll employee</p><h2>Add employee without login</h2></div><button className="restaurant-employee-modal-close" type="button" onClick={() => setShowPayrollOnlyForm(false)} disabled={saving} aria-label="Close">×</button></div>
+              <div className="restaurant-employee-form-grid">
+                <label>Employee name<input name="name" required maxLength={120} /></label>
+                <label>Role<select name="role" defaultValue="dining"><option value="dining">Dining</option><option value="kitchen_staff">Kitchen staff</option><option value="cook">Cook</option><option value="server">Server</option><option value="cleaner">Cleaner</option><option value="dishwasher">Dishwasher</option><option value="host">Host</option><option value="manager">Manager</option><option value="other">Other</option></select></label>
+              </div>
+              <p className="restaurant-employee-form-help">No email, mobile number, or login account required.</p>
+              <div className="restaurant-employee-modal-actions"><button className="button button-secondary restaurant-compact-action" type="button" onClick={() => setShowPayrollOnlyForm(false)} disabled={saving}>Cancel</button><button className="button button-primary restaurant-compact-action" type="submit" disabled={saving}>{saving ? 'Adding…' : 'Add employee'}</button></div>
+            </form>
+          </div>
+        ) : null}
 
         {showForm ? (
           <div
@@ -206,9 +235,9 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
               <article className={`restaurant-employee-card${employee.isActive ? '' : ' is-inactive'}`} key={employee.id}>
                 <div className="restaurant-employee-avatar" aria-hidden="true">{employee.name.charAt(0).toUpperCase()}</div>
                 <div className="restaurant-employee-details">
-                  <div className="restaurant-employee-name-row"><h2>{employee.preferredName}</h2><span className="restaurant-employee-role">{roleLabels[employee.role]}</span></div>
+                  <div className="restaurant-employee-name-row"><h2>{employee.preferredName}</h2><span className="restaurant-employee-role">{roleLabels[employee.role] || employee.role.replaceAll('_', ' ')}</span></div>
                   <p>{employee.mobileNumber}</p>
-                  <p>{employee.email}</p>
+                  {employee.email ? <p>{employee.email}</p> : <p>No login account</p>}
                   {!employee.isActive ? <p className="restaurant-employee-status">Inactive</p> : null}
                 </div>
                 <div className="restaurant-employee-actions">
