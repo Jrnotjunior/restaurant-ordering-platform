@@ -71,7 +71,7 @@
 .tenant-onboarding-form input:focus{border-color:#111827;box-shadow:0 0 0 3px rgba(17,24,39,.08);background:#fff}
 .tenant-onboarding-form input[readonly]{cursor:default}
 .tenant-onboarding-password-hint{margin:-6px 0 0;color:#64748b;font-size:12px;line-height:1.5}
-.tenant-onboarding-submit{width:100%;border:0;border-radius:10px;padding:14px 16px;background:#111827;color:#fff;font:inherit;font-weight:700;cursor:pointer;transition:background .15s ease,opacity .15s ease}
+.tenant-onboarding-submit{width:100%;border:0;border-radius:10px;padding:14px 16px;background:#374151;color:#fff;font:inherit;font-weight:700;cursor:pointer;transition:background .15s ease,opacity .15s ease}
 .tenant-onboarding-submit:hover{background:#0f172a}
 .tenant-onboarding-submit:disabled{opacity:.55;cursor:not-allowed}
 .tenant-onboarding-error{padding:12px 14px;border:1px solid #fecaca;border-radius:10px;background:#fef2f2;color:#b91c1c;font-size:13px;line-height:1.5}
@@ -470,8 +470,8 @@
 .privileged-mfa-card .restaurant-owner-auth-form input{min-height:48px;border-color:#dbe2ea;border-radius:10px;background:#fff;color:#111827;font-size:16px;letter-spacing:.08em}
 .privileged-mfa-card .restaurant-owner-auth-form input:focus{border-color:#b91c1c;box-shadow:0 0 0 3px rgba(185,28,28,.1)}
 .privileged-mfa-card .privileged-mfa-submit{display:flex;width:min(120px,100%);min-height:48px;margin:2px auto 0;border:0;border-radius:10px;background:#7c818b;color:#fff;font-weight:700;box-shadow:none}
-.privileged-mfa-card .privileged-mfa-submit:not(:disabled){background:#111827}
-.privileged-mfa-card .privileged-mfa-submit:hover:not(:disabled){background:#1f2937}
+.privileged-mfa-card .privileged-mfa-submit:not(:disabled){background:#374151}
+.privileged-mfa-card .privileged-mfa-submit:hover:not(:disabled){background:#4b5563}
 .privileged-mfa-card .privileged-mfa-signout{display:flex;width:min(120px,100%);min-height:44px;margin:12px auto 0;justify-content:center;border:1px solid #cbd5e1;border-radius:10px;background:#fff;color:#111827;font-weight:700}
 .privileged-mfa-card .privileged-mfa-signout:hover{background:#f8fafc}
 @media(max-width:640px){.privileged-mfa-card{padding:28px 22px;border-radius:16px}.privileged-mfa-card>h1{font-size:30px}}
@@ -580,11 +580,11 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   padding:10px 18px!important;
   border:0!important;
   border-radius:9px!important;
-  background:#111827!important;
+  background:#374151!important;
   color:#fff!important;
   box-shadow:none!important;
 }
-.privileged-mfa-page .privileged-mfa-card .privileged-mfa-submit:hover:not(:disabled){background:#1f2937!important}
+.privileged-mfa-page .privileged-mfa-card .privileged-mfa-submit:hover:not(:disabled){background:#4b5563!important}
 .privileged-mfa-page .privileged-mfa-card .privileged-mfa-submit:disabled{opacity:.55!important}
 .privileged-mfa-page .privileged-mfa-card .privileged-mfa-signout{display:none!important}
 .privileged-mfa-page .privileged-mfa-card #privileged-mfa-message{margin:0!important;color:#fca5a5!important;text-align:center!important}
@@ -602,8 +602,8 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
 .privileged-mfa-page .privileged-mfa-card .restaurant-owner-auth-form label{color:#111827!important}
 .privileged-mfa-page .privileged-mfa-card .restaurant-owner-auth-form input{background:#fff!important;color:#111827!important;border-color:#dbe2ea!important}
 .privileged-mfa-page .privileged-mfa-card .restaurant-owner-auth-form input:focus{border-color:#111827!important}
-.privileged-mfa-page .privileged-mfa-card .privileged-mfa-submit{background:#111827!important;color:#fff!important}
-.privileged-mfa-page .privileged-mfa-card .privileged-mfa-submit:hover:not(:disabled){background:#1f2937!important}
+.privileged-mfa-page .privileged-mfa-card .privileged-mfa-submit{background:#374151!important;color:#fff!important}
+.privileged-mfa-page .privileged-mfa-card .privileged-mfa-submit:hover:not(:disabled){background:#4b5563!important}
  
 /* Center sign-in labels and typed email/password text. */
 .restaurant-owner-auth-form label{text-align:center!important}
