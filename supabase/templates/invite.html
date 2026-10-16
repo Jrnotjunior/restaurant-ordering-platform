@@ -20,7 +20,7 @@
         <tr><td style="padding:40px 36px 24px 36px;">
           <p style="margin:0 0 12px 0;font-size:12px;line-height:18px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#e53935;">{{ .Data.invitation_label }}</p>
           <h1 style="margin:0 0 20px 0;font-size:28px;line-height:36px;font-weight:700;color:#111111;">
-            Welcome to {{ .Data.restaurant_name }}
+            Hi, {{ if .Data.name }}{{ .Data.name }}{{ else }}there{{ end }}!
           </h1>
           <p style="margin:0 0 18px 0;font-size:16px;line-height:26px;color:#444444;">You've been invited to join {{ .Data.restaurant_name }} as {{ .Data.invitation_role }}.</p>
           <p style="margin:0 0 28px 0;font-size:16px;line-height:26px;color:#444444;">Accept your invitation using the button below to continue with {{ .Data.account_setup }} setup.</p>
