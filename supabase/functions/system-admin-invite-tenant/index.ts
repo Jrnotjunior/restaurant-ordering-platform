@@ -78,9 +78,12 @@ Deno.serve(async (request) => {
 
     const body = await request.json();
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const ownerName = typeof body.owner_name === "string" ? body.owner_name.trim() : "";
     const name = typeof body.name === "string" ? body.name.trim() : "";
     const slug = typeof body.slug === "string" ? body.slug.trim().toLowerCase() : "";
     const packageId = Number(body.package_id);
+
+    if (ownerName.length < 2) return jsonResponse({ error: "Owner full name is required." }, 400);
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return jsonResponse({ error: "Please enter a valid tenant owner email address." }, 400);
@@ -178,6 +181,8 @@ Deno.serve(async (request) => {
           ...(existingAuthUser.user_metadata ?? {}),
           invitation_type: "tenant_owner",
           tenant_invitation_id: invitation.id,
+          name: ownerName,
+          full_name: ownerName,
           restaurant_name: "Web2Table",
           invitation_role: "a restaurant owner",
           account_setup: "your restaurant account",
@@ -195,6 +200,8 @@ Deno.serve(async (request) => {
           data: {
             invitation_type: "tenant_owner",
             tenant_invitation_id: invitation.id,
+            name: ownerName,
+            full_name: ownerName,
             restaurant_name: "Web2Table",
             invitation_role: "a restaurant owner",
             account_setup: "your restaurant account",
