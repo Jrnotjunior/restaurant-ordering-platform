@@ -152,7 +152,6 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
               type="search"
               value={searchEmployee}
               onChange={(event) => setSearchEmployee(event.target.value)}
-              placeholder="Search by name, mobile, email, or role"
             />
             {searchEmployee && (
               <button
