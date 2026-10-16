@@ -188,7 +188,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
                 await createPayrollOnlyEmployee(restaurantId, { name, role });
                 setUnsavedChanges(false); setShowPayrollOnlyForm(false); setConfirmation('Employee added without a login account.'); await loadStaff();
               } catch (saveError) {
-                setError(saveError instanceof Error ? saveError.message : 'Unable to add employee.');
+                setError(String((saveError as { message?: string; details?: string; hint?: string; code?: string })?.message || (saveError as { details?: string })?.details || (saveError as { hint?: string })?.hint || 'Unable to add employee. Please verify MFA and try again.'));
               } finally { setSaving(false); }
             }}>
               <div className="restaurant-employee-modal-header"><div><p className="eyebrow">Payroll employee</p><h2>Add employee without login</h2></div><button className="restaurant-employee-modal-close" type="button" onClick={() => setShowPayrollOnlyForm(false)} disabled={saving} aria-label="Close">×</button></div>
