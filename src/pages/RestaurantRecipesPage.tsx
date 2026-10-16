@@ -162,7 +162,7 @@ export function RestaurantRecipesPage({ restaurantId }: Props) {
 }
 
 const fieldStyle: CSSProperties = {width:'100%',boxSizing:'border-box',minHeight:40,border:'1px solid var(--border,#dce2ea)',borderRadius:9,padding:'8px 10px',background:'var(--surface,#fff)',color:'inherit',font:'inherit'};
-const buttonStyle: React.CSSProperties = {border:'1px solid var(--border,#dce2ea)',borderRadius:9,padding:'9px 12px',background:'var(--surface,#fff)',color:'var(--text,#202938)',font:'inherit',fontWeight:650,cursor:'pointer'};
+const buttonStyle: React.CSSProperties = {border:'1px solid var(--border,#dce2ea)',borderRadius:8,padding:'6px 10px',minHeight:32,background:'var(--surface,#fff)',color:'var(--text,#202938)',fontSize:12,lineHeight:1.2,fontWeight:650,cursor:'pointer'};
 const primaryButtonStyle: React.CSSProperties = {...buttonStyle,border:'1px solid var(--color-primary,#111827)',background:'var(--color-primary,#111827)',color:'var(--color-primary-text,#ffffff)'};
 const thStyle: React.CSSProperties = {padding:'11px 10px',borderBottom:'1px solid var(--border,#e2e8f0)',textAlign:'left',fontSize:11,textTransform:'uppercase',color:'var(--muted,#64748b)'};
 const tdStyle: React.CSSProperties = {padding:'11px 10px',borderBottom:'1px solid var(--border,#e2e8f0)',textAlign:'left',verticalAlign:'top'};
