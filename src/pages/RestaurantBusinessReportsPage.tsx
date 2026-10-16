@@ -286,7 +286,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
               })}
               {!completedOrders.length && <tr><td colSpan={3}>No completed orders in this period.</td></tr>}
             </tbody></table></div>
-            <div className="business-reports-actions"><button className="business-reports-button primary restaurant-compact-action" type="button" onClick={exportSales}>Export sales CSV</button></div>
+            <div className="business-reports-actions business-reports-actions-end"><button className="business-reports-button primary restaurant-compact-action" type="button" onClick={exportSales}>Export sales CSV</button></div>
           </section>
         </>}
         {tab === 'expenses' && <>
