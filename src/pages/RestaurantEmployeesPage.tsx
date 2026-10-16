@@ -189,15 +189,14 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
             </div>
             <p className="restaurant-employee-form-help">Kitchen and Dispatcher are shared accounts. Rider accounts are also created through this employee invitation flow.</p>
             <div className="restaurant-employee-form-grid">
-              <label>Full name<input name="name" type="text" placeholder="e.g. Juan Dela Cruz" required /></label>
-              <label>Preferred name<input name="preferredName" type="text" placeholder="e.g. Juan" required /></label>
+              <label>Full name<input name="name" type="text"  required /></label>
+              <label>Preferred name<input name="preferredName" type="text"  required /></label>
               <label>Role<select name="role" defaultValue="cashier"><option value="cashier">Cashier</option><option value="kitchen">Kitchen</option><option value="dispatcher">Dispatcher</option><option value="rider">Rider</option></select></label>
-              <label>Mobile number<input name="mobileNumber" type="tel" inputMode="numeric" placeholder="09XXXXXXXXX" maxLength={11} pattern="^09[0-9]{9}$" onInput={(event) => { event.currentTarget.value = normalizeMobileNumber(event.currentTarget.value); }} required /><span className="restaurant-employee-form-help">Must start with 09 and contain exactly 11 digits.</span></label>
-              <label className="restaurant-employee-email-field">Login email<input name="email" type="email" placeholder="employee@example.com" required /></label>
+              <label>Mobile number<input name="mobileNumber" type="tel" inputMode="numeric"  maxLength={11} pattern="^09[0-9]{9}$" onInput={(event) => { event.currentTarget.value = normalizeMobileNumber(event.currentTarget.value); }} required /><span className="restaurant-employee-form-help">Must start with 09 and contain exactly 11 digits.</span></label>
+              <label className="restaurant-employee-email-field">Login email<input name="email" type="email"  required /></label>
             </div>
             <p className="restaurant-employee-form-help">A Supabase Auth account is created automatically and an invitation email is sent so the employee can set a password.</p>
             <div className="restaurant-employee-form-actions">
-              <button className="button button-secondary" type="button" onClick={() => setShowForm(false)} disabled={saving}>Cancel</button>
               <button className="button button-primary" type="submit" disabled={saving}>{saving ? 'Creating…' : 'Add Employee'}</button>
             </div>
           </form>
