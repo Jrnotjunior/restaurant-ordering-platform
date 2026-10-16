@@ -70,3 +70,22 @@
 .salary-profile-edit-dialog .restaurant-payroll-dialog-form .restaurant-payroll-dialog-actions{grid-column:1/-1}
 .salary-profile-edit-dialog .restaurant-payroll-dialog-form textarea{width:100%;min-height:76px;box-sizing:border-box;resize:vertical}
 @media(max-width:480px){.salary-profile-edit-dialog .restaurant-payroll-dialog-form{grid-template-columns:minmax(0,1fr)}.salary-profile-edit-dialog .restaurant-payroll-dialog-form .salary-notes-field,.salary-profile-edit-dialog .restaurant-payroll-dialog-form .restaurant-payroll-dialog-actions{grid-column:1}}
+
+
+/* Match salary edit controls to the shared Web2Table form theme. */
+.restaurant-payroll-page .salary-profile-edit-dialog .restaurant-payroll-dialog-form>label{display:flex;flex-direction:column;gap:6px;min-width:0;color:#172033;font-size:12px;font-weight:650;line-height:1.4}
+.restaurant-payroll-page .salary-profile-edit-dialog .restaurant-payroll-dialog-form input,
+.restaurant-payroll-page .salary-profile-edit-dialog .restaurant-payroll-dialog-form select,
+.restaurant-payroll-page .salary-profile-edit-dialog .restaurant-payroll-dialog-form textarea{
+  display:block;width:100%;max-width:100%;min-width:0;min-height:40px;box-sizing:border-box;
+  padding:9px 11px;border:1px solid #d7e0ed;border-radius:9px;background:#fff;color:#172033;
+  font:500 13px/1.4 Inter,Manrope,system-ui,sans-serif;box-shadow:none;outline:none;
+}
+.restaurant-payroll-page .salary-profile-edit-dialog .restaurant-payroll-dialog-form textarea{min-height:76px;resize:vertical}
+.restaurant-payroll-page .salary-profile-edit-dialog .restaurant-payroll-dialog-form input:focus,
+.restaurant-payroll-page .salary-profile-edit-dialog .restaurant-payroll-dialog-form select:focus,
+.restaurant-payroll-page .salary-profile-edit-dialog .restaurant-payroll-dialog-form textarea:focus{border-color:#0f766e;box-shadow:0 0 0 3px rgba(15,118,110,.12);outline:none}
+.restaurant-payroll-page .salary-profile-edit-dialog .restaurant-payroll-dialog-actions{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:4px}
+.restaurant-payroll-page .salary-profile-edit-dialog .restaurant-payroll-dialog-actions .button{min-height:32px;padding:7px 12px;border-radius:8px;font:650 12px/1.2 Inter,Manrope,system-ui,sans-serif}
+.restaurant-payroll-page .salary-profile-edit-dialog .restaurant-payroll-dialog-actions .button-secondary{border:1px solid #dce2ea;background:#f3f4f6;color:#172033}
+.restaurant-payroll-page .salary-profile-edit-dialog .restaurant-payroll-dialog-actions .button-primary{border:1px solid #111827;background:#111827;color:#fff}
