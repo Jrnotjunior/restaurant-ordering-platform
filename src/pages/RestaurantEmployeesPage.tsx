@@ -175,7 +175,18 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
         {confirmation ? <div className="restaurant-employees-success" role="status" aria-live="polite">{confirmation}</div> : null}
 
         {showForm ? (
-          <form className="restaurant-employee-form" onSubmit={(event) => void handleSubmit(event)}>
+          <div
+            className="restaurant-employee-modal-backdrop"
+            role="presentation"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget && !saving) setShowForm(false);
+            }}
+          >
+          <form className="restaurant-employee-modal restaurant-employee-edit-modal restaurant-employee-form" onSubmit={(event) => void handleSubmit(event)}>
+            <div className="restaurant-employee-modal-header">
+              <div><p className="eyebrow">New employee</p><h2>Add employee</h2></div>
+              <button className="restaurant-employee-modal-close" type="button" onClick={() => setShowForm(false)} disabled={saving} aria-label="Close">×</button>
+            </div>
             <div className="restaurant-employee-form-heading">
               <div><p className="eyebrow">New employee</p><h2>Add employee</h2></div>
               <p>Kitchen and Dispatcher are shared accounts. Rider accounts are also created through this employee invitation flow.</p>
@@ -193,6 +204,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
               <button className="button button-primary" type="submit" disabled={saving}>{saving ? 'Creating…' : 'Add Employee'}</button>
             </div>
           </form>
+          </div>
         ) : null}
 
         <div className="restaurant-employees-list">
