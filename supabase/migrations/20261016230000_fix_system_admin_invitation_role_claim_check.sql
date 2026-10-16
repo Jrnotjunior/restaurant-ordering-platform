@@ -1,7 +1,6 @@
--- Allow invited System Administrators to activate their own pending access.
--- The custom JWT role claim is not guaranteed to be present during invitation
--- acceptance; ownership is instead proven by the authenticated user's pending
--- system_admin_access row, and MFA AAL2 remains mandatory.
+-- Invitation acceptance occurs before the administrator can enroll/verify MFA.
+-- Authorize activation only for the authenticated user with their own pending
+-- invitation. The System Admin app continues to enforce MFA before admin access.
 create or replace function public.system_admin_activate_my_pending_access()
 returns void
 language plpgsql
@@ -13,10 +12,6 @@ declare
 begin
   if auth.uid() is null then
     raise exception 'Authenticated user required';
-  end if;
-
-  if coalesce(auth.jwt() ->> 'aal', '') <> 'aal2' then
-    raise exception 'Multi-factor authentication required';
   end if;
 
   select status into v_status
