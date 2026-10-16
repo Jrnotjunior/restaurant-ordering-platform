@@ -862,14 +862,14 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           </div>
           <div className="restaurant-paymongo-actions">
             {(paymongoTestStatus === 'not_connected' || paymongoTestStatus === 'error' || paymongoTestStatus === 'revoked') && (
-              <button type="button" className="button button-primary" disabled={paymongoBusy || loading || saving} onClick={() => void startPayMongoTestConnection()}>
+              <button type="button" className="button button-primary restaurant-compact-action" disabled={paymongoBusy || loading || saving} onClick={() => void startPayMongoTestConnection()}>
                 {paymongoBusy ? 'Starting…' : 'Connect PayMongo'}
               </button>
             )}
             {paymongoTestStatus === 'pending' && (
               <>
                 {paymongoTestSignupUrl && (
-                  <a className="button button-secondary" href={paymongoTestSignupUrl} target="_blank" rel="noreferrer">
+                  <a className="button button-secondary restaurant-compact-action" href={paymongoTestSignupUrl} target="_blank" rel="noreferrer">
                     {paymongoTestInvitationId ? 'Open PayMongo' : 'Open Verification'}
                   </a>
                 )}
@@ -879,12 +879,12 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
               </>
             )}
             {paymongoTestStatus === 'linked' && (
-              <button type="button" className="button button-primary" disabled={paymongoBusy} onClick={() => void syncPayMongoTestConnection()}>
+              <button type="button" className="button button-primary restaurant-compact-action" disabled={paymongoBusy} onClick={() => void syncPayMongoTestConnection()}>
                 {paymongoBusy ? 'Checking…' : 'Finish Connection'}
               </button>
             )}
             {paymongoTestStatus === 'active' && (
-              <button type="button" className="button button-secondary" disabled={paymongoBusy} onClick={() => void syncPayMongoTestConnection()}>
+              <button type="button" className="button button-secondary restaurant-compact-action" disabled={paymongoBusy} onClick={() => void syncPayMongoTestConnection()}>
                 {paymongoBusy ? 'Checking…' : 'Refresh Status'}
               </button>
             )}
