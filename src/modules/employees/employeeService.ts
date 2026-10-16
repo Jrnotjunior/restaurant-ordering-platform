@@ -1,6 +1,6 @@
 import { supabase, supabaseGet } from '../../services/supabaseClient';
 
-export type StaffRole = 'cashier' | 'kitchen' | 'dispatcher' | 'rider';
+export type StaffRole = 'cashier' | 'kitchen' | 'dispatcher' | 'rider' | 'dining' | 'kitchen_staff' | 'cook' | 'server' | 'cleaner' | 'dishwasher' | 'host' | 'manager' | 'other';
 
 export type StaffAccount = {
   id: string;
@@ -22,11 +22,20 @@ type StaffRow = {
   is_active: boolean;
 };
 
-export const roleLabels: Record<StaffRole, string> = {
+export const roleLabels: Record<string, string> = {
   cashier: 'Cashier',
   kitchen: 'Kitchen',
   dispatcher: 'Dispatcher',
   rider: 'Rider',
+  dining: 'Dining',
+  kitchen_staff: 'Kitchen staff',
+  cook: 'Cook',
+  server: 'Server',
+  cleaner: 'Cleaner',
+  dishwasher: 'Dishwasher',
+  host: 'Host',
+  manager: 'Manager',
+  other: 'Other',
 };
 
 export function validatePhilippineMobileNumber(value: string) {
@@ -112,5 +121,26 @@ export async function setEmployeeActive(
     .eq('id', employee.id)
     .eq('restaurant_id', restaurantId);
 
+  if (error) throw error;
+}
+
+
+export async function createPayrollOnlyEmployee(
+  restaurantId: string,
+  values: { name: string; role: string },
+) {
+  if (!supabase) throw new Error('Supabase is not configured.');
+  const name = values.name.trim();
+  if (!name) throw new Error('Employee name is required.');
+  const { error } = await supabase.from('restaurant_staff').insert({
+    restaurant_id: restaurantId,
+    name,
+    preferred_name: name,
+    mobile_number: '',
+    email: '',
+    auth_user_id: null,
+    role: values.role,
+    is_active: true,
+  });
   if (error) throw error;
 }
