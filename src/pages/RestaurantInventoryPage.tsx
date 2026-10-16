@@ -184,7 +184,7 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
       .inventory-form-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:10px;align-items:end}
       .inventory-form label,.inventory-adjust label{display:grid;gap:6px;font-size:13px;font-weight:650;color:var(--text,#202938)}
       .inventory-form input,.inventory-form select,.inventory-adjust input,.inventory-adjust select,.inventory-search{width:100%;box-sizing:border-box;min-height:40px;border:1px solid var(--border,#dce2ea);border-radius:9px;padding:8px 10px;background:var(--surface,#fff);color:inherit;font:inherit}
-      .inventory-button{border:1px solid var(--border,#dce2ea);border-radius:9px;padding:9px 12px;background:var(--surface,#fff);color:var(--text,#202938);font:inherit;font-weight:650;cursor:pointer}
+      .inventory-button{box-sizing:border-box;min-height:32px;padding:6px 12px;border:1px solid var(--border,#dce2ea);border-radius:9px;background:var(--surface,#fff);color:var(--text,#202938);font-size:12px;line-height:1.2;font-weight:700;cursor:pointer}
       .inventory-button.primary{background:var(--color-primary,#111827);border-color:var(--color-primary,#111827);color:#fff}
       .inventory-button:disabled{opacity:.55;cursor:wait}
       .inventory-toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
@@ -253,8 +253,8 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
             <td>{numberFormat.format(Number(item.low_stock_threshold))} {item.unit}</td>
             <td><span className={`inventory-badge${Number(item.quantity_on_hand)<=0?' out':Number(item.quantity_on_hand)<=Number(item.low_stock_threshold)?' low':''}`}>{Number(item.quantity_on_hand)<=0?'Out of stock':Number(item.quantity_on_hand)<=Number(item.low_stock_threshold)?'Low stock':'In stock'}</span></td>
             <td className="inventory-actions-cell"><div className="inventory-row-actions">
-              <button className="inventory-button" type="button" disabled={saving} onClick={()=>startEditing(item)} aria-expanded={editingItemId===item.id}>Edit</button>
-              <button className="inventory-button inventory-expand-button" type="button" disabled={saving} aria-expanded={expandedAdjustmentId===item.id} onClick={()=>{setEditingItemId(null);setExpandedAdjustmentId((current)=>current===item.id?null:item.id)}}>{expandedAdjustmentId===item.id?'Close':'Adjust stock'}</button>
+              <button className="inventory-button restaurant-compact-action" type="button" disabled={saving} onClick={()=>startEditing(item)} aria-expanded={editingItemId===item.id}>Edit</button>
+              <button className="inventory-button restaurant-compact-action inventory-expand-button" type="button" disabled={saving} aria-expanded={expandedAdjustmentId===item.id} onClick={()=>{setEditingItemId(null);setExpandedAdjustmentId((current)=>current===item.id?null:item.id)}}>{expandedAdjustmentId===item.id?'Close':'Adjust stock'}</button>
               <button className="inventory-delete-button" type="button" disabled={saving} onClick={()=>void deleteItem(item)} aria-label={`Delete ${item.name}`} title={`Delete ${item.name}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg></button>
             </div></td>
           </tr>
