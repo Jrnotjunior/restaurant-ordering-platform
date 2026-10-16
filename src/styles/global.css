@@ -80,6 +80,19 @@ main { flex: 1; }
   background: var(--color-secondary);
   border-color: var(--color-primary);
 }
+
+/* Shared hover treatment for export actions across restaurant-owner pages. */
+.restaurant-export-button {
+  background: var(--surface, #fff) !important;
+  color: var(--text, var(--color-text, #17243a)) !important;
+  border-color: var(--border, var(--color-border, #dce2ea)) !important;
+}
+.restaurant-export-button:hover:not(:disabled) {
+  background: var(--surface-muted, #f3f4f6) !important;
+  color: var(--text, var(--color-text, #17243a)) !important;
+  border-color: var(--color-primary, #17243a) !important;
+}
+
 .button-danger {
   color: #ffffff;
   background: #dc2626;
