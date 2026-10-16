@@ -290,7 +290,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
               })}
               {!completedOrders.length && <tr><td colSpan={3}>No completed orders in this period.</td></tr>}
             </tbody></table></div>
-            <div className="business-reports-actions" style={{ justifyContent: 'flex-end' }}><button className="business-reports-button primary restaurant-compact-action" type="button" onClick={exportSales}>Export sales CSV</button></div>
+            <div className="business-reports-actions" style={{ justifyContent: 'flex-end' }}><button className="business-reports-button restaurant-compact-action" type="button" onClick={exportSales}>Export sales CSV</button></div>
           </section>
         </>}
         {tab === 'expenses' && <>
@@ -334,7 +334,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
               {paymentMethods.map((item) => <tr key={item.method}><td>{item.method === 'gcash' ? 'GCash / online' : 'Cash'}</td><td>{item.count}</td><td>{peso(item.paidAmount)}</td><td>{peso(item.outstandingAmount)}</td><td>{item.method === 'gcash' ? peso(item.providerFees) : '—'}</td><td>{item.method === 'gcash' ? peso(item.recordedNet) : '—'}</td></tr>)}
             </tbody></table></div>
             <p className="business-reports-muted">Provider fees and net amounts are displayed only when recorded on the order. Zero may mean no value was recorded, not necessarily a zero-fee transaction. Refunded amounts are listed separately in the status summary.</p>
-            <div className="business-reports-actions" style={{ justifyContent: 'flex-end' }}><button className="business-reports-button primary restaurant-compact-action" type="button" onClick={exportPayments}>Export payment reconciliation CSV</button></div>
+            <div className="business-reports-actions" style={{ justifyContent: 'flex-end' }}><button className="business-reports-button restaurant-compact-action" type="button" onClick={exportPayments}>Export payment reconciliation CSV</button></div>
           </section>
           <section className="business-reports-panel"><h2>Orders to review</h2>
             <div className="business-reports-table-wrap"><table className="business-reports-table"><thead><tr><th>Order</th><th>Date</th><th>Order status</th><th>Method</th><th>Payment status</th><th>Amount</th></tr></thead><tbody>
@@ -353,7 +353,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
           <section className="business-reports-panel"><h2>Tax-support exports</h2>
             <p>These files summarize order and tax fields already recorded by the platform. They are supporting records for review by your accountant, not official BIR invoices, books, returns, or confirmation that your business is tax-compliant. No tax rate is inferred when order tax data is missing.</p>
             <p className="business-reports-muted">Orders with VAT registration recorded: {vatConfiguredOrders} of {completedOrders.length} completed orders in this period. Check your business registration and tax treatment with your accountant before relying on these totals.</p>
-            <div className="business-reports-actions" style={{ justifyContent: 'flex-end' }}><button className="business-reports-button primary restaurant-compact-action" type="button" onClick={exportTaxSupport}>Export tax-support CSV</button><button className="business-reports-button restaurant-compact-action" type="button" onClick={exportSales}>Export detailed sales CSV</button></div>
+            <div className="business-reports-actions" style={{ justifyContent: 'flex-end' }}><button className="business-reports-button restaurant-compact-action" type="button" onClick={exportTaxSupport}>Export tax-support CSV</button><button className="business-reports-button restaurant-compact-action" type="button" onClick={exportSales}>Export detailed sales CSV</button></div>
           </section>
           <section className="business-reports-panel"><h2>Included in the export</h2><ul><li>Order number, date, status, and payment status</li><li>Recorded order amount and discounts</li><li>Recorded net sales, vatable sales, VAT amount, and VAT-exempt sales when available</li></ul><p>Tax status and amounts are taken from existing order records. Review data quality and applicable requirements before filing.</p></section>
         </>}
