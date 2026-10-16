@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import * as XLSX from 'xlsx-js-style';
 import { getRestaurantLoyaltyCustomers, type RestaurantLoyaltyCustomer } from '../modules/loyalty/loyaltyCustomerService';
 
 type Props = { restaurantId: string };
@@ -15,44 +16,89 @@ function formatPoints(value: number): string {
   return new Intl.NumberFormat().format(value);
 }
 
-function csvCell(value: string | number): string {
-  let text = String(value ?? '');
-  if (/^[=+@\-\t\r]/.test(text)) text = `'${text}`;
-  return `"${text.replace(/"/g, '""')}"`;
-}
-
 function exportCustomers(customers: RestaurantLoyaltyCustomer[]): void {
-  const headers = [
-    'Customer name',
-    'Email',
-    'Mobile number',
-    'Registration date',
-    'Available points',
-    'Lifetime points earned',
-    'Lifetime points redeemed',
-    'Last activity',
+  const rows: (string | number)[][] = [
+    ['WEB2TABLE | LOYALTY CUSTOMER REPORT'],
+    ['Report generated', new Date().toLocaleString()],
+    ['Registered customers', customers.length],
+    ['Total available points', customers.reduce((sum, customer) => sum + customer.pointsBalance, 0)],
+    [],
+    [
+      'Customer name',
+      'Email address',
+      'Mobile number',
+      'Registration date',
+      'Available points',
+      'Lifetime points earned',
+      'Lifetime points redeemed',
+      'Last activity',
+    ],
+    ...customers.map((customer) => [
+      customer.name,
+      customer.email,
+      customer.phone ?? '',
+      customer.registeredAt ? new Date(customer.registeredAt).toLocaleDateString() : '',
+      customer.pointsBalance,
+      customer.lifetimePointsEarned,
+      customer.lifetimePointsRedeemed,
+      customer.lastActivityAt ? new Date(customer.lastActivityAt).toLocaleDateString() : 'No activity yet',
+    ]),
   ];
-  const rows = customers.map((customer) => [
-    customer.name,
-    customer.email,
-    customer.phone ?? '',
-    customer.registeredAt,
-    customer.pointsBalance,
-    customer.lifetimePointsEarned,
-    customer.lifetimePointsRedeemed,
-    customer.lastActivityAt ?? '',
-  ]);
-  const csv = [headers, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n');
-  const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `web2table-loyalty-customers-${new Date().toISOString().slice(0, 10)}.csv`;
-  link.style.display = 'none';
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
+
+  const worksheet = XLSX.utils.aoa_to_sheet(rows);
+  const navy = '17243A';
+  const blue = '2563EB';
+  const paleGray = 'F4F6FA';
+  const border = { style: 'thin', color: { rgb: 'D9E1EE' } };
+  const columnCount = rows.reduce((max, row) => Math.max(max, row.length), 0);
+  worksheet['!cols'] = [
+    { wch: 26 }, { wch: 34 }, { wch: 20 }, { wch: 19 },
+    { wch: 18 }, { wch: 24 }, { wch: 25 }, { wch: 19 },
+  ];
+  worksheet['!rows'] = rows.map((row, index) => ({ hpt: index === 0 ? 30 : index === 5 ? 28 : 22 }));
+  worksheet['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: columnCount - 1 } }];
+  worksheet['!autofilter'] = {
+    ref: XLSX.utils.encode_range({ s: { r: 5, c: 0 }, e: { r: rows.length - 1, c: columnCount - 1 } }),
+  };
+  worksheet['!freeze'] = { xSplit: 0, ySplit: 6 };
+
+  for (let row = 0; row < rows.length; row += 1) {
+    for (let col = 0; col < columnCount; col += 1) {
+      const cell = worksheet[XLSX.utils.encode_cell({ r: row, c: col })];
+      if (!cell) continue;
+      const isTitle = row === 0;
+      const isHeader = row === 5;
+      const isSummary = row >= 1 && row <= 3;
+      cell.s = {
+        font: {
+          name: 'Aptos',
+          sz: isTitle ? 16 : 10,
+          bold: isTitle || isHeader || (isSummary && col === 0),
+          color: { rgb: isTitle || isHeader ? 'FFFFFF' : navy },
+        },
+        fill: {
+          patternType: 'solid',
+          fgColor: { rgb: isTitle ? navy : isHeader ? blue : isSummary ? 'E8F0FE' : row % 2 === 0 ? 'FFFFFF' : paleGray },
+        },
+        alignment: { vertical: 'center', wrapText: isTitle || isHeader || String(cell.v ?? '').length > 34 },
+        border: { bottom: border },
+      };
+      if (row >= 6 && col >= 4 && col <= 6 && typeof cell.v === 'number') {
+        cell.z = '#,##0;[Red](#,##0);-';
+        cell.s.alignment = { horizontal: 'right', vertical: 'center' };
+      }
+      if (row >= 6 && col === 3 && customers[row - 6]?.registeredAt) {
+        cell.z = 'mmm d, yyyy';
+      }
+      if (row >= 6 && col === 7 && customers[row - 6]?.lastActivityAt) {
+        cell.z = 'mmm d, yyyy';
+      }
+    }
+  }
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Loyalty Customers');
+  XLSX.writeFile(workbook, `web2table-loyalty-customers-${new Date().toISOString().slice(0, 10)}.xlsx`, { compression: true });
 }
 
 export function RestaurantLoyaltyCustomers({ restaurantId }: Props) {
@@ -123,7 +169,7 @@ export function RestaurantLoyaltyCustomers({ restaurantId }: Props) {
             onClick={() => exportCustomers(filteredCustomers)}
             disabled={loading || filteredCustomers.length === 0}
           >
-            Export CSV{search.trim() ? ` (${filteredCustomers.length})` : ''}
+            Export Excel{search.trim() ? ` (${filteredCustomers.length})` : ''}
           </button>
         </div>
 
