@@ -321,6 +321,8 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
                             ? ['sales']
                           : item.href === '#restaurant/loyalty'
                           ? ['loyalty']
+                          : item.href === '#restaurant/payroll'
+                            ? ['payroll']
                           : item.href === '#restaurant/website-customization'
                             ? ['website']
                             : [];
