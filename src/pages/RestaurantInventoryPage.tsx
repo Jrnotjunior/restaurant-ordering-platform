@@ -185,6 +185,8 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
       .inventory-form label,.inventory-adjust label{display:grid;gap:6px;font-size:13px;font-weight:650;color:var(--text,#202938)}
       .inventory-form input,.inventory-form select,.inventory-adjust input,.inventory-adjust select,.inventory-search{width:100%;box-sizing:border-box;min-height:40px;border:1px solid var(--border,#dce2ea);border-radius:9px;padding:8px 10px;background:var(--surface,#fff);color:inherit;font:inherit}
       .inventory-button{border:1px solid var(--border,#dce2ea);background:var(--surface,#fff);color:var(--text,#202938);cursor:pointer}
+      .inventory-button:hover:not(:disabled){background:var(--surface-muted,#f3f4f6);border-color:var(--color-primary,#17243a);color:var(--text,#202938)}
+      .inventory-button:focus-visible{outline:2px solid var(--color-primary,#17243a);outline-offset:2px}
       .inventory-button.primary{background:var(--color-primary,#111827);border-color:var(--color-primary,#111827);color:#fff}
       .inventory-button:disabled{opacity:.55;cursor:wait}
       .inventory-toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
