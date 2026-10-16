@@ -8,7 +8,7 @@
   <title>Web2Table Invitation</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f3f3f3;font-family:Arial,Helvetica,sans-serif;color:#171717;">
-  <div style="display:none;font-size:1px;color:#f3f3f3;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">You've been invited to join {{ .Data.restaurant_name }}.</div>
+  <div style="display:none;font-size:1px;color:#f3f3f3;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">{{ if eq .Data.invitation_type "system_admin" }}You've been invited to join the Web2Table system administration team.{{ else if eq .Data.invitation_type "tenant_owner" }}You've been invited to become a Web2Table restaurant owner.{{ else if eq .Data.invitation_type "employee_staff" }}You've been invited to join {{ .Data.restaurant_name }}.{{ else }}You've received a Web2Table invitation.{{ end }}</div>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background-color:#f3f3f3;">
     <tr><td align="center" style="padding:36px 16px;">
       <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border:1px solid #e5e5e5;border-collapse:separate;border-spacing:0;">
@@ -20,10 +20,10 @@
         <tr><td style="padding:40px 36px 24px 36px;">
           <p style="margin:0 0 12px 0;font-size:12px;line-height:18px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#e53935;">{{ .Data.invitation_label }}</p>
           <h1 style="margin:0 0 20px 0;font-size:28px;line-height:36px;font-weight:700;color:#111111;">
-            Hi, {{ if .Data.name }}{{ .Data.name }}{{ else }}there{{ end }}!
+            Hi, {{ if .Data.name }}{{ .Data.name }}{{ else if .Data.full_name }}{{ .Data.full_name }}{{ else }}there{{ end }}!
           </h1>
-          <p style="margin:0 0 18px 0;font-size:16px;line-height:26px;color:#444444;">You've been invited to join {{ .Data.restaurant_name }} as {{ .Data.invitation_role }}.</p>
-          <p style="margin:0 0 28px 0;font-size:16px;line-height:26px;color:#444444;">Accept your invitation using the button below to continue with {{ .Data.account_setup }} setup.</p>
+          <p style="margin:0 0 18px 0;font-size:16px;line-height:26px;color:#444444;">{{ if eq .Data.invitation_type "system_admin" }}You've been invited to join Web2Table as a system administrator.{{ else if eq .Data.invitation_type "tenant_owner" }}You've been invited to become a restaurant owner on Web2Table.{{ else if eq .Data.invitation_type "employee_staff" }}You've been invited to join {{ .Data.restaurant_name }} as {{ .Data.invitation_role }}.{{ else }}You've received an invitation to Web2Table.{{ end }}</p>
+          <p style="margin:0 0 28px 0;font-size:16px;line-height:26px;color:#444444;">{{ if eq .Data.invitation_type "system_admin" }}Accept your invitation to continue setting up your system administrator account.{{ else if eq .Data.invitation_type "tenant_owner" }}Accept your invitation to continue setting up your restaurant owner account.{{ else if eq .Data.invitation_type "employee_staff" }}Accept your invitation to continue setting up {{ .Data.account_setup }}.{{ else }}Accept your invitation to continue setting up your Web2Table account.{{ end }}</p>
           <table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 28px auto;">
             <tr><td align="center" bgcolor="#e53935" style="background-color:#e53935;border-radius:4px;">
               <a href="{{ .SiteURL }}/?invitation=1&amp;token_hash={{ .TokenHash }}&amp;type=invite" target="_blank" style="display:inline-block;padding:15px 30px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:20px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:4px;">Accept Invitation</a>
