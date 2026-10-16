@@ -454,9 +454,9 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
                   <h4 className="website-customization-live-footer-social-heading" style={{ color: websiteTheme.colors.text }}>Follow Us</h4>
                   <nav className="website-customization-live-footer-socials" aria-label="Social media links">
                     {([
-                      ['Facebook', storefront.socialLinks?.facebook, '/restaurant-ordering-platform/social-facebook.svg'],
-                      ['Instagram', storefront.socialLinks?.instagram, '/restaurant-ordering-platform/social-instagram.svg'],
-                      ['TikTok', storefront.socialLinks?.tiktok, '/restaurant-ordering-platform/social-tiktok.svg'],
+                      ['Facebook', storefront.socialLinks?.facebook, `${import.meta.env.BASE_URL}social-facebook.svg`],
+                      ['Instagram', storefront.socialLinks?.instagram, `${import.meta.env.BASE_URL}social-instagram.svg`],
+                      ['TikTok', storefront.socialLinks?.tiktok, `${import.meta.env.BASE_URL}social-tiktok.svg`],
                     ] as const).map(([name, url, icon]) => (
                       url ? (
                         <a key={name} className="website-customization-live-footer-social-link" href={url} target="_blank" rel="noreferrer" aria-label={name} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
