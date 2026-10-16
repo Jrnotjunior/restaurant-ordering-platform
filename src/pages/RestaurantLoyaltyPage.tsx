@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { getLoyaltyProgramSettings, saveLoyaltyProgramSettings } from '../modules/loyalty/loyaltyService';
 import { useOwnerUnsavedChanges } from '../contexts/OwnerUnsavedChangesContext';
 import { useOwnerUnsavedChangesTracking } from '../hooks/useOwnerUnsavedChangesTracking';
+import { RestaurantLoyaltyCustomers } from '../components/RestaurantLoyaltyCustomers';
 
 type Props = { restaurantId: string };
 
@@ -213,6 +214,7 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
         .restaurant-loyalty-actions{display:flex;justify-content:flex-end}
         @media(max-width:760px){.restaurant-loyalty-rule{grid-template-columns:1fr}.restaurant-loyalty-actions{justify-content:stretch}.restaurant-loyalty-actions .button{width:100%}}
       `}</style>
+      <RestaurantLoyaltyCustomers restaurantId={restaurantId} />
     </section>
   );
 }
