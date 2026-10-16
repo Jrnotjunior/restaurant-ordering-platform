@@ -69,6 +69,9 @@ export class SupabaseRestaurantRepository implements RestaurantRepository {
     const rows = await supabaseRpc<RestaurantDomainRow>('resolve_restaurant_by_domain', { p_hostname: hostname });
     const restaurant = rows[0];
     if (!restaurant) {
+      // The slug fallback is only for the temporary GitHub Pages test storefront.
+      // Unknown custom domains must not silently resolve to a different tenant.
+      if (hostname !== 'jrnotjunior.github.io') return null;
       const configuredSlug = String(import.meta.env.VITE_RESTAURANT_SLUG ?? '').trim();
       if (!configuredSlug) return null;
       const fallbackRows = await supabaseGet<RestaurantRow>('restaurants', {
