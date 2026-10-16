@@ -241,7 +241,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
             <h2>Product Menu</h2>
             <p>Manage the products customers can order from your restaurant.</p>
           </div>
-          <button className="button restaurant-menu-add-button" type="button" onClick={openAdd} disabled={loading}>+ Add Product</button>
+          <button className="button restaurant-menu-add-button restaurant-compact-action" type="button" onClick={openAdd} disabled={loading}>+ Add Product</button>
         </div>
 
         <div className="restaurant-menu-search">
