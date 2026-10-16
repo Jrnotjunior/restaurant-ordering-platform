@@ -252,6 +252,9 @@
 .restaurant-operations-shell-owner{min-height:100vh;background:#f7f9fc;padding-left:220px;padding-top:70px;box-sizing:border-box}
 .restaurant-owner-sidebar{position:fixed;z-index:60;inset:0 auto 0 0;width:220px;box-sizing:border-box;padding:18px 12px;background:#101b2f;color:#dbe5f2}
 .restaurant-owner-brand{display:flex;align-items:center;gap:11px;padding:0 10px 22px;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.08)}
+.restaurant-owner-brand-name-only{justify-content:center;text-align:center}
+.restaurant-owner-brand-name-only>span{flex:1;min-width:0}
+.restaurant-owner-brand-name-only strong{display:block;text-align:center}
 .restaurant-owner-brand-mark{width:32px;height:32px;display:grid;place-items:center;font-size:22px}
 .restaurant-owner-brand strong,.restaurant-owner-brand small{display:block}.restaurant-owner-brand strong{font-size:16px;line-height:1.1}.restaurant-owner-brand small{margin-top:3px;color:#9aa9bd;font-size:11px}
 .restaurant-owner-sidebar-nav{display:grid;gap:5px;margin-top:20px}.restaurant-owner-sidebar-nav a{display:flex;align-items:center;gap:13px;min-height:44px;padding:0 13px;border-radius:9px;color:#aebbd0;text-decoration:none;font-size:14px;font-weight:600}.restaurant-owner-sidebar-nav a:hover{background:rgba(255,255,255,.06);color:#fff}.restaurant-owner-sidebar-nav a.is-active{background:#263754;color:#fff;box-shadow:inset 2px 0 #38bdf8}.restaurant-owner-sidebar-nav svg{width:19px;height:19px;flex:0 0 auto}
