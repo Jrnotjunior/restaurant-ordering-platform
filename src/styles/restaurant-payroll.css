@@ -89,3 +89,52 @@
 .restaurant-payroll-page .salary-profile-edit-dialog .restaurant-payroll-dialog-actions .button{min-height:32px;padding:7px 12px;border-radius:8px;font:650 12px/1.2 Inter,Manrope,system-ui,sans-serif}
 .restaurant-payroll-page .salary-profile-edit-dialog .restaurant-payroll-dialog-actions .button-secondary{border:1px solid #dce2ea;background:#f3f4f6;color:#172033}
 .restaurant-payroll-page .salary-profile-edit-dialog .restaurant-payroll-dialog-actions .button-primary{border:1px solid #111827;background:#111827;color:#fff}
+
+
+/* Payroll workflow: separate preparation, run selection, and review. */
+.restaurant-payroll-page .restaurant-payroll-workspace{display:grid;gap:16px;min-width:0}
+.restaurant-payroll-page .payroll-section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+.restaurant-payroll-page .payroll-section-heading h2{margin:0 0 6px}
+.restaurant-payroll-page .payroll-section-heading p{margin:0;color:var(--text-muted,#64748b);font-size:13px;line-height:1.5}
+.restaurant-payroll-page .payroll-step-label{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#e6f4f1;color:#0f766e;padding:5px 9px;font-size:11px;font-weight:750;white-space:nowrap}
+.restaurant-payroll-page .payroll-count{color:var(--text-muted,#64748b);font-size:12px;font-weight:650;white-space:nowrap}
+.restaurant-payroll-page .payroll-period-form{grid-template-columns:repeat(2,minmax(0,1fr));max-width:620px;margin-bottom:14px}
+.restaurant-payroll-page .payroll-create-footer,.restaurant-payroll-page .payroll-review-footer{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:14px}
+.restaurant-payroll-page .payroll-create-footer p,.restaurant-payroll-page .payroll-review-footer>p{margin:0;color:var(--text-muted,#64748b);font-size:12px;line-height:1.5}
+.restaurant-payroll-page .payroll-runs-list{display:grid;gap:8px}
+.restaurant-payroll-page .payroll-run-card{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;align-items:center;gap:14px;width:100%;min-height:68px;padding:12px 14px;text-align:left;border:1px solid var(--border,#dce2ea);border-radius:10px;background:var(--surface,#fff);color:var(--text,#172033);cursor:pointer;transition:border-color .15s ease,background .15s ease,box-shadow .15s ease}
+.restaurant-payroll-page .payroll-run-card:hover{border-color:#9bbdb9;background:#fbfefd}
+.restaurant-payroll-page .payroll-run-card.is-selected{border-color:#0f766e;background:#f6fbfa;box-shadow:0 0 0 1px rgba(15,118,110,.08)}
+.restaurant-payroll-page .payroll-run-main,.restaurant-payroll-page .payroll-run-total{display:grid;gap:4px;min-width:0}
+.restaurant-payroll-page .payroll-run-main strong{font-size:13px;font-weight:700}
+.restaurant-payroll-page .payroll-run-main small,.restaurant-payroll-page .payroll-run-total small{font-size:11px;font-weight:450;color:var(--text-muted,#64748b)}
+.restaurant-payroll-page .payroll-run-total strong{font-size:13px;font-weight:750;white-space:nowrap}
+.restaurant-payroll-page .payroll-status{display:inline-flex;align-items:center;justify-content:center;width:max-content;border-radius:999px;padding:5px 9px;font-size:11px;line-height:1.2;font-weight:750;white-space:nowrap}
+.restaurant-payroll-page .payroll-status.status-draft{background:#f1f5f9;color:#475569}
+.restaurant-payroll-page .payroll-status.status-finalized{background:#fff7e6;color:#92400e}
+.restaurant-payroll-page .payroll-status.status-paid{background:#e8f7ed;color:#166534}
+.restaurant-payroll-page .payroll-duplicate-warning{grid-column:1/-1;color:#a33b22;font-size:11px;font-weight:650;padding-top:3px}
+.restaurant-payroll-page .payroll-run-open{font-size:12px;font-weight:650;color:#0f766e;white-space:nowrap}
+.restaurant-payroll-page .payroll-run-open span{font-size:18px;margin-left:4px}
+.restaurant-payroll-page .payroll-empty-state{border:1px dashed var(--border,#dce2ea);border-radius:10px;padding:24px;text-align:center}
+.restaurant-payroll-page .payroll-empty-state strong{font-size:13px}
+.restaurant-payroll-page .payroll-empty-state p{margin:6px 0 0;color:var(--text-muted,#64748b);font-size:12px}
+.restaurant-payroll-page .payroll-totals-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:16px 0}
+.restaurant-payroll-page .payroll-totals-grid>div{display:grid;gap:6px;padding:13px;border:1px solid var(--border,#dce2ea);border-radius:9px;background:var(--surface-subtle,#f8fafc)}
+.restaurant-payroll-page .payroll-totals-grid span{color:var(--text-muted,#64748b);font-size:12px}
+.restaurant-payroll-page .payroll-totals-grid strong{font-size:16px;font-weight:750;color:var(--text,#172033)}
+.restaurant-payroll-page .payroll-review-footer .payroll-paid-note{display:flex;align-items:center;gap:7px;color:#166534}
+@media(max-width:760px){
+ .restaurant-payroll-page .payroll-run-card{grid-template-columns:minmax(0,1fr) auto;gap:9px 12px}
+ .restaurant-payroll-page .payroll-run-main{grid-column:1}
+ .restaurant-payroll-page .payroll-status{grid-column:2;grid-row:1}
+ .restaurant-payroll-page .payroll-run-total{grid-column:1;grid-row:2}
+ .restaurant-payroll-page .payroll-run-open{grid-column:2;grid-row:2;justify-self:end}
+ .restaurant-payroll-page .payroll-duplicate-warning{grid-column:1/-1}
+}
+@media(max-width:520px){
+ .restaurant-payroll-page .payroll-period-form,.restaurant-payroll-page .payroll-totals-grid{grid-template-columns:minmax(0,1fr)}
+ .restaurant-payroll-page .payroll-section-heading{gap:8px}
+ .restaurant-payroll-page .payroll-create-footer,.restaurant-payroll-page .payroll-review-footer{align-items:stretch;flex-direction:column}
+ .restaurant-payroll-page .payroll-create-footer .button,.restaurant-payroll-page .payroll-review-footer .button{align-self:flex-start}
+}
