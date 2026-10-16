@@ -85,7 +85,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
       setShowForm(false);
       await loadStaff();
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'Unable to add employee.');
+      setError(String((saveError as { message?: string })?.message || 'Unable to add employee. Please verify your authentication code and try again.'));
     } finally {
       setSaving(false);
     }
