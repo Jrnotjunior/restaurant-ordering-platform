@@ -622,10 +622,10 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .restaurant-settings-switch-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:14px;font-weight:700;color:#0f172a}
         .restaurant-settings-switch{position:relative;display:inline-flex;flex:0 0 auto}
         .restaurant-settings-switch input{position:absolute;opacity:0;pointer-events:none}
-        .restaurant-settings-switch-track{position:relative;width:48px;height:28px;border-radius:999px;background:#cbd5e1;transition:background .2s ease;display:block}
-        .restaurant-settings-switch-thumb{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.25);transition:transform .2s ease}
+        .restaurant-settings-switch-track{position:relative;width:38px;height:22px;border-radius:999px;background:#cbd5e1;transition:background .2s ease;display:block}
+        .restaurant-settings-switch-thumb{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.25);transition:transform .2s ease}
         .restaurant-settings-switch input:checked + .restaurant-settings-switch-track{background:#101b2f}
-        .restaurant-settings-switch input:checked + .restaurant-settings-switch-track .restaurant-settings-switch-thumb{transform:translateX(20px)}
+        .restaurant-settings-switch input:checked + .restaurant-settings-switch-track .restaurant-settings-switch-thumb{transform:translateX(16px)}
         .restaurant-settings-switch input:focus-visible + .restaurant-settings-switch-track{outline:2px solid #101b2f;outline-offset:2px}
         .restaurant-settings-switch input:disabled + .restaurant-settings-switch-track{opacity:.55}
         .restaurant-settings-logo-row{display:flex;align-items:center;gap:16px;margin-top:16px;flex-wrap:wrap}
