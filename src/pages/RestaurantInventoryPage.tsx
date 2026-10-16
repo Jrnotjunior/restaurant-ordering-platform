@@ -240,7 +240,7 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
           <label>Starting stock<input required type="number" min="0" step="0.001" value={form.quantity} onChange={(event)=>setForm((current)=>({...current,quantity:event.target.value}))}/></label>
           <label>Low-stock level<input required type="number" min="0" step="0.001" value={form.threshold} onChange={(event)=>setForm((current)=>({...current,threshold:event.target.value}))}/></label>
         </div>
-        <div style={{marginTop:12}}><button className="inventory-button primary" type="submit" disabled={saving}>{saving?'Saving…':'Add inventory item'}</button></div>
+        <div style={{marginTop:12}}><button className="inventory-button primary restaurant-compact-action" type="submit" disabled={saving}>{saving?'Saving…':'Add inventory item'}</button></div>
       </form>
     </section>
     <section className="inventory-panel"><div className="inventory-toolbar"><div><h2 style={{margin:0}}>Stock on hand</h2><p className="inventory-panel-subtitle" style={{margin:"5px 0 0"}}>{visibleItems.length} of {items.length} inventory items</p></div><input className="inventory-search" type="search" aria-label="Search inventory" placeholder="Search items or categories" value={search} onChange={(event)=>setSearch(event.target.value)}/></div>
