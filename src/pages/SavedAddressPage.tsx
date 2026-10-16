@@ -211,7 +211,7 @@ export function SavedAddressPage() {
           {message ? <p className="saved-address-success" role="status">{message}</p> : null}
 
           {!showForm ? <button className="button button-primary saved-address-add-button" type="button" onClick={openAddForm} disabled={addresses.length >= 2}>+ Add address</button> : (
-            <div className="saved-address-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeForm(); }}><form className="saved-address-form saved-address-modal" onSubmit={handleSave}>
+            <div className="saved-address-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeForm(); }}><form className="saved-address-form saved-address-modal restaurant-edit-dialog" onSubmit={handleSave}>
               <div className="saved-address-form-heading"><h2>{editingAddressId ? 'Edit address' : 'Add address'}</h2><button type="button" className="saved-address-cancel" onClick={closeForm}>Cancel</button></div>
               <label><span>Address name</span><input type="text" value={label} onChange={(event) => setLabel(event.target.value)} placeholder="e.g. Home, Work, School" /></label>
               <div className="saved-address-map-section">
