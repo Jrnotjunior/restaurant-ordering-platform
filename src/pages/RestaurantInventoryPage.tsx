@@ -184,7 +184,7 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
       .inventory-form-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:10px;align-items:end}
       .inventory-form label,.inventory-adjust label{display:grid;gap:6px;font-size:13px;font-weight:650;color:var(--text,#202938)}
       .inventory-form input,.inventory-form select,.inventory-adjust input,.inventory-adjust select,.inventory-search{width:100%;box-sizing:border-box;min-height:40px;border:1px solid var(--border,#dce2ea);border-radius:9px;padding:8px 10px;background:var(--surface,#fff);color:inherit;font:inherit}
-      .inventory-button{box-sizing:border-box;min-height:32px;padding:6px 12px;border:1px solid var(--border,#dce2ea);border-radius:9px;background:var(--surface,#fff);color:var(--text,#202938);font-size:12px;line-height:1.2;font-weight:700;cursor:pointer}
+      .inventory-button{border:1px solid var(--border,#dce2ea);background:var(--surface,#fff);color:var(--text,#202938);cursor:pointer}
       .inventory-button.primary{background:var(--color-primary,#111827);border-color:var(--color-primary,#111827);color:#fff}
       .inventory-button:disabled{opacity:.55;cursor:wait}
       .inventory-toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
