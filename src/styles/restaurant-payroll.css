@@ -61,3 +61,12 @@
 .restaurant-payroll-edit-icon{background:#eef2ff;color:#3446a5}
 @media(max-width:560px){.restaurant-payroll-edit-dialog .restaurant-payroll-dialog-form{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:380px){.restaurant-payroll-edit-dialog .restaurant-payroll-dialog-form{grid-template-columns:minmax(0,1fr)}}
+
+
+/* Salary profile editing uses the same centered, compact modal as other edit flows. */
+.salary-profile-edit-dialog{width:min(100%,560px)}
+.salary-profile-edit-dialog .restaurant-payroll-dialog-form{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:18px}
+.salary-profile-edit-dialog .restaurant-payroll-dialog-form .salary-notes-field,
+.salary-profile-edit-dialog .restaurant-payroll-dialog-form .restaurant-payroll-dialog-actions{grid-column:1/-1}
+.salary-profile-edit-dialog .restaurant-payroll-dialog-form textarea{width:100%;min-height:76px;box-sizing:border-box;resize:vertical}
+@media(max-width:480px){.salary-profile-edit-dialog .restaurant-payroll-dialog-form{grid-template-columns:minmax(0,1fr)}.salary-profile-edit-dialog .restaurant-payroll-dialog-form .salary-notes-field,.salary-profile-edit-dialog .restaurant-payroll-dialog-form .restaurant-payroll-dialog-actions{grid-column:1}}
