@@ -48,3 +48,16 @@
 .restaurant-payroll-dialog .button-danger{border:1px solid #b42318;background:#b42318;color:#fff}
 .restaurant-payroll-dialog .button-danger:hover:not(:disabled){border-color:#912018;background:#912018;color:#fff}
 @media(max-width:480px){.restaurant-payroll-dialog{padding:20px;border-radius:14px}.restaurant-payroll-dialog-actions .button{flex:1}}
+
+
+/* Keep the shift editor dialog content inside its card and align actions. */
+.restaurant-payroll-edit-dialog{width:min(100%,560px);box-sizing:border-box}
+.restaurant-payroll-edit-dialog .restaurant-payroll-dialog-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;width:100%;margin-top:16px;box-sizing:border-box}
+.restaurant-payroll-edit-dialog .restaurant-payroll-dialog-form>label{display:flex;flex-direction:column;gap:6px;min-width:0;margin:0;font-size:12px;font-weight:650}
+.restaurant-payroll-edit-dialog .restaurant-payroll-dialog-form input,
+.restaurant-payroll-edit-dialog .restaurant-payroll-dialog-form select{width:100%;min-width:0;max-width:100%;box-sizing:border-box}
+.restaurant-payroll-edit-dialog .restaurant-payroll-dialog-actions{grid-column:1/-1;display:flex;align-items:center;justify-content:flex-end;gap:8px;width:100%;min-width:0;margin:12px 0 0;padding:0;box-sizing:border-box}
+.restaurant-payroll-edit-dialog .restaurant-payroll-dialog-actions .button{flex:0 0 auto;white-space:nowrap}
+.restaurant-payroll-edit-icon{background:#eef2ff;color:#3446a5}
+@media(max-width:560px){.restaurant-payroll-edit-dialog .restaurant-payroll-dialog-form{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:380px){.restaurant-payroll-edit-dialog .restaurant-payroll-dialog-form{grid-template-columns:minmax(0,1fr)}}
