@@ -25,3 +25,8 @@
   padding: 7px 12px;
   font-size: 12px;
 }
+
+
+/* Keep salary profile editing controls compact and aligned. */
+.restaurant-payroll-page .salary-form-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.restaurant-payroll-page .restaurant-payroll-table td:last-child{white-space:nowrap}
