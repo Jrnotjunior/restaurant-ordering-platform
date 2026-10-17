@@ -49,7 +49,7 @@ export function Footer() {
         </div>
         <a className="site-footer-powered-by" href="https://web2table.io" target="_blank" rel="noreferrer" aria-label="Powered by Web2Table">
           <span>Powered by</span>
-          <img src="https://raw.githubusercontent.com/Jrnotjunior/web2table.io/main/web2table.png" alt="Web2Table" className="site-footer-web2table-logo" />
+          <img src="https://xaihajwrsvcdjisezmmc.supabase.co/storage/v1/object/public/web2table-assets/web2table%20(1).png" alt="Web2Table" className="site-footer-web2table-logo" />
         </a>
       </div>
     </footer>
