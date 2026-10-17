@@ -249,6 +249,8 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
       <style>{`
         .website-customization-form{display:grid;gap:22px}
         .website-customization-tabs{display:flex;align-items:center;gap:26px;flex-wrap:wrap;border-bottom:1px solid #dbe2ea;margin:0;padding:0 4px}
+        .website-customization-form [role="tabpanel"]{min-height:440px;box-sizing:border-box}
+        @media(max-width:700px){.website-customization-form [role="tabpanel"]{min-height:0}}
         .website-customization-tab{appearance:none;border:0;border-bottom:2px solid transparent;border-radius:0;background:transparent;color:#475569;min-height:42px;padding:10px 2px 9px;font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
         .website-customization-tab:hover{color:#0f172a}
         .website-customization-tab[aria-selected="true"]{color:#0f172a;border-bottom-color:#101b2f;font-weight:700}
