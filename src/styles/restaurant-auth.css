@@ -636,3 +636,10 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   margin-inline: auto !important;
   flex: 0 0 160px !important;
 }
+
+/* Compact sign-in form: keep labels accessible while using in-field placeholders. */
+.restaurant-owner-auth-card .restaurant-auth-input-label{display:block;gap:0}
+.restaurant-owner-auth-card .restaurant-auth-input-label>.visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.restaurant-owner-auth-card .restaurant-owner-auth-form{gap:14px}
+.restaurant-owner-auth-card .restaurant-owner-auth-form input::placeholder{color:#64748b;opacity:1}
+.restaurant-owner-auth-card .restaurant-owner-auth-form .button{width:min(160px,100%);justify-self:center;margin-top:2px}
