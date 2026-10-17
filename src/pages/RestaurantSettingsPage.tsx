@@ -709,13 +709,16 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .restaurant-paymongo-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
         .restaurant-settings-help{margin:0;color:#64748b;line-height:1.5;font-size:14px}
         .restaurant-settings-form{display:grid;gap:16px}
-        .restaurant-settings-jump-nav{position:sticky;top:8px;z-index:20;display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:10px 12px;border:1px solid #dce4ee;border-radius:12px;background:rgba(255,255,255,.96);box-shadow:0 4px 14px rgba(15,23,42,.05);backdrop-filter:blur(8px)}
-        .restaurant-settings-jump-label{margin-right:4px;color:#64748b;font-size:12px;font-weight:700}
-        .restaurant-settings-jump-nav a{display:inline-flex;align-items:center;min-height:30px;padding:5px 10px;border:1px solid #dbe2ea;border-radius:7px;color:#334155;background:#fff;font-size:12px;font-weight:650;text-decoration:none;white-space:nowrap}
-        .restaurant-settings-jump-nav a:hover{border-color:#94a3b8;background:#f8fafc;color:#0f172a}
+        .restaurant-settings-form{grid-template-columns:220px minmax(0,1fr);align-items:start;gap:14px 20px}
+        .restaurant-settings-jump-nav{position:sticky;top:16px;z-index:5;grid-column:1;grid-row:1 / span 10;display:flex;flex-direction:column;align-items:stretch;gap:5px;padding:14px;border:1px solid #dce4ee;border-radius:12px;background:#fff;box-shadow:0 3px 12px rgba(15,23,42,.04)}
+        .restaurant-settings-jump-label{padding:2px 8px 8px;color:#64748b;font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+        .restaurant-settings-jump-nav a{display:flex;align-items:center;min-height:38px;padding:8px 10px;border:1px solid transparent;border-radius:8px;color:#475569;background:transparent;font-size:13px;font-weight:650;text-decoration:none;transition:background .15s ease,border-color .15s ease,color .15s ease}
+        .restaurant-settings-jump-nav a:hover{border-color:#e2e8f0;background:#f8fafc;color:#0f172a}
         .restaurant-settings-jump-nav a:focus-visible{outline:2px solid #334155;outline-offset:2px}
-        .restaurant-settings-card[id]{scroll-margin-top:100px}
-        .restaurant-settings-card[id]:focus{outline:2px solid #94a3b8;outline-offset:3px}
+        .restaurant-settings-form>.restaurant-settings-card,.restaurant-settings-form>#store-live-payments,.restaurant-settings-form>.restaurant-settings-actions{grid-column:2;min-width:0}
+        .restaurant-settings-card[id],#store-live-payments{scroll-margin-top:24px}
+        .restaurant-settings-card[id]:focus,#store-live-payments:focus{outline:2px solid #94a3b8;outline-offset:3px}
+        @media(max-width:900px){.restaurant-settings-form{grid-template-columns:1fr}.restaurant-settings-jump-nav{position:static;grid-column:1;grid-row:auto;display:flex;flex-direction:row;align-items:center;flex-wrap:wrap;gap:6px}.restaurant-settings-jump-label{width:100%;padding:0 2px 4px}.restaurant-settings-jump-nav a{flex:1 1 auto;justify-content:center}.restaurant-settings-form>.restaurant-settings-card,.restaurant-settings-form>#store-live-payments,.restaurant-settings-form>.restaurant-settings-actions{grid-column:1}}
         @media(max-width:700px){.restaurant-settings-jump-nav{position:static;gap:6px}.restaurant-settings-jump-label{width:100%}.restaurant-settings-jump-nav a{flex:1 1 auto;justify-content:center}}
         .restaurant-settings-field{display:grid;gap:7px;font-weight:600;font-size:14px}
         .restaurant-settings-field input[type=text]{width:100%;min-height:40px;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:9px;padding:8px 11px;font:inherit;color:#0f172a;background:#fff}
