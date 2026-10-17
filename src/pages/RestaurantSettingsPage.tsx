@@ -823,7 +823,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         </div>
 
                 <div className="restaurant-settings-card" id="store-hours" role="tabpanel" aria-labelledby="store-settings-tab-hours" hidden={activeSettingsTab !== 'hours'}>
-          <h2>Operating hours</h2>
           <p className="restaurant-settings-help">Set the hours customers can visit the store. {openDays} of 7 days are currently open.</p>
           <div className="restaurant-settings-days">
             <div className="restaurant-settings-hours-head" aria-hidden="true">
