@@ -238,7 +238,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
       <div className="restaurant-menu-management-card">
         <div className="restaurant-menu-section-header">
           <div>
-            <h2>Product Menu</h2>
+            <h2>Menu</h2>
             <p>Manage the products customers can order from your restaurant.</p>
           </div>
           <button className="button restaurant-menu-add-button restaurant-compact-action" type="button" onClick={openAdd} disabled={loading}>+ Add Product</button>
