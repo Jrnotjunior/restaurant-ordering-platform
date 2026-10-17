@@ -1,6 +1,7 @@
 -- Save restaurant delivery origin only for the authenticated active owner.
 create or replace function public.update_restaurant_delivery_origin(
   p_restaurant_id uuid,
+  p_store_address text,
   p_latitude double precision,
   p_longitude double precision
 )
@@ -24,7 +25,8 @@ begin
 
   return query
   update public.restaurants r
-  set delivery_location_latitude = p_latitude,
+  set store_address = nullif(btrim(p_store_address), ''),
+      delivery_location_latitude = p_latitude,
       delivery_location_longitude = p_longitude
   where r.id = p_restaurant_id
     and r.owner_id = auth.uid()
@@ -37,5 +39,5 @@ begin
 end;
 $$;
 
-revoke all on function public.update_restaurant_delivery_origin(uuid, double precision, double precision) from public, anon;
+revoke all on function public.update_restaurant_delivery_origin(uuid, text, double precision, double precision) from public, anon;
 grant execute on function public.update_restaurant_delivery_origin(uuid, double precision, double precision) to authenticated;
