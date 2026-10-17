@@ -31,6 +31,30 @@ const ownerNavigationItems: NavigationItem[] = [
   { label: 'Customize', href: '#restaurant/website-customization', icon: 'customization' },
 ];
 
+
+const ownerNavigationGroups: Array<{ label: string; hrefs: string[] }> = [
+  { label: 'Overview', hrefs: ['#restaurant/owner'] },
+  { label: 'Operations', hrefs: ['#restaurant/orders', '#restaurant/menu', '#restaurant/inventory', '#restaurant/recipes'] },
+  { label: 'People', hrefs: ['#restaurant/employees', '#restaurant/payroll'] },
+  { label: 'Business', hrefs: ['#restaurant/sales', '#restaurant/business-reports', '#restaurant/loyalty'] },
+  { label: 'Store', hrefs: ['#restaurant/settings', '#restaurant/website-customization'] },
+];
+
+function shouldShowOwnerNavigationItem(item: NavigationItem, ownerModules: Record<string, boolean>) {
+  const requiredModules =
+    item.href === '#restaurant/orders' ? ['self_ordering', 'dispatch_delivery'] :
+    item.href === '#restaurant/menu' ? ['self_ordering', 'pos'] :
+    item.href === '#restaurant/delivery-dispatch' || item.href === '#restaurant/shipping-fee' ? ['dispatch_delivery'] :
+    item.href === '#restaurant/sales' || item.href === '#restaurant/business-reports' || item.href === '#restaurant/inventory' ? ['sales'] :
+    item.href === '#restaurant/loyalty' ? ['loyalty'] :
+    item.href === '#restaurant/payroll' ? ['payroll'] :
+    item.href === '#restaurant/website-customization' ? ['website'] : [];
+  return item.href === '#restaurant/owner' || item.href === '#restaurant/employees' ||
+    (item.href === '#restaurant/payroll' && ownerModules.payroll === true) ||
+    item.href === '#restaurant/settings' || requiredModules.length === 0 ||
+    requiredModules.some((moduleKey) => ownerModules[moduleKey] === true);
+}
+
 function NavigationIcon({ type }: { type: NavigationItem['icon'] }) {
   const common = {
     viewBox: '0 0 24 24',
@@ -305,44 +329,24 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
             <span><strong>{restaurant.name || 'Restaurant'}</strong></span>
           </a>
           <nav className="restaurant-owner-sidebar-nav">
-            {ownerNavigationItems.map((item) => {
-              const requiredModules =
-                item.href === '#restaurant/orders'
-                  ? ['self_ordering', 'dispatch_delivery']
-                  : item.href === '#restaurant/menu'
-                    ? ['self_ordering', 'pos']
-                    : item.href === '#restaurant/delivery-dispatch' || item.href === '#restaurant/shipping-fee'
-                      ? ['dispatch_delivery']
-                      : item.href === '#restaurant/sales'
-                        ? ['sales']
-                        : item.href === '#restaurant/business-reports'
-                          ? ['sales']
-                          : item.href === '#restaurant/inventory'
-                            ? ['sales']
-                          : item.href === '#restaurant/loyalty'
-                          ? ['loyalty']
-                          : item.href === '#restaurant/payroll'
-                            ? ['payroll']
-                          : item.href === '#restaurant/website-customization'
-                            ? ['website']
-                            : [];
-
-              const shouldShow =
-                item.href === '#restaurant/owner' ||
-                item.href === '#restaurant/employees' ||
-                (item.href === '#restaurant/payroll' && ownerModules['payroll'] === true) ||
-                item.href === '#restaurant/settings' ||
-                requiredModules.length === 0 ||
-                requiredModules.some((moduleKey) => ownerModules[moduleKey] === true);
-
-              if (modulesLoading || !shouldShow) return null;
-
-              const active = currentRoute === item.href;
+            {ownerNavigationGroups.map((group) => {
+              const items = ownerNavigationItems.filter((item) =>
+                group.hrefs.includes(item.href) && shouldShowOwnerNavigationItem(item, ownerModules)
+              );
+              if (modulesLoading || items.length === 0) return null;
               return (
-                <a key={item.href} className={active ? 'is-active' : ''} href={item.href} aria-current={active ? 'page' : undefined}>
-                  <NavigationIcon type={item.icon} />
-                  <span>{item.label}</span>
-                </a>
+                <div className="restaurant-owner-nav-group" key={group.label}>
+                  <span className="restaurant-owner-nav-heading">{group.label}</span>
+                  {items.map((item) => {
+                    const active = currentRoute === item.href;
+                    return (
+                      <a key={item.href} className={active ? 'is-active' : ''} href={item.href} aria-current={active ? 'page' : undefined}>
+                        <NavigationIcon type={item.icon} />
+                        <span>{item.label}</span>
+                      </a>
+                    );
+                  })}
+                </div>
               );
             })}
           </nav>
