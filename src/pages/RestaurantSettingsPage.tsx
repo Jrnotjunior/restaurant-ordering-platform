@@ -649,9 +649,9 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     <section className="restaurant-page restaurant-settings-page">
       <header className="restaurant-settings-header">
         <div>
-          <p className="eyebrow">Restaurant configuration</p>
+          <p className="eyebrow">Store operations &amp; payments</p>
           <h1>Store Settings</h1>
-          <p className="restaurant-settings-help">Manage store operations, ordering status, tax configuration, and operating hours. Website branding and customer-facing content are managed separately.</p>
+          <p className="restaurant-settings-help">Manage opening hours, delivery pricing, ordering status, payment connections, and tax settings. For your logo, website colors, and customer-facing content, use Website &amp; Branding.</p>
         </div>
       </header>
       <style>{`
