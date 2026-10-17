@@ -536,8 +536,6 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
 
         {activeWebsiteSection === 'branding' ? <div role="tabpanel" id="website-customization-panel-branding" aria-labelledby="website-customization-tab-branding">
         <div className="website-customization-card">
-          <h2>Branding</h2>
-          <p className="website-customization-help">Customize the logo and website branding customers see on your website.</p>
           <div className="website-customization-branding-grid">
             <div>
               <span className="website-customization-subheading">Logo</span>
