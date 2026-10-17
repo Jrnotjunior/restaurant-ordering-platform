@@ -1,11 +1,11 @@
 .storefront-hero{
   position:relative;
-  min-height:300px;
+  min-height:170px;
   display:flex;
   align-items:center;
   overflow:hidden;
   border-radius:var(--radius-lg);
-  margin-bottom:32px;
+  margin-bottom:20px;
   background:var(--color-hero, transparent);
   background-size:cover;
   background-position:center;
@@ -22,13 +22,13 @@
   position:relative;
   z-index:1;
   width:min(760px,100%);
-  padding:36px 32px;
+  padding:22px 24px;
 }
 .storefront-hero-content .eyebrow{color:inherit;opacity:.8}
 .storefront-hero-content h1{
-  margin:8px 0 10px;
+  margin:6px 0 8px;
   font-family:var(--font-heading);
-  font-size:clamp(2rem,6vw,4.5rem);
+  font-size:clamp(1.8rem,4vw,3rem);
   line-height:1.05;
   letter-spacing:-.04em;
 }
@@ -79,8 +79,9 @@
 }
 .storefront-social a:hover{border-color:var(--color-primary);color:var(--color-primary)}
 @media(max-width:700px){
-  .storefront-hero{min-height:280px;margin-bottom:24px}
-  .storefront-hero-content{padding:28px 16px}
+  .storefront-hero{min-height:145px;margin-bottom:18px}
+  .storefront-hero-content{padding:18px 16px}
+  .storefront-hero-content h1{font-size:clamp(1.7rem,7vw,2.25rem)}
   .storefront-info-grid{grid-template-columns:1fr;margin-top:36px}
   .storefront-hours>div{font-size:14px}
 }
