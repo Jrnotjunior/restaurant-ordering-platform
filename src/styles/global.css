@@ -471,14 +471,14 @@ main { flex: 1; }
 .restaurant-page {
   width: min(var(--restaurant-content-width), calc(100% - 2rem));
   margin: 0 auto;
-  padding: 32px 0 56px;
+  padding: 24px 0 40px;
 }
 
 @media (max-width: 760px) {
   .restaurant-page {
     width: min(100% - 1rem, var(--restaurant-content-width));
-    padding-top: 24px;
-    padding-bottom: 40px;
+    padding-top: 18px;
+    padding-bottom: 28px;
   }
 }
 
@@ -1329,4 +1329,36 @@ textarea {
   .restaurant-edit-dialog .restaurant-employee-modal-actions,
   .restaurant-edit-dialog .restaurant-product-form-actions,
   .restaurant-edit-dialog .restaurant-payroll-dialog-actions{flex-direction:row}
+}
+
+/* Shared compact management UI, aligned with the Business Reports reference. */
+.restaurant-page :is(input:not([type="checkbox"]):not([type="radio"]):not([type="color"]), select, textarea) {
+  min-height: 38px;
+  border-radius: 9px;
+}
+.restaurant-page :is(input, select, textarea):focus-visible {
+  outline: 2px solid rgba(100, 116, 139, .38);
+  outline-offset: 1px;
+}
+.restaurant-page :is(.button, button.button, a.button, .inventory-button) {
+  min-height: 32px;
+}
+.restaurant-page table th {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+.restaurant-page table td,
+.restaurant-page table th {
+  border-color: #e2e8f0;
+}
+@media (max-width: 560px) {
+  .restaurant-page {
+    width: calc(100% - 1rem);
+  }
+  .restaurant-page :is(.restaurant-settings-card, .restaurant-employees-card) {
+    padding: 14px;
+  }
 }
