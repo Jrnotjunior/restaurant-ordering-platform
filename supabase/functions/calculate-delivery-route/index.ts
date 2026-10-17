@@ -132,13 +132,30 @@ Deno.serve(async (req) => {
   const distanceMeters = Number(routeBody?.routes?.[0]?.distance);
 
   if (!routeResponse.ok || !Number.isFinite(distanceMeters)) {
+    const mapboxCode = typeof routeBody?.code === "string" ? routeBody.code : "UnknownError";
+    const mapboxMessage = typeof routeBody?.message === "string" ? routeBody.message : "";
     await admin.from("system_api_usage_events").insert({
       provider: "mapbox", service: "directions", operation: "calculate_driving_distance", restaurant_id: restaurantId,
       request_count: 1, status: routeResponse.status === 429 ? "blocked" : "error", estimated_cost_usd: 0,
-      metadata: { http_status: routeResponse.status },
+      metadata: { http_status: routeResponse.status, error_code: mapboxCode },
     });
-    console.error("Mapbox Directions API failed", { status: routeResponse.status, body: routeBody });
-    return json({ error: "We could not calculate the delivery distance. Please try again." }, 502);
+    console.error("Mapbox Directions API failed", {
+      status: routeResponse.status,
+      code: mapboxCode,
+      message: mapboxMessage,
+      restaurant_id: restaurantId,
+    });
+
+    // Mapbox's useful validation message should reach the client rather than
+    // being hidden behind Supabase's generic "non-2xx" error.
+    if (routeResponse.status === 422) {
+      const error = mapboxCode === "InvalidInput" && mapboxMessage.toLowerCase().includes("maximum distance")
+        ? "Mapbox rejected the route because it exceeds its routing distance limit. Check the selected restaurant and delivery pins, then try again."
+        : "Mapbox could not create a driving route between those locations. Adjust the map pin and try again.";
+      return json({ error, code: mapboxCode }, 422);
+    }
+
+    return json({ error: "We could not calculate the delivery distance right now. Please try again." }, routeResponse.status === 429 ? 429 : 502);
   }
 
   const increments = Math.ceil(distanceMeters / incrementMeters);
