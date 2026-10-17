@@ -247,7 +247,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
   return (
     <section className="restaurant-page restaurant-shipping-page">
       <style>{`
-        .website-customization-form{display:grid;gap:22px}
+        .website-customization-form{display:grid;gap:10px}
         .website-customization-tabs{display:flex;align-items:center;gap:26px;flex-wrap:wrap;border-bottom:1px solid #dbe2ea;margin:0;padding:0 4px}
         .website-customization-form [role="tabpanel"]{min-height:440px;box-sizing:border-box}
         @media(max-width:700px){.website-customization-form [role="tabpanel"]{min-height:0}}
