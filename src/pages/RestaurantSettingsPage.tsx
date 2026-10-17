@@ -804,8 +804,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         </div>
 
         <div className="restaurant-settings-card" id="store-status" role="tabpanel" aria-labelledby="store-settings-tab-status" hidden={activeSettingsTab !== 'status'}>
-          <h2>Store status</h2>
-          <p className="restaurant-settings-help">Operating hours automatically control the normal opening and closing schedule. Use this switch when you need to manually close the store outside that schedule.</p>
           <label className="restaurant-settings-switch-row">
             <span>{orderingEnabled ? 'Store is open' : 'Store is manually closed'}</span>
             <span className="restaurant-settings-switch">
