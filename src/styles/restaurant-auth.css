@@ -637,21 +637,156 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   flex: 0 0 160px !important;
 }
 
-/* Reference-inspired login layout; keep the existing Web2Table colors and component styles. */
-.restaurant-owner-auth-card{width:min(360px,100%);padding:6px 32px 30px}
-.restaurant-owner-auth-card .restaurant-auth-input-label{display:block;gap:0}
-.restaurant-owner-auth-card .restaurant-auth-input-label>.visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
-.restaurant-owner-auth-card .restaurant-owner-auth-form{gap:12px}
-.restaurant-owner-auth-card .restaurant-owner-auth-form input::placeholder{color:#64748b;opacity:1}
-.restaurant-owner-auth-card .restaurant-login-title{margin:0 0 18px;text-align:center;font-size:clamp(28px,4vw,34px);line-height:1.15;letter-spacing:-.025em;color:#111827}
-.restaurant-owner-auth-card .restaurant-owner-auth-form .restaurant-auth-options-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:-2px}
-.restaurant-owner-auth-card .restaurant-owner-auth-form .restaurant-auth-remember{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:400;white-space:nowrap}
-.restaurant-owner-auth-card .restaurant-owner-auth-form .restaurant-auth-remember input[type="checkbox"]{width:12px;height:12px;margin:0;accent-color:#101b30}
-.restaurant-owner-auth-card .restaurant-owner-auth-form .restaurant-auth-forgot-password-row{margin:0;text-align:right;font-size:11px}
-.restaurant-owner-auth-card .restaurant-auth-forgot-password-row a{color:#334155;font-weight:600;text-underline-offset:2px}
-/* Match reference button dimensions/placement only; preserve Web2Table button visuals. */
-.restaurant-owner-auth-card .restaurant-owner-auth-form > button.button[type="submit"]{display:block!important;box-sizing:border-box!important;width:100%!important;max-width:100%!important;min-width:100%!important;min-height:38px!important;justify-self:stretch!important;align-self:stretch!important;margin:0!important;flex:0 0 100%!important;grid-column:1 / -1!important}
-.restaurant-owner-auth-card .restaurant-auth-switch{margin-top:14px!important;font-size:12px}
-.restaurant-owner-auth-card .customer-password-input-row input[type="password"],.restaurant-owner-auth-card .customer-password-input-row input[type="text"],.restaurant-owner-auth-card .restaurant-owner-auth-form input[type="email"]{text-align:left!important;padding-left:13px!important}
-.restaurant-owner-auth-card .customer-password-input-row input[type="password"],.restaurant-owner-auth-card .customer-password-input-row input[type="text"]{padding-right:48px!important}
-@media(max-width:420px){.restaurant-owner-auth-page{min-height:100svh;padding:24px 20px 18px!important;align-items:flex-start!important;justify-content:center!important}.restaurant-owner-auth-card{padding:4px 22px 26px}}
+
+/* Restaurant owner login: consolidated layout rules. Preserve Web2Table visual theme. */
+.restaurant-owner-auth-page {
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: clamp(24px, 7vh, 64px) 20px 32px;
+  background: #f8fafc;
+  box-sizing: border-box;
+}
+.restaurant-owner-auth-card {
+  width: min(360px, 100%);
+  margin: 0;
+  padding: 22px 32px 28px;
+  box-sizing: border-box;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, .08);
+}
+.restaurant-owner-auth-card .restaurant-login-title {
+  margin: 0 0 18px;
+  text-align: center;
+  color: #111827;
+  font-size: clamp(28px, 4vw, 34px);
+  line-height: 1.15;
+  letter-spacing: -.025em;
+}
+.restaurant-owner-auth-card .restaurant-owner-auth-form {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  margin: 0;
+}
+.restaurant-owner-auth-card .restaurant-auth-input-label {
+  display: block;
+  margin: 0;
+  color: #111827;
+}
+.restaurant-owner-auth-card .restaurant-auth-input-label > .visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+.restaurant-owner-auth-card .restaurant-owner-auth-form input[type="email"],
+.restaurant-owner-auth-card .restaurant-owner-auth-form .customer-password-input-row input[type="password"],
+.restaurant-owner-auth-card .restaurant-owner-auth-form .customer-password-input-row input[type="text"] {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  box-sizing: border-box;
+  padding: 11px 13px;
+  text-align: left;
+  border-radius: 10px;
+  background: #eaf2ff;
+  color: #111827;
+}
+.restaurant-owner-auth-card .restaurant-owner-auth-form input::placeholder {
+  color: #64748b;
+  opacity: 1;
+}
+.restaurant-owner-auth-card .restaurant-owner-auth-form .customer-password-input-row {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+.restaurant-owner-auth-card .restaurant-owner-auth-form .customer-password-input-row input[type="password"],
+.restaurant-owner-auth-card .restaurant-owner-auth-form .customer-password-input-row input[type="text"] {
+  padding-right: 48px;
+}
+.restaurant-owner-auth-card .restaurant-owner-auth-form .customer-password-input-row .customer-password-visibility {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  padding: 7px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #64748b;
+}
+.restaurant-owner-auth-card .restaurant-owner-auth-form .restaurant-auth-options-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: -1px 0 0;
+}
+.restaurant-owner-auth-card .restaurant-owner-auth-form .restaurant-auth-remember {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+.restaurant-owner-auth-card .restaurant-owner-auth-form .restaurant-auth-remember input[type="checkbox"] {
+  width: 12px;
+  height: 12px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  accent-color: #101b30;
+}
+.restaurant-owner-auth-card .restaurant-owner-auth-form .restaurant-auth-forgot-password-row {
+  margin: 0;
+  text-align: right;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.restaurant-owner-auth-card .restaurant-owner-auth-form .restaurant-auth-forgot-password-row a {
+  color: #334155;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.restaurant-owner-auth-card .restaurant-owner-auth-form > button.button[type="submit"] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  min-height: 38px;
+  box-sizing: border-box;
+  align-self: stretch;
+  margin: 0;
+}
+.restaurant-owner-auth-card .restaurant-auth-switch {
+  margin: 14px 0 0 !important;
+  text-align: center;
+  font-size: 12px;
+}
+@media (max-width: 420px) {
+  .restaurant-owner-auth-page {
+    padding: 20px 16px 28px;
+  }
+  .restaurant-owner-auth-card {
+    padding: 18px 22px 26px;
+  }
+}
