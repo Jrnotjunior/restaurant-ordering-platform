@@ -1,4 +1,3 @@
-import { useRestaurant } from '../components/RestaurantProvider';
 import './LegalPoliciesPage.css';
 
 const policies = [
@@ -33,14 +32,10 @@ function PolicyIcon({ type }: { type: (typeof policies)[number]['icon'] }) {
 }
 
 export function LegalPoliciesPage() {
-  const restaurant = useRestaurant();
-
   return (
     <main className="customer-legal-page">
       <section className="customer-legal-intro">
-        <p className="customer-legal-eyebrow">CUSTOMER INFORMATION</p>
         <h1>Legal &amp; Policies</h1>
-        <p>Review the policies that apply when you browse or order from {restaurant.name}.</p>
       </section>
 
       <nav className="customer-legal-list" aria-label="Legal documents">
@@ -56,7 +51,6 @@ export function LegalPoliciesPage() {
         ))}
       </nav>
 
-      <a className="customer-legal-back" href="#menu">← Back to menu</a>
     </main>
   );
 }
