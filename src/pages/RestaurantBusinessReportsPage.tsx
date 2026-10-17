@@ -264,9 +264,6 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
         .business-reports-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
         @media(max-width:760px){.business-reports-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.business-reports-card,.business-reports-panel{padding:13px}.business-reports-range{align-items:stretch}.business-reports-range label{flex:1 1 130px}.business-reports-range input{width:100%}}
       `}</style>
-      <header className="business-reports-header">
-        <div><h1>Business Reports</h1><p>Review sales performance, record operating expenses, and export transaction records for your accountant. Reports include only this restaurant's records.</p></div>
-      </header>
       <nav className="business-reports-tabs" role="tablist" aria-label="Business report sections">
         {([['overview','Overview'],['expenses','Expenses & Profit'],['payments','Payments'],['tax','Tax Reports']] as [Tab,string][]).map(([key,label]) => <button key={key} type="button" role="tab" aria-selected={tab===key} onClick={() => {setTab(key);setError('');setNotice('');}}>{label}</button>)}
       </nav>
