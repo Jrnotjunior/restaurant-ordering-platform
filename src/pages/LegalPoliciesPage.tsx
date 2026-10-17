@@ -33,9 +33,9 @@ function PolicyIcon({ type }: { type: (typeof policies)[number]['icon'] }) {
 
 export function LegalPoliciesPage() {
   return (
-    <main className="customer-legal-page">
+    <section className="customer-legal-page" aria-labelledby="customer-legal-title">
       <section className="customer-legal-intro">
-        <h1>Legal &amp; Policies</h1>
+        <h1 id="customer-legal-title">Legal &amp; Policies</h1>
       </section>
 
       <nav className="customer-legal-list" aria-label="Legal documents">
@@ -51,6 +51,6 @@ export function LegalPoliciesPage() {
         ))}
       </nav>
 
-    </main>
+    </section>
   );
 }
