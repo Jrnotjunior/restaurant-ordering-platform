@@ -137,14 +137,6 @@ export function RestaurantLoyaltyCustomers({ restaurantId }: Props) {
   return (
     <section className="restaurant-page restaurant-loyalty-customers">
       <div className="restaurant-shipping-card">
-        <div className="restaurant-shipping-section-header">
-          <div>
-            <p className="eyebrow">Customer accounts</p>
-            <h2>Registered customers</h2>
-            <p className="restaurant-shipping-help">Customers who created an account for this restaurant and their live loyalty points balance.</p>
-          </div>
-        </div>
-
         <div className="restaurant-loyalty-customer-stats">
           <article><span>Registered customers</span><strong>{loading ? '—' : formatPoints(customers.length)}</strong></article>
           <article><span>Points outstanding</span><strong>{loading ? '—' : formatPoints(totalPoints)}</strong></article>
