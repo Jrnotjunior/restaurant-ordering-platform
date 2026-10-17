@@ -19,7 +19,7 @@ type OwnerSupportAttachment = { id: string; message_id: string | null; storage_p
 const ownerNavigationItems: NavigationItem[] = [
   { label: 'Dashboard', href: '#restaurant/owner', icon: 'dashboard' },
   { label: 'Orders', href: '#restaurant/orders', icon: 'orders' },
-  { label: 'Products', href: '#restaurant/menu', icon: 'products' },
+  { label: 'Menu', href: '#restaurant/menu', icon: 'products' },
   { label: 'Employees', href: '#restaurant/employees', icon: 'riders' },
   { label: 'Payroll & HR', href: '#restaurant/payroll', icon: 'payroll' },
   { label: 'Sales', href: '#restaurant/sales', icon: 'sales' },
