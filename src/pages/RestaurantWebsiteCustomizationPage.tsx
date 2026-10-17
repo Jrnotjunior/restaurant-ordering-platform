@@ -37,6 +37,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
   const [error, setError] = useState('');
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
   const [showLivePreview, setShowLivePreview] = useState(false);
+  const [activeWebsiteSection, setActiveWebsiteSection] = useState<'favicon' | 'branding' | 'social' | 'colors'>('favicon');
   const [previewPosition, setPreviewPosition] = useState({ x: 0, y: 0 });
   const [previewDragging, setPreviewDragging] = useState(false);
   const previewStageRef = useRef<HTMLDivElement>(null);
@@ -247,6 +248,11 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
     <section className="restaurant-page restaurant-shipping-page">
       <style>{`
         .website-customization-form{display:grid;gap:22px}
+        .website-customization-tabs{display:flex;align-items:center;gap:26px;flex-wrap:wrap;border-bottom:1px solid #dbe2ea;margin:0;padding:0 4px}
+        .website-customization-tab{appearance:none;border:0;border-bottom:2px solid transparent;border-radius:0;background:transparent;color:#475569;min-height:42px;padding:10px 2px 9px;font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
+        .website-customization-tab:hover{color:#0f172a}
+        .website-customization-tab[aria-selected="true"]{color:#0f172a;border-bottom-color:#101b2f;font-weight:700}
+        .website-customization-tab:focus-visible{outline:2px solid #0ea5e9;outline-offset:3px}
         .owner-feedback-toast{position:fixed;top:22px;left:50%;transform:translateX(-50%);z-index:12000;width:min(520px,calc(100vw - 32px));box-sizing:border-box;display:flex;align-items:flex-start;gap:12px;padding:15px 18px;border:1px solid;border-radius:14px;box-shadow:0 14px 40px rgba(15,23,42,.18);font-size:14px;line-height:1.45;animation:ownerFeedbackToastIn .22s ease-out}
         .owner-feedback-toast strong{display:block;margin:1px 0 3px;font-size:14px;font-weight:750}
         .owner-feedback-toast p{margin:0;font-size:13px}
@@ -392,6 +398,28 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
           <p className="website-customization-help" style={{ marginTop: 8 }}>Customize your restaurant's branding, homepage content, and visible customer-facing sections. These settings affect this restaurant only.</p>
         </div>
 
+        <nav className="website-customization-tabs" aria-label="Website and branding sections" role="tablist">
+          {([
+            ['favicon', 'Browser tab icon'],
+            ['branding', 'Branding'],
+            ['social', 'Social media links'],
+            ['colors', 'Website colors'],
+          ] as const).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              id={`website-customization-tab-${id}`}
+              aria-selected={activeWebsiteSection === id}
+              aria-controls={`website-customization-panel-${id}`}
+              className="website-customization-tab"
+              onClick={() => setActiveWebsiteSection(id)}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+
         {showLivePreview ? (
           <div
             className={`website-customization-phone website-customization-phone-floating${previewDragging ? ' is-dragging' : ''}`}
@@ -505,13 +533,14 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
           </div>
         ) : null}
 
-        <RestaurantFaviconSettings
+        {activeWebsiteSection === 'favicon' ? <div role="tabpanel" id="website-customization-panel-favicon" aria-labelledby="website-customization-tab-favicon"><RestaurantFaviconSettings
           restaurantId={restaurantId}
           faviconUrl={storefront.faviconUrl}
           disabled={loading || saving}
           onChange={(url) => { setStorefront((current) => ({ ...current, faviconUrl: url || undefined })); setMessage(''); setError(''); }}
-        />
+        /></div> : null}
 
+        {activeWebsiteSection === 'branding' ? <div role="tabpanel" id="website-customization-panel-branding" aria-labelledby="website-customization-tab-branding">
         <div className="website-customization-card">
           <h2>Branding</h2>
           <p className="website-customization-help">Customize the logo and website branding customers see on your website.</p>
@@ -530,6 +559,9 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
           </div>
         </div>
 
+        </div> : null}
+
+        {activeWebsiteSection === 'social' ? <div role="tabpanel" id="website-customization-panel-social" aria-labelledby="website-customization-tab-social">
         <div className="website-customization-card">
           <h2>Social Media Links</h2>
           <p className="website-customization-help">Add your restaurant's Facebook, Instagram, and TikTok profile URLs. These links appear in the Follow Us section of your customer-facing website footer. Leave a field blank to show that network as unavailable.</p>
@@ -563,6 +595,9 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
           </div>
         </div>
 
+        </div> : null}
+
+        {activeWebsiteSection === 'colors' ? <div role="tabpanel" id="website-customization-panel-colors" aria-labelledby="website-customization-tab-colors">
         <div className="website-customization-card">
           <div className="website-customization-section-heading">
             <div>
@@ -614,6 +649,8 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
           </div>
         </div>
 
+
+        </div> : null}
 
         <div className="website-customization-actions-bar">
           <button
