@@ -849,18 +849,13 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   text-transform: uppercase;
 }
 .restaurant-owner-auth-card.customer-signup-card > h1 {
-  margin: 0 0 8px;
+  margin: 0 0 24px;
   color: #111827;
   font-size: clamp(28px, 4vw, 34px);
   font-weight: 700;
   line-height: 1.15;
   letter-spacing: -.025em;
-}
-.restaurant-owner-auth-card.customer-signup-card > p:not(.eyebrow):not(.restaurant-auth-switch) {
-  margin: 0 0 20px;
-  color: #64748b;
-  font-size: 14px;
-  line-height: 1.55;
+  text-align: center;
 }
 .restaurant-owner-auth-card.customer-signup-card .restaurant-owner-auth-form {
   display: flex;
