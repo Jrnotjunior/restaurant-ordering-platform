@@ -592,7 +592,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
       const { data: savedRow, error: verifyError } = await supabase
         .from('restaurants')
-        .select('tagline,store_address,operating_hours,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,delivery_location_latitude,delivery_longitude')
+        .select('tagline,store_address,operating_hours,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,delivery_location_latitude,delivery_location_longitude')
         .eq('id', restaurantId)
         .single();
 
