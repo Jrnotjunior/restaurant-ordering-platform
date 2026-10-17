@@ -205,7 +205,8 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
       </div>
 
       <style>{`
-        .restaurant-loyalty-tabs{display:flex;align-items:center;gap:26px;flex-wrap:wrap;border-bottom:1px solid #dbe2ea;margin:0 0 18px;padding:0 4px}
+        .restaurant-loyalty-tabs{display:flex;align-items:center;gap:26px;flex-wrap:wrap;border-bottom:1px solid #dbe2ea;margin:0 0 12px;padding:0 4px}
+        .restaurant-loyalty-page .restaurant-shipping-card{margin-top:0}
         .restaurant-loyalty-tabs button{position:relative;display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 2px;margin:0 0 -1px;border:0;border-bottom:2px solid transparent;border-radius:0;background:transparent;color:#475569;font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
         .restaurant-loyalty-tabs button:hover{color:#0f172a}
         .restaurant-loyalty-tabs button.is-active{border-bottom-color:#101b2f;color:#101b2f;font-weight:700}
