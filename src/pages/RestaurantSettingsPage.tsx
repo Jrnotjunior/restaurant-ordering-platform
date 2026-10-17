@@ -553,13 +553,34 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
       if (saveError) throw saveError;
 
+      // Persist the delivery origin through an owner-scoped RPC as well.
+      // Direct PostgREST UPDATE can succeed with zero affected rows when RLS
+      // filters the restaurant, so do not rely on the absence of an error.
+      const { error: originSaveError } = await supabase.rpc('update_restaurant_delivery_origin', {
+        p_restaurant_id: restaurantId,
+        p_store_address: address.trim() || null,
+        p_latitude: deliveryLocationLatitude,
+        p_longitude: deliveryLocationLongitude,
+      });
+      if (originSaveError) throw originSaveError;
+
       const { data: savedRow, error: verifyError } = await supabase
         .from('restaurants')
-        .select('store_address,operating_hours')
+        .select('store_address,operating_hours,delivery_location_latitude,delivery_location_longitude')
         .eq('id', restaurantId)
         .single();
 
       if (verifyError) throw verifyError;
+      if (
+        deliveryLocationLatitude !== null &&
+        deliveryLocationLongitude !== null &&
+        (
+          Number(savedRow.delivery_location_latitude) !== deliveryLocationLatitude ||
+          Number(savedRow.delivery_location_longitude) !== deliveryLocationLongitude
+        )
+      ) {
+        throw new Error('The restaurant delivery location was not saved. Please try again.');
+      }
 
       const savedHours = normalizeHours(savedRow?.operating_hours);
       const savedAddress = savedRow?.store_address ?? '';
