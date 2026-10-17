@@ -558,6 +558,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       // filters the restaurant, so do not rely on the absence of an error.
       const { error: originSaveError } = await supabase.rpc('update_restaurant_delivery_origin', {
         p_restaurant_id: restaurantId,
+        p_store_address: address.trim() || null,
         p_latitude: deliveryLocationLatitude,
         p_longitude: deliveryLocationLongitude,
       });
