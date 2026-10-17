@@ -160,7 +160,7 @@ export function CustomerSignUpPage() {
         </form>
 
         <p className="restaurant-auth-switch">
-          Already have an account? <a href="#account">Sign in</a>
+          Already have an account? <a href="#account">Log in</a>
         </p>
 
 
