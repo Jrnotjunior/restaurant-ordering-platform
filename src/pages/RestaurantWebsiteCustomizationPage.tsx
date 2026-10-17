@@ -392,12 +392,6 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
       {message ? <div className="owner-feedback-toast is-success" role="status"><span className="owner-feedback-toast-icon" aria-hidden="true">✓</span><div><strong>Changes saved</strong><p>{message}</p></div></div> : null}
 
       <form className="website-customization-form" onSubmit={(event: FormEvent) => { event.preventDefault(); setShowSaveConfirmation(true); }}>
-        <div className="website-customization-header">
-          <p className="eyebrow">Customer-facing website</p>
-          <h1 style={{ margin: 0 }}>Website &amp; Branding</h1>
-          <p className="website-customization-help" style={{ marginTop: 8 }}>Customize your restaurant's branding, homepage content, and visible customer-facing sections. These settings affect this restaurant only.</p>
-        </div>
-
         <nav className="website-customization-tabs" aria-label="Website and branding sections" role="tablist">
           {([
             ['favicon', 'Browser tab icon'],
