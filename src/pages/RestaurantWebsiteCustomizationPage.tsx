@@ -488,7 +488,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
                   <div>{`© ${new Date().getFullYear()} All rights reserved.`}</div>
                   <a className="website-customization-live-footer-powered-by" href="https://web2table.io" target="_blank" rel="noreferrer" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
                     <span>Powered by</span>
-                    <img src="https://xaihajwrsvcdjisezmmc.supabase.co/storage/v1/object/public/web2table-assets/web2table%20(1).png" alt="Web2Table" className="website-customization-live-footer-powered-logo" />
+                    <img src="https://xaihajwrsvcdjisezmmc.supabase.co/storage/v1/object/public/web2table-assets/web2table.png" alt="Web2Table" className="website-customization-live-footer-powered-logo" />
                   </a>
                 </div>
               </div>
