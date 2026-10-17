@@ -9,7 +9,7 @@ export function CustomerPolicyPage({ kind }: { kind: PolicyKind }) {
   return (
     <main className="restaurant-owner-auth-page">
       <article className="restaurant-owner-auth-card privacy-notice-card" aria-labelledby="customer-policy-title">
-        <a className="privacy-notice-back" href="#menu">← Back to menu</a>
+        <a className="privacy-notice-back" href="#legal">← Back to Legal &amp; Policies</a>
         <p className="eyebrow">{restaurant.name}</p>
         <h1 id="customer-policy-title">{title}</h1>
         {isTerms ? (
