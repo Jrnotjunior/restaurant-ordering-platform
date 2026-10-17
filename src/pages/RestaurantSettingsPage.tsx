@@ -905,8 +905,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         </div>
 
                 <div className="restaurant-settings-card" id="store-cod" role="tabpanel" aria-labelledby="store-settings-tab-cod" hidden={activeSettingsTab !== 'cod'}>
-          <h2>Cash on Delivery</h2>
-          <p className="restaurant-settings-help">Allow customers to place delivery orders and pay in cash when the order is received. Turning this off requires delivery customers to use Online Payment.</p>
           <label className="restaurant-settings-switch-row">
             <span>Accept Cash on Delivery</span>
             <span className="restaurant-settings-switch">
