@@ -637,15 +637,13 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   flex: 0 0 160px !important;
 }
 
-/* Compact sign-in form matching the reference while retaining Web2Table colors. */
+/* Compact reference layout only; preserve the existing Web2Table button and color styles. */
 .restaurant-owner-auth-card .restaurant-auth-input-label{display:block;gap:0}
 .restaurant-owner-auth-card .restaurant-auth-input-label>.visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
 .restaurant-owner-auth-card .restaurant-owner-auth-form{gap:14px}
 .restaurant-owner-auth-card .restaurant-owner-auth-form input::placeholder{color:#64748b;opacity:1}
 .restaurant-owner-auth-card .restaurant-login-title{margin:0 0 22px;text-align:center;font-size:clamp(28px,4vw,34px);line-height:1.15;letter-spacing:-.025em;color:#111827}
-.restaurant-owner-auth-card .restaurant-owner-auth-form > button.button[type="submit"]{width:min(100%,220px)!important;min-width:0!important;max-width:220px!important;min-height:38px!important;justify-self:center!important;margin:0 auto!important;padding:9px 24px!important;border-radius:999px!important;background:#fff!important;color:#101b30!important;border:1px solid #d6e1f0!important;box-shadow:0 2px 8px rgba(15,23,42,.08)!important;font-weight:700!important;flex:0 1 220px!important}
-.restaurant-owner-auth-card .restaurant-owner-auth-form > button.button[type="submit"]:hover:not(:disabled){background:#f1f5fb!important;border-color:#c5d4e8!important}
-.restaurant-owner-auth-card .restaurant-owner-auth-form > button.button[type="submit"]:disabled{opacity:.65!important}
+.restaurant-owner-auth-card .restaurant-owner-auth-form > button.button[type="submit"]{width:160px!important;max-width:160px!important;min-width:0!important;justify-self:center!important;margin:0 auto!important;flex:0 0 160px!important}
 .restaurant-owner-auth-card .restaurant-auth-switch{margin-top:18px!important}
 .restaurant-owner-auth-card .restaurant-auth-forgot-password-row{margin-top:-5px;text-align:right;font-size:13px}
 .restaurant-owner-auth-card .restaurant-auth-forgot-password-row a{color:#334155;font-weight:650;text-underline-offset:3px}
