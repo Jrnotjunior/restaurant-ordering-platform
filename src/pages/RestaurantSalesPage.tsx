@@ -271,13 +271,7 @@ export function RestaurantSalesPage({ restaurantId, role = 'owner' }: Props) {
   return (
     <section className="restaurant-page restaurant-sales-page">
       <div className="restaurant-sales-card">
-        <div className="restaurant-sales-card-header">
-          <div>
-            <h1>Sales Overview</h1>
-            <p>
-              Your restaurant's completed sales are shown here. Click a date to view the daily sales report.
-            </p>
-          </div>
+        <div className="restaurant-sales-card-header restaurant-sales-card-header-compact">
           <span className={`restaurant-dashboard-live-status is-${realtimeStatus}`}>
             <span className="restaurant-dashboard-live-dot" />
             {realtimeStatus === 'live' ? 'Live' : realtimeStatus === 'connecting' ? 'Connecting…' : 'Reconnecting…'}
