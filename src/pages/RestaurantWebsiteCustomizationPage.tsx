@@ -591,8 +591,6 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         <div className="website-customization-card">
           <div className="website-customization-section-heading">
             <div>
-              <h2>Website Colors</h2>
-              <p className="website-customization-help">Choose colors for each part of your customer-facing store. Changes update the preview immediately and are saved per restaurant.</p>
             </div>
             <button type="button" className="button button-primary website-customization-inline-preview restaurant-compact-action" onClick={openLivePreview}>
               See Live Preview
