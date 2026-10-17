@@ -703,8 +703,8 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .restaurant-paymongo-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
         .restaurant-settings-help{margin:0;color:#64748b;line-height:1.5;font-size:14px}
         .restaurant-settings-form{display:grid;gap:16px}
-        .restaurant-settings-form{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
-        .restaurant-settings-tabs{display:flex;align-items:center;gap:26px;flex-wrap:wrap;border-bottom:1px solid #dbe2ea;margin-bottom:2px}
+        .restaurant-settings-form{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+        .restaurant-settings-tabs{display:flex;align-items:center;gap:26px;flex-wrap:wrap;border-bottom:1px solid #dbe2ea;margin:0}
         .restaurant-settings-tabs button{position:relative;display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 2px;margin:0 0 -1px;border:0;border-bottom:2px solid transparent;border-radius:0;background:transparent;color:#475569;font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
         .restaurant-settings-tabs button:hover{color:#0f172a}
         .restaurant-settings-tabs button.is-active{border-bottom-color:#101b2f;color:#101b2f;font-weight:700}
