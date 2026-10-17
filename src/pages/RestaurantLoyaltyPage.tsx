@@ -18,6 +18,7 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [activeLoyaltyTab, setActiveLoyaltyTab] = useState<'program' | 'customers'>('program');
 
   async function loadSettings() {
     setLoading(true);
@@ -86,10 +87,15 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
   }
 
   return (
-    <section className="restaurant-page restaurant-shipping-page">
+    <section className="restaurant-page restaurant-shipping-page restaurant-loyalty-page">
+      <nav className="restaurant-loyalty-tabs" aria-label="Loyalty tabs" role="tablist">
+        <button id="restaurant-loyalty-tab-program" type="button" role="tab" aria-selected={activeLoyaltyTab === 'program'} aria-controls="restaurant-loyalty-panel-program" className={activeLoyaltyTab === 'program' ? 'is-active' : ''} onClick={() => setActiveLoyaltyTab('program')}>Loyalty program</button>
+        <button id="restaurant-loyalty-tab-customers" type="button" role="tab" aria-selected={activeLoyaltyTab === 'customers'} aria-controls="restaurant-loyalty-panel-customers" className={activeLoyaltyTab === 'customers' ? 'is-active' : ''} onClick={() => setActiveLoyaltyTab('customers')}>Customers</button>
+      </nav>
       {error && <div className="restaurant-shipping-message is-error" role="alert">{error}</div>}
       {message && <div className="restaurant-shipping-message is-success" role="status">{message}</div>}
 
+      <div id="restaurant-loyalty-panel-program" role="tabpanel" aria-labelledby="restaurant-loyalty-tab-program" hidden={activeLoyaltyTab !== 'program'}>
       <div className="restaurant-shipping-card">
         <div className="restaurant-shipping-section-header">
           <div>
@@ -193,8 +199,18 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
           </div>
         </div>
       </div>
+      </div>
+      <div id="restaurant-loyalty-panel-customers" role="tabpanel" aria-labelledby="restaurant-loyalty-tab-customers" hidden={activeLoyaltyTab !== 'customers'}>
+        <RestaurantLoyaltyCustomers restaurantId={restaurantId} />
+      </div>
 
       <style>{`
+        .restaurant-loyalty-tabs{display:flex;align-items:center;gap:26px;flex-wrap:wrap;border-bottom:1px solid #dbe2ea;margin:0 0 18px;padding:0 4px}
+        .restaurant-loyalty-tabs button{position:relative;display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 2px;margin:0 0 -1px;border:0;border-bottom:2px solid transparent;border-radius:0;background:transparent;color:#475569;font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
+        .restaurant-loyalty-tabs button:hover{color:#0f172a}
+        .restaurant-loyalty-tabs button.is-active{border-bottom-color:#101b2f;color:#101b2f;font-weight:700}
+        .restaurant-loyalty-tabs button:focus-visible{outline:2px solid #64748b;outline-offset:3px}
+        .restaurant-loyalty-page [role="tabpanel"][hidden]{display:none!important}
         .restaurant-loyalty-form{display:grid;gap:18px}
         .restaurant-loyalty-toggle{display:flex;align-items:flex-start;gap:10px;padding:.25rem 0;color:var(--color-text);font-size:.85rem;font-weight:700}
         .restaurant-loyalty-toggle input{width:18px;height:18px;margin:1px 0 0;accent-color:var(--color-primary);flex:0 0 auto}
@@ -214,7 +230,6 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
         .restaurant-loyalty-actions{display:flex;justify-content:flex-end}\n        .restaurant-loyalty-actions .button{min-height:36px;padding:8px 14px;font-size:.78rem;line-height:1.2;border-radius:10px}
         @media(max-width:760px){.restaurant-loyalty-rule{grid-template-columns:1fr}.restaurant-loyalty-actions{justify-content:flex-end}.restaurant-loyalty-actions .button{width:auto}}
       `}</style>
-      <RestaurantLoyaltyCustomers restaurantId={restaurantId} />
     </section>
   );
 }
