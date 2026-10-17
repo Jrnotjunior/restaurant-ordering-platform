@@ -650,7 +650,7 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
 .restaurant-owner-auth-card .restaurant-owner-auth-form .restaurant-auth-forgot-password-row{margin:0;text-align:right;font-size:11px}
 .restaurant-owner-auth-card .restaurant-auth-forgot-password-row a{color:#334155;font-weight:600;text-underline-offset:2px}
 /* Match reference button dimensions/placement only; preserve Web2Table button visuals. */
-.restaurant-owner-auth-card .restaurant-owner-auth-form > button.button[type="submit"]{width:220px!important;max-width:100%!important;min-width:0!important;min-height:38px!important;justify-self:center!important;margin:0 auto!important;flex:0 1 220px!important}
+.restaurant-owner-auth-card .restaurant-owner-auth-form > button.button[type="submit"]{width:100%!important;max-width:100%!important;min-width:0!important;min-height:38px!important;justify-self:stretch!important;margin:0!important;flex:1 1 100%!important}
 .restaurant-owner-auth-card .restaurant-auth-switch{margin-top:14px!important;font-size:12px}
 .restaurant-owner-auth-card .customer-password-input-row input[type="password"],.restaurant-owner-auth-card .customer-password-input-row input[type="text"],.restaurant-owner-auth-card .restaurant-owner-auth-form input[type="email"]{text-align:left!important;padding-left:13px!important}
 .restaurant-owner-auth-card .customer-password-input-row input[type="password"],.restaurant-owner-auth-card .customer-password-input-row input[type="text"]{padding-right:48px!important}
