@@ -829,6 +829,11 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
                 if (selected.latitude === null || selected.longitude === null) throw new Error('Google did not return an exact restaurant location.');
                 setDeliveryLocationLatitude(selected.latitude);
                 setDeliveryLocationLongitude(selected.longitude);
+                // The map is the single source of truth for the restaurant address.
+                // Keep the persisted address aligned whenever a search returns one.
+                if (selected.formattedAddress.trim()) {
+                  setAddress(selected.formattedAddress.trim());
+                }
                 setMessage('');
                 setError('');
               }}
