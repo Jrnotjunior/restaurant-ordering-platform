@@ -29,7 +29,7 @@ main { flex: 1; }
 .site-header { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: var(--space-6); border-bottom: 1px solid var(--color-border); background: var(--color-header, var(--color-background)); color: var(--color-text); }
 .brand { display: inline-flex; align-items: center; gap: var(--space-3); min-width: 0; font-family: var(--font-heading); font-weight: 800; }
 .brand span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.brand-logo { width: 36px; height: 36px; flex: 0 0 auto; object-fit: contain; border-radius: var(--radius-sm); }
+.brand-logo { width: 42px; height: 42px; flex: 0 0 auto; object-fit: contain; border-radius: var(--radius-sm); }
 .site-header nav { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: var(--space-6); color: var(--color-muted); }
 .site-header nav a { min-height: 44px; display: inline-flex; align-items: center; }
 .site-header nav a:hover, .header-cart:hover { color: var(--color-text); }
