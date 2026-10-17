@@ -5,7 +5,7 @@ export function PrivacyNoticePage() {
   return (
     <main className="restaurant-owner-auth-page">
       <article className="restaurant-owner-auth-card privacy-notice-card" aria-labelledby="privacy-notice-title">
-        <a className="privacy-notice-back" href="#signup">← Back to Create Account</a>
+        <a className="privacy-notice-back" href="#legal">← Back to Legal &amp; Policies</a>
 
         <p className="eyebrow">Data Privacy</p>
         <h1 id="privacy-notice-title">Privacy Notice</h1>
