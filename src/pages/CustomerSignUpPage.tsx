@@ -92,9 +92,7 @@ export function CustomerSignUpPage() {
   return (
     <main className="restaurant-owner-auth-page">
       <section className="restaurant-owner-auth-card customer-signup-card" aria-labelledby="customer-signup-title">
-        <p className="eyebrow">Customer account</p>
         <h1 id="customer-signup-title">Register</h1>
-        <p>Create your customer account to sign in and place orders.</p>
 
         {error && <div className="restaurant-dashboard-error" role="alert">{error}</div>}
         {message && (
