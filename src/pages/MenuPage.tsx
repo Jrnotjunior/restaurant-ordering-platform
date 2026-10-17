@@ -95,9 +95,9 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
       <section className={`storefront-hero${hero.imageUrl ? ' has-image' : ''}`} style={hero.imageUrl ? { backgroundImage: `url("${hero.imageUrl}")` } : undefined}>
           <div className="storefront-hero-overlay" />
           <div className="storefront-hero-content">
-            {hero.eyebrow ? <p className="eyebrow">{hero.eyebrow}</p> : null}
+            <p className="eyebrow">Welcome to our menu</p>
             <h1>{restaurant.name}</h1>
-            {restaurant.tagline ? <p>{restaurant.tagline}</p> : null}
+            <p>{restaurant.tagline && !/book demo with us/i.test(restaurant.tagline.trim()) ? restaurant.tagline : 'Good food, easy ordering.'}</p>
           </div>
         </section>
       <div id="menu" />
