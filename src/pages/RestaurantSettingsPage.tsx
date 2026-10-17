@@ -647,13 +647,21 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
   return (
     <section className="restaurant-page restaurant-settings-page">
-      <div className="restaurant-settings-card">
-        <p className="eyebrow">Restaurant configuration</p>
-        <h1 style={{ margin: 0 }}>Store Settings</h1>
-        <p className="restaurant-settings-help" style={{ marginTop: 8 }}>Manage store operations, ordering status, tax configuration, and operating hours. Website branding and customer-facing content are managed separately.</p>
-      </div>
+      <header className="restaurant-settings-header">
+        <div>
+          <p className="eyebrow">Restaurant configuration</p>
+          <h1>Store Settings</h1>
+          <p className="restaurant-settings-help">Manage store operations, ordering status, tax configuration, and operating hours. Website branding and customer-facing content are managed separately.</p>
+        </div>
+      </header>
       <style>{`
-        .restaurant-settings-grid{display:grid;gap:20px}
+        .restaurant-settings-grid{display:grid;gap:16px}
+        .restaurant-settings-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:0}
+        .restaurant-settings-header .eyebrow{margin:0 0 6px;font-size:11px;letter-spacing:.08em}
+        .restaurant-settings-header h1{margin:0;font-size:clamp(25px,2.6vw,32px);line-height:1.2;letter-spacing:-.03em}
+        .restaurant-settings-header .restaurant-settings-help{max-width:900px;margin-top:6px}
+        .restaurant-settings-page{display:grid;gap:16px}
+
         .owner-feedback-toast{position:fixed;top:22px;left:50%;transform:translateX(-50%);z-index:12000;width:min(520px,calc(100vw - 32px));box-sizing:border-box;display:flex;align-items:flex-start;gap:12px;padding:15px 18px;border:1px solid;border-radius:14px;box-shadow:0 14px 40px rgba(15,23,42,.18);font-size:14px;line-height:1.45;animation:ownerFeedbackToastIn .22s ease-out}
         .owner-feedback-toast strong{display:block;margin:1px 0 3px;font-size:14px;font-weight:750}
         .owner-feedback-toast p{margin:0;font-size:13px}
@@ -690,8 +698,8 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .restaurant-settings-logo-button{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center}
         .restaurant-settings-logo-button input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
         .restaurant-settings-logo-button input:disabled{cursor:not-allowed}
-        .restaurant-settings-card{padding:24px;border:1px solid #e1e5eb;border-radius:14px;background:#fff}
-        .restaurant-settings-card h2{margin:0 0 8px}
+        .restaurant-settings-card{padding:18px;border:1px solid #dce4ee;border-radius:14px;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.025)}
+        .restaurant-settings-card h2{margin:0 0 6px;font-size:18px;line-height:1.3;letter-spacing:-.02em}
         .restaurant-paymongo-status{display:grid;gap:8px;margin-top:16px;padding:14px;border:1px solid #e1e5eb;border-radius:10px;background:#f8fafc}
         .restaurant-paymongo-status>div{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
         .restaurant-paymongo-badge{display:inline-flex;align-items:center;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:700;text-transform:capitalize;background:#e2e8f0;color:#334155}
@@ -699,19 +707,19 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .restaurant-paymongo-badge.is-pending,.restaurant-paymongo-badge.is-linked{background:#fef3c7;color:#92400e}
         .restaurant-paymongo-badge.is-error,.restaurant-paymongo-badge.is-revoked{background:#fee2e2;color:#991b1b}
         .restaurant-paymongo-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-        .restaurant-settings-help{margin:0;color:#64748b;line-height:1.6}
-        .restaurant-settings-form{display:grid;gap:22px}
+        .restaurant-settings-help{margin:0;color:#64748b;line-height:1.5;font-size:14px}
+        .restaurant-settings-form{display:grid;gap:16px}
         .restaurant-settings-field{display:grid;gap:7px;font-weight:600;font-size:14px}
-        .restaurant-settings-field input[type=text]{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:10px;padding:12px;font:inherit;color:#0f172a;background:#fff}
-        .restaurant-settings-field input[type=number]{width:64px;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:10px;padding:12px;font:inherit;color:#0f172a;background:#fff;-moz-appearance:textfield}
+        .restaurant-settings-field input[type=text]{width:100%;min-height:40px;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:9px;padding:8px 11px;font:inherit;color:#0f172a;background:#fff}
+        .restaurant-settings-field input[type=number]{width:64px;min-height:38px;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:9px;padding:8px 10px;font:inherit;color:#0f172a;background:#fff;-moz-appearance:textfield}
         .restaurant-settings-field input[type=number]::-webkit-inner-spin-button,.restaurant-settings-field input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
         .restaurant-settings-field input:focus{outline:none;border-color:#94a3b8;box-shadow:0 0 0 3px rgba(148,163,184,.18)}
         .restaurant-settings-days{display:grid;border:1px solid #e5e7eb;border-radius:10px;overflow:visible}
-        .restaurant-settings-hours-head,.restaurant-settings-day{display:grid;grid-template-columns:140px minmax(120px,1fr) minmax(120px,1fr) 72px;align-items:center;gap:12px;padding:10px 14px}
+        .restaurant-settings-hours-head,.restaurant-settings-day{display:grid;grid-template-columns:140px minmax(120px,1fr) minmax(120px,1fr) 72px;align-items:center;gap:10px;padding:8px 12px}
         .restaurant-settings-hours-head{background:#f8fafc;color:#64748b;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
         .restaurant-settings-day{border-top:1px solid #e5e7eb}
         .restaurant-settings-day-name{font-weight:600}
-        .restaurant-settings-day input[type=time]{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:8px;padding:8px 9px;font:inherit;background:#fff}
+        .restaurant-settings-day input[type=time]{width:100%;min-height:36px;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:8px;padding:6px 8px;font:inherit;background:#fff}
         .restaurant-time-picker{position:relative;width:100%}
         .restaurant-time-picker-trigger{width:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #dbe2ea;border-radius:8px;padding:8px 10px;font:inherit;background:#fff;color:#0f172a;text-align:left;cursor:pointer}
         .restaurant-time-picker-trigger:disabled{background:#f8fafc;color:#94a3b8;cursor:not-allowed}
