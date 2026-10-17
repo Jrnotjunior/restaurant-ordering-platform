@@ -790,8 +790,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         </nav>
 
         <div className="restaurant-settings-card" id="store-profile" role="tabpanel" aria-labelledby="store-settings-tab-profile" hidden={activeSettingsTab !== 'profile'}>
-          <h2>Restaurant profile</h2>
-          <p className="restaurant-settings-help">Set the tagline shown beneath your restaurant name on the customer-facing menu. Leave it blank to hide the subtitle.</p>
           <label className="restaurant-settings-field" style={{ display: 'grid', gap: 7, marginTop: 16 }}>
             <span>Restaurant tagline</span>
             <input
