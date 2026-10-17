@@ -1016,7 +1016,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
         <div className="restaurant-settings-card" id="store-tax" role="tabpanel" aria-labelledby="store-settings-tab-tax" hidden={activeSettingsTab !== 'tax'}>
           <h2>Tax &amp; receipt settings</h2>
-          <p className="restaurant-settings-help">These settings control POS tax calculations. The selected settings are copied into each finalized POS order so historical receipts remain unchanged if you update the store later.</p>
           <div className="restaurant-settings-tax-grid">
             <label className="restaurant-settings-switch-row">
               <span>VAT registered</span>
