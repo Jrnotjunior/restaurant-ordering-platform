@@ -239,7 +239,7 @@ export function RestaurantInventoryPage({ restaurantId }: Props) {
       .inventory-edit-modal-actions{grid-column:1/-1;display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:6px}
       @media(max-width:480px){.inventory-edit-modal{padding:18px}.inventory-edit-modal-form{grid-template-columns:minmax(0,1fr)}.inventory-edit-modal-help,.inventory-edit-modal-actions{grid-column:1}}
     `}</style>
-    <header className="inventory-header"><div><h1>Inventory</h1><p>Track ingredients and supplies, record stock used or received, and spot items that need restocking. Inventory is separate from menu product availability.</p></div></header>
+    
     {error && <div className="inventory-message error" role="alert">{error}</div>}
     {notice && <div className="inventory-message notice" role="status">{notice}</div>}
     <div className="inventory-cards">
