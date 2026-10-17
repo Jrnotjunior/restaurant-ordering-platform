@@ -1014,7 +1014,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
 
         <div className="restaurant-settings-card" id="store-tax" role="tabpanel" aria-labelledby="store-settings-tab-tax" hidden={activeSettingsTab !== 'tax'}>
-          <h2>Tax &amp; receipt settings</h2>
           <div className="restaurant-settings-tax-grid">
             <label className="restaurant-settings-switch-row">
               <span>VAT registered</span>
