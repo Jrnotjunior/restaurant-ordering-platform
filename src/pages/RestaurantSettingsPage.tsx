@@ -243,7 +243,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     try {
       const { data, error: loadError } = await supabase
         .from('restaurants')
-        .select('tagline,store_address,location_text,ordering_enabled,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate,cash_on_delivery_enabled,automatic_rider_assignment_enabled,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,delivery_location_latitude,delivery_location_longitude')
+        .select('tagline,tagline,store_address,location_text,ordering_enabled,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate,cash_on_delivery_enabled,automatic_rider_assignment_enabled,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,delivery_location_latitude,delivery_location_longitude')
          .eq('id', restaurantId)
         .single();
 
@@ -538,7 +538,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       const { error: saveError } = await supabase
         .from('restaurants')
         .update({
-          tagline: restaurantTagline.trim() || null,
           store_address: address.trim() || null,
           operating_hours: normalizedHours,
           ordering_enabled: orderingEnabled,
@@ -551,6 +550,12 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .eq('id', restaurantId);
 
       if (saveError) throw saveError;
+
+      const { error: taglineSaveError } = await supabase.rpc('update_restaurant_tagline', {
+        p_restaurant_id: restaurantId,
+        p_tagline: restaurantTagline.trim(),
+      });
+      if (taglineSaveError) throw taglineSaveError;
 
       // Save delivery pricing through an owner-scoped RPC. PostgREST UPDATE can
       // return no error when RLS filters the row, so the RPC must return the
