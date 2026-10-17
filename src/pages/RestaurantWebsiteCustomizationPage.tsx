@@ -555,8 +555,6 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
 
         {activeWebsiteSection === 'social' ? <div role="tabpanel" id="website-customization-panel-social" aria-labelledby="website-customization-tab-social">
         <div className="website-customization-card">
-          <h2>Social Media Links</h2>
-          <p className="website-customization-help">Add your restaurant's Facebook, Instagram, and TikTok profile URLs. These links appear in the Follow Us section of your customer-facing website footer. Leave a field blank to show that network as unavailable.</p>
           <div className="website-customization-grid">
             {([
               ['facebook', 'Facebook URL', 'https://www.facebook.com/your-restaurant'],
