@@ -365,7 +365,8 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-phone.is-dragging{cursor:grabbing;box-shadow:0 30px 70px rgba(15,23,42,.34)}
         .website-customization-phone-screen{width:100%;height:calc(100% - 34px);box-sizing:border-box;overflow:auto;border-radius:25px;scrollbar-width:none}
         .website-customization-phone-screen::-webkit-scrollbar{display:none}
-        .website-customization-branding-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(220px,.6fr);gap:24px;margin-top:18px;align-items:start}
+        .website-customization-branding-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(220px,.6fr);gap:24px;margin-top:0;align-items:start}
+        .website-customization-branding-grid .website-customization-logo-row{margin-top:0}
         .website-customization-subheading{display:block;font-size:13px;font-weight:700;color:#475569;margin-bottom:8px}
         .website-customization-color-control{display:flex;align-items:center;gap:10px}
         .website-customization-color-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:18px}
