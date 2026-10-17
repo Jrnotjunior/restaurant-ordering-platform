@@ -18,8 +18,11 @@
 }
 .app-shell > main:has(> .customer-legal-page) {
   display: block;
-  min-height: 0;
+  flex: 1 0 auto;
+  min-width: 0;
+  min-height: auto;
   height: auto;
+  max-height: none;
   overflow: visible;
 }
 .customer-legal-intro { margin-bottom: 24px; }
