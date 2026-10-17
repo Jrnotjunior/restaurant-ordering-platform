@@ -193,6 +193,7 @@ function normalizeHours(value: unknown): OperatingHours {
 export function RestaurantSettingsPage({ restaurantId }: Props) {
   const { setUnsavedChanges } = useOwnerUnsavedChanges();
   const [address, setAddress] = useState('');
+  const [restaurantTagline, setRestaurantTagline] = useState('');
   const [hours, setHours] = useState<OperatingHours>(DEFAULT_HOURS);
   const [vatRegistered, setVatRegistered] = useState(false);
   const [pricesVatInclusive, setPricesVatInclusive] = useState(false);
@@ -242,11 +243,12 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     try {
       const { data, error: loadError } = await supabase
         .from('restaurants')
-        .select('store_address,location_text,ordering_enabled,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate,cash_on_delivery_enabled,automatic_rider_assignment_enabled,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,delivery_location_latitude,delivery_location_longitude')
+        .select('tagline,store_address,location_text,ordering_enabled,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate,cash_on_delivery_enabled,automatic_rider_assignment_enabled,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,delivery_location_latitude,delivery_location_longitude')
          .eq('id', restaurantId)
         .single();
 
       if (loadError) throw loadError;
+      setRestaurantTagline(data?.tagline ?? '');
       setAddress(data?.store_address ?? data?.location_text ?? '');
       setHours(normalizeHours(data?.operating_hours));
       setOrderingEnabled(data?.ordering_enabled !== false);
@@ -536,6 +538,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       const { error: saveError } = await supabase
         .from('restaurants')
         .update({
+          tagline: restaurantTagline.trim() || null,
           store_address: address.trim() || null,
           operating_hours: normalizedHours,
           ordering_enabled: orderingEnabled,
@@ -623,6 +626,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         throw new Error(`The ${mismatchedDay.label} operating hours were not stored correctly. Please try again.`);
       }
 
+      setRestaurantTagline(savedRow?.tagline ?? restaurantTagline.trim());
       setAddress(savedAddress);
       setHours(savedHours);
       setMessage('Store settings saved successfully.');
@@ -743,6 +747,22 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       {message && <div className="owner-feedback-toast is-success" role="status"><span className="owner-feedback-toast-icon" aria-hidden="true">✓</span><div><strong>Changes saved</strong><p>{message}</p></div></div>}
 
       <form className="restaurant-settings-form" onSubmit={(event) => { event.preventDefault(); setShowSaveConfirmation(true); }}>
+        <div className="restaurant-settings-card">
+          <h2>Restaurant profile</h2>
+          <p className="restaurant-settings-help">Set the tagline shown beneath your restaurant name on the customer-facing menu. Leave it blank to hide the subtitle.</p>
+          <label className="restaurant-settings-field" style={{ display: 'grid', gap: 7, marginTop: 16 }}>
+            <span>Restaurant tagline</span>
+            <input
+              type="text"
+              maxLength={120}
+              value={restaurantTagline}
+              placeholder="Enter your restaurant tagline"
+              disabled={loading || saving}
+              onChange={(event) => { setRestaurantTagline(event.target.value); setMessage(''); setError(''); }}
+            />
+          </label>
+        </div>
+
         <div className="restaurant-settings-card">
           <h2>Store status</h2>
           <p className="restaurant-settings-help">Operating hours automatically control the normal opening and closing schedule. Use this switch when you need to manually close the store outside that schedule.</p>
