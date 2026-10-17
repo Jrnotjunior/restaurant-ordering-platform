@@ -925,7 +925,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         </div>
 
                 <div className="restaurant-settings-card" id="store-rider" role="tabpanel" aria-labelledby="store-settings-tab-rider" hidden={activeSettingsTab !== 'rider'}>
-          <h2>Automatic Rider Assignment</h2>
           <label className="restaurant-settings-switch-row">
             <span>Auto-assign delivery orders</span>
             <span className="restaurant-settings-switch">
