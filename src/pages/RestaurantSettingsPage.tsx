@@ -819,7 +819,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           </div>
           <p className="restaurant-settings-help" style={{ marginTop: 12 }}>Example: ₱10 per 500 meters means 1.2 km = 3 distance increments. A base fee, if configured, is added on top.</p>
           <div style={{ marginTop: 18 }}>
-            <p className="restaurant-settings-help" style={{ marginBottom: 10 }}><strong>Restaurant delivery location</strong><br />This is the origin Google Routes uses for driving-distance calculations.</p>
+            <p className="restaurant-settings-help" style={{ marginBottom: 10 }}><strong>Store address</strong><br />Set your restaurant's address by searching or adjusting the map pin. This location is also the origin Google Routes uses to calculate delivery distances and fees.</p>
             <MapboxDeliveryLocationPicker
               variant="restaurant"
               disabled={loading || saving}
