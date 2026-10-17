@@ -117,7 +117,7 @@ export function RestaurantRecipesPage({ restaurantId }: Props) {
   }
 
   return <section className="restaurant-page" style={{display:'grid',gap:18,maxWidth:1100}}>
-    <header><h1 style={{margin:'0 0 6px'}}>Recipe & Ingredient Linking</h1><p style={{margin:0,color:'var(--muted,#64748b)',lineHeight:1.5}}>Define how much stock each menu product uses. Ingredients are deducted automatically when an order is completed.</p></header>
+    
     {error && <div role="alert" style={{padding:12,borderRadius:10,background:'#fef2f2',color:'#991b1b'}}>{error}</div>}
     {notice && <div role="status" style={{padding:12,borderRadius:10,background:'#eff6ff',color:'#1d4ed8'}}>{notice}</div>}
     <section style={{padding:18,border:'1px solid var(--border,#e2e8f0)',borderRadius:14,background:'var(--surface,#fff)'}}>
