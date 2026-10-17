@@ -28,7 +28,7 @@ const ownerNavigationItems: NavigationItem[] = [
   { label: 'Recipes', href: '#restaurant/recipes', icon: 'products' },
   { label: 'Loyalty', href: '#restaurant/loyalty', icon: 'loyalty' },
   { label: 'Store Settings', href: '#restaurant/settings', icon: 'settings' },
-  { label: 'Customize', href: '#restaurant/website-customization', icon: 'customization' },
+  { label: 'Website & Branding', href: '#restaurant/website-customization', icon: 'customization' },
 ];
 
 
