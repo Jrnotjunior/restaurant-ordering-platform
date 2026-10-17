@@ -1,6 +1,13 @@
 .customer-legal-page {
+  position: relative;
+  display: block;
   box-sizing: border-box;
   width: min(720px, calc(100% - 32px));
+  max-width: 100%;
+  min-width: 0;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
   margin: 32px auto 48px;
   padding: clamp(22px, 5vw, 36px);
   border: 1px solid var(--color-border, #e2e8f0);
@@ -8,6 +15,12 @@
   background: var(--color-surface, #fff);
   color: var(--color-text, #111827);
   box-shadow: 0 18px 48px rgb(15 23 42 / 7%);
+}
+.app-shell > main:has(> .customer-legal-page) {
+  display: block;
+  min-height: 0;
+  height: auto;
+  overflow: visible;
 }
 .customer-legal-intro { margin-bottom: 24px; }
 .customer-legal-eyebrow {
