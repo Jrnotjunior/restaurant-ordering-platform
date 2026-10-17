@@ -106,14 +106,15 @@
     flex-direction: row;
     flex-wrap: nowrap;
     align-items: center;
-    justify-content: center;
-    gap: 0.45rem;
+    justify-content: space-between;
+    gap: 0.75rem;
     padding-top: 0.4rem;
-    text-align: center;
+    text-align: initial;
     white-space: nowrap;
+    width: 100%;
   }
-  .site-footer-copyright { align-items: center; min-width: 0; }
-  .site-footer-powered-by { flex-shrink: 0; justify-content: center; gap: 0.2rem; font-size: 0.68rem; white-space: nowrap; }
+  .site-footer-copyright { align-items: flex-start; min-width: 0; text-align: left; }
+  .site-footer-powered-by { flex-shrink: 0; justify-content: flex-end; gap: 0.2rem; font-size: 0.68rem; white-space: nowrap; text-align: right; }
   .site-footer-web2table-logo { max-width: 2rem; max-height: 1rem; }
   .site-footer-copyright small { font-size: 0.68rem; white-space: nowrap; }
 }
