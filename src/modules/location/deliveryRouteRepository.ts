@@ -18,7 +18,16 @@ export async function calculateDeliveryRoute(
   const { data, error } = await supabase.functions.invoke('calculate-delivery-route', {
     body: { restaurantId, latitude, longitude },
   });
-  if (error) throw new Error(error.message || 'Unable to calculate delivery distance.');
+  if (error) {
+    // Supabase wraps non-2xx Edge Function responses in a FunctionsHttpError.
+    // Read its JSON body so actionable route errors reach the checkout UI.
+    const context = (error as { context?: Response }).context;
+    if (context && typeof context.clone === 'function') {
+      const responseBody = await context.clone().json().catch(() => null) as { error?: string } | null;
+      if (responseBody?.error) throw new Error(responseBody.error);
+    }
+    throw new Error(error.message || 'Unable to calculate delivery distance.');
+  }
   if (!data?.quoteId) throw new Error(data?.error || 'Unable to calculate delivery distance.');
   return {
     quoteId: data.quoteId,
