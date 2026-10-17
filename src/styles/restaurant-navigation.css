@@ -264,14 +264,78 @@
 @media(max-width:900px){.restaurant-operations-shell-owner{padding-left:72px}.restaurant-owner-sidebar{width:72px;padding:18px 8px}.restaurant-owner-brand{justify-content:center;padding:0 0 22px}.restaurant-owner-sidebar-nav a span{display:none}.restaurant-owner-brand-name-only{justify-content:center;text-align:center;padding:0 6px 22px}.restaurant-owner-brand-name-only>span{display:block!important;min-width:0}.restaurant-owner-brand-name-only strong{font-size:12px;overflow-wrap:anywhere}.restaurant-owner-sidebar-nav a{justify-content:center;padding:0}.restaurant-owner-topbar{left:72px;padding:0 16px}.restaurant-owner-user-copy,.restaurant-owner-chevron{display:none}}
 @media(max-width:560px){.restaurant-owner-topbar-status div{display:none}.restaurant-owner-topbar{gap:10px}.restaurant-owner-topbar-divider{display:none}}
 
-.restaurant-dispatch-tabs-slot {
-  flex: 1 1 auto;
-  min-width: 0;
+/* Dispatch order-type filters belong to the Dispatch page, not global navigation. */
+.restaurant-dispatch-tabs {
+  width: 100%;
+  margin: 0 0 16px;
+  padding: 0 0 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #e2e8f0;
 }
 
-.restaurant-dispatch-tabs-slot .restaurant-dispatch-tabs {
-  margin: 0;
-  width: 100%;
+.restaurant-dispatch-tab {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #526174;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.restaurant-dispatch-tab:hover {
+  background: #f1f5f9;
+  color: #172033;
+}
+
+.restaurant-dispatch-tab.is-active {
+  border-color: #dbe3ed;
+  background: #fff;
+  color: #172033;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .06);
+}
+
+.restaurant-dispatch-tab:focus-visible {
+  outline: 2px solid #172033;
+  outline-offset: 2px;
+}
+
+.restaurant-dispatch-tab-count {
+  min-width: 20px;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: #e9eef5;
+  color: #334155;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.restaurant-dispatch-tab.is-active .restaurant-dispatch-tab-count {
+  background: #172033;
+  color: #fff;
+}
+
+@media (max-width: 560px) {
+  .restaurant-dispatch-tabs {
+    gap: 4px;
+  }
+
+  .restaurant-dispatch-tab {
+    flex: 1 1 auto;
+    padding: 7px 9px;
+  }
 }
 
 /* Keep the account control accessible above the customer closed-store overlay.
