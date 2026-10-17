@@ -388,7 +388,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
       <form className="website-customization-form" onSubmit={(event: FormEvent) => { event.preventDefault(); setShowSaveConfirmation(true); }}>
         <div className="website-customization-header">
           <p className="eyebrow">Customer-facing website</p>
-          <h1 style={{ margin: 0 }}>Customize</h1>
+          <h1 style={{ margin: 0 }}>Website &amp; Branding</h1>
           <p className="website-customization-help" style={{ marginTop: 8 }}>Customize your restaurant's branding, homepage content, and visible customer-facing sections. These settings affect this restaurant only.</p>
         </div>
 
