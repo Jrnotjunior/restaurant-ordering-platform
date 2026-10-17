@@ -8,8 +8,8 @@ set is_active = false,
 where id = 5
   and package_key = 'dispatch_delivery';
 
-delete from public.system_package_modules
-where package_id = 5;
+-- Keep the existing package-module mappings so restaurants already assigned
+-- Package 5 continue working until an administrator migrates them deliberately.
 
 -- Existing restaurants assigned to Package 5 are intentionally not reassigned
 -- automatically. Their subscriptions remain referentially valid, but inactive
