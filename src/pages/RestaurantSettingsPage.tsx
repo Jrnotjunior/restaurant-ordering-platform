@@ -753,7 +753,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .restaurant-paymongo-error{display:grid;gap:4px;margin:0 0 16px;padding:13px 15px;border:1px solid #fecaca;border-radius:10px;background:#fef2f2;color:#991b1b;line-height:1.4}
         .restaurant-paymongo-error strong{font-size:14px}
         .restaurant-paymongo-error span{font-size:13px;font-weight:600;overflow-wrap:anywhere}
-        @media(max-width:700px){.restaurant-settings-hours-head{display:none}.restaurant-settings-day{grid-template-columns:1fr 1fr;padding:12px}.restaurant-settings-day-name{grid-column:1/-1}.restaurant-settings-toggle{justify-content:flex-start}.restaurant-settings-actions .button{width:100%}}
+        @media(max-width:700px){.restaurant-settings-header h1{font-size:26px}.restaurant-settings-hours-head{display:none}.restaurant-settings-day{grid-template-columns:1fr 1fr;padding:10px}.restaurant-settings-day-name{grid-column:1/-1}.restaurant-settings-toggle{justify-content:flex-start}.restaurant-settings-actions .button{width:100%}}
       `}</style>
 
       {error && <div className="owner-feedback-toast is-error" role="alert"><span className="owner-feedback-toast-icon" aria-hidden="true">!</span><div><strong>Couldn't complete that action</strong><p>{error}</p></div></div>}
