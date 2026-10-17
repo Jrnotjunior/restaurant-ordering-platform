@@ -151,6 +151,8 @@ export function Header({ cartCount = 0 }: HeaderProps) {
           </a>
         ) : null}
 
+        <a className="header-legal-link" href="#legal">Legal &amp; Policies</a>
+
         <div className="header-account-menu">
           {logoutMessage ? <span className={`header-logout-message is-${logoutMessage.type}`} role={logoutMessage.type === 'error' ? 'alert' : 'status'}>{logoutMessage.text}</span> : null}
           <button className="header-account" type="button" aria-label="Account" aria-expanded={user ? accountOpen : undefined} title="Account" onClick={() => {
