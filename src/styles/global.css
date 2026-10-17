@@ -1333,6 +1333,40 @@ textarea {
 
 /* Shared compact management UI, aligned with the Business Reports reference. */
 
+
+/* Align real owner-page components with the Business Reports reference. */
+.restaurant-page :is(.restaurant-owner-dashboard-stat, .restaurant-owner-dashboard-chart,
+  .restaurant-payroll-panel, .restaurant-payroll-workspace, .inventory-card, .inventory-panel,
+  .restaurant-order-column, .restaurant-sales-summary-item) {
+  border: 1px solid #dce4ee;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .025);
+}
+.restaurant-page :is(.restaurant-owner-dashboard-stat, .restaurant-owner-dashboard-chart,
+  .restaurant-payroll-panel, .restaurant-payroll-workspace, .inventory-card, .inventory-panel,
+  .restaurant-sales-summary-item) { padding: 17px; }
+.restaurant-page :is(.restaurant-order-payment-tabs) {
+  display: flex; align-items: center; flex-wrap: nowrap; gap: 22px;
+  overflow-x: auto; border-bottom: 1px solid #dce4ee;
+}
+.restaurant-page .restaurant-order-payment-tabs button {
+  flex: 0 0 auto; border: 0; border-bottom: 2px solid transparent;
+  border-radius: 0; background: transparent; color: #64748b; padding: 9px 0 10px;
+}
+.restaurant-page .restaurant-order-payment-tabs button.is-active {
+  border-bottom-color: #111827; background: transparent; color: #111827;
+}
+.restaurant-page :is(.restaurant-payroll-table, .inventory-table) th {
+  color: #64748b; font-size: 11px; font-weight: 700;
+  letter-spacing: .035em; text-transform: uppercase;
+}
+@media (max-width: 760px) {
+  .restaurant-page :is(.restaurant-owner-dashboard-stat, .restaurant-owner-dashboard-chart,
+    .restaurant-payroll-panel, .restaurant-payroll-workspace, .inventory-card, .inventory-panel,
+    .restaurant-sales-summary-item) { padding: 14px; }
+}
+
 /* Unified Restaurant Owner UI: Business Reports is the spacing, card, and tab-navigation reference. */
 .restaurant-page {
   display: grid;
