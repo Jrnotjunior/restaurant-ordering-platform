@@ -119,9 +119,7 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
   return (
     <main className="restaurant-owner-auth-page">
       <section className="restaurant-owner-auth-card" aria-labelledby="account-login-title">
-        <p className="eyebrow">{staffOnly ? 'Restaurant team' : 'Account access'}</p>
-        <h1 id="account-login-title">{staffOnly ? 'Welcome back, team.' : 'Welcome back.'}</h1>
-        <p className="restaurant-login-description">{staffOnly ? 'Sign in securely to access your restaurant team account and daily tasks.' : 'Sign in to your account to manage your restaurant, view orders, and continue with Web2Table.'}</p>
+        <h1 className="restaurant-login-title" id="account-login-title">{staffOnly ? 'Team Login' : 'Login'}</h1>
         {(error || authError) && <div className="restaurant-dashboard-error" role="alert">{error || authError}</div>}
 
         {staffOnly ? (
