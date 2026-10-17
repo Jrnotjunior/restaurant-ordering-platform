@@ -114,9 +114,9 @@
     width: 100%;
   }
   .site-footer-copyright { align-items: flex-start; min-width: 0; text-align: left; }
-  .site-footer-powered-by { flex-shrink: 0; justify-content: flex-end; gap: 0.2rem; font-size: 0.68rem; white-space: nowrap; text-align: right; }
+  .site-footer-powered-by { flex-shrink: 0; justify-content: flex-end; gap: 0.25rem; font-size: 0.76rem; white-space: nowrap; text-align: right; }
   .site-footer-web2table-logo { max-width: 2rem; max-height: 1rem; }
-  .site-footer-copyright small { font-size: 0.68rem; white-space: nowrap; }
+  .site-footer-copyright small { font-size: 0.76rem; white-space: nowrap; }
 }
 @media (prefers-reduced-motion: reduce) {
   .site-footer-social-link, .site-footer-legal-title { transition: none; }
