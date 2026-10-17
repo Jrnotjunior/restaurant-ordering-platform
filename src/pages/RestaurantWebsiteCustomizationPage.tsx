@@ -199,18 +199,10 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
 
       const { data: publicUrlData } = supabase.storage.from('restaurant-logos').getPublicUrl(path);
       const publicUrl = publicUrlData.publicUrl;
-      const { data: savedRestaurant, error: saveError } = await supabase
-        .from('restaurants')
-        .update({ logo_url: publicUrl })
-        .eq('id', restaurantId)
-        .select('id, logo_url')
-        .maybeSingle();
-      if (saveError) throw saveError;
-      if (!savedRestaurant?.logo_url) {
-        throw new Error('The logo uploaded, but Supabase did not save it to this restaurant. Check the restaurant owner permissions and try again.');
-      }
-
-      setLogoUrl(savedRestaurant.logo_url);
+      // Match favicon behavior: update local customization state after upload,
+      // then persist the logo URL through the normal Save workflow.
+      setLogoUrl(publicUrl);
+      setMessage('Logo uploaded. Save your website customization to publish it.');
       setMessage('Restaurant logo updated successfully.');
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : 'Unable to upload restaurant logo.');
@@ -233,6 +225,15 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .from('restaurant_website_customizations')
         .upsert({ restaurant_id: restaurantId, theme: websiteTheme, storefront }, { onConflict: 'restaurant_id' });
       if (saveError) throw saveError;
+
+      // Persist the logo through an owner-checked RPC, since direct restaurant
+      // updates may be filtered by the restaurants table's RLS policy.
+      const { error: logoSaveError } = await supabase.rpc('update_restaurant_logo', {
+        p_restaurant_id: restaurantId,
+        p_logo_url: logoUrl || null,
+      });
+      if (logoSaveError) throw logoSaveError;
+
       setMessage('Website customization saved successfully.');
       setUnsavedChanges(false);
     } catch (saveError) {
