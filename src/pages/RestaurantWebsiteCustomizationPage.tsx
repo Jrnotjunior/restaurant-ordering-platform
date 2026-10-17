@@ -225,6 +225,15 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .from('restaurant_website_customizations')
         .upsert({ restaurant_id: restaurantId, theme: websiteTheme, storefront }, { onConflict: 'restaurant_id' });
       if (saveError) throw saveError;
+
+      // Persist the logo through an owner-checked RPC, since direct restaurant
+      // updates may be filtered by the restaurants table's RLS policy.
+      const { error: logoSaveError } = await supabase.rpc('update_restaurant_logo', {
+        p_restaurant_id: restaurantId,
+        p_logo_url: logoUrl || null,
+      });
+      if (logoSaveError) throw logoSaveError;
+
       setMessage('Website customization saved successfully.');
       setUnsavedChanges(false);
     } catch (saveError) {
