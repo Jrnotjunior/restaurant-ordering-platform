@@ -575,8 +575,8 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         deliveryLocationLatitude !== null &&
         deliveryLocationLongitude !== null &&
         (
-          Number(savedRow.delivery_location_latitude) !== deliveryLocationLatitude ||
-          Number(savedRow.delivery_location_longitude) !== deliveryLocationLongitude
+          Math.abs(Number(savedRow.delivery_location_latitude) - deliveryLocationLatitude) > 0.000001 ||
+          Math.abs(Number(savedRow.delivery_location_longitude) - deliveryLocationLongitude) > 0.000001
         )
       ) {
         throw new Error('The restaurant delivery location was not saved. Please try again.');
