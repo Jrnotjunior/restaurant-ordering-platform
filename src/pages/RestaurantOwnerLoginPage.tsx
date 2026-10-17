@@ -153,7 +153,7 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
           </form>
         )}
 
-        {!staffOnly && <p className="restaurant-auth-switch">New customer? <a href="#signup">Create account</a></p>}
+        {!staffOnly && <p className="restaurant-auth-switch">New customer? <a href="#signup">Register</a></p>}
         {staffOnly && <p className="restaurant-auth-switch"><a href="#account">Back to sign in</a></p>}
       </section>
     </main>
