@@ -827,3 +827,105 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
     font-size: 11px;
   }
 }
+
+
+/* Customer signup page follows the same card format as login. */
+.restaurant-owner-auth-page:has(.customer-signup-card) {
+  padding: 24px 20px;
+}
+.restaurant-owner-auth-card.customer-signup-card {
+  display: block;
+  width: min(380px, 100%);
+  min-height: 0;
+  padding: 28px;
+}
+.restaurant-owner-auth-card.customer-signup-card > .eyebrow {
+  margin: 0 0 10px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+.restaurant-owner-auth-card.customer-signup-card > h1 {
+  margin: 0 0 8px;
+  color: #111827;
+  font-size: clamp(28px, 4vw, 34px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -.025em;
+}
+.restaurant-owner-auth-card.customer-signup-card > p:not(.eyebrow):not(.restaurant-auth-switch) {
+  margin: 0 0 20px;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.55;
+}
+.restaurant-owner-auth-card.customer-signup-card .restaurant-owner-auth-form {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+.restaurant-owner-auth-card.customer-signup-card .restaurant-owner-auth-form > label,
+.restaurant-owner-auth-card.customer-signup-card .customer-signup-name-row > label {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+  margin: 0;
+  color: #111827;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.restaurant-owner-auth-card.customer-signup-card .restaurant-owner-auth-form input:not([type="checkbox"]) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 11px 13px;
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+  background: #eaf2ff;
+  color: #111827;
+  font: inherit;
+  font-weight: 400;
+}
+.restaurant-owner-auth-card.customer-signup-card .restaurant-owner-auth-form input:not([type="checkbox"]):focus {
+  border-color: #111827;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(17, 24, 39, .08);
+}
+.restaurant-owner-auth-card.customer-signup-card .customer-signup-name-row {
+  gap: 10px;
+}
+.restaurant-owner-auth-card.customer-signup-card .customer-personal-info-consent {
+  margin: 2px 0 4px;
+  font-size: 11px !important;
+  line-height: 1.45;
+}
+.restaurant-owner-auth-card.customer-signup-card .restaurant-owner-auth-form > button.button[type="submit"] {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  margin: 2px 0 0;
+}
+.restaurant-owner-auth-card.customer-signup-card .restaurant-auth-switch {
+  margin: 18px 0 0 !important;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+}
+@media (max-width: 420px) {
+  .restaurant-owner-auth-page:has(.customer-signup-card) {
+    padding: 20px 16px;
+  }
+  .restaurant-owner-auth-card.customer-signup-card {
+    padding: 24px 20px;
+  }
+  .restaurant-owner-auth-card.customer-signup-card .customer-signup-name-row {
+    gap: 12px;
+  }
+}
