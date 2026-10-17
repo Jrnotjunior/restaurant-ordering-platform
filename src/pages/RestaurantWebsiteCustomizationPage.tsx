@@ -640,7 +640,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         </div> : null}
 
         <div className="website-customization-actions-bar">
-          <button
+          {activeWebsiteSection === 'colors' ? <button
             className="button button-secondary restaurant-compact-action"
             type="button"
             disabled={loading || saving}
@@ -660,7 +660,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
             }}
           >
             Back to Default
-          </button>
+          </button> : null}
           <button className="button button-primary restaurant-compact-action" type="submit" disabled={loading || saving}>{saving ? 'Saving…' : 'Save'}</button>
         </div>
       </form>
