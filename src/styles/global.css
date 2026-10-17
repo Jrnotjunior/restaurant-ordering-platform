@@ -1334,6 +1334,45 @@ textarea {
 /* Shared compact management UI, aligned with the Business Reports reference. */
 
 
+
+/* Refine real owner-page headings and cards to match Business Reports. */
+.restaurant-page :is(.inventory-header, .business-reports-header, .restaurant-page-header,
+  .restaurant-role-dashboard-header, .restaurant-employees-card-header, .restaurant-settings-header) {
+  display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap;
+}
+.restaurant-page :is(.inventory-header, .business-reports-header, .restaurant-page-header,
+  .restaurant-role-dashboard-header, .restaurant-settings-header) h1 {
+  margin:0 0 6px; font-family:var(--font-heading,'Manrope',sans-serif);
+  font-size:clamp(24px,3vw,32px); line-height:1.2; letter-spacing:-.03em;
+}
+.restaurant-page :is(.inventory-header, .business-reports-header, .restaurant-page-header,
+  .restaurant-role-dashboard-header, .restaurant-settings-header) p {
+  color:var(--muted,#64748b); line-height:1.5;
+}
+.restaurant-page :is(.inventory-card, .inventory-panel, .business-reports-card, .business-reports-panel,
+  .restaurant-settings-card, .restaurant-employees-card, .restaurant-payroll-panel,
+  .restaurant-owner-dashboard-stat, .restaurant-owner-dashboard-chart) {
+  min-width:0; border:1px solid #dce4ee; border-radius:14px;
+  background:#fff; box-shadow:0 1px 2px rgba(15,23,42,.025);
+}
+.restaurant-page :is(.inventory-card, .inventory-panel, .business-reports-card, .business-reports-panel,
+  .restaurant-settings-card, .restaurant-employees-card, .restaurant-payroll-panel,
+  .restaurant-owner-dashboard-stat, .restaurant-owner-dashboard-chart) { padding:17px; }
+.restaurant-page :is(.inventory-panel, .business-reports-panel, .restaurant-settings-card,
+  .restaurant-employees-card, .restaurant-payroll-panel) > h2 {
+  margin:0 0 8px; font-family:var(--font-heading,'Manrope',sans-serif);
+  font-size:18px; line-height:1.35; letter-spacing:-.02em;
+}
+.restaurant-page :is(.inventory-cards, .business-reports-cards, .restaurant-owner-dashboard-stats) { gap:12px; }
+.restaurant-page :is(.inventory-panel-subtitle, .business-reports-panel > p) {
+  color:#64748b; font-size:13px; line-height:1.5;
+}
+@media(max-width:760px) {
+  .restaurant-page :is(.inventory-card, .inventory-panel, .business-reports-card, .business-reports-panel,
+    .restaurant-settings-card, .restaurant-employees-card, .restaurant-payroll-panel,
+    .restaurant-owner-dashboard-stat, .restaurant-owner-dashboard-chart) { padding:14px; }
+}
+
 /* Align real owner-page components with the Business Reports reference. */
 .restaurant-page :is(.restaurant-owner-dashboard-stat, .restaurant-owner-dashboard-chart,
   .restaurant-payroll-panel, .restaurant-payroll-workspace, .inventory-card, .inventory-panel,
