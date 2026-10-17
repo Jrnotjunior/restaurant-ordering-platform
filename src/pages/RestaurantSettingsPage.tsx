@@ -709,6 +709,14 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .restaurant-paymongo-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
         .restaurant-settings-help{margin:0;color:#64748b;line-height:1.5;font-size:14px}
         .restaurant-settings-form{display:grid;gap:16px}
+        .restaurant-settings-jump-nav{position:sticky;top:8px;z-index:20;display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:10px 12px;border:1px solid #dce4ee;border-radius:12px;background:rgba(255,255,255,.96);box-shadow:0 4px 14px rgba(15,23,42,.05);backdrop-filter:blur(8px)}
+        .restaurant-settings-jump-label{margin-right:4px;color:#64748b;font-size:12px;font-weight:700}
+        .restaurant-settings-jump-nav a{display:inline-flex;align-items:center;min-height:30px;padding:5px 10px;border:1px solid #dbe2ea;border-radius:7px;color:#334155;background:#fff;font-size:12px;font-weight:650;text-decoration:none;white-space:nowrap}
+        .restaurant-settings-jump-nav a:hover{border-color:#94a3b8;background:#f8fafc;color:#0f172a}
+        .restaurant-settings-jump-nav a:focus-visible{outline:2px solid #334155;outline-offset:2px}
+        .restaurant-settings-card[id]{scroll-margin-top:100px}
+        .restaurant-settings-card[id]:focus{outline:2px solid #94a3b8;outline-offset:3px}
+        @media(max-width:700px){.restaurant-settings-jump-nav{position:static;gap:6px}.restaurant-settings-jump-label{width:100%}.restaurant-settings-jump-nav a{flex:1 1 auto;justify-content:center}}
         .restaurant-settings-field{display:grid;gap:7px;font-weight:600;font-size:14px}
         .restaurant-settings-field input[type=text]{width:100%;min-height:40px;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:9px;padding:8px 11px;font:inherit;color:#0f172a;background:#fff}
         .restaurant-settings-field input[type=number]{width:64px;min-height:38px;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:9px;padding:8px 10px;font:inherit;color:#0f172a;background:#fff;-moz-appearance:textfield}
@@ -760,7 +768,19 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       {message && <div className="owner-feedback-toast is-success" role="status"><span className="owner-feedback-toast-icon" aria-hidden="true">✓</span><div><strong>Changes saved</strong><p>{message}</p></div></div>}
 
       <form className="restaurant-settings-form" onSubmit={(event) => { event.preventDefault(); setShowSaveConfirmation(true); }}>
-        <div className="restaurant-settings-card">
+        <nav className="restaurant-settings-jump-nav" aria-label="Store settings sections">
+          <span className="restaurant-settings-jump-label">Jump to section</span>
+          <a href="#store-profile">Profile</a>
+          <a href="#store-status">Store status</a>
+          <a href="#store-hours">Operating hours</a>
+          <a href="#store-delivery">Delivery pricing</a>
+          <a href="#store-rider">Rider assignment</a>
+          <a href="#store-cod">Cash on Delivery</a>
+          <a href="#store-payments">Online payments</a>
+          <a href="#store-tax">Tax &amp; receipts</a>
+        </nav>
+
+        <div className="restaurant-settings-card" id="store-profile" tabIndex={-1}>
           <h2>Restaurant profile</h2>
           <p className="restaurant-settings-help">Set the tagline shown beneath your restaurant name on the customer-facing menu. Leave it blank to hide the subtitle.</p>
           <label className="restaurant-settings-field" style={{ display: 'grid', gap: 7, marginTop: 16 }}>
@@ -776,7 +796,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           </label>
         </div>
 
-        <div className="restaurant-settings-card">
+        <div className="restaurant-settings-card" id="store-status" tabIndex={-1}>
           <h2>Store status</h2>
           <p className="restaurant-settings-help">Operating hours automatically control the normal opening and closing schedule. Use this switch when you need to manually close the store outside that schedule.</p>
           <label className="restaurant-settings-switch-row">
@@ -797,7 +817,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Turn it off to close ordering immediately. Turn it back on to return control to the automatic operating hours.</p>
         </div>
 
-                <div className="restaurant-settings-card">
+                <div className="restaurant-settings-card" id="store-hours" tabIndex={-1}>
           <h2>Operating hours</h2>
           <p className="restaurant-settings-help">Set the hours customers can visit the store. {openDays} of 7 days are currently open.</p>
           <div className="restaurant-settings-days">
@@ -841,7 +861,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           </div>
         </div>
 
-                <div className="restaurant-settings-card">
+                <div className="restaurant-settings-card" id="store-delivery" tabIndex={-1}>
           <h2>Delivery pricing</h2>
           <p className="restaurant-settings-help">Delivery fees are calculated automatically from the restaurant to the customer's confirmed Google Maps location. You no longer need to configure Barangays and individual shipping fees.</p>
           <div className="restaurant-delivery-pricing-grid">
@@ -875,7 +895,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           </div>
         </div>
 
-                <div className="restaurant-settings-card">
+                <div className="restaurant-settings-card" id="store-rider" tabIndex={-1}>
           <h2>Automatic Rider Assignment</h2>
           <p className="restaurant-settings-help">Automatically assign a ready delivery order to an available rider. The system assigns ready delivery orders to an available rider using the restaurant's rider workload and delivery history.</p>
           <label className="restaurant-settings-switch-row">
@@ -895,7 +915,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Controlled by the System Administrator. Contact the System Administrator to request a workflow change.</p>
         </div>
 
-                <div className="restaurant-settings-card">
+                <div className="restaurant-settings-card" id="store-cod" tabIndex={-1}>
           <h2>Cash on Delivery</h2>
           <p className="restaurant-settings-help">Allow customers to place delivery orders and pay in cash when the order is received. Turning this off requires delivery customers to use Online Payment.</p>
           <label className="restaurant-settings-switch-row">
@@ -915,7 +935,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Controlled by the System Administrator. Contact the System Administrator to request a workflow change.</p>
         </div>
 
-                <div className="restaurant-settings-card restaurant-paymongo-card">
+                <div className="restaurant-settings-card restaurant-paymongo-card" id="store-payments" tabIndex={-1}>
           {paymongoError && <div className="restaurant-paymongo-error" role="alert">
             <strong>PayMongo connection error</strong>
             <span>{paymongoError}</span>
@@ -962,9 +982,9 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           <p className="restaurant-settings-help" style={{ marginTop: 12 }}>Test mode uses a PayMongo simulated merchant account, so no real identity verification is required. Production live payments will use the same restaurant-specific architecture with real merchant onboarding after the platform is ready for launch.</p>
         </div>
 
-                <PayMongoLiveOnboardingCard restaurantId={restaurantId} />
+                <div id="store-live-payments" tabIndex={-1}><PayMongoLiveOnboardingCard restaurantId={restaurantId} /></div>
 
-                <div className="restaurant-settings-card">
+                <div className="restaurant-settings-card" id="store-tax" tabIndex={-1}>
           <h2>Tax &amp; receipt settings</h2>
           <p className="restaurant-settings-help">These settings control POS tax calculations. The selected settings are copied into each finalized POS order so historical receipts remain unchanged if you update the store later.</p>
           <div className="restaurant-settings-tax-grid">
