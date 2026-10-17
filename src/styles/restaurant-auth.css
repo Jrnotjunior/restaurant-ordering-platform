@@ -638,7 +638,7 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
 }
 
 /* Reference-inspired login layout; keep the existing Web2Table colors and component styles. */
-.restaurant-owner-auth-card{width:min(360px,100%);padding:28px 32px 30px}
+.restaurant-owner-auth-card{width:min(360px,100%);padding:18px 32px 30px}
 .restaurant-owner-auth-card .restaurant-auth-input-label{display:block;gap:0}
 .restaurant-owner-auth-card .restaurant-auth-input-label>.visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
 .restaurant-owner-auth-card .restaurant-owner-auth-form{gap:12px}
