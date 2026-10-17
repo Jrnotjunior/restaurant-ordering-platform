@@ -8,6 +8,7 @@ export type AppRouteContext = {
   isCustomerEmailConfirmationPage: boolean;
   isCustomerPasswordResetPage: boolean;
   isCustomerForgotPasswordPage: boolean;
+  isLegalPoliciesPage: boolean;
   isPrivacyPage: boolean;
   isTermsPage: boolean;
   isRefundsPage: boolean;
@@ -60,6 +61,7 @@ export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' |
   const isCustomerEmailConfirmationPage = route === '#signup-confirmation';
   const isCustomerPasswordResetPage = searchParams.get('customer-password-reset') === '1';
   const isCustomerForgotPasswordPage = route === '#forgot-password';
+  const isLegalPoliciesPage = route === '#legal';
   const isPrivacyPage = route === '#privacy';
   const isTermsPage = route === '#terms';
   const isRefundsPage = route === '#refunds';
@@ -157,6 +159,7 @@ export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' |
     isCustomerEmailConfirmationPage,
     isCustomerPasswordResetPage,
     isCustomerForgotPasswordPage,
+    isLegalPoliciesPage,
     isPrivacyPage,
     isTermsPage,
     isRefundsPage,
