@@ -266,10 +266,6 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
       `}</style>
       <header className="business-reports-header">
         <div><h1>Business Reports</h1><p>Review sales performance, record operating expenses, and export transaction records for your accountant. Reports include only this restaurant's records.</p></div>
-        <div className="business-reports-range">
-          <label>From<input type="date" value={fromDate} max={toDate} onChange={(event) => setFromDate(event.target.value)} /></label>
-          <label>To<input type="date" value={toDate} min={fromDate} onChange={(event) => setToDate(event.target.value)} /></label>
-        </div>
       </header>
       <nav className="business-reports-tabs" role="tablist" aria-label="Business report sections">
         {([['overview','Overview'],['expenses','Expenses & Profit'],['payments','Payments'],['tax','Tax Reports']] as [Tab,string][]).map(([key,label]) => <button key={key} type="button" role="tab" aria-selected={tab===key} onClick={() => {setTab(key);setError('');setNotice('');}}>{label}</button>)}
@@ -284,7 +280,14 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
             <div className="business-reports-card"><small>Average order value</small><strong>{peso(completedOrders.length ? totalSales / completedOrders.length : 0)}</strong></div>
             <div className="business-reports-card"><small>Recorded expenses</small><strong>{peso(totalExpenses)}</strong></div>
           </div>
-          <section className="business-reports-panel"><h2>Sales by day</h2><p>Completed orders only. Cancelled and incomplete orders are not included in sales totals.</p>
+          <section className="business-reports-panel">
+            <div className="business-reports-header">
+              <div><h2>Sales by day</h2><p>Completed orders only. Cancelled and incomplete orders are not included in sales totals.</p></div>
+              <div className="business-reports-range">
+                <label>From<input type="date" value={fromDate} max={toDate} onChange={(event) => setFromDate(event.target.value)} /></label>
+                <label>To<input type="date" value={toDate} min={fromDate} onChange={(event) => setToDate(event.target.value)} /></label>
+              </div>
+            </div>
             <div className="business-reports-table-wrap"><table className="business-reports-table"><thead><tr><th>Date</th><th>Completed orders</th><th>Sales</th></tr></thead><tbody>
               {Array.from(new Set(completedOrders.map((order) => new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(order.createdAt))))).sort((a,b)=>b.localeCompare(a)).map((date) => {
                 const dayOrders = completedOrders.filter((order) => new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(order.createdAt)) === date);
