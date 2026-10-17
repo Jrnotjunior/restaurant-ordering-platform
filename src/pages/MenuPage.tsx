@@ -97,7 +97,7 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
           <div className="storefront-hero-content">
             <p className="eyebrow">Welcome to our menu</p>
             <h1>{restaurant.name}</h1>
-            {restaurant.tagline && !/book demo with us/i.test(restaurant.tagline.trim()) ? <p>{restaurant.tagline}</p> : null}
+            {restaurant.tagline?.trim() ? <p>{restaurant.tagline.trim()}</p> : null}
           </div>
         </section>
       <div id="menu" />
