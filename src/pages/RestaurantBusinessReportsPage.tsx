@@ -233,8 +233,9 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
         .business-reports-header h1{margin:0 0 6px;font-size:clamp(24px,3vw,32px);letter-spacing:-.03em}
         .business-reports-header p{margin:0;color:var(--muted,#64748b);max-width:720px;line-height:1.5}
         .business-reports-range,.business-reports-form-grid{display:flex;align-items:end;gap:12px;flex-wrap:wrap}
-        .business-reports-range label,.business-reports-form label{display:grid;gap:6px;font-size:13px;font-weight:650;color:var(--text,#202938)}
-        .business-reports-range input,.business-reports-form input,.business-reports-form select{box-sizing:border-box;min-height:40px;border:1px solid var(--border,#dce2ea);border-radius:9px;padding:8px 10px;background:var(--surface,#fff);color:inherit;font:inherit}
+        .business-reports-range label,.business-reports-form label{display:grid;gap:5px;font-size:12px;font-weight:650;color:var(--text,#202938)}
+        .business-reports-range input{box-sizing:border-box;min-height:36px;border:1px solid var(--border,#dce2ea);border-radius:8px;padding:5px 8px;background:var(--surface,#fff);color:inherit;font:600 12px/1.2 var(--font-ui,inherit);width:128px}
+        .business-reports-form input,.business-reports-form select{box-sizing:border-box;min-height:40px;border:1px solid var(--border,#dce2ea);border-radius:9px;padding:8px 10px;background:var(--surface,#fff);color:inherit;font:inherit}
         .business-reports-tabs{display:flex;gap:24px;flex-wrap:wrap;border-bottom:1px solid var(--border,#e2e8f0);padding-bottom:0}
         .business-reports-tabs button{position:relative;appearance:none;border:0;border-radius:0;background:transparent;color:var(--muted,#64748b);padding:10px 0 12px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
         .business-reports-tabs button:hover{color:var(--text,#111827)}
