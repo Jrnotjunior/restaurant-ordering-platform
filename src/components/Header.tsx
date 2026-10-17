@@ -151,15 +151,9 @@ export function Header({ cartCount = 0 }: HeaderProps) {
           </a>
         ) : null}
 
-        <a className="header-legal-link" href="#legal">Legal &amp; Policies</a>
-
         <div className="header-account-menu">
           {logoutMessage ? <span className={`header-logout-message is-${logoutMessage.type}`} role={logoutMessage.type === 'error' ? 'alert' : 'status'}>{logoutMessage.text}</span> : null}
           <button className="header-account" type="button" aria-label="Account" aria-expanded={user ? accountOpen : undefined} title="Account" onClick={() => {
-            if (!user) {
-              window.location.hash = '#account';
-              return;
-            }
             setAccountOpen((open) => !open);
             setChangePasswordOpen(false);
             setPasswordMessage('');
@@ -171,11 +165,11 @@ export function Header({ cartCount = 0 }: HeaderProps) {
           </button>
           {accountOpen ? (
             <div className="header-account-dropdown" role="menu">
-              <div className="header-account-identity">
+              {user ? <div className="header-account-identity">
                 <strong>{isRestaurantOwner ? 'Restaurant Owner' : isRestaurantStaff ? (staffRole ? staffRole.charAt(0).toUpperCase() + staffRole.slice(1) : 'Staff') : customerDisplayName}</strong>
-                <span>{user?.email}</span>
+                <span>{user.email}</span>
                 {isCustomer ? <span className="header-account-points">Loyalty points: {loyaltyLoading ? '…' : loyaltyPoints ?? '—'}</span> : null}
-              </div>
+              </div> : <div className="header-account-identity"><strong>Your account</strong><span>Sign in or review our policies.</span></div>}
               {user ? <>{isCustomer ? <>
                 <a className="header-account-menu-item" href={withBasePath('/order-history')} onClick={() => setAccountOpen(false)}>Order history</a>
                 <a className="header-account-menu-item" href={withBasePath('/saved-address')} onClick={() => setAccountOpen(false)}>Saved address</a>
@@ -201,7 +195,11 @@ export function Header({ cartCount = 0 }: HeaderProps) {
                   </form>
                 ) : null}
                 <button className="header-account-menu-item" type="button" onClick={() => void handleLogout()}>Log out</button>
-              </> : null}
+              </> : <>
+                <a className="header-account-menu-item" href={withBasePath('/account')} onClick={() => setAccountOpen(false)}>Log in</a>
+                <a className="header-account-menu-item" href={withBasePath('/signup')} onClick={() => setAccountOpen(false)}>Register</a>
+              </>}
+              <a className="header-account-menu-item" href="#legal" onClick={() => setAccountOpen(false)}>Legal &amp; Policies</a>
             </div>
           ) : null}
         </div>
