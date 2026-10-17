@@ -97,16 +97,6 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
 
       <div id="restaurant-loyalty-panel-program" role="tabpanel" aria-labelledby="restaurant-loyalty-tab-program" hidden={activeLoyaltyTab !== 'program'}>
       <div className="restaurant-shipping-card">
-        <div className="restaurant-shipping-section-header">
-          <div>
-            <p className="eyebrow">Customer rewards</p>
-            <h2>Loyalty Program</h2>
-            <p className="restaurant-shipping-help">
-              Registered customers can earn points on eligible online or in-person sales when their account is linked to the order. Customers without an account cannot earn points.
-            </p>
-          </div>
-        </div>
-
         <div className="restaurant-loyalty-form">
           <label className="restaurant-loyalty-toggle">
             <input
