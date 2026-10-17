@@ -234,12 +234,6 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
       });
       if (logoSaveError) throw logoSaveError;
 
-      const { error: taglineSaveError } = await supabase.rpc('update_restaurant_tagline', {
-        p_restaurant_id: restaurantId,
-        p_tagline: restaurantTagline.trim(),
-      });
-      if (taglineSaveError) throw taglineSaveError;
-
       setMessage('Website customization saved successfully.');
       setUnsavedChanges(false);
     } catch (saveError) {
@@ -520,25 +514,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
 
         <div className="website-customization-card">
           <h2>Branding</h2>
-          <p className="website-customization-help">Customize the restaurant tagline and logo customers see on your website.</p>
-          <div className="website-customization-grid">
-            <label className="website-customization-field">
-              <span>Restaurant tagline</span>
-              <input
-                type="text"
-                maxLength={120}
-                placeholder="Enter your restaurant tagline"
-                value={restaurantTagline}
-                disabled={loading || saving}
-                onChange={(event) => {
-                  setRestaurantTagline(event.target.value);
-                  setMessage('');
-                  setError('');
-                }}
-              />
-              <small>This appears beneath your restaurant name on the menu page. Leave blank to hide it.</small>
-            </label>
-          </div>
+          <p className="website-customization-help">Customize the logo and website branding customers see on your website.</p>
           <div className="website-customization-branding-grid">
             <div>
               <span className="website-customization-subheading">Logo</span>
