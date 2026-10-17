@@ -195,7 +195,9 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
       </div>
 
       <style>{`
-        .restaurant-loyalty-tabs{display:flex;align-items:center;gap:26px;flex-wrap:wrap;border-bottom:1px solid #dbe2ea;margin:0 0 10px;padding:0 4px}
+        .restaurant-loyalty-page{gap:10px}
+        .restaurant-loyalty-tabs{display:flex;align-items:center;gap:26px;flex-wrap:wrap;border-bottom:1px solid #dbe2ea;margin:0;padding:0 4px}
+        .restaurant-loyalty-page #restaurant-loyalty-panel-program,.restaurant-loyalty-page #restaurant-loyalty-panel-customers{margin:0;padding:0}
         .restaurant-loyalty-page .restaurant-shipping-card{margin-top:0}
         .restaurant-loyalty-page .restaurant-loyalty-customers{margin:0;padding:0}
         .restaurant-loyalty-page #restaurant-loyalty-panel-customers{margin:0;padding:0}
