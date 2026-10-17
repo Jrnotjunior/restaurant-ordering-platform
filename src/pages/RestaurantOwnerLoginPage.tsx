@@ -149,7 +149,7 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
                 <a href="#forgot-password">Forgot password?</a>
               </div>
             </div>
-            <button className="button" type="submit" disabled={submitting}>{submitting ? 'Signing in…' : 'Sign in'}</button>
+            <button className="button" type="submit" disabled={submitting}>{submitting ? 'Logging in…' : 'Log in'}</button>
           </form>
         )}
 
