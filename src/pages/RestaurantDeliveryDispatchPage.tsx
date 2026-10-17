@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { assignDelivery, completeDispatchHandoff, getDispatchData, subscribeToDispatchChanges, type DispatchTab, type ReadyOrder, type Rider } from '../modules/dispatch/dispatchService';
 
 type Props = { restaurantId: string; role?: 'owner' | 'dispatcher' };
@@ -14,12 +13,6 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
   const [assigningRiderId, setAssigningRiderId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
-  const [dispatchTabsSlot, setDispatchTabsSlot] = useState<HTMLElement | null>(null);
-
-  useEffect(() => {
-    setDispatchTabsSlot(document.getElementById('restaurant-dispatch-tabs-slot'));
-  }, []);
-
   async function loadDispatchData() {
     try {
       setError('');
@@ -133,37 +126,35 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
       {error ? <div className="restaurant-dispatch-message" role="alert">{error}</div> : null}
 
       <main className="restaurant-dispatch-workflow">
-        {dispatchTabsSlot
-          ? createPortal(
-              <nav className="restaurant-navigation restaurant-dispatch-tabs" aria-label="Dispatch order type">
-                <button
-                  type="button"
-                  className={'restaurant-navigation-item' + (activeTab === 'delivery' ? ' is-active' : '')}
-                  onClick={() => setActiveTab('delivery')}
-                >
-                  <span>Delivery</span>
-                  <span className="restaurant-dispatch-tab-count">{deliveryOrders.length}</span>
-                </button>
-                <button
-                  type="button"
-                  className={'restaurant-navigation-item' + (activeTab === 'pickup' ? ' is-active' : '')}
-                  onClick={() => setActiveTab('pickup')}
-                >
-                  <span>Pick Up</span>
-                  <span className="restaurant-dispatch-tab-count">{pickupOrders.length}</span>
-                </button>
-                <button
-                  type="button"
-                  className={'restaurant-navigation-item' + (activeTab === 'dine_in' ? ' is-active' : '')}
-                  onClick={() => setActiveTab('dine_in')}
-                >
-                  <span>Dine In</span>
-                  <span className="restaurant-dispatch-tab-count">{dineInOrders.length}</span>
-                </button>
-              </nav>,
-              dispatchTabsSlot,
-            )
-          : null}
+        <nav className="restaurant-dispatch-tabs" aria-label="Dispatch order type">
+          <button
+            type="button"
+            className={'restaurant-dispatch-tab' + (activeTab === 'delivery' ? ' is-active' : '')}
+            aria-pressed={activeTab === 'delivery'}
+            onClick={() => setActiveTab('delivery')}
+          >
+            <span>Delivery</span>
+            <span className="restaurant-dispatch-tab-count">{deliveryOrders.length}</span>
+          </button>
+          <button
+            type="button"
+            className={'restaurant-dispatch-tab' + (activeTab === 'pickup' ? ' is-active' : '')}
+            aria-pressed={activeTab === 'pickup'}
+            onClick={() => setActiveTab('pickup')}
+          >
+            <span>Pick Up</span>
+            <span className="restaurant-dispatch-tab-count">{pickupOrders.length}</span>
+          </button>
+          <button
+            type="button"
+            className={'restaurant-dispatch-tab' + (activeTab === 'dine_in' ? ' is-active' : '')}
+            aria-pressed={activeTab === 'dine_in'}
+            onClick={() => setActiveTab('dine_in')}
+          >
+            <span>Dine In</span>
+            <span className="restaurant-dispatch-tab-count">{dineInOrders.length}</span>
+          </button>
+        </nav>
 
         <section className="restaurant-panel">
           <div className="restaurant-panel-header">
