@@ -204,7 +204,7 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
         .restaurant-loyalty-tabs button.is-active{border-bottom-color:#101b2f;color:#101b2f;font-weight:700}
         .restaurant-loyalty-tabs button:focus-visible{outline:2px solid #64748b;outline-offset:3px}
         .restaurant-loyalty-page [role="tabpanel"][hidden]{display:none!important}
-        .restaurant-loyalty-form{display:grid;gap:18px}
+        .restaurant-loyalty-form{display:grid;gap:10px}
         .restaurant-loyalty-toggle{display:flex;align-items:flex-start;gap:10px;padding:.25rem 0;color:var(--color-text);font-size:.85rem;font-weight:700}
         .restaurant-loyalty-toggle input{width:18px;height:18px;margin:1px 0 0;accent-color:var(--color-primary);flex:0 0 auto}
         .restaurant-loyalty-toggle span{display:grid;gap:.25rem}
