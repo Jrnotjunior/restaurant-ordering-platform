@@ -77,11 +77,6 @@ export function RestaurantFaviconSettings({ restaurantId, faviconUrl, disabled =
             disabled={disabled || uploading}
           />
         </label>
-        {faviconUrl ? (
-          <button type="button" className="button button-secondary restaurant-compact-action" disabled={disabled || uploading} onClick={() => { setError(''); onChange(''); }}>
-            Use default icon
-          </button>
-        ) : null}
       </div>
       {error ? <p className="tenant-onboarding-error" role="alert">{error}</p> : null}
       <p className="website-customization-help">Remember to save your website customization to publish the change.</p>
