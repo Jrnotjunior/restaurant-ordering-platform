@@ -212,6 +212,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
+  const [activeSettingsTab, setActiveSettingsTab] = useState('profile');
   const [paymongoTestStatus, setPaymongoTestStatus] = useState("not_connected");
   const [paymongoLiveStatus, setPaymongoLiveStatus] = useState("not_connected");
   const [paymongoLiveAccountId, setPaymongoLiveAccountId] = useState("");
@@ -709,17 +710,15 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .restaurant-paymongo-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
         .restaurant-settings-help{margin:0;color:#64748b;line-height:1.5;font-size:14px}
         .restaurant-settings-form{display:grid;gap:16px}
-        .restaurant-settings-form{grid-template-columns:220px minmax(0,1fr);align-items:start;gap:14px 20px}
-        .restaurant-settings-jump-nav{position:sticky;top:16px;z-index:5;grid-column:1;grid-row:1 / span 10;display:flex;flex-direction:column;align-items:stretch;gap:5px;padding:14px;border:1px solid #dce4ee;border-radius:12px;background:#fff;box-shadow:0 3px 12px rgba(15,23,42,.04)}
-        .restaurant-settings-jump-label{padding:2px 8px 8px;color:#64748b;font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
-        .restaurant-settings-jump-nav a{display:flex;align-items:center;min-height:38px;padding:8px 10px;border:1px solid transparent;border-radius:8px;color:#475569;background:transparent;font-size:13px;font-weight:650;text-decoration:none;transition:background .15s ease,border-color .15s ease,color .15s ease}
-        .restaurant-settings-jump-nav a:hover{border-color:#e2e8f0;background:#f8fafc;color:#0f172a}
-        .restaurant-settings-jump-nav a:focus-visible{outline:2px solid #334155;outline-offset:2px}
-        .restaurant-settings-form>.restaurant-settings-card,.restaurant-settings-form>#store-live-payments,.restaurant-settings-form>.restaurant-settings-actions{grid-column:2;min-width:0}
+        .restaurant-settings-form{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+        .restaurant-settings-tabs{display:flex;align-items:center;gap:26px;flex-wrap:wrap;border-bottom:1px solid #dbe2ea;margin-bottom:2px}
+        .restaurant-settings-tabs button{position:relative;display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 2px;margin:0 0 -1px;border:0;border-bottom:2px solid transparent;border-radius:0;background:transparent;color:#475569;font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
+        .restaurant-settings-tabs button:hover{color:#0f172a}
+        .restaurant-settings-tabs button.is-active{border-bottom-color:#101b2f;color:#101b2f;font-weight:700}
+        .restaurant-settings-tabs button:focus-visible{outline:2px solid #64748b;outline-offset:3px}
+        .restaurant-settings-form>[role="tabpanel"][hidden],.restaurant-settings-form>#store-live-payments[hidden]{display:none!important}
         .restaurant-settings-card[id],#store-live-payments{scroll-margin-top:24px}
-        .restaurant-settings-card[id]:focus,#store-live-payments:focus{outline:2px solid #94a3b8;outline-offset:3px}
-        @media(max-width:900px){.restaurant-settings-form{grid-template-columns:1fr}.restaurant-settings-jump-nav{position:static;grid-column:1;grid-row:auto;display:flex;flex-direction:row;align-items:center;flex-wrap:wrap;gap:6px}.restaurant-settings-jump-label{width:100%;padding:0 2px 4px}.restaurant-settings-jump-nav a{flex:1 1 auto;justify-content:center}.restaurant-settings-form>.restaurant-settings-card,.restaurant-settings-form>#store-live-payments,.restaurant-settings-form>.restaurant-settings-actions{grid-column:1}}
-        @media(max-width:700px){.restaurant-settings-jump-nav{position:static;gap:6px}.restaurant-settings-jump-label{width:100%}.restaurant-settings-jump-nav a{flex:1 1 auto;justify-content:center}}
+        @media(max-width:700px){.restaurant-settings-tabs{gap:18px;overflow-x:auto;flex-wrap:nowrap}.restaurant-settings-tabs button{flex:0 0 auto}}
         .restaurant-settings-field{display:grid;gap:7px;font-weight:600;font-size:14px}
         .restaurant-settings-field input[type=text]{width:100%;min-height:40px;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:9px;padding:8px 11px;font:inherit;color:#0f172a;background:#fff}
         .restaurant-settings-field input[type=number]{width:64px;min-height:38px;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:9px;padding:8px 10px;font:inherit;color:#0f172a;background:#fff;-moz-appearance:textfield}
@@ -771,19 +770,33 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       {message && <div className="owner-feedback-toast is-success" role="status"><span className="owner-feedback-toast-icon" aria-hidden="true">✓</span><div><strong>Changes saved</strong><p>{message}</p></div></div>}
 
       <form className="restaurant-settings-form" onSubmit={(event) => { event.preventDefault(); setShowSaveConfirmation(true); }}>
-        <nav className="restaurant-settings-jump-nav" aria-label="Store settings sections">
-          <span className="restaurant-settings-jump-label">Jump to section</span>
-          <a href="#store-profile">Profile</a>
-          <a href="#store-status">Store status</a>
-          <a href="#store-hours">Operating hours</a>
-          <a href="#store-delivery">Delivery pricing</a>
-          <a href="#store-rider">Rider assignment</a>
-          <a href="#store-cod">Cash on Delivery</a>
-          <a href="#store-payments">Online payments</a>
-          <a href="#store-tax">Tax &amp; receipts</a>
+        <nav className="restaurant-settings-tabs" aria-label="Store settings tabs" role="tablist">
+          {[
+            { id: 'profile', label: 'Profile' },
+            { id: 'status', label: 'Store status' },
+            { id: 'hours', label: 'Operating hours' },
+            { id: 'delivery', label: 'Delivery pricing' },
+            { id: 'rider', label: 'Rider assignment' },
+            { id: 'cod', label: 'Cash on Delivery' },
+            { id: 'payments', label: 'Online payments' },
+            { id: 'tax', label: 'Tax & receipts' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              id={`store-settings-tab-${tab.id}`}
+              aria-selected={activeSettingsTab === tab.id}
+              aria-controls={`store-settings-panel-${tab.id}`}
+              className={activeSettingsTab === tab.id ? 'is-active' : ''}
+              onClick={() => setActiveSettingsTab(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
         </nav>
 
-        <div className="restaurant-settings-card" id="store-profile" tabIndex={-1}>
+        <div className="restaurant-settings-card" id="store-profile" role="tabpanel" aria-labelledby="store-settings-tab-profile" hidden={activeSettingsTab !== 'profile'}>
           <h2>Restaurant profile</h2>
           <p className="restaurant-settings-help">Set the tagline shown beneath your restaurant name on the customer-facing menu. Leave it blank to hide the subtitle.</p>
           <label className="restaurant-settings-field" style={{ display: 'grid', gap: 7, marginTop: 16 }}>
@@ -799,7 +812,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           </label>
         </div>
 
-        <div className="restaurant-settings-card" id="store-status" tabIndex={-1}>
+        <div className="restaurant-settings-card" id="store-status" role="tabpanel" aria-labelledby="store-settings-tab-status" hidden={activeSettingsTab !== 'status'}>
           <h2>Store status</h2>
           <p className="restaurant-settings-help">Operating hours automatically control the normal opening and closing schedule. Use this switch when you need to manually close the store outside that schedule.</p>
           <label className="restaurant-settings-switch-row">
@@ -820,7 +833,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Turn it off to close ordering immediately. Turn it back on to return control to the automatic operating hours.</p>
         </div>
 
-                <div className="restaurant-settings-card" id="store-hours" tabIndex={-1}>
+                <div className="restaurant-settings-card" id="store-hours" role="tabpanel" aria-labelledby="store-settings-tab-hours" hidden={activeSettingsTab !== 'hours'}>
           <h2>Operating hours</h2>
           <p className="restaurant-settings-help">Set the hours customers can visit the store. {openDays} of 7 days are currently open.</p>
           <div className="restaurant-settings-days">
@@ -864,7 +877,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           </div>
         </div>
 
-                <div className="restaurant-settings-card" id="store-delivery" tabIndex={-1}>
+                <div className="restaurant-settings-card" id="store-delivery" role="tabpanel" aria-labelledby="store-settings-tab-delivery" hidden={activeSettingsTab !== 'delivery'}>
           <h2>Delivery pricing</h2>
           <p className="restaurant-settings-help">Delivery fees are calculated automatically from the restaurant to the customer's confirmed Google Maps location. You no longer need to configure Barangays and individual shipping fees.</p>
           <div className="restaurant-delivery-pricing-grid">
@@ -898,7 +911,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           </div>
         </div>
 
-                <div className="restaurant-settings-card" id="store-rider" tabIndex={-1}>
+                <div className="restaurant-settings-card" id="store-rider" role="tabpanel" aria-labelledby="store-settings-tab-rider" hidden={activeSettingsTab !== 'rider'}>
           <h2>Automatic Rider Assignment</h2>
           <p className="restaurant-settings-help">Automatically assign a ready delivery order to an available rider. The system assigns ready delivery orders to an available rider using the restaurant's rider workload and delivery history.</p>
           <label className="restaurant-settings-switch-row">
@@ -918,7 +931,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Controlled by the System Administrator. Contact the System Administrator to request a workflow change.</p>
         </div>
 
-                <div className="restaurant-settings-card" id="store-cod" tabIndex={-1}>
+                <div className="restaurant-settings-card" id="store-cod" role="tabpanel" aria-labelledby="store-settings-tab-cod" hidden={activeSettingsTab !== 'cod'}>
           <h2>Cash on Delivery</h2>
           <p className="restaurant-settings-help">Allow customers to place delivery orders and pay in cash when the order is received. Turning this off requires delivery customers to use Online Payment.</p>
           <label className="restaurant-settings-switch-row">
@@ -938,7 +951,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Controlled by the System Administrator. Contact the System Administrator to request a workflow change.</p>
         </div>
 
-                <div className="restaurant-settings-card restaurant-paymongo-card" id="store-payments" tabIndex={-1}>
+                <div className="restaurant-settings-card restaurant-paymongo-card" id="store-payments" role="tabpanel" aria-labelledby="store-settings-tab-payments" hidden={activeSettingsTab !== 'payments'}>
           {paymongoError && <div className="restaurant-paymongo-error" role="alert">
             <strong>PayMongo connection error</strong>
             <span>{paymongoError}</span>
@@ -985,9 +998,9 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           <p className="restaurant-settings-help" style={{ marginTop: 12 }}>Test mode uses a PayMongo simulated merchant account, so no real identity verification is required. Production live payments will use the same restaurant-specific architecture with real merchant onboarding after the platform is ready for launch.</p>
         </div>
 
-                <div id="store-live-payments" tabIndex={-1}><PayMongoLiveOnboardingCard restaurantId={restaurantId} /></div>
+                <div id="store-live-payments" hidden={activeSettingsTab !== 'payments'}><PayMongoLiveOnboardingCard restaurantId={restaurantId} /></div>
 
-                <div className="restaurant-settings-card" id="store-tax" tabIndex={-1}>
+                <div className="restaurant-settings-card" id="store-tax" role="tabpanel" aria-labelledby="store-settings-tab-tax" hidden={activeSettingsTab !== 'tax'}>
           <h2>Tax &amp; receipt settings</h2>
           <p className="restaurant-settings-help">These settings control POS tax calculations. The selected settings are copied into each finalized POS order so historical receipts remain unchanged if you update the store later.</p>
           <div className="restaurant-settings-tax-grid">
