@@ -59,11 +59,6 @@ export function RestaurantFaviconSettings({ restaurantId, faviconUrl, disabled =
 
   return (
     <div className="website-customization-card">
-      <h2>Browser tab icon</h2>
-      <p className="website-customization-help">
-        Upload a small square image for this restaurant's browser tab. It will be used on this restaurant's custom domain too.
-        PNG, JPG, or WebP; maximum 512 KB.
-      </p>
       <div className="website-customization-logo-row">
         <div className="website-customization-logo-preview" aria-label="Favicon preview">
           {faviconUrl ? <img src={faviconUrl} alt="Restaurant favicon preview" /> : <span>Default icon</span>}
