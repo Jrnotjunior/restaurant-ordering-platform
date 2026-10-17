@@ -284,15 +284,15 @@ export function RestaurantSalesPage({ restaurantId, role = 'owner' }: Props) {
           <div className="restaurant-sales-summary" aria-label="Sales summary">
             <div className="restaurant-sales-summary-item">
               <small>Total sales</small>
-              <strong>₱ {salesSummary.total.toFixed(2)}</strong>
+              <strong>₱ {salesSummary.total.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
             </div>
             <div className="restaurant-sales-summary-item">
               <small>PayMongo fees</small>
-              <strong>₱ {salesSummary.paymongoFees.toFixed(2)}</strong>
+              <strong>₱ {salesSummary.paymongoFees.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
             </div>
             <div className="restaurant-sales-summary-item">
               <small>Net after PayMongo fees</small>
-              <strong>₱ {salesSummary.netAfterPaymongoFees.toFixed(2)}</strong>
+              <strong>₱ {salesSummary.netAfterPaymongoFees.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
             </div>
             <div className="restaurant-sales-summary-item">
               <small>Online orders</small>
@@ -347,18 +347,18 @@ export function RestaurantSalesPage({ restaurantId, role = 'owner' }: Props) {
                     <span className="restaurant-sales-day-stats">
                       <span>
                         <small>Total sales</small>
-                        <strong>₱ {day.total.toFixed(2)}</strong>
+                        <strong>₱ {day.total.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                       </span>
                       {role === 'owner' && (
                         <span>
                           <small>PayMongo fees</small>
-                          <strong>₱ {day.paymongoFees.toFixed(2)}</strong>
+                          <strong>₱ {day.paymongoFees.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                         </span>
                       )}
                       {role === 'owner' && (
                         <span>
                           <small>Net after fees</small>
-                          <strong>₱ {day.netAfterPaymongoFees.toFixed(2)}</strong>
+                          <strong>₱ {day.netAfterPaymongoFees.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                         </span>
                       )}
                       <span>
@@ -405,15 +405,15 @@ export function RestaurantSalesPage({ restaurantId, role = 'owner' }: Props) {
               <div className="restaurant-sales-modal-financials">
                 <div>
                   <small>Total sales</small>
-                  <strong>₱ {selectedDay.total.toFixed(2)}</strong>
+                  <strong>₱ {selectedDay.total.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                 </div>
                 <div>
                   <small>PayMongo fees</small>
-                  <strong>₱ {selectedDay.paymongoFees.toFixed(2)}</strong>
+                  <strong>₱ {selectedDay.paymongoFees.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                 </div>
                 <div>
                   <small>Net after fees</small>
-                  <strong>₱ {selectedDay.netAfterPaymongoFees.toFixed(2)}</strong>
+                  <strong>₱ {selectedDay.netAfterPaymongoFees.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                 </div>
               </div>
 
