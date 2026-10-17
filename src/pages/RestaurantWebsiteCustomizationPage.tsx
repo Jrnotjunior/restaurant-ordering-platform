@@ -538,7 +538,6 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         <div className="website-customization-card">
           <div className="website-customization-branding-grid">
             <div>
-              <span className="website-customization-subheading">Logo</span>
               <div className="website-customization-logo-row">
                 <div className="website-customization-logo-preview">{logoUrl ? <img src={logoUrl} alt="Restaurant logo" /> : <span>No logo</span>}</div>
                 <label className="button button-secondary website-customization-logo-button restaurant-compact-action">
