@@ -769,7 +769,9 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
             { id: 'status', label: 'Store status' },
             { id: 'hours', label: 'Operating hours' },
             { id: 'delivery', label: 'Delivery pricing' },
+            { id: 'cod', label: 'Cash on Delivery' },
             { id: 'payments', label: 'Online payments' },
+            { id: 'tax', label: 'Tax & receipts' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -901,6 +903,26 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           </div>
         </div>
 
+                <div className="restaurant-settings-card" id="store-cod" role="tabpanel" aria-labelledby="store-settings-tab-cod" hidden={activeSettingsTab !== 'cod'}>
+          <h2>Cash on Delivery</h2>
+          <p className="restaurant-settings-help">Allow customers to place delivery orders and pay in cash when the order is received. Turning this off requires delivery customers to use Online Payment.</p>
+          <label className="restaurant-settings-switch-row">
+            <span>Accept Cash on Delivery</span>
+            <span className="restaurant-settings-switch">
+              <input
+                type="checkbox"
+                checked={cashOnDeliveryEnabled}
+                disabled
+                aria-label="Cash on Delivery status"
+              />
+              <span className="restaurant-settings-switch-track" aria-hidden="true">
+                <span className="restaurant-settings-switch-thumb" />
+              </span>
+            </span>
+          </label>
+          <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Controlled by the System Administrator. Contact the System Administrator to request a workflow change.</p>
+        </div>
+
                 <div className="restaurant-settings-card restaurant-paymongo-card" id="store-payments" role="tabpanel" aria-labelledby="store-settings-tab-payments" hidden={activeSettingsTab !== 'payments'}>
           {paymongoError && <div className="restaurant-paymongo-error" role="alert">
             <strong>PayMongo connection error</strong>
@@ -951,6 +973,41 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
                 <div id="store-live-payments" hidden={activeSettingsTab !== 'payments'}><PayMongoLiveOnboardingCard restaurantId={restaurantId} /></div>
 
 
+
+        <div className="restaurant-settings-card" id="store-tax" role="tabpanel" aria-labelledby="store-settings-tab-tax" hidden={activeSettingsTab !== 'tax'}>
+          <h2>Tax &amp; receipt settings</h2>
+          <p className="restaurant-settings-help">These settings control POS tax calculations. The selected settings are copied into each finalized POS order so historical receipts remain unchanged if you update the store later.</p>
+          <div className="restaurant-settings-tax-grid">
+            <label className="restaurant-settings-switch-row">
+              <span>VAT registered</span>
+              <span className="restaurant-settings-switch">
+                <input
+                  type="checkbox"
+                  checked={vatRegistered}
+                  disabled
+                  onChange={() => undefined}
+                />
+                <span className="restaurant-settings-switch-track" aria-hidden="true">
+                  <span className="restaurant-settings-switch-thumb" />
+                </span>
+              </span>
+            </label>
+            {vatRegistered && (
+              <>
+                <label className="restaurant-settings-field">
+                  <span>VAT rate (%)</span>
+                  <input type="number" min="0" max="100" step="0.01" value={vatRate} disabled onChange={() => undefined} />
+                </label>
+                <label className="restaurant-settings-toggle">
+                  <input type="checkbox" checked={pricesVatInclusive} disabled onChange={() => undefined} />
+                  Menu prices are VAT-inclusive
+                </label>
+              </>
+            )}
+          </div>
+          <p className="restaurant-settings-help" style={{ marginTop: 12 }}>Controlled by the System Administrator. Contact the System Administrator to request a tax configuration change.</p>
+          <p className="restaurant-settings-help" style={{ marginTop: 12 }}>For Senior Citizen/PWD transactions, the POS applies the 20% discount to the eligible VAT-exclusive share and removes the corresponding VAT when the restaurant is VAT-registered. Verify the restaurant’s actual BIR registration and pricing treatment before enabling VAT settings.</p>
+        </div>
 
                 <div className="restaurant-settings-actions">
           <button className="button button-primary restaurant-compact-action" type="submit" disabled={loading || saving}>
