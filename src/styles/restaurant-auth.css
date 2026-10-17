@@ -35,7 +35,20 @@
 .restaurant-owner-auth-form .button:disabled{opacity:.55;cursor:not-allowed}
 @media(max-width:640px){.customer-personal-info-consent{font-size:11.5px!important}}
 
-.privacy-notice-card{width:min(760px,100%);max-height:calc(100vh - 48px);overflow:auto}
+/* Legal documents must scroll with the page, not inside a height-limited card. */
+.restaurant-owner-auth-page:has(.privacy-notice-card) {
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100svh;
+}
+.privacy-notice-card {
+  width: min(760px, 100%);
+  max-height: none;
+  height: auto;
+  overflow: visible;
+  margin: 0 auto;
+}
 .privacy-notice-back{display:inline-block;margin-bottom:24px;color:#475569;font-size:13px;font-weight:700;text-decoration:none}
 .privacy-notice-back:hover{text-decoration:underline;text-underline-offset:3px}
 .privacy-notice-card h1{font-size:clamp(32px,5vw,46px)}
@@ -49,7 +62,7 @@
 .privacy-notice-legal-note p+p{margin-top:10px}
 .privacy-notice-footer{margin:22px 0 0!important;color:#64748b!important;font-size:12px!important}
 .customer-personal-info-consent a{color:#334155;font-weight:700;text-decoration:underline;text-underline-offset:3px}
-@media(max-width:640px){.privacy-notice-card{max-height:calc(100vh - 24px);padding:24px}.privacy-notice-section h2{font-size:17px}.privacy-notice-section p,.privacy-notice-section ul{font-size:13px}}
+@media(max-width:640px){.restaurant-owner-auth-page:has(.privacy-notice-card){padding:20px 16px;align-items:flex-start}.privacy-notice-card{max-height:none;height:auto;overflow:visible;padding:24px}.privacy-notice-section h2{font-size:17px}.privacy-notice-section p,.privacy-notice-section ul{font-size:13px}}
 
 .customer-signin-modal-backdrop{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px;background:rgba(15,23,42,.55);box-sizing:border-box}
 .customer-signin-modal{position:relative;width:min(420px,100%);max-height:calc(100vh - 40px);overflow:auto;box-sizing:border-box;padding:28px;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 24px 70px rgba(15,23,42,.24)}
