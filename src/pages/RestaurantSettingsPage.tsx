@@ -926,7 +926,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
                 <div className="restaurant-settings-card" id="store-rider" role="tabpanel" aria-labelledby="store-settings-tab-rider" hidden={activeSettingsTab !== 'rider'}>
           <h2>Automatic Rider Assignment</h2>
-          <p className="restaurant-settings-help">Automatically assign a ready delivery order to an available rider. The system assigns ready delivery orders to an available rider using the restaurant's rider workload and delivery history.</p>
           <label className="restaurant-settings-switch-row">
             <span>Auto-assign delivery orders</span>
             <span className="restaurant-settings-switch">
