@@ -220,3 +220,24 @@
 .header-logout-message.is-error {
   border-color: #d97777;
 }
+
+
+.header-legal-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 4px;
+  color: var(--color-muted, #64748b);
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.header-legal-link:hover { color: var(--color-text, #172033); text-decoration: underline; text-underline-offset: 3px; }
+.header-legal-link:focus-visible { outline: 2px solid var(--color-primary, #315fa8); outline-offset: 2px; border-radius: 4px; }
+@media (max-width: 420px) {
+  .header-legal-link { font-size: 0.7rem; padding-inline: 1px; }
+}
