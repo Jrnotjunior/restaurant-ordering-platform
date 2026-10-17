@@ -133,8 +133,10 @@ main { flex: 1; }
   justify-content: center;
   color: var(--color-text);
   text-decoration: none;
-  border: 1px solid var(--color-border);
-  border-radius: 50%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   transition: opacity .2s ease, transform .2s ease;
 }
 .site-footer-socials a:hover {
