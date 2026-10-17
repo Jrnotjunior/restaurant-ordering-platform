@@ -779,7 +779,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
             { id: 'rider', label: 'Rider assignment' },
             { id: 'cod', label: 'Cash on Delivery' },
             { id: 'payments', label: 'Online payments' },
-            { id: 'tax', label: 'Tax & receipts' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -1000,40 +999,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
                 <div id="store-live-payments" hidden={activeSettingsTab !== 'payments'}><PayMongoLiveOnboardingCard restaurantId={restaurantId} /></div>
 
-                <div className="restaurant-settings-card" id="store-tax" role="tabpanel" aria-labelledby="store-settings-tab-tax" hidden={activeSettingsTab !== 'tax'}>
-          <h2>Tax &amp; receipt settings</h2>
-          <p className="restaurant-settings-help">These settings control POS tax calculations. The selected settings are copied into each finalized POS order so historical receipts remain unchanged if you update the store later.</p>
-          <div className="restaurant-settings-tax-grid">
-            <label className="restaurant-settings-switch-row">
-              <span>VAT registered</span>
-              <span className="restaurant-settings-switch">
-                <input
-                  type="checkbox"
-                  checked={vatRegistered}
-                  disabled
-                  onChange={() => undefined}
-                />
-                <span className="restaurant-settings-switch-track" aria-hidden="true">
-                  <span className="restaurant-settings-switch-thumb" />
-                </span>
-              </span>
-            </label>
-            {vatRegistered && (
-              <>
-                <label className="restaurant-settings-field">
-                  <span>VAT rate (%)</span>
-                  <input type="number" min="0" max="100" step="0.01" value={vatRate} disabled onChange={() => undefined} />
-                </label>
-                <label className="restaurant-settings-toggle">
-                  <input type="checkbox" checked={pricesVatInclusive} disabled onChange={() => undefined} />
-                  Menu prices are VAT-inclusive
-                </label>
-              </>
-            )}
-          </div>
-          <p className="restaurant-settings-help" style={{ marginTop: 12 }}>Controlled by the System Administrator. Contact the System Administrator to request a tax configuration change.</p>
-          <p className="restaurant-settings-help" style={{ marginTop: 12 }}>For Senior Citizen/PWD transactions, the POS applies the 20% discount to the eligible VAT-exclusive share and removes the corresponding VAT when the restaurant is VAT-registered. Verify the restaurant’s actual BIR registration and pricing treatment before enabling VAT settings.</p>
-        </div>
+
 
                 <div className="restaurant-settings-actions">
           <button className="button button-primary restaurant-compact-action" type="submit" disabled={loading || saving}>
