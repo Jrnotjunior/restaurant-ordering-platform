@@ -1332,6 +1332,88 @@ textarea {
 }
 
 /* Shared compact management UI, aligned with the Business Reports reference. */
+
+/* Unified Restaurant Owner UI: Business Reports is the spacing, card, and tab-navigation reference. */
+.restaurant-page {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+.restaurant-page > header,
+.restaurant-page > .restaurant-page-header {
+  margin: 0;
+}
+.restaurant-page h1 {
+  margin-top: 0;
+  margin-bottom: 6px;
+  font-size: clamp(24px, 2.6vw, 32px);
+  line-height: 1.2;
+  letter-spacing: -.03em;
+}
+.restaurant-page :is(.restaurant-settings-card, .restaurant-employees-card, .restaurant-sales-card,
+  .restaurant-menu-management-card, .website-customization-card, .inventory-card,
+  .business-reports-card, .business-reports-panel, .restaurant-owner-dashboard-stat) {
+  border: 1px solid #dce4ee;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .025);
+}
+.restaurant-page :is(.restaurant-settings-card, .restaurant-employees-card, .restaurant-sales-card,
+  .restaurant-menu-management-card, .website-customization-card, .business-reports-panel) {
+  padding: 17px;
+}
+.restaurant-page :is(.restaurant-settings-card, .restaurant-employees-card, .restaurant-sales-card,
+  .restaurant-menu-management-card, .website-customization-card, .business-reports-panel) > :is(h2, h3) {
+  margin-top: 0;
+  letter-spacing: -.02em;
+}
+.restaurant-page :is(.business-reports-tabs, .restaurant-payroll-tabs, .restaurant-orders-tabs) {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 24px;
+  min-width: 0;
+  overflow-x: auto;
+  border-bottom: 1px solid #dce4ee;
+  padding: 0;
+  scrollbar-width: thin;
+}
+.restaurant-page :is(.business-reports-tabs, .restaurant-payroll-tabs, .restaurant-orders-tabs) button {
+  position: relative;
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 9px 0 10px;
+  border: 0;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #64748b;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.restaurant-page :is(.business-reports-tabs, .restaurant-payroll-tabs, .restaurant-orders-tabs) button:hover {
+  background: transparent;
+  color: #172033;
+}
+.restaurant-page :is(.business-reports-tabs, .restaurant-payroll-tabs, .restaurant-orders-tabs) button.is-active,
+.restaurant-page .business-reports-tabs button[aria-selected="true"] {
+  border-bottom-color: #111827;
+  background: transparent;
+  color: #111827;
+  font-weight: 750;
+}
+@media (max-width: 760px) {
+  .restaurant-page { gap: 14px; }
+  .restaurant-page :is(.restaurant-settings-card, .restaurant-employees-card, .restaurant-sales-card,
+    .restaurant-menu-management-card, .website-customization-card, .business-reports-panel) {
+    padding: 14px;
+  }
+  .restaurant-page :is(.business-reports-tabs, .restaurant-payroll-tabs, .restaurant-orders-tabs) {
+    gap: 20px;
+  }
+}
 .restaurant-page :is(input:not([type="checkbox"]):not([type="radio"]):not([type="color"]), select, textarea) {
   min-height: 38px;
   border-radius: 9px;
