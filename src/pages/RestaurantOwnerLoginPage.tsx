@@ -143,8 +143,11 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
                 </button>
               </span>
             </label>
-            <div className="restaurant-auth-forgot-password-row">
-              <a href="#forgot-password">Forgot password?</a>
+            <div className="restaurant-auth-options-row">
+              <label className="restaurant-auth-remember"><input type="checkbox" name="remember-me" /> <span>Remember me</span></label>
+              <div className="restaurant-auth-forgot-password-row">
+                <a href="#forgot-password">Forgot password?</a>
+              </div>
             </div>
             <button className="button" type="submit" disabled={submitting}>{submitting ? 'Signing in…' : 'Sign in'}</button>
           </form>
