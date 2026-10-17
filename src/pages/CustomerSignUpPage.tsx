@@ -91,7 +91,7 @@ export function CustomerSignUpPage() {
 
   return (
     <main className="restaurant-owner-auth-page">
-      <section className="restaurant-owner-auth-card" aria-labelledby="customer-signup-title">
+      <section className="restaurant-owner-auth-card customer-signup-card" aria-labelledby="customer-signup-title">
         <p className="eyebrow">Customer account</p>
         <h1 id="customer-signup-title">Create account</h1>
         <p>Create your customer account to sign in and place orders.</p>
