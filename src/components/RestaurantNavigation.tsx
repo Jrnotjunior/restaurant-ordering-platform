@@ -9,7 +9,7 @@ export type RestaurantNavigationRole = 'owner' | 'cashier' | 'kitchen' | 'dispat
 type NavigationItem = {
   label: string;
   href: string;
-  icon: 'dashboard' | 'orders' | 'products' | 'riders' | 'shipping' | 'sales' | 'dispatch' | 'settings' | 'loyalty' | 'customization' | 'payroll';
+  icon: 'dashboard' | 'orders' | 'menu' | 'inventory' | 'recipes' | 'riders' | 'shipping' | 'sales' | 'reports' | 'dispatch' | 'settings' | 'loyalty' | 'customization' | 'payroll';
 };
 
 type OwnerSupportTicket = { id: string; request_number: string | null; subject: string; status: string; created_at: string; updated_at: string };
@@ -19,13 +19,13 @@ type OwnerSupportAttachment = { id: string; message_id: string | null; storage_p
 const ownerNavigationItems: NavigationItem[] = [
   { label: 'Dashboard', href: '#restaurant/owner', icon: 'dashboard' },
   { label: 'Orders', href: '#restaurant/orders', icon: 'orders' },
-  { label: 'Menu', href: '#restaurant/menu', icon: 'products' },
+  { label: 'Menu', href: '#restaurant/menu', icon: 'menu' },
   { label: 'Employees', href: '#restaurant/employees', icon: 'riders' },
   { label: 'Payroll & HR', href: '#restaurant/payroll', icon: 'payroll' },
   { label: 'Sales', href: '#restaurant/sales', icon: 'sales' },
-  { label: 'Business Reports', href: '#restaurant/business-reports', icon: 'sales' },
-  { label: 'Inventory', href: '#restaurant/inventory', icon: 'products' },
-  { label: 'Recipes', href: '#restaurant/recipes', icon: 'products' },
+  { label: 'Business Reports', href: '#restaurant/business-reports', icon: 'reports' },
+  { label: 'Inventory', href: '#restaurant/inventory', icon: 'inventory' },
+  { label: 'Recipes', href: '#restaurant/recipes', icon: 'recipes' },
   { label: 'Loyalty', href: '#restaurant/loyalty', icon: 'loyalty' },
   { label: 'Store Settings', href: '#restaurant/settings', icon: 'settings' },
   { label: 'Website & Branding', href: '#restaurant/website-customization', icon: 'customization' },
@@ -76,8 +76,16 @@ function NavigationIcon({ type }: { type: NavigationItem['icon'] }) {
     return <svg {...common}><path d="M6 3.5h9l3 3V20.5H6z" /><path d="M14 3.5v4h4" /><path d="M9 12h6M9 15.5h6" /></svg>;
   }
 
-  if (type === 'products') {
-    return <svg {...common}><path d="M4 9h16" /><path d="M5 9l1.5-4h11L19 9" /><path d="M6 9v9.5h12V9" /><path d="M9 18.5v-5h6v5" /><path d="M10 5v4M14 5v4" /></svg>;
+  if (type === 'menu') {
+    return <svg {...common}><path d="M4 5v6M7 5v6M4 8h3M5.5 11v8" /><path d="M14 5v14M14 5c3 2 4 5 0 7" /></svg>;
+  }
+
+  if (type === 'inventory') {
+    return <svg {...common}><path d="m12 3.5 8 4.2v8.6l-8 4.2-8-4.2V7.7z" /><path d="m4.5 7.8 7.5 4 7.5-4M12 12v8" /></svg>;
+  }
+
+  if (type === 'recipes') {
+    return <svg {...common}><path d="M5 4.5h10.5A3.5 3.5 0 0 1 19 8v11H8a3 3 0 0 1-3-3z" /><path d="M5 4.5v11A3 3 0 0 0 8 18.5M9 8h6M9 11h6" /></svg>;
   }
 
   if (type === 'riders') {
@@ -90,6 +98,10 @@ function NavigationIcon({ type }: { type: NavigationItem['icon'] }) {
 
   if (type === 'shipping') {
     return <svg {...common}><circle cx="7" cy="17.5" r="2.5" /><circle cx="18" cy="17.5" r="2.5" /><path d="M9.5 17.5h6M4.5 17.5H3v-5h2l2-5h6l3 3h3l2 3v4h-1.5" /><path d="M7 7.5h6M13 10.5h3" /></svg>;
+  }
+
+  if (type === 'reports') {
+    return <svg {...common}><path d="M4 20V12h4v8M10 20V5h4v15M16 20V9h4v11" /><path d="M3 20.5h18" /></svg>;
   }
 
   if (type === 'loyalty') {
@@ -105,7 +117,7 @@ function NavigationIcon({ type }: { type: NavigationItem['icon'] }) {
   }
 
 
-  return <svg {...common}><path d="M4 19.5V10M10 19.5V6M16 19.5v-9M22 19.5V3" /><path d="M2.5 19.5h20" /></svg>;
+  return <svg {...common}><path d="M4 17.5 9 12l4 3 7-8" /><path d="M15.5 7H20v4.5" /><path d="M3 20.5h18" /></svg>;
 }
 
 function getCurrentRoute() {
@@ -121,7 +133,7 @@ const roleNavigationItems: Record<RestaurantNavigationRole, NavigationItem[]> = 
   ],
   kitchen: [
     { label: 'Orders', href: '#restaurant/kitchen', icon: 'orders' },
-    { label: 'Menu', href: '#restaurant/kitchen-menu', icon: 'products' },
+    { label: 'Menu', href: '#restaurant/kitchen-menu', icon: 'menu' },
   ],
   dispatcher: [{ label: 'Dispatch', href: '#restaurant/dispatcher', icon: 'dispatch' }],
   rider: [{ label: 'Deliveries', href: '#rider/dashboard', icon: 'dispatch' }],
