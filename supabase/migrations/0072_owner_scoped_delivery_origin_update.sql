@@ -40,4 +40,4 @@ end;
 $$;
 
 revoke all on function public.update_restaurant_delivery_origin(uuid, text, double precision, double precision) from public, anon;
-grant execute on function public.update_restaurant_delivery_origin(uuid, double precision, double precision) to authenticated;
+grant execute on function public.update_restaurant_delivery_origin(uuid, text, double precision, double precision) to authenticated;
