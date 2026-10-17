@@ -542,16 +542,34 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           tax_vat_registered: vatRegistered,
           tax_prices_vat_inclusive: vatRegistered ? pricesVatInclusive : false,
           tax_vat_rate: vatRegistered ? parsedVatRate : 0,
-          delivery_base_fee: parsedBaseFee,
-          delivery_distance_increment_meters: Math.round(parsedDistanceIncrement),
-          delivery_fee_per_increment: parsedFeePerIncrement,
-          delivery_max_distance_meters: Math.round(parsedMaxDistance),
           delivery_location_latitude: deliveryLocationLatitude,
           delivery_location_longitude: deliveryLocationLongitude,
         })
         .eq('id', restaurantId);
 
       if (saveError) throw saveError;
+
+      // Save delivery pricing through an owner-scoped RPC. PostgREST UPDATE can
+      // return no error when RLS filters the row, so the RPC must return the
+      // exact saved values before the UI reports success.
+      const { data: savedPricingRows, error: pricingSaveError } = await supabase.rpc('update_restaurant_delivery_pricing', {
+        p_restaurant_id: restaurantId,
+        p_base_fee: parsedBaseFee,
+        p_distance_increment_meters: Math.round(parsedDistanceIncrement),
+        p_fee_per_increment: parsedFeePerIncrement,
+        p_max_distance_meters: Math.round(parsedMaxDistance),
+      });
+      if (pricingSaveError) throw pricingSaveError;
+      const savedPricing = Array.isArray(savedPricingRows) ? savedPricingRows[0] : null;
+      if (
+        !savedPricing ||
+        Number(savedPricing.delivery_base_fee) !== parsedBaseFee ||
+        Number(savedPricing.delivery_distance_increment_meters) !== Math.round(parsedDistanceIncrement) ||
+        Number(savedPricing.delivery_fee_per_increment) !== parsedFeePerIncrement ||
+        Number(savedPricing.delivery_max_distance_meters) !== Math.round(parsedMaxDistance)
+      ) {
+        throw new Error('Delivery pricing was not saved. Please verify your restaurant owner permissions and try again.');
+      }
 
       // Persist the delivery origin through an owner-scoped RPC as well.
       // Direct PostgREST UPDATE can succeed with zero affected rows when RLS
@@ -566,11 +584,19 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
       const { data: savedRow, error: verifyError } = await supabase
         .from('restaurants')
-        .select('store_address,operating_hours,delivery_location_latitude,delivery_location_longitude')
+        .select('store_address,operating_hours,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,delivery_location_latitude,delivery_location_longitude')
         .eq('id', restaurantId)
         .single();
 
       if (verifyError) throw verifyError;
+      if (
+        Number(savedRow.delivery_base_fee) !== parsedBaseFee ||
+        Number(savedRow.delivery_distance_increment_meters) !== Math.round(parsedDistanceIncrement) ||
+        Number(savedRow.delivery_fee_per_increment) !== parsedFeePerIncrement ||
+        Number(savedRow.delivery_max_distance_meters) !== Math.round(parsedMaxDistance)
+      ) {
+        throw new Error('Saved delivery pricing does not match your settings. Please try again.');
+      }
       if (
         deliveryLocationLatitude !== null &&
         deliveryLocationLongitude !== null &&
