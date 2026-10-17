@@ -74,7 +74,6 @@ export function RestaurantFaviconSettings({ restaurantId, faviconUrl, disabled =
         </label>
       </div>
       {error ? <p className="tenant-onboarding-error" role="alert">{error}</p> : null}
-      <p className="website-customization-help">Remember to save your website customization to publish the change.</p>
     </div>
   );
 }
