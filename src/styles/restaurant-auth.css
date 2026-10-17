@@ -610,18 +610,22 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   box-sizing: border-box;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   min-height: 100vh;
   min-height: 100svh;
-  padding: clamp(28px, 6vh, 56px) 20px 32px;
+  padding: 24px 20px;
   background: #f8fafc;
 }
 
 .restaurant-owner-auth-card {
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   width: min(380px, 100%);
+  min-height: 320px;
   margin: 0;
-  padding: 24px 28px 26px;
+  padding: 28px;
   background: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 20px;
@@ -801,11 +805,12 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
 
 @media (max-width: 420px) {
   .restaurant-owner-auth-page {
-    padding: 20px 16px 28px;
+    padding: 20px 16px;
   }
 
   .restaurant-owner-auth-card {
-    padding: 22px 20px 24px;
+    min-height: 320px;
+    padding: 24px 20px;
     border-radius: 16px;
   }
 
