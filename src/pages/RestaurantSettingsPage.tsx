@@ -744,21 +744,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
       <form className="restaurant-settings-form" onSubmit={(event) => { event.preventDefault(); setShowSaveConfirmation(true); }}>
         <div className="restaurant-settings-card">
-          <h2>Store address</h2>
-          <p className="restaurant-settings-help">Enter the full address customers and pickup couriers should use to find your store. This address powers the pickup location's Google Maps link and Copy Address action.</p>
-          <label className="restaurant-settings-field" style={{ marginTop: 16 }}>
-            <span>Full store address</span>
-            <input
-              type="text"
-              value={address}
-              onChange={(event) => { setAddress(event.target.value); setMessage(''); setError(''); }}
-              placeholder="Building, street, barangay, city, province, postal code"
-              autoComplete="street-address"
-              disabled={loading || saving}
-            />
-          </label>
-        </div>
-        <div className="restaurant-settings-card">
           <h2>Store status</h2>
           <p className="restaurant-settings-help">Operating hours automatically control the normal opening and closing schedule. Use this switch when you need to manually close the store outside that schedule.</p>
           <label className="restaurant-settings-switch-row">
