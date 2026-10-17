@@ -654,4 +654,4 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
 .restaurant-owner-auth-card .restaurant-auth-switch{margin-top:14px!important;font-size:12px}
 .restaurant-owner-auth-card .customer-password-input-row input[type="password"],.restaurant-owner-auth-card .customer-password-input-row input[type="text"],.restaurant-owner-auth-card .restaurant-owner-auth-form input[type="email"]{text-align:left!important;padding-left:13px!important}
 .restaurant-owner-auth-card .customer-password-input-row input[type="password"],.restaurant-owner-auth-card .customer-password-input-row input[type="text"]{padding-right:48px!important}
-@media(max-width:420px){.restaurant-owner-auth-page{min-height:100svh;padding:18px 20px;align-items:center}.restaurant-owner-auth-card{padding:4px 22px 26px}}
+@media(max-width:420px){.restaurant-owner-auth-page{min-height:100svh;padding:24px 20px 18px!important;align-items:flex-start!important;justify-content:center!important}.restaurant-owner-auth-card{padding:4px 22px 26px}}
