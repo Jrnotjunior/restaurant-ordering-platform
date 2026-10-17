@@ -865,8 +865,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         </div>
 
                 <div className="restaurant-settings-card" id="store-delivery" role="tabpanel" aria-labelledby="store-settings-tab-delivery" hidden={activeSettingsTab !== 'delivery'}>
-          <h2>Delivery pricing</h2>
-          <p className="restaurant-settings-help">Delivery fees are calculated automatically from the restaurant to the customer's confirmed Google Maps location. You no longer need to configure Barangays and individual shipping fees.</p>
           <div className="restaurant-delivery-pricing-grid">
             <label className="restaurant-settings-field"><span>Base delivery fee (₱)</span><input type="number" min="0" step="0.01" value={deliveryBaseFee} onChange={(event) => setDeliveryBaseFee(event.target.value)} disabled={loading || saving} /></label>
             <label className="restaurant-settings-field"><span>Distance increment (meters)</span><input type="number" min="1" step="1" value={deliveryDistanceIncrementMeters} onChange={(event) => setDeliveryDistanceIncrementMeters(event.target.value)} disabled={loading || saving} /></label>
