@@ -93,7 +93,7 @@ export function CustomerSignUpPage() {
     <main className="restaurant-owner-auth-page">
       <section className="restaurant-owner-auth-card customer-signup-card" aria-labelledby="customer-signup-title">
         <p className="eyebrow">Customer account</p>
-        <h1 id="customer-signup-title">Create account</h1>
+        <h1 id="customer-signup-title">Register</h1>
         <p>Create your customer account to sign in and place orders.</p>
 
         {error && <div className="restaurant-dashboard-error" role="alert">{error}</div>}
@@ -156,7 +156,7 @@ export function CustomerSignUpPage() {
             <span>I agree to the use of my personal information for account creation and order-related services. <a href="#privacy">Privacy Notice</a>.</span>
           </label>
           {fieldError('consent')}
-          <button className="button" type="submit" disabled={submitting}>{submitting ? 'Creating account…' : 'Create account'}</button>
+          <button className="button" type="submit" disabled={submitting}>{submitting ? 'Registering…' : 'Register'}</button>
         </form>
 
         <p className="restaurant-auth-switch">
