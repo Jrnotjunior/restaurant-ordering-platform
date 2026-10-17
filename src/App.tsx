@@ -30,6 +30,7 @@ import { CustomerPasswordRecoveryPage } from './pages/CustomerPasswordRecoveryPa
 import { CustomerEmailConfirmationPage } from './pages/CustomerEmailConfirmationPage';
 import { PrivacyNoticePage } from './pages/PrivacyNoticePage';
 import { CustomerPolicyPage } from './pages/CustomerPolicyPage';
+import { LegalPoliciesPage } from './pages/LegalPoliciesPage';
 import { SavedAddressPage } from './pages/SavedAddressPage';
 import { CustomerOrderHistoryPage } from './pages/CustomerOrderHistoryPage';
 import { RiderDeliveryPage } from './pages/RiderDeliveryPage';
@@ -252,6 +253,7 @@ function AppContent() {
     isCustomerEmailConfirmationPage,
     isCustomerPasswordResetPage,
     isCustomerForgotPasswordPage,
+    isLegalPoliciesPage,
     isPrivacyPage,
     isTermsPage,
     isRefundsPage,
@@ -296,6 +298,7 @@ function AppContent() {
   if (isCustomerEmailConfirmationPage || new URLSearchParams(window.location.search).get('customer-confirmation') === '1') {
     return <CustomerEmailConfirmationPage />;
   }
+  if (isLegalPoliciesPage) return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}><LegalPoliciesPage /></RestaurantLayout></ThemeProvider></RestaurantProvider>;
   if (isPrivacyPage) return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><PrivacyNoticePage /></ThemeProvider></RestaurantProvider>;
   if (isTermsPage) return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><CustomerPolicyPage kind="terms" /></ThemeProvider></RestaurantProvider>;
   if (isRefundsPage) return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><CustomerPolicyPage kind="refunds" /></ThemeProvider></RestaurantProvider>;
