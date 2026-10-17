@@ -623,7 +623,7 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   flex-direction: column;
   justify-content: center;
   width: min(380px, 100%);
-  min-height: 320px;
+  min-height: 350px;
   margin: 0;
   padding: 28px;
   background: #fff;
