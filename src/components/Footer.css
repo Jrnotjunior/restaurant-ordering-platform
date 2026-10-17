@@ -17,12 +17,12 @@
 .site-footer-socials { display: flex; align-items: center; justify-content: center; gap: 0.7rem; }
 .site-footer-social-link {
   display: inline-flex; width: 2.5rem; height: 2.5rem; box-sizing: border-box;
-  align-items: center; justify-content: center; border: 1px solid #e3e7ee;
-  border-radius: 50%; background: #fff;
-  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  align-items: center; justify-content: center; border: 0;
+  border-radius: 0; background: transparent;
+  transition: transform 160ms ease;
 }
 .site-footer-social-link[href]:hover {
-  transform: translateY(-2px); border-color: #c7d0dd; box-shadow: 0 4px 12px rgb(24 39 75 / 10%);
+  transform: translateY(-2px);
 }
 .site-footer-social-link:focus-visible, .site-footer-legal-item:focus-visible, .site-footer-powered-by:focus-visible {
   outline: 3px solid #7899d4; outline-offset: 3px;
