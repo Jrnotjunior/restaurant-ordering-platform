@@ -339,10 +339,7 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
         <aside className="restaurant-owner-sidebar" aria-label="Restaurant management navigation">
           <a className="restaurant-owner-brand restaurant-owner-brand-premium" href="#restaurant/owner" aria-label={`${restaurant.name || 'Restaurant'} dashboard`}>
             <span className="restaurant-owner-brand-mark" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 3v7M7 3v7M4 6h3M5.5 10v11" />
-                <path d="M15 3v18M15 3c4 2.5 5 6.5 0 9" />
-              </svg>
+              {(restaurant.name || 'Restaurant').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word.charAt(0).toUpperCase()).join('') || 'R'}
             </span>
             <span className="restaurant-owner-brand-copy">
               <strong>{restaurant.name || 'Restaurant'}</strong>
