@@ -153,6 +153,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
   const isTakeOut = order.orderType === 'take_out';
   const isDineIn = order.orderType === 'dine_in';
   const isCashDineIn = isDineIn && order.paymentMethod === 'cash';
+  const isCashTakeOut = isTakeOut && order.paymentMethod === 'cash';
   const isCollectionOrder = isPickup || isTakeOut;
   const isCustomerCourierPickup = isPickup && order.pickupMethod === 'third_party_courier';
   const steps = isDineIn ? dineInSteps : isCollectionOrder ? collectionSteps : deliverySteps;
@@ -263,9 +264,9 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
           </div>
         ) : null}
 
-        {isCashDineIn && !isCancelled ? (
-          <section className="order-dine-in-number-card" aria-label="Dine-in order number for cashier">
-            <p className="eyebrow">Dine-in · Tell the cashier</p>
+        {(isCashDineIn || isCashTakeOut) && !isCancelled ? (
+          <section className="order-dine-in-number-card" aria-label="Cash order number for cashier">
+            <p className="eyebrow">{isCashDineIn ? 'Dine-in' : 'Take-out'} · Tell the cashier</p>
             <strong className="order-dine-in-number">{order.orderNumber}</strong>
             <p>Give this order number to the cashier to help them find your order.</p>
           </section>
