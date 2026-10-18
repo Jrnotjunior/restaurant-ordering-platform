@@ -15,11 +15,15 @@ begin
       and pg_get_functiondef(p.oid) like '%p_order_type%'
   loop
     v_definition := pg_get_functiondef(v_function.oid);
-    v_updated := regexp_replace(
+    v_updated := replace(
       v_definition,
-      '\(''delivery''[[:space:]]*,[[:space:]]*''pickup''[[:space:]]*,[[:space:]]*''dine_in''\)',
-      '(''delivery'', ''take_out'', ''pickup'', ''dine_in'')',
-      'gi'
+      '(''delivery'', ''pickup'', ''dine_in'')',
+      '(''delivery'', ''take_out'', ''pickup'', ''dine_in'')'
+    );
+    v_updated := replace(
+      v_updated,
+      '(''delivery'',''pickup'',''dine_in'')',
+      '(''delivery'',''take_out'',''pickup'',''dine_in'')'
     );
     if v_updated is distinct from v_definition then
       execute v_updated;
