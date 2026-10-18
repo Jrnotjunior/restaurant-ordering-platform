@@ -974,7 +974,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
               </span>
             </span>
           </label>
-          <div style={{ marginTop: 24 }}>
+          <div>
             <label className="restaurant-settings-switch-row">
               <span>Accept Cash for Pickup</span>
               <span className="restaurant-settings-switch">
