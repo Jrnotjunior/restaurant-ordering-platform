@@ -446,7 +446,7 @@
 
 
 /* MFA Verify button: compact and centered like Sign out. */
-.privileged-mfa-card .restaurant-owner-auth-form .privileged-mfa-submit{width:fit-content;min-width:120px;max-width:100%;justify-self:center;margin-inline:auto;padding-inline:24px;}
+.privileged-mfa-card .restaurant-owner-auth-form .privileged-mfa-submit{box-sizing:border-box;width:100%;min-width:0;max-width:100%;justify-self:stretch;margin-inline:0;padding-inline:24px;}
 
 
 /* MFA verification secondary action: white Sign out button. */
