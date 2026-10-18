@@ -78,6 +78,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
   const [loyaltyLoading, setLoyaltyLoading] = useState(false);
   const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
   const [cashOnPickupEnabled, setCashOnPickupEnabled] = useState(true);
+  const [cashOnTakeOutEnabled, setCashOnTakeOutEnabled] = useState(true);
   const [storeAddress, setStoreAddress] = useState('');
   // Public storefront config may omit the database ID; the cart product carries the resolved tenant ID.
   const restaurantId = restaurant.id ?? items[0]?.product.restaurantId;
@@ -149,10 +150,11 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
 
   useEffect(() => {
     const cashUnavailable = (orderType === 'delivery' && !cashOnDeliveryEnabled)
-      || (['pickup', 'take_out'].includes(orderType) && !cashOnPickupEnabled)
+      || (orderType === 'pickup' && !cashOnPickupEnabled)
+      || (orderType === 'take_out' && !cashOnTakeOutEnabled)
       || (thirdPartyCourierDelivery && orderType === 'pickup');
     if (paymentMethod === 'cash' && cashUnavailable) setPaymentMethod('');
-  }, [orderType, cashOnDeliveryEnabled, cashOnPickupEnabled, thirdPartyCourierDelivery, paymentMethod]);
+  }, [orderType, cashOnDeliveryEnabled, cashOnPickupEnabled, cashOnTakeOutEnabled, thirdPartyCourierDelivery, paymentMethod]);
 
   useEffect(() => {
     if (!supabase || !restaurantId) return;
@@ -162,13 +164,14 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
     async function loadCashOnDeliverySetting() {
       const { data, error } = await client
         .from('restaurants')
-        .select('cash_on_delivery_enabled,cash_on_pickup_enabled')
+        .select('cash_on_delivery_enabled,cash_on_pickup_enabled,cash_on_take_out_enabled')
         .eq('id', restaurantId)
         .single();
 
       if (!mounted) return;
       if (!error) setCashOnDeliveryEnabled(data?.cash_on_delivery_enabled !== false);
       if (!error) setCashOnPickupEnabled(data?.cash_on_pickup_enabled !== false);
+      if (!error) setCashOnTakeOutEnabled(data?.cash_on_take_out_enabled !== false);
     }
 
     void loadCashOnDeliverySetting();
