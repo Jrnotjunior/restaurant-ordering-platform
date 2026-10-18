@@ -18,7 +18,7 @@ type PosPrintOrder = {
   deliveryAddress: string;
   notes: string;
   cashierName: string;
-  orderType: 'dine_in' | 'pickup' | 'delivery';
+  orderType: 'dine_in' | 'take_out' | 'pickup' | 'delivery';
   createdAt: string;
   items: CartItem[];
   beneficiaries: DraftBeneficiary[];
@@ -58,7 +58,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const [category, setCategory] = useState('all');
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [orderType, setOrderType] = useState<'dine_in' | 'pickup' | 'delivery'>('dine_in');
+  const [orderType, setOrderType] = useState<'dine_in' | 'take_out' | 'pickup' | 'delivery'>('dine_in');
   const [selfOrderingEnabled, setSelfOrderingEnabled] = useState(true);
   const [mobileNumber, setMobileNumber] = useState('');
   const [deliveryCity, setDeliveryCity] = useState('');
@@ -114,7 +114,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
     const modules = Array.isArray(data) ? data as { module_key: string; enabled: boolean }[] : [];
     setSelfOrderingEnabled(modules.some((module) => module.module_key === 'self_ordering' && module.enabled));
     if (modules.some((module) => module.module_key === 'self_ordering' && module.enabled)) {
-      setOrderType((current) => current === 'delivery' ? 'dine_in' : current);
+      setOrderType((current) => current === 'delivery' || current === 'pickup' ? 'dine_in' : current);
     }
   }
   async function loadCashierName() {
@@ -457,7 +457,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
 
           <div className="restaurant-pos-type"><span>Order type</span><div>
             <button type="button" className={orderType === 'dine_in' ? 'is-active' : ''} onClick={() => setOrderType('dine_in')}>Dine-in</button>
-            <button type="button" className={orderType === 'pickup' ? 'is-active' : ''} onClick={() => setOrderType('pickup')}>Take-out</button>
+            <button type="button" className={orderType === 'take_out' ? 'is-active' : ''} onClick={() => setOrderType('take_out')}>Take-out</button>
             {!selfOrderingEnabled && <button type="button" className={orderType === 'pickup' ? 'is-active' : ''} onClick={() => setOrderType('pickup')}>Pickup</button>}
             {!selfOrderingEnabled && <button type="button" className={orderType === 'delivery' ? 'is-active' : ''} onClick={() => setOrderType('delivery')}>Delivery</button>}
           </div></div>
@@ -597,7 +597,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             <hr className="pos-receipt-divider" />
             <div className="pos-receipt-center">
               <div className="pos-receipt-label">
-                {printOrder.orderType === 'dine_in' ? 'DINE-IN' : printOrder.orderType === 'delivery' ? 'DELIVERY' : 'PICKUP / TAKE-OUT'}
+                {printOrder.orderType === 'dine_in' ? 'DINE-IN' : printOrder.orderType === 'delivery' ? 'DELIVERY' : printOrder.orderType === 'pickup' ? 'PICKUP' : 'TAKE-OUT'}
               </div>
               <div>{printOrder.customerName}</div>
               {printOrder.orderType === 'delivery' && <>
