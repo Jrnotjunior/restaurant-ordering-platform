@@ -18,11 +18,9 @@ function getSecretKey() {
   return secretKeys.default ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 }
 
-const fallbackSiteBaseUrl = "https://jrnotjunior.github.io/restaurant-ordering-platform/";
-
-function getRestaurantSiteBaseUrl(customDomain: unknown) {
+function getRestaurantSiteBaseUrl(customDomain: unknown): string | null {
   const configuredDomain = String(customDomain ?? "").trim();
-  if (!configuredDomain) return fallbackSiteBaseUrl;
+  if (!configuredDomain) return null;
 
   try {
     const candidate = new URL(
@@ -40,11 +38,11 @@ function getRestaurantSiteBaseUrl(customDomain: unknown) {
       candidate.pathname !== "/" ||
       candidate.search ||
       candidate.hash
-    ) return fallbackSiteBaseUrl;
+    ) return null;
 
     return `${candidate.origin}/`;
   } catch {
-    return fallbackSiteBaseUrl;
+    return null;
   }
 }
 
@@ -102,6 +100,13 @@ Deno.serve(async (request) => {
       .maybeSingle();
     if (restaurantDomainError) throw restaurantDomainError;
     const siteBaseUrl = getRestaurantSiteBaseUrl(restaurantDomain?.custom_domain);
+    if (!siteBaseUrl) {
+      console.error("PayMongo checkout blocked: restaurant custom domain is missing or invalid", {
+        paymentId: pendingPayment.id,
+        restaurantId: pendingPayment.restaurant_id,
+      });
+      return jsonResponse({ error: "This restaurant storefront domain is not configured correctly. Please contact the restaurant before trying payment again." }, 409);
+    }
     if (pendingPayment.status !== "pending") {
       return jsonResponse({ error: "This payment is no longer awaiting payment." }, 409);
     }
