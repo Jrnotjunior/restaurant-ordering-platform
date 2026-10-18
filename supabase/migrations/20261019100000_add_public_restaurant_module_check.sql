@@ -1,4 +1,4 @@
-create or replace function public.public_restaurant_has_module(p_restaurant_id uuid, p_module_key text)
+create or replace function public.public_restaurant_has_module(p_restaurant_id uuid, p_module_key text default 'dispatch_delivery')
 returns boolean
 language sql
 stable
