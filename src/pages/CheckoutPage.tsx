@@ -84,13 +84,13 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
     let cancelled = false;
     async function checkDeliveryModule() {
       if (!supabase) { setDeliveryModuleEnabled(false); return; }
-      const { data, error } = await supabase.rpc('public_restaurant_has_module', {
-        p_restaurant_id: restaurantId,
-        p_module_key: 'dispatch_delivery',
+      const { data, error } = await supabase.functions.invoke('public-delivery-module-check', {
+        body: { restaurantId },
       });
       if (cancelled) return;
-      setDeliveryModuleEnabled(!error && data === true);
-      if ((error || data !== true) && orderType === 'delivery') setOrderType('take_out');
+      const enabled = !error && data?.enabled === true;
+      setDeliveryModuleEnabled(enabled);
+      if (!enabled && orderType === 'delivery') setOrderType('take_out');
     }
     void checkDeliveryModule();
     return () => { cancelled = true; };
