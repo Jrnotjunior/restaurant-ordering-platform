@@ -14,7 +14,7 @@ type CustomerStatus = OrderStatus | 'out_for_delivery' | 'arrived';
 const deliverySteps: Array<{ key: CustomerStatus; label: string; description: string }> = [
   { key: 'pending', label: 'Order Received', description: 'Your order has been received by the restaurant.' },
   { key: 'confirmed', label: 'Confirmed', description: 'The restaurant has confirmed your order.' },
-  { key: 'preparing', label: 'Preparing', description: 'The kitchen is preparing your food.' },
+  { key: 'preparing', label: 'Preparing', description: 'The restaurant is preparing your food.' },
   { key: 'ready', label: 'Ready', description: 'Your order is ready.' },
   { key: 'out_for_delivery', label: 'Out for delivery', description: 'Your rider is on the way to you.' },
   { key: 'arrived', label: 'Arrived at customer', description: 'Your rider has arrived at your location.' },
@@ -138,8 +138,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
     return <section className="order-tracking-page"><div className="order-tracking-card"><p className="eyebrow">Order tracking</p><h1>Loading your order…</h1><p>Please wait while we retrieve the latest status.</p></div></section>;
   }
 
-  // Restaurant uses "confirmed" for orders that have entered the kitchen.
-  // The customer-facing timeline should show that stage as "Preparing".
+  // Keep confirmation and preparation separate so tracking reflects the actual saved order status.
   const isCancelled = order.status === 'cancelled';
   const customerStatus: CustomerStatus = order.deliveryStatus === 'failed'
     ? 'completed'
@@ -149,8 +148,6 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
       ? 'out_for_delivery'
       : order.deliveryStatus === 'arrived'
         ? 'arrived'
-        : order.status === 'confirmed'
-        ? 'preparing'
         : order.status;
   const isPickup = order.orderType === 'pickup';
   const isTakeOut = order.orderType === 'take_out';
