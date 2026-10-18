@@ -215,6 +215,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [activeSettingsTab, setActiveSettingsTab] = useState('profile');
   const [hasDispatchDelivery, setHasDispatchDelivery] = useState(false);
   const [hasSelfOrdering, setHasSelfOrdering] = useState(true);
+  const [hasOnlinePayments, setHasOnlinePayments] = useState(true);
   const [paymongoTestStatus, setPaymongoTestStatus] = useState("not_connected");
   const [paymongoLiveStatus, setPaymongoLiveStatus] = useState("not_connected");
   const [paymongoLiveAccountId, setPaymongoLiveAccountId] = useState("");
@@ -234,25 +235,28 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       if (!supabase) {
         setHasDispatchDelivery(false);
         setHasSelfOrdering(false);
+        setHasOnlinePayments(false);
         return;
       }
-      const [{ data: deliveryData, error: deliveryError }, { data: orderingData, error: orderingError }] = await Promise.all([
+      const [{ data: deliveryData, error: deliveryError }, { data: orderingData, error: orderingError }, { data: paymentsData, error: paymentsError }] = await Promise.all([
         supabase.rpc('restaurant_has_module', { p_restaurant_id: restaurantId, p_module_key: 'dispatch_delivery' }),
         supabase.rpc('restaurant_has_module', { p_restaurant_id: restaurantId, p_module_key: 'self_ordering' }),
+        supabase.rpc('restaurant_has_module', { p_restaurant_id: restaurantId, p_module_key: 'online_payments' }),
       ]);
       if (cancelled) return;
       setHasDispatchDelivery(!deliveryError && deliveryData === true);
       setHasSelfOrdering(!orderingError && orderingData === true);
+      setHasOnlinePayments(!paymentsError && paymentsData === true);
     }
     void loadPackageModules();
     return () => { cancelled = true; };
   }, [restaurantId]);
 
   useEffect(() => {
-    if ((!hasDispatchDelivery && ["delivery", "cod", "rider"].includes(activeSettingsTab)) || (!hasSelfOrdering && ["status", "hours"].includes(activeSettingsTab))) {
+    if ((!hasDispatchDelivery && ["delivery", "cod", "rider"].includes(activeSettingsTab)) || (!hasSelfOrdering && ["status", "hours"].includes(activeSettingsTab)) || (!hasOnlinePayments && activeSettingsTab === "payments")) {
       setActiveSettingsTab('profile');
     }
-  }, [hasDispatchDelivery, hasSelfOrdering, activeSettingsTab]);
+  }, [hasDispatchDelivery, hasSelfOrdering, hasOnlinePayments, activeSettingsTab]);
 
   useEffect(() => {
     if (!message) return;
@@ -814,7 +818,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
             { id: 'delivery', label: 'Delivery pricing' },
             { id: 'cod', label: 'Cash on Delivery' },
             { id: 'rider', label: 'Rider assignment' },
-            { id: 'payments', label: 'Online payments' },
+            ...(hasOnlinePayments ? [{ id: 'payments', label: 'Online payments' }] : []),
             { id: 'tax', label: 'Tax & receipts' },
           ].filter((tab) => hasDispatchDelivery || !['delivery', 'cod', 'rider'].includes(tab.id)).map((tab) => (
             <button
@@ -986,7 +990,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Controlled by the System Administrator. Contact the System Administrator to request a workflow change.</p>
         </div>
 
-                <div className="restaurant-settings-card restaurant-paymongo-card" id="store-payments" role="tabpanel" aria-labelledby="store-settings-tab-payments" hidden={activeSettingsTab !== 'payments'}>
+                {hasOnlinePayments && <div className="restaurant-settings-card restaurant-paymongo-card" id="store-payments" role="tabpanel" aria-labelledby="store-settings-tab-payments" hidden={activeSettingsTab !== 'payments'}>
           {paymongoError && <div className="restaurant-paymongo-error" role="alert">
             <strong>PayMongo connection error</strong>
             <span>{paymongoError}</span>
@@ -1034,8 +1038,9 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           </div>
           <p className="restaurant-settings-help" style={{ marginTop: 12 }}>Test mode uses a PayMongo simulated merchant account, so no real identity verification is required. Production live payments will use the same restaurant-specific architecture with real merchant onboarding after the platform is ready for launch.</p>
         </div>
+                </div>}
 
-                <div id="store-live-payments" hidden={activeSettingsTab !== 'payments'}><PayMongoLiveOnboardingCard restaurantId={restaurantId} /></div>
+                {hasOnlinePayments && <div id="store-live-payments" hidden={activeSettingsTab !== 'payments'}><PayMongoLiveOnboardingCard restaurantId={restaurantId} /></div>}
 
 
 
