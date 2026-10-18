@@ -650,14 +650,14 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
             }} /><span className="order-type-content"><strong>{type.label}</strong></span></label>)}
           </div></fieldset>
 
-          {orderType === 'pickup' && (
+          {(orderType === 'pickup' || orderType === 'take_out') && (
             <section className="checkout-section checkout-pickup-location" aria-label="Restaurant pickup location">
-              <p className="eyebrow">Pickup location</p>
+              <p className="eyebrow">{orderType === 'take_out' ? 'Take-out location' : 'Pickup location'}</p>
               <h2>{restaurant.name}</h2>
               {restaurantPickupPoint
                 ? <p>{restaurantPickupPoint}</p>
                 : <p role="status">The restaurant has not configured a pickup address yet. Please contact the restaurant before placing your order.</p>}
-              {restaurantPickupPoint ? <span>Please collect your order from this restaurant address.</span> : null}
+              {restaurantPickupPoint ? <span>{orderType === 'take_out' ? 'Collect your take-out order from this restaurant address.' : 'Please collect your order from this restaurant address.'}</span> : null}
             </section>
           )}
 
