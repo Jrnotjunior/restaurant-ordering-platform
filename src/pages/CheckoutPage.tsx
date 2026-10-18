@@ -78,7 +78,8 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
   const [loyaltyLoading, setLoyaltyLoading] = useState(false);
   const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
   const [storeAddress, setStoreAddress] = useState('');
-  const restaurantId = restaurant.id;
+  // Public storefront config may omit the database ID; the cart product carries the resolved tenant ID.
+  const restaurantId = restaurant.id ?? items[0]?.product.restaurantId;
 
   useEffect(() => {
     let cancelled = false;
