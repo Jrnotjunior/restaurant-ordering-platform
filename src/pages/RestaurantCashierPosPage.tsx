@@ -634,7 +634,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             <hr className="pos-receipt-divider" />
             <div className="pos-receipt-center">
               <div className="pos-receipt-label">
-                {printOrder.orderType === 'dine_in' ? 'DINE-IN' : printOrder.orderType === 'delivery' ? 'DELIVERY' : 'PICKUP / TAKE-OUT'}
+                {printOrder.orderType === 'dine_in' ? 'DINE-IN' : printOrder.orderType === 'delivery' ? 'DELIVERY' : printOrder.orderType === 'pickup' ? 'PICKUP' : 'TAKE-OUT'}
               </div>
               <div>Cash • Paid</div>
             </div>
