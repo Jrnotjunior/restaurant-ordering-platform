@@ -312,8 +312,6 @@ function AppContent() {
     }).then(({ data, error }) => {
       if (cancelled || error || data !== false) return;
       window.location.hash = '#account';
-    }).catch((error: unknown) => {
-      console.error('Unable to verify public self-ordering access.', error);
     });
     return () => { cancelled = true; };
   }, [restaurant.id, route]);
