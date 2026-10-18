@@ -13,6 +13,8 @@ type DraftBeneficiary = { discountType: PosDiscountType; idType: PosDiscountIdTy
 type PosPrintOrder = {
   orderNumber: string;
   customerName: string;
+  mobileNumber: string;
+  deliveryAddress: string;
   notes: string;
   cashierName: string;
   orderType: 'dine_in' | 'pickup' | 'delivery';
@@ -281,7 +283,9 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
       setPrintOrder({
         orderNumber: created.orderNumber,
         customerName: enteredCustomerName,
-         notes: notes.trim(),
+        mobileNumber: orderType === 'delivery' ? mobileNumber.trim() : '',
+        deliveryAddress: orderType === 'delivery' ? deliveryAddress.trim() : '',
+        notes: notes.trim(),
         cashierName,
         orderType,
         createdAt: new Date().toISOString(),
@@ -572,6 +576,10 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
                 {printOrder.orderType === 'dine_in' ? 'DINE-IN' : printOrder.orderType === 'delivery' ? 'DELIVERY' : 'PICKUP / TAKE-OUT'}
               </div>
               <div>{printOrder.customerName}</div>
+              {printOrder.orderType === 'delivery' && <>
+                <div>{printOrder.mobileNumber}</div>
+                <div>{printOrder.deliveryAddress}</div>
+              </>}
             </div>
             <hr className="pos-receipt-divider" />
             {printOrder.notes && (
@@ -602,7 +610,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             <hr className="pos-receipt-divider" />
             <div className="pos-receipt-center">
               <div className="pos-receipt-label">
-                {printOrder.orderType === 'dine_in' ? 'DINE-IN' : 'PICKUP / TAKE-OUT'}
+                {printOrder.orderType === 'dine_in' ? 'DINE-IN' : printOrder.orderType === 'delivery' ? 'DELIVERY' : 'PICKUP / TAKE-OUT'}
               </div>
               <div>Cash • Paid</div>
             </div>
