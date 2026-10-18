@@ -15,7 +15,7 @@ export type RestaurantOrder = {
   orderNumber: string;
   customerName: string;
   notes: string;
-  orderType: 'delivery' | 'pickup' | 'dine_in';
+  orderType: 'delivery' | 'take_out' | 'pickup' | 'dine_in';
   pickupMethod: 'customer' | 'third_party_courier' | null;
   paymentMethod: 'cash' | 'gcash';
   paymentStatus: RestaurantPaymentStatus;
@@ -56,7 +56,7 @@ export type CreateOrderInput = {
   restaurantId: string;
   customerName: string;
   mobileNumber: string;
-  orderType: 'delivery' | 'pickup' | 'dine_in';
+  orderType: 'delivery' | 'take_out' | 'pickup' | 'dine_in';
   deliveryCity: string;
   deliveryBarangay: string;
   deliveryAddress: string;
@@ -94,7 +94,7 @@ export type TrackedOrder = {
   storeLatitude: number | null;
   storeLongitude: number | null;
   operatingHours: Record<string, { isOpen: boolean; open: string; close: string }> | null;
-  orderType: 'delivery' | 'pickup' | 'dine_in';
+  orderType: 'delivery' | 'take_out' | 'pickup' | 'dine_in';
   pickupMethod: 'customer' | 'third_party_courier' | null;
   paymentMethod: 'cash' | 'gcash';
   status: OrderStatus;
