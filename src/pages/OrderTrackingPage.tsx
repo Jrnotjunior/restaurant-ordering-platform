@@ -252,7 +252,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
           <div>
             <p className="eyebrow">Order tracking</p>
             <h1>Order #{order.orderNumber}</h1>
-            <p className="order-tracking-subtitle">Track your order from confirmation to completion.</p>
+            <p className="order-tracking-subtitle">View your order summary and collection details.</p>
           </div>
           <span className={`order-tracking-live-status is-${realtimeStatus}`}>
             <span className="order-tracking-live-dot" />
@@ -327,7 +327,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
           </div>
         ) : isCancelled ? (
           <div className="order-tracking-cancelled"><strong>Order cancelled</strong><span>This order has been cancelled by the restaurant or customer.</span></div>
-        ) : (
+        ) : order.orderType === 'delivery' ? (
           <div className="order-status-timeline" aria-label="Order status">
             {steps.map((step, index) => {
               const complete = index <= currentIndex;
@@ -340,7 +340,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
               );
             })}
           </div>
-        )}
+        ) : null}
 
         {isCustomerCourierPickup && !isCancelled && order.status !== 'completed' && (
           <div className="order-tracking-cancelled" role="note">
