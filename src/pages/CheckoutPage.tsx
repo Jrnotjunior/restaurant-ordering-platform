@@ -89,11 +89,15 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
       // request; wait for a real tenant ID and let this effect rerun.
       if (!restaurantId) return;
       if (!supabase) { setDeliveryModuleEnabled(false); return; }
-      const { data, error } = await supabase.functions.invoke('public-delivery-module-check', {
-        body: { restaurantId },
+      // Use the public, SECURITY DEFINER module check directly. The Edge Function
+      // wrapper has been returning 503 despite this database RPC working correctly.
+      const { data, error } = await supabase.rpc('public_restaurant_has_module', {
+        p_restaurant_id: restaurantId,
+        p_module_key: 'dispatch_delivery',
       });
       if (cancelled) return;
-      const enabled = !error && data?.enabled === true;
+      if (error) console.error('Unable to check delivery module availability.', error);
+      const enabled = !error && data === true;
       setDeliveryModuleEnabled(enabled);
       if (!enabled && orderType === 'delivery') setOrderType('take_out');
     }
