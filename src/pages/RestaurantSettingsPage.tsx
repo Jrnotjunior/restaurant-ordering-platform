@@ -193,6 +193,7 @@ function normalizeHours(value: unknown): OperatingHours {
 export function RestaurantSettingsPage({ restaurantId }: Props) {
   const { setUnsavedChanges } = useOwnerUnsavedChanges();
   const [address, setAddress] = useState('');
+  const [restaurantAddress, setRestaurantAddress] = useState('');
   const [restaurantTagline, setRestaurantTagline] = useState('');
   const [hours, setHours] = useState<OperatingHours>(DEFAULT_HOURS);
   const [vatRegistered, setVatRegistered] = useState(false);
@@ -244,13 +245,14 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     try {
       const { data, error: loadError } = await supabase
         .from('restaurants')
-        .select('tagline,store_address,location_text,ordering_enabled,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate,cash_on_delivery_enabled,automatic_rider_assignment_enabled,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,delivery_location_latitude,delivery_location_longitude')
+        .select('tagline,restaurant_address,store_address,location_text,ordering_enabled,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate,cash_on_delivery_enabled,automatic_rider_assignment_enabled,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,delivery_location_latitude,delivery_location_longitude')
          .eq('id', restaurantId)
         .single();
 
       if (loadError) throw loadError;
       setRestaurantTagline(data?.tagline ?? '');
       setAddress(data?.store_address ?? data?.location_text ?? '');
+      setRestaurantAddress(data?.restaurant_address ?? '');
       setHours(normalizeHours(data?.operating_hours));
       setOrderingEnabled(data?.ordering_enabled !== false);
       setVatRegistered(Boolean(data?.tax_vat_registered));
@@ -539,6 +541,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       const { error: saveError } = await supabase
         .from('restaurants')
         .update({
+          restaurant_address: restaurantAddress.trim() || null,
           store_address: address.trim() || null,
           operating_hours: normalizedHours,
           ordering_enabled: orderingEnabled,
@@ -593,7 +596,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
       const { data: savedRow, error: verifyError } = await supabase
         .from('restaurants')
-        .select('tagline,store_address,operating_hours,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,delivery_location_latitude,delivery_location_longitude')
+        .select('tagline,restaurant_address,store_address,operating_hours,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,delivery_location_latitude,delivery_location_longitude')
         .eq('id', restaurantId)
         .single();
 
@@ -634,6 +637,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
       setRestaurantTagline(savedRow?.tagline ?? restaurantTagline.trim());
       setAddress(savedAddress);
+      setRestaurantAddress(savedRow?.restaurant_address ?? restaurantAddress.trim());
       setHours(savedHours);
       setMessage('Store settings saved successfully.');
       setUnsavedChanges(false);
@@ -790,6 +794,17 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         </nav>
 
         <div className="restaurant-settings-card" id="store-profile" role="tabpanel" aria-labelledby="store-settings-tab-profile" hidden={activeSettingsTab !== 'profile'}>
+          <label className="restaurant-settings-field" style={{ display: 'grid', gap: 7, marginTop: 16 }}>
+            <span>Restaurant address</span>
+            <input
+              type="text"
+              value={restaurantAddress}
+              placeholder="Enter the address customers should see"
+              disabled={loading || saving}
+              onChange={(event) => { setRestaurantAddress(event.target.value); setMessage(''); setError(''); }}
+            />
+            <small className="restaurant-settings-help">This address is displayed to customers as the restaurant pickup location. It is separate from the delivery map location.</small>
+          </label>
           <label className="restaurant-settings-field" style={{ display: 'grid', gap: 7, marginTop: 16 }}>
             <span>Restaurant tagline</span>
             <input
