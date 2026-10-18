@@ -719,7 +719,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
             }} /><span className="order-type-content"><strong>{type.label}</strong></span></label>)}
           </div></fieldset>
 
-          {(orderType === 'pickup' || orderType === 'take_out') && (
+          {orderType === 'pickup' && (
             <section className="checkout-section checkout-pickup-location" aria-label="Restaurant pickup location">
               <p className="eyebrow">{orderType === 'take_out' ? 'Take-out location' : 'Pickup location'}</p>
               <h2>{restaurant.name}</h2>
