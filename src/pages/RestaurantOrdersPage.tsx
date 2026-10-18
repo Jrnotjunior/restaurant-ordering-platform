@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { getRestaurantOrders, updateOrderStatus, type RestaurantOrder, type RestaurantOrderStatus } from '../modules/ordering/orderService';
+import { getRestaurantOrders, updateOrderStatus, sendOrderToKitchen, type RestaurantOrder, type RestaurantOrderStatus } from '../modules/ordering/orderService';
 import { getKitchenOrders, updateKitchenOrderStatus } from '../modules/kitchen/kitchenService';
 import { confirmPosCashPayment } from '../modules/pos/posService';
 import { supabase } from '../services/supabaseClient';
@@ -206,7 +206,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
       setError('');
       setUpdating(order.orderId);
       window.print();
-      await updateOrderStatus(order.orderId, 'preparing');
+      await sendOrderToKitchen(order.orderId);
       const updated = { ...order, status: 'preparing' as RestaurantOrderStatus };
       setOrders((current) => current.map((item) => (item.orderId === order.orderId ? updated : item)));
       // Close only the order-detail modal and return to the New Orders list.
