@@ -148,6 +148,13 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
   }, [restaurantId]);
 
   useEffect(() => {
+    const cashUnavailable = (orderType === 'delivery' && !cashOnDeliveryEnabled)
+      || (['pickup', 'take_out'].includes(orderType) && !cashOnPickupEnabled)
+      || (thirdPartyCourierDelivery && orderType === 'pickup');
+    if (paymentMethod === 'cash' && cashUnavailable) setPaymentMethod('');
+  }, [orderType, cashOnDeliveryEnabled, cashOnPickupEnabled, thirdPartyCourierDelivery, paymentMethod]);
+
+  useEffect(() => {
     if (!supabase || !restaurantId) return;
     const client = supabase as NonNullable<typeof supabase>;
 
