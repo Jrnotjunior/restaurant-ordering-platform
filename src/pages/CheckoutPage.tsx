@@ -84,6 +84,10 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
   useEffect(() => {
     let cancelled = false;
     async function checkDeliveryModule() {
+      // The public storefront can render before its restaurant ID and cart
+      // products have finished resolving. Never send an empty module-check
+      // request; wait for a real tenant ID and let this effect rerun.
+      if (!restaurantId) return;
       if (!supabase) { setDeliveryModuleEnabled(false); return; }
       const { data, error } = await supabase.functions.invoke('public-delivery-module-check', {
         body: { restaurantId },
