@@ -111,7 +111,7 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
             />
             <span>
               <strong>Enable Loyalty Program</strong>
-              <small>When disabled, completed orders will not award points.</small>
+              <small>When disabled, completed orders will not add eligible spend or award points.</small>
             </span>
           </label>
 
@@ -151,8 +151,8 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
 
           <div className="restaurant-loyalty-rule-preview">
             <span>Current earning rule</span>
-            <strong>{points || '0'} points for every ₱{threshold || '0'} in eligible sales</strong>
-            <small>Example: if the rule is ₱500 = 5 points, a ₱1,000 eligible order earns 10 points.</small>
+            <strong>{points || '0'} points for every ₱{threshold || '0'} in cumulative eligible sales</strong>
+            <small>Eligible spend carries over between completed orders. Example: ₱365 + ₱180 = ₱545 earns 5 points with ₱45 carried toward the next reward. Your restaurant's configured threshold and points remain the source of truth.</small>
           </div>
 
           <div className="restaurant-loyalty-redemption">
@@ -222,7 +222,8 @@ export function RestaurantLoyaltyPage({ restaurantId }: Props) {
         .restaurant-loyalty-rule-preview strong{color:var(--color-text);font-size:.95rem}
         .restaurant-loyalty-rule-preview small{color:var(--color-muted);font-size:.75rem;line-height:1.4}
         .restaurant-loyalty-redemption{display:grid;gap:18px;padding-top:6px;border-top:1px solid var(--color-border)}
-        .restaurant-loyalty-actions{display:flex;justify-content:flex-end}\n        .restaurant-loyalty-actions .button{min-height:36px;padding:8px 14px;font-size:.78rem;line-height:1.2;border-radius:10px}
+        .restaurant-loyalty-actions{display:flex;justify-content:flex-end}
+        .restaurant-loyalty-actions .button{min-height:36px;padding:8px 14px;font-size:.78rem;line-height:1.2;border-radius:10px}
         @media(max-width:760px){.restaurant-loyalty-rule{grid-template-columns:1fr}.restaurant-loyalty-actions{justify-content:flex-end}.restaurant-loyalty-actions .button{width:auto}}
       `}</style>
     </section>
