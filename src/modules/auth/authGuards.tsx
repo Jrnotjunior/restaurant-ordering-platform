@@ -16,7 +16,7 @@ export function ownerRestaurantConfig(
     name: restaurant.name,
     tagline: restaurant.tagline,
     logoUrl: restaurant.logo_url ?? undefined,
-    locationText: restaurant.location_text ?? undefined,
+    locationText: restaurant.restaurant_address ?? undefined,
     contactNumber: restaurant.contact_number ?? undefined,
     email: restaurant.email ?? undefined,
   };
