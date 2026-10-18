@@ -1,6 +1,6 @@
 -- Retire standalone Dispatch + Delivery package (Package 5).
 -- Keep the package row and ID for existing subscription referential integrity,
--- but prevent new assignments and remove its standalone module combination.
+-- but mark it inactive while preserving existing module mappings.
 update public.system_packages
 set is_active = false,
     description = 'Retired: delivery requires a supported order source such as Self Ordering or POS.',
