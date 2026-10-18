@@ -516,7 +516,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
       orderType: isOwnCourierPickup ? 'pickup' : orderType,
       deliveryCity: isDelivery && !thirdPartyCourierDelivery ? deliveryCity.trim() : '',
       deliveryBarangay: isDelivery && !thirdPartyCourierDelivery ? deliveryBarangay.trim() : '',
-      deliveryAddress: isOwnCourierPickup ? restaurantPickupPoint : isDelivery ? [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ') : address.trim(),
+      deliveryAddress: isOwnCourierPickup ? restaurantPickupPoint : isDelivery ? [deliveryCity.trim(), deliveryBarangay.trim(), address.trim()].filter(Boolean).join(', ') : '',
       notes: finalNotes,
       paymentMethod: method === 'online' ? 'gcash' : 'cash',
       isThirdPartyCourier: isOwnCourierPickup,
