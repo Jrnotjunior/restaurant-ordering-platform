@@ -160,7 +160,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
             <h1>Employees</h1>
             <p>Manage your restaurant employees and their access to the management system.</p>
           </div>
-          <div className="restaurant-employee-header-actions"><button className="button button-secondary restaurant-compact-action" type="button" onClick={() => setShowPayrollOnlyForm(true)}>Add employee without login</button><button className="button button-primary restaurant-compact-action" type="button" onClick={() => setShowForm(true)}>Add Employee account</button></div>
+          <div className="restaurant-employee-header-actions"><button className="button button-primary restaurant-compact-action" type="button" onClick={() => setShowForm(true)}>Add Employee account</button></div>
         </div>
 
         <div className="restaurant-employees-search">
