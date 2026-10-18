@@ -224,6 +224,10 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   async function placeOrder() {
     if (!cart.length || saving || !cashPaymentReady) return;
     const enteredCustomerName = customerName.trim();
+    if (orderType === 'delivery' && (!mobileNumber.trim() || !deliveryCity.trim() || !deliveryBarangay.trim() || !deliveryAddress.trim() || !selectedDeliveryLocation || !deliveryRouteQuote?.inRange || deliveryRouteLoading)) {
+      setError('Enter the delivery contact and address, then select an in-range location on the map to calculate the delivery fee.');
+      return;
+    }
     if (!enteredCustomerName) {
       setError('Enter the customer name before placing the order.');
       return;
@@ -295,6 +299,12 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
       setCart([]);
       clearDiscounts();
       setCustomerName('');
+      setMobileNumber('');
+      setDeliveryCity('');
+      setDeliveryBarangay('');
+      setDeliveryAddress('');
+      setSelectedDeliveryLocation(null);
+      setDeliveryRouteQuote(null);
       setSelectedCustomerId(null);
       setSelectedCustomerPoints(null);
       setRedeemPoints(false);
@@ -347,7 +357,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
         </div>
 
         <aside className="restaurant-pos-cart">
-          <div className="restaurant-pos-cart-header"><div><p className="eyebrow">Walk-in order</p><h2>Current Order</h2></div><strong>₱{total.toFixed(2)}</strong></div>
+          <div className="restaurant-pos-cart-header"><div><p className="eyebrow">{orderType === 'delivery' ? 'Delivery order' : 'Walk-in order'}</p><h2>Current Order</h2></div><strong>₱{total.toFixed(2)}</strong></div>
 
           <div className="restaurant-pos-customer-field">
             <label className="restaurant-pos-field">
@@ -503,6 +513,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
 
           <div className="restaurant-pos-totals">
             <div className="restaurant-pos-total"><span>Subtotal</span><strong>₱{subtotal.toFixed(2)}</strong></div>
+            {orderType === 'delivery' && <div className="restaurant-pos-total"><span>Delivery fee</span><strong>₱{deliveryFee.toFixed(2)}</strong></div>}
             {taxSettings?.vatRegistered && <div className="restaurant-pos-total"><span>VATable sales</span><strong>₱{vatableSales.toFixed(2)}</strong></div>}
             {taxSettings?.vatRegistered && <div className="restaurant-pos-total"><span>VAT {taxSettings.vatRate.toFixed(2)}%</span><strong>₱{vatAmount.toFixed(2)}</strong></div>}
             {beneficiaries.length > 0 && <>
