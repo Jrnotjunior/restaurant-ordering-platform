@@ -268,7 +268,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
           <section className="order-dine-in-number-card" aria-label="Dine-in order number for cashier">
             <p className="eyebrow">Dine-in · Tell the cashier</p>
             <strong className="order-dine-in-number">{order.orderNumber}</strong>
-            <p>Give this order number to the cashier to help them find your order. You do not need to track preparation progress here.</p>
+            <p>Give this order number to the cashier to help them find your order.</p>
           </section>
         ) : null}
         <details className="order-tracking-details">
