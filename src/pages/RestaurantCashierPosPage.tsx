@@ -443,10 +443,10 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
           </div></div>
 
           {orderType === 'delivery' && <section className="restaurant-pos-delivery-fields">
-            <label className="restaurant-pos-field"><span>Customer phone number</span><input type="tel" value={mobileNumber} onChange={(event) => setMobileNumber(event.target.value)} placeholder="09XX XXX XXXX" disabled={saving} /></label>
-            <label className="restaurant-pos-field"><span>City / Municipality</span><input value={deliveryCity} onChange={(event) => setDeliveryCity(event.target.value)} placeholder="City or municipality" disabled={saving} /></label>
-            <label className="restaurant-pos-field"><span>Barangay</span><input value={deliveryBarangay} onChange={(event) => setDeliveryBarangay(event.target.value)} placeholder="Barangay" disabled={saving} /></label>
-            <label className="restaurant-pos-field"><span>Complete delivery address</span><textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="House / unit number, street, building, landmark" rows={2} disabled={saving} /></label>
+            <label className="restaurant-pos-field"><span>Customer phone number</span><input type="tel" value={mobileNumber} onChange={(event) => setMobileNumber(event.target.value)} disabled={saving} /></label>
+            <label className="restaurant-pos-field"><span>City / Municipality</span><input value={deliveryCity} onChange={(event) => setDeliveryCity(event.target.value)} disabled={saving} /></label>
+            <label className="restaurant-pos-field"><span>Barangay</span><input value={deliveryBarangay} onChange={(event) => setDeliveryBarangay(event.target.value)} disabled={saving} /></label>
+            <label className="restaurant-pos-field"><span>Complete delivery address</span><textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} rows={2} disabled={saving} /></label>
             <MapboxDeliveryLocationPicker disabled={saving} onSelect={async (selected) => {
               setSelectedDeliveryLocation(selected);
               setDeliveryCity(selected.city || '');
