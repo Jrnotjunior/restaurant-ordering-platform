@@ -11,6 +11,7 @@ import {
 } from '../modules/employees/employeeService';
 import { useOwnerUnsavedChanges } from '../contexts/OwnerUnsavedChangesContext';
 import { useOwnerUnsavedChangesTracking } from '../hooks/useOwnerUnsavedChangesTracking';
+import { supabase } from '../services/supabaseClient';
 
 export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string }) {
   const { setUnsavedChanges } = useOwnerUnsavedChanges();
@@ -23,6 +24,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
   const [error, setError] = useState('');
   const [confirmation, setConfirmation] = useState('');
   const [searchEmployee, setSearchEmployee] = useState('');
+  const [availableStaffModules, setAvailableStaffModules] = useState({ kitchen: false, dispatchDelivery: false });
 
   async function loadStaff() {
     setLoading(true);
@@ -38,7 +40,24 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
 
   useOwnerUnsavedChangesTracking('.restaurant-employees-page');
 
-  useEffect(() => { void loadStaff(); }, [restaurantId]);
+  useEffect(() => {
+    void loadStaff();
+    let cancelled = false;
+    async function loadAvailableStaffModules() {
+      if (!supabase) return;
+      const [kitchenResult, dispatchResult] = await Promise.all([
+        supabase.rpc('restaurant_has_module', { p_restaurant_id: restaurantId, p_module_key: 'kitchen' }),
+        supabase.rpc('restaurant_has_module', { p_restaurant_id: restaurantId, p_module_key: 'dispatch_delivery' }),
+      ]);
+      if (cancelled) return;
+      setAvailableStaffModules({
+        kitchen: kitchenResult.error ? false : kitchenResult.data === true,
+        dispatchDelivery: dispatchResult.error ? false : dispatchResult.data === true,
+      });
+    }
+    void loadAvailableStaffModules();
+    return () => { cancelled = true; };
+  }, [restaurantId]);
 
   const filteredStaff = useMemo(() => {
     const query = searchEmployee.trim().toLowerCase();
@@ -218,7 +237,7 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
             <div className="restaurant-employee-form-grid">
               <label>Full name<input name="name" type="text"  required /></label>
               <label>Preferred name<input name="preferredName" type="text"  required /></label>
-              <label>Role<select name="role" defaultValue="cashier"><option value="cashier">Cashier</option><option value="kitchen">Kitchen</option><option value="dispatcher">Dispatcher</option><option value="rider">Rider</option></select></label>
+              <label>Role<select name="role" defaultValue="cashier"><option value="cashier">Cashier</option>{availableStaffModules.kitchen ? <option value="kitchen">Kitchen</option> : null}{availableStaffModules.dispatchDelivery ? <><option value="dispatcher">Dispatcher</option><option value="rider">Rider</option></> : null}</select></label>
               <label>Mobile number<input name="mobileNumber" type="tel" inputMode="numeric"  maxLength={11} pattern="^09[0-9]{9}$" onInput={(event) => { event.currentTarget.value = normalizeMobileNumber(event.currentTarget.value); }} required /></label>
               <label className="restaurant-employee-email-field">Login email<input name="email" type="email"  required /></label>
             </div>
