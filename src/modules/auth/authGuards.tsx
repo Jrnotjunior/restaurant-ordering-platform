@@ -54,8 +54,15 @@ export function RestaurantModuleGuard({ restaurantId, anyOf, children }: {
 
   if (checking) return <section className="restaurant-owner-auth-loading">Checking feature access…</section>;
   if (!allowed) {
-    if (window.location.hash !== '#restaurant/owner') window.location.hash = '#restaurant/owner';
-    return <section className="restaurant-owner-auth-loading">Loading…</section>;
+    return (
+      <section className="restaurant-owner-auth-no-restaurant">
+        <div className="restaurant-owner-auth-no-restaurant-card">
+          <p className="eyebrow">Package access</p>
+          <h1>Feature not included in this package</h1>
+          <p>This restaurant's current package does not include this feature. Contact the restaurant owner or system administrator if you believe access should be enabled.</p>
+        </div>
+      </section>
+    );
   }
   return <>{children}</>;
 }
