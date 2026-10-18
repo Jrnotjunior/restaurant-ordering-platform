@@ -67,13 +67,33 @@ export function RiderDashboardPage() {
     const client = supabase;
     if (!client) return;
 
+    let refreshInProgress = false;
+    const refreshDeliveries = async () => {
+      if (refreshInProgress) return;
+      refreshInProgress = true;
+      try {
+        await loadDeliveries();
+      } finally {
+        refreshInProgress = false;
+      }
+    };
+
     const channel = client
       .channel('rider-dashboard-deliveries')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => void loadDeliveries())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'delivery_assignments' }, () => void loadDeliveries())
-      .subscribe();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => void refreshDeliveries())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'delivery_assignments' }, () => void refreshDeliveries())
+      .subscribe((status) => {
+        // Re-fetch after the channel is live to catch assignments made during connection.
+        if (status === 'SUBSCRIBED') void refreshDeliveries();
+      });
+
+    // Keep the dashboard current even if Realtime events are delayed or unavailable.
+    const refreshInterval = window.setInterval(() => {
+      void refreshDeliveries();
+    }, 10000);
 
     return () => {
+      window.clearInterval(refreshInterval);
       void client.removeChannel(channel);
     };
   }, []);
