@@ -106,6 +106,10 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   useEffect(() => { void loadMenu(); void loadCashierName(); void loadPackageAccess(); }, [restaurantId]);
 
   async function loadPackageAccess() {
+    if (!supabase) {
+      setSelfOrderingEnabled(true);
+      return;
+    }
     const { data, error } = await supabase.rpc('restaurant_get_my_modules', { p_restaurant_id: restaurantId });
     if (error) {
       setSelfOrderingEnabled(true);
