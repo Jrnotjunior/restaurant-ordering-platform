@@ -37,40 +37,18 @@ Deno.serve(async (req) => {
   }
 
   const admin = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
-  const { data: override, error: overrideError } = await admin
-    .from("restaurant_module_overrides")
-    .select("enabled")
-    .eq("restaurant_id", restaurantId)
-    .eq("module_key", "dispatch_delivery")
-    .maybeSingle();
-  if (overrideError) return json({ error: "Could not check delivery availability.", stage: "override" }, 503);
-  if (override) return json({ enabled: override.enabled === true });
 
-  const { data: subscription, error: subscriptionError } = await admin
-    .from("restaurant_subscriptions")
-    .select("package_id")
-    .eq("restaurant_id", restaurantId)
-    .eq("status", "active")
-    .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
-    .maybeSingle();
-  if (subscriptionError) return json({ error: "Could not check active package.", stage: "subscription" }, 503);
-  if (!subscription) return json({ enabled: false });
+  // Use the existing SECURITY DEFINER database function instead of querying
+  // protected tables directly; service_role currently lacks SELECT grants on
+  // restaurant_module_overrides in this project.
+  const { data: enabled, error } = await admin.rpc("public_restaurant_has_module", {
+    p_restaurant_id: restaurantId,
+    p_module_key: "dispatch_delivery",
+  });
+  if (error) {
+    console.error("public_restaurant_has_module failed", { code: error.code, message: error.message });
+    return json({ error: "Could not check delivery availability.", stage: "module_rpc" }, 503);
+  }
 
-  const { data: packageModule, error: packageModuleError } = await admin
-    .from("system_package_modules")
-    .select("module_key")
-    .eq("package_id", subscription.package_id)
-    .eq("module_key", "dispatch_delivery")
-    .maybeSingle();
-  if (packageModuleError) return json({ error: "Could not check package modules.", stage: "package_module" }, 503);
-  if (!packageModule) return json({ enabled: false });
-
-  const { data: module, error: moduleStatusError } = await admin
-    .from("system_modules")
-    .select("is_active")
-    .eq("module_key", "dispatch_delivery")
-    .maybeSingle();
-  if (moduleStatusError) return json({ error: "Could not check module status.", stage: "module_status" }, 503);
-
-  return json({ enabled: module?.is_active === true });
+  return json({ enabled: enabled === true });
 });
