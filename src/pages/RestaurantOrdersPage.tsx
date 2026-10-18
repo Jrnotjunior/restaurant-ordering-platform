@@ -82,6 +82,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
   const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
   const [searchQuery, setSearchQuery] = useState('');
   const [newOrderPaymentFilter, setNewOrderPaymentFilter] = useState<'all' | 'online-paid' | 'unpaid'>('all');
+  const [hasKitchenModule, setHasKitchenModule] = useState(true);
 
   async function loadOrders() {
     try {
@@ -97,6 +98,14 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
   }
 
   useEffect(() => {
+    let cancelled = false;
+    async function loadKitchenModule() {
+      if (!supabase) return;
+      const { data, error: moduleError } = await supabase.rpc('restaurant_has_module', { p_restaurant_id: restaurantId, p_module_key: 'kitchen' });
+      if (cancelled) return;
+      if (!moduleError) setHasKitchenModule(Boolean(data));
+    }
+    void loadKitchenModule();
     void loadOrders();
     const client = supabase;
     if (!client) {
@@ -117,6 +126,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
       });
 
     return () => {
+      cancelled = true;
       void client.removeChannel(channel);
     };
   }, [restaurantId]);
@@ -149,14 +159,18 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
     : [];
 
   async function advance(order: RestaurantOrder) {
-    if (role !== 'kitchen') return;
-    const status = nextStatus[order.status];
+    const cashierCanManageNoKitchen = role === 'cashier' && !hasKitchenModule && ['take_out', 'pickup', 'dine_in'].includes(order.orderType);
+    if (role !== 'kitchen' && !cashierCanManageNoKitchen) return;
+    const status = cashierCanManageNoKitchen
+      ? ({ confirmed: 'preparing', preparing: 'ready', ready: 'completed' } as Partial<Record<RestaurantOrderStatus, RestaurantOrderStatus>>)[order.status]
+      : nextStatus[order.status];
     if (!status) return;
 
     try {
       setError('');
       setUpdating(order.orderId);
-      await updateKitchenOrderStatus(order.orderId, status);
+      if (cashierCanManageNoKitchen) await updateOrderStatus(order.orderId, status);
+      else await updateKitchenOrderStatus(order.orderId, status);
       const updated = { ...order, status };
       setOrders((current) => current.map((item) => (item.orderId === order.orderId ? updated : item)));
       closeOrderList();
@@ -458,6 +472,24 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
                   ))}
                 </div>
               )}
+              {!hasKitchenModule && (
+                <div style={{ marginTop: 24 }}>
+                  <h2 style={{ fontSize: 18, marginBottom: 10 }}>Preparing & collection</h2>
+                  <p style={{ color: '#64748b', fontSize: 13, marginTop: 0 }}>Manage take-out, pickup, and dine-in orders without a separate Kitchen role.</p>
+                  {boardOrders.filter((order) => ['take_out', 'pickup', 'dine_in'].includes(order.orderType) && ['confirmed', 'preparing', 'ready'].includes(order.status)).length === 0 ? (
+                    <div className="restaurant-order-list-empty">No orders are being prepared or waiting for collection.</div>
+                  ) : (
+                    <div className="restaurant-order-list restaurant-order-list-scroll">
+                      {boardOrders.filter((order) => ['take_out', 'pickup', 'dine_in'].includes(order.orderType) && ['confirmed', 'preparing', 'ready'].includes(order.status)).map((order) => (
+                        <button className="restaurant-order-list-item" key={order.orderId} type="button" onClick={() => setSelectedOrder(order)}>
+                          <span><span className="restaurant-order-list-number">{order.orderNumber}</span><span style={{ display: 'block', marginTop: 3, fontSize: 13, color: '#64748b' }}>{order.customerName} · {order.orderType === 'dine_in' ? 'Dine-in' : order.orderType === 'take_out' ? 'Take-out' : 'Pickup'}</span></span>
+                          <span className="restaurant-order-list-meta"><span className="restaurant-order-list-status">{statusLabels[order.status]}</span><span className="restaurant-order-list-total">₱{order.total.toFixed(2)}</span></span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </section>
           );
         })()
@@ -683,14 +715,14 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
                     Cancel Order
                   </button>
                 </>
-              ) : nextStatus[selectedOrder.status] ? (
+              ) : (nextStatus[selectedOrder.status] || (role === 'cashier' && !hasKitchenModule && ['take_out', 'pickup', 'dine_in'].includes(selectedOrder.orderType) && ['confirmed', 'preparing', 'ready'].includes(selectedOrder.status))) ? (
                 <button
                   className="button button-primary"
                   type="button"
                   disabled={updating === selectedOrder.orderId}
                   onClick={() => void advance(selectedOrder)}
                 >
-                  {updating === selectedOrder.orderId ? 'Updating…' : actionLabels[selectedOrder.status]}
+                  {updating === selectedOrder.orderId ? 'Updating…' : role === 'cashier' && !hasKitchenModule ? ({ confirmed: 'Start Preparing', preparing: 'Mark Ready', ready: selectedOrder.orderType === 'dine_in' ? 'Mark Served' : selectedOrder.orderType === 'pickup' ? 'Mark Collected' : 'Complete Handoff' } as Partial<Record<RestaurantOrderStatus, string>>)[selectedOrder.status] : actionLabels[selectedOrder.status]}
                 </button>
               ) : null}
             </div>}
