@@ -483,7 +483,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
     if (!firstName.trim()) return 'Enter your first name to continue.';
     if (!lastName.trim()) return 'Enter your last name to continue.';
     if (/[0-9]/.test(firstName) || /[0-9]/.test(lastName)) return 'First and last names must not contain numbers.';
-    if (orderType !== 'dine_in' && !/^09\d{9}$/.test(mobileNumber)) return 'Enter a valid 11-digit Philippine mobile number starting with 09.';
+    if (!['dine_in', 'take_out'].includes(orderType) && !/^09\d{9}$/.test(mobileNumber)) return 'Enter a valid 11-digit Philippine mobile number starting with 09.';
     if (isOwnCourierPickup && !restaurantPickupPoint) return 'The restaurant pickup address is not configured. Please contact the restaurant.';
     if (isDelivery && !thirdPartyCourierDelivery) {
       if (deliveryRouteLoading) return 'Checking whether your delivery address is within the restaurant delivery area. Please wait.';
@@ -495,7 +495,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
     return '';
   })();
 
-  const canContinue = items.length > 0 && !customerProfileLoading && !customerProfileError && Boolean(firstName.trim() && lastName.trim()) && !/[0-9]/.test(firstName) && !/[0-9]/.test(lastName) && (orderType === 'dine_in' || /^09\d{9}$/.test(mobileNumber)) && (
+  const canContinue = items.length > 0 && !customerProfileLoading && !customerProfileError && Boolean(firstName.trim() && lastName.trim()) && !/[0-9]/.test(firstName) && !/[0-9]/.test(lastName) && (['dine_in', 'take_out'].includes(orderType) || /^09\d{9}$/.test(mobileNumber)) && (
     isOwnCourierPickup
       ? Boolean(restaurantPickupPoint)
       : isDelivery
@@ -733,7 +733,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
           <fieldset className="checkout-section"><legend>Customer information</legend>{customerProfileError && <p className="checkout-error" role="alert">{customerProfileError}</p>}<div className="checkout-fields">
             <label><span>First name</span><input type="text" value={customerProfileLoading ? '' : firstName} onChange={(event) => setFirstName(event.target.value)} autoComplete="given-name" required />{/[0-9]/.test(firstName) && <span className="checkout-field-error" role="alert">First name must not contain numbers.</span>}</label>
             <label><span>Last name</span><input type="text" value={customerProfileLoading ? '' : lastName} onChange={(event) => setLastName(event.target.value)} autoComplete="family-name" required />{/[0-9]/.test(lastName) && <span className="checkout-field-error" role="alert">Last name must not contain numbers.</span>}</label>
-            {orderType !== 'dine_in' && <label><span>Mobile number</span><input type="tel" value={customerProfileLoading ? '' : mobileNumber} onChange={(event) => setMobileNumber(event.target.value)} autoComplete="tel" inputMode="numeric" maxLength={11} pattern="09[0-9]{9}" title="Enter an 11-digit Philippine mobile number starting with 09." required />{mobileNumber.length >= 2 && !mobileNumber.startsWith('09') && <span className="checkout-field-error" role="alert">Mobile number must start with 09.</span>}{mobileNumber.length > 0 && mobileNumber.startsWith('09') && mobileNumber.length < 11 && <span className="checkout-field-hint">Enter all 11 digits.</span>}</label>}
+            {!['dine_in', 'take_out'].includes(orderType) && <label><span>Mobile number</span><input type="tel" value={customerProfileLoading ? '' : mobileNumber} onChange={(event) => setMobileNumber(event.target.value)} autoComplete="tel" inputMode="numeric" maxLength={11} pattern="09[0-9]{9}" title="Enter an 11-digit Philippine mobile number starting with 09." required />{mobileNumber.length >= 2 && !mobileNumber.startsWith('09') && <span className="checkout-field-error" role="alert">Mobile number must start with 09.</span>}{mobileNumber.length > 0 && mobileNumber.startsWith('09') && mobileNumber.length < 11 && <span className="checkout-field-hint">Enter all 11 digits.</span>}</label>}
           </div></fieldset>
 
           {isDelivery && <fieldset className="checkout-section"><legend>{thirdPartyCourierDelivery ? 'Pickup with Your Own Courier' : 'Delivery address'}</legend>
