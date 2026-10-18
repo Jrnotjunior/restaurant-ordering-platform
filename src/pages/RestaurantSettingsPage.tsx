@@ -213,6 +213,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [error, setError] = useState('');
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
   const [activeSettingsTab, setActiveSettingsTab] = useState('profile');
+  const [hasDispatchDelivery, setHasDispatchDelivery] = useState(false);
   const [paymongoTestStatus, setPaymongoTestStatus] = useState("not_connected");
   const [paymongoLiveStatus, setPaymongoLiveStatus] = useState("not_connected");
   const [paymongoLiveAccountId, setPaymongoLiveAccountId] = useState("");
@@ -225,6 +226,30 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const paymongoTestStorageKey = `web2table.paymongo.test.${restaurantId}`;
   const [paymongoBusy, setPaymongoBusy] = useState(false);
   const [paymongoError, setPaymongoError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadPackageModules() {
+      if (!supabase) {
+        setHasDispatchDelivery(false);
+        return;
+      }
+      const { data, error: moduleError } = await supabase.rpc('restaurant_has_module', {
+        p_restaurant_id: restaurantId,
+        p_module_key: 'dispatch_delivery',
+      });
+      if (cancelled) return;
+      setHasDispatchDelivery(!moduleError && data === true);
+    }
+    void loadPackageModules();
+    return () => { cancelled = true; };
+  }, [restaurantId]);
+
+  useEffect(() => {
+    if (!hasDispatchDelivery && ["delivery", "cod", "rider"].includes(activeSettingsTab)) {
+      setActiveSettingsTab('profile');
+    }
+  }, [hasDispatchDelivery, activeSettingsTab]);
 
   useEffect(() => {
     if (!message) return;
@@ -789,7 +814,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
             { id: 'rider', label: 'Rider assignment' },
             { id: 'payments', label: 'Online payments' },
             { id: 'tax', label: 'Tax & receipts' },
-          ].map((tab) => (
+          ].filter((tab) => hasDispatchDelivery || !['delivery', 'cod', 'rider'].includes(tab.id)).map((tab) => (
             <button
               key={tab.id}
               type="button"
@@ -891,7 +916,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           </div>
         </div>
 
-                <div className="restaurant-settings-card" id="store-delivery" role="tabpanel" aria-labelledby="store-settings-tab-delivery" hidden={activeSettingsTab !== 'delivery'}>
+                <div className="restaurant-settings-card" id="store-delivery" role="tabpanel" aria-labelledby="store-settings-tab-delivery" hidden={!hasDispatchDelivery || activeSettingsTab !== 'delivery'}>
           <div className="restaurant-delivery-pricing-grid">
             <label className="restaurant-settings-field"><span>Base delivery fee (₱)</span><input type="number" min="0" step="0.01" value={deliveryBaseFee} onChange={(event) => setDeliveryBaseFee(event.target.value)} disabled={loading || saving} /></label>
             <label className="restaurant-settings-field"><span>Distance increment (meters)</span><input type="number" min="1" step="1" value={deliveryDistanceIncrementMeters} onChange={(event) => setDeliveryDistanceIncrementMeters(event.target.value)} disabled={loading || saving} /></label>
@@ -923,7 +948,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           </div>
         </div>
 
-                <div className="restaurant-settings-card" id="store-cod" role="tabpanel" aria-labelledby="store-settings-tab-cod" hidden={activeSettingsTab !== 'cod'}>
+                <div className="restaurant-settings-card" id="store-cod" role="tabpanel" aria-labelledby="store-settings-tab-cod" hidden={!hasDispatchDelivery || activeSettingsTab !== 'cod'}>
           <label className="restaurant-settings-switch-row">
             <span>Accept Cash on Delivery</span>
             <span className="restaurant-settings-switch">
@@ -941,7 +966,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Controlled by the System Administrator. Contact the System Administrator to request a workflow change.</p>
         </div>
 
-                <div className="restaurant-settings-card" id="store-rider" role="tabpanel" aria-labelledby="store-settings-tab-rider" hidden={activeSettingsTab !== 'rider'}>
+                <div className="restaurant-settings-card" id="store-rider" role="tabpanel" aria-labelledby="store-settings-tab-rider" hidden={!hasDispatchDelivery || activeSettingsTab !== 'rider'}>
           <label className="restaurant-settings-switch-row">
             <span>Auto-assign delivery orders</span>
             <span className="restaurant-settings-switch">
