@@ -67,7 +67,6 @@ insert into public.system_packages (id, package_key, name, description) values
 (2,'self_ordering_pos','Self Ordering + POS','Self Ordering, POS, and Sales.'),
 (3,'pos','POS','POS and Sales.'),
 (4,'self_ordering_pos_kitchen','Self Ordering + POS + Kitchen','Self Ordering, POS, Sales, and Kitchen.'),
-(5,'dispatch_delivery','Dispatch + Delivery','Dispatch, Delivery, Rider, Shipping Fee, and operational Sales records.'),
 (6,'self_ordering_kitchen','Self Ordering + Kitchen','Self Ordering, Orders, Kitchen, and Sales.'),
 (7,'pos_delivery','POS + Delivery','POS, Sales, Orders, Dispatch, Rider, Delivery, and Shipping Fee.')
 on conflict (id) do update set package_key=excluded.package_key,name=excluded.name,description=excluded.description,is_active=true,updated_at=now();
@@ -88,7 +87,6 @@ insert into public.system_package_modules (package_id,module_key) values
 (2,'self_ordering'),(2,'pos'),(2,'sales'),
 (3,'pos'),(3,'sales'),
 (4,'self_ordering'),(4,'pos'),(4,'sales'),(4,'kitchen'),
-(5,'dispatch_delivery'),(5,'sales'),
 (6,'self_ordering'),(6,'sales'),(6,'kitchen'),
 (7,'pos'),(7,'sales'),(7,'dispatch_delivery');
 
