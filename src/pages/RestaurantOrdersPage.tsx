@@ -186,9 +186,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
     try {
       setError(''); setUpdating(order.orderId);
       await confirmPosCashPayment(order.orderId);
-      // Payment confirmation sends the order to the kitchen, so persist the customer-visible preparing state.
-      await updateOrderStatus(order.orderId, 'preparing');
-      setOrders((current) => current.map((item) => item.orderId === order.orderId ? { ...item, paymentStatus: 'paid', status: 'preparing' } : item));
+      setOrders((current) => current.map((item) => item.orderId === order.orderId ? { ...item, paymentStatus: 'paid', status: 'confirmed' } : item));
       setSelectedOrder(null); setOpenColumn(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to confirm cash payment.');
@@ -206,8 +204,8 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
       setError('');
       setUpdating(order.orderId);
       window.print();
-      await updateOrderStatus(order.orderId, 'preparing');
-      const updated = { ...order, status: 'preparing' as RestaurantOrderStatus };
+      await updateOrderStatus(order.orderId, 'confirmed');
+      const updated = { ...order, status: 'confirmed' as RestaurantOrderStatus };
       setOrders((current) => current.map((item) => (item.orderId === order.orderId ? updated : item)));
       // Close only the order-detail modal and return to the New Orders list.
       // Keep the parent New Orders modal open for the cashier. 
