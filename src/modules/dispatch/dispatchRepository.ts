@@ -1,6 +1,6 @@
 import { supabase } from '../../services/supabaseClient';
 
-export type DispatchTab = 'dine_in' | 'delivery' | 'pickup';
+export type DispatchTab = 'dine_in' | 'delivery' | 'pickup' | 'take_out';
 export type ReadyOrder = {
   id: string; orderNumber: string; customerName: string; address: string; total: number;
   readyAt: string; pickupMethod: 'customer' | 'third_party_courier' | null;
@@ -35,7 +35,7 @@ function todayStartIso(){ const now=new Date(); return new Date(now.getFullYear(
 export async function getDispatchData(restaurantId:string):Promise<{orders:ReadyOrder[]; riders:Rider[]}> {
   if(!supabase) throw new Error('Supabase is not configured.');
   const [orderResult,riderResult,activeOrderResult,assignmentResult]=await Promise.all([
-    supabase.from('orders').select('id,order_number,customer_name,delivery_address,delivery_barangay,total,created_at,pickup_method,order_type,rider_id').eq('restaurant_id',restaurantId).in('order_type',['delivery','pickup','dine_in']).eq('status','ready').order('created_at',{ascending:true}),
+    supabase.from('orders').select('id,order_number,customer_name,delivery_address,delivery_barangay,total,created_at,pickup_method,order_type,rider_id').eq('restaurant_id',restaurantId).in('order_type',['delivery','pickup','take_out','dine_in']).eq('status','ready').order('created_at',{ascending:true}),
     supabase.from('restaurant_staff').select('id,name,mobile_number').eq('restaurant_id',restaurantId).eq('role','rider').eq('is_active',true).order('name',{ascending:true}),
     supabase.from('orders').select('rider_id,delivery_status').eq('restaurant_id',restaurantId).not('rider_id','is',null).in('delivery_status',['assigned','delivering']),
     supabase.from('delivery_assignments').select('rider_id,status,delivered_at').eq('restaurant_id',restaurantId),
@@ -98,7 +98,7 @@ export async function assignDelivery(restaurantId:string,orderId:string,riderId:
   }
 }
 
-export async function completeDispatchHandoff(restaurantId:string,orderId:string,orderType:'pickup'|'dine_in'){
+export async function completeDispatchHandoff(restaurantId:string,orderId:string,orderType:'pickup'|'take_out'|'dine_in'){
   if(!supabase) throw new Error('Supabase is not configured.');
   const {data,error}=await supabase.from('orders').update({status:'completed'}).eq('id',orderId).eq('restaurant_id',restaurantId).eq('order_type',orderType).eq('status','ready').select('id').maybeSingle();
   if(error) throw error;
