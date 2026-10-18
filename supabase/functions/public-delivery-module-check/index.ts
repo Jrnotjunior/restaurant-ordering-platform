@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
   }
 
   const restaurantId = String(body.restaurantId ?? "").trim();
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(restaurantId)) {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(restaurantId)) {
     return json({ error: "Invalid restaurant." }, 400);
   }
 
@@ -56,14 +56,21 @@ Deno.serve(async (req) => {
   if (subscriptionError) return json({ error: "Could not check delivery availability." }, 503);
   if (!subscription) return json({ enabled: false });
 
-  const { data: moduleRow, error: moduleError } = await admin
+  const { data: packageModule, error: packageModuleError } = await admin
     .from("system_package_modules")
-    .select("module_key,system_modules!inner(module_key,is_active)")
+    .select("module_key")
     .eq("package_id", subscription.package_id)
     .eq("module_key", "dispatch_delivery")
-    .eq("system_modules.is_active", true)
     .maybeSingle();
-  if (moduleError) return json({ error: "Could not check delivery availability." }, 503);
+  if (packageModuleError) return json({ error: "Could not check package modules.", stage: "package_module" }, 503);
+  if (!packageModule) return json({ enabled: false });
 
-  return json({ enabled: Boolean(moduleRow) });
+  const { data: module, error: moduleStatusError } = await admin
+    .from("system_modules")
+    .select("is_active")
+    .eq("module_key", "dispatch_delivery")
+    .maybeSingle();
+  if (moduleStatusError) return json({ error: "Could not check module status.", stage: "module_status" }, 503);
+
+  return json({ enabled: module?.is_active === true });
 });
