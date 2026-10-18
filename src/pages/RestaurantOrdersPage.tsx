@@ -54,9 +54,9 @@ function isOnlinePaid(order: RestaurantOrder) {
 function columnFor(order: RestaurantOrder): BoardColumn | null {
   if (order.status === 'pending') return 'new';
   if (order.status === 'confirmed' || order.status === 'preparing') return 'kitchen';
-  // Delivery and pickup orders leave the restaurant Orders board once they are ready.
-  // They are handled in Dispatch instead. Dine-in orders remain on the Ready board.
-  if (order.status === 'ready' && order.orderType === 'dine_in') return 'ready';
+  // Delivery and Pickup orders are handled in Dispatch once ready.
+  // Dine-in and ordinary Take-out orders remain on the Ready board for handoff.
+  if (order.status === 'ready' && (order.orderType === 'dine_in' || order.orderType === 'take_out')) return 'ready';
   if (order.status === 'completed') return 'completed';
   return null;
 }
