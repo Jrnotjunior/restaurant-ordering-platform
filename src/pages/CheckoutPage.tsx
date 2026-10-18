@@ -803,7 +803,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
             {loyaltyEligible ? <label className="checkout-loyalty-option"><input type="checkbox" checked={redeemPoints} onChange={(event) => setRedeemPoints(event.target.checked)} /><span><strong>Redeem {loyaltySettings.pointsRequired} points</strong><small>Apply ₱{loyaltySettings.discountAmount.toFixed(2)} off this order before online payment.</small></span></label> : <p className="checkout-loyalty-hint">{loyaltyLoading ? 'Loading…' : `You need ${loyaltySettings.pointsRequired} points to unlock this reward.`}</p>}
           </div>}
           {redeemPoints && loyaltyDiscountPreview > 0 && <div className="checkout-summary-row checkout-loyalty-discount"><span>Loyalty Discount</span><strong>-₱{loyaltyDiscountPreview.toFixed(2)}</strong></div>}
-          </div>
+          <div className="checkout-summary-total"><span>Total</span><strong>₱{checkoutTotal.toFixed(2)}</strong></div></div>
           <button className="button button-primary" type="button" disabled={!canContinue} onClick={() => { setSubmitError(''); setPaymentMethod(''); setShowPaymentModal(true); }}>Continue to Payment</button>
           {!canContinue && checkoutValidationMessage && <div className="checkout-validation-notice" role="status" aria-live="polite"><span className="checkout-validation-notice-icon" aria-hidden="true">!</span><div className="checkout-validation-notice-content"><strong>Before you continue</strong><p>{checkoutValidationMessage}</p></div></div>}
         </aside>
