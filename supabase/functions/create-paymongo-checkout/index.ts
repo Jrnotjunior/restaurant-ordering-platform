@@ -103,36 +103,44 @@ Deno.serve(async (request) => {
     const storedItems = Array.isArray(pendingPayment.items) ? pendingPayment.items : [];
     if (!storedItems.length) return jsonResponse({ error: "The payment has no items." }, 400);
 
+    // PayMongo Checkout line items do not document native discount lines.
+    // Keep product prices intact in Web2Table and represent the discounted
+    // merchandise as one aggregate line in PayMongo, rather than silently
+    // reducing the price of the first product.
+    const subtotal = Math.round(Number(pendingPayment.subtotal ?? 0) * 100);
     const loyaltyDiscount = Math.round(Number(pendingPayment.loyalty_discount_amount ?? 0) * 100);
-    const productUnits: Array<{ name: string; description: string; amount: number; currency: "PHP"; quantity: number }> = [];
-
-    for (const item of storedItems as Array<{ product_name: string; unit_price: number; quantity: number }>) {
-      const unitAmount = Math.round(Number(item.unit_price) * 100);
-      for (let index = 0; index < Number(item.quantity); index += 1) {
-        productUnits.push({
-          name: item.product_name,
-          description: item.product_name,
-          amount: unitAmount,
-          currency: "PHP",
-          quantity: 1,
-        });
-      }
-    }
-
-    let remainingDiscount = loyaltyDiscount;
-    for (const item of productUnits) {
-      if (remainingDiscount <= 0) break;
-      const reduction = Math.min(item.amount, remainingDiscount);
-      item.amount -= reduction;
-      remainingDiscount -= reduction;
-    }
-
-    const lineItems = productUnits.filter((item) => item.amount > 0);
-    if (!lineItems.length) {
-      return jsonResponse({ error: "The discounted payment amount must be greater than zero." }, 409);
-    }
-
     const deliveryFee = Math.round(Number(pendingPayment.delivery_fee ?? 0) * 100);
+    const expectedTotal = Math.round(Number(pendingPayment.total) * 100);
+
+    if (
+      !Number.isSafeInteger(subtotal) || subtotal < 0 ||
+      !Number.isSafeInteger(loyaltyDiscount) || loyaltyDiscount < 0 || loyaltyDiscount > subtotal ||
+      !Number.isSafeInteger(deliveryFee) || deliveryFee < 0 ||
+      !Number.isSafeInteger(expectedTotal) || expectedTotal <= 0 ||
+      subtotal - loyaltyDiscount + deliveryFee !== expectedTotal
+    ) {
+      console.error("PayMongo amount verification failed", {
+        paymentId: pendingPayment.id,
+        subtotal,
+        loyaltyDiscount,
+        deliveryFee,
+        expectedTotal,
+      });
+      return jsonResponse({ error: "The payment amount could not be verified. Please try again." }, 409);
+    }
+
+    const lineItems: Array<{ name: string; description: string; amount: number; currency: "PHP"; quantity: number }> = [];
+    const discountedMerchandiseTotal = subtotal - loyaltyDiscount;
+    if (discountedMerchandiseTotal > 0) {
+      lineItems.push({
+        name: loyaltyDiscount > 0 ? "Food subtotal (after loyalty discount)" : "Food subtotal",
+        description: "Merchandise total",
+        amount: discountedMerchandiseTotal,
+        currency: "PHP",
+        quantity: 1,
+      });
+    }
+
     if (deliveryFee > 0) {
       lineItems.push({
         name: "Delivery fee",
@@ -143,12 +151,11 @@ Deno.serve(async (request) => {
       });
     }
 
-    if (remainingDiscount > 0) {
-      return jsonResponse({ error: "The loyalty discount could not be applied to the payment items." }, 409);
+    if (!lineItems.length) {
+      return jsonResponse({ error: "The discounted payment amount must be greater than zero." }, 409);
     }
 
     const lineItemTotal = lineItems.reduce((sum, item) => sum + item.amount * item.quantity, 0);
-    const expectedTotal = Math.round(Number(pendingPayment.total) * 100);
     if (lineItemTotal !== expectedTotal) {
       console.error("PayMongo amount verification failed", {
         paymentId: pendingPayment.id,
@@ -158,13 +165,7 @@ Deno.serve(async (request) => {
         deliveryFee: pendingPayment.delivery_fee,
         loyaltyDiscount: pendingPayment.loyalty_discount_amount,
       });
-      return jsonResponse({
-        error: "The payment amount could not be verified. Please try again.",
-        debug: {
-          lineItemTotal,
-          expectedTotal,
-        },
-      }, 409);
+      return jsonResponse({ error: "The payment amount could not be verified. Please try again." }, 409);
     }
 
     const response = await fetch("https://api.paymongo.com/v2/checkout_sessions", {
