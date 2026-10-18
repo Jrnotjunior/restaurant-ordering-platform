@@ -79,7 +79,6 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
   const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
   const [cashOnPickupEnabled, setCashOnPickupEnabled] = useState(true);
   const [cashOnTakeOutEnabled, setCashOnTakeOutEnabled] = useState(true);
-  const [cashOnTakeOutEnabled, setCashOnTakeOutEnabled] = useState(true);
   const [storeAddress, setStoreAddress] = useState('');
   // Public storefront config may omit the database ID; the cart product carries the resolved tenant ID.
   const restaurantId = restaurant.id ?? items[0]?.product.restaurantId;
