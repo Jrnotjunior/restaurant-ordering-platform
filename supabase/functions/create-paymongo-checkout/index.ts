@@ -18,7 +18,35 @@ function getSecretKey() {
   return secretKeys.default ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 }
 
-const siteBaseUrl = "https://jrnotjunior.github.io/restaurant-ordering-platform/";
+const fallbackSiteBaseUrl = "https://jrnotjunior.github.io/restaurant-ordering-platform/";
+
+function getRestaurantSiteBaseUrl(customDomain: unknown) {
+  const configuredDomain = String(customDomain ?? "").trim();
+  if (!configuredDomain) return fallbackSiteBaseUrl;
+
+  try {
+    const candidate = new URL(
+      configuredDomain.includes("://") ? configuredDomain : `https://${configuredDomain}`,
+    );
+    // Only accept a plain HTTPS origin from the restaurant's trusted DB field.
+    // Reject paths, credentials, ports, query strings, and fragments so a
+    // malformed value cannot redirect checkout to an arbitrary URL.
+    if (
+      candidate.protocol !== "https:" ||
+      !candidate.hostname ||
+      candidate.username ||
+      candidate.password ||
+      candidate.port ||
+      candidate.pathname !== "/" ||
+      candidate.search ||
+      candidate.hash
+    ) return fallbackSiteBaseUrl;
+
+    return `${candidate.origin}/`;
+  } catch {
+    return fallbackSiteBaseUrl;
+  }
+}
 
 function getPayMongoSecretKey(environment: "test" | "live") {
   if (environment === "live") {
@@ -67,6 +95,13 @@ Deno.serve(async (request) => {
 
     if (paymentError) throw paymentError;
     if (!pendingPayment) return jsonResponse({ error: "Pending payment not found." }, 404);
+    const { data: restaurantDomain, error: restaurantDomainError } = await adminClient
+      .from("restaurants")
+      .select("custom_domain")
+      .eq("id", pendingPayment.restaurant_id)
+      .maybeSingle();
+    if (restaurantDomainError) throw restaurantDomainError;
+    const siteBaseUrl = getRestaurantSiteBaseUrl(restaurantDomain?.custom_domain);
     if (pendingPayment.status !== "pending") {
       return jsonResponse({ error: "This payment is no longer awaiting payment." }, 409);
     }
