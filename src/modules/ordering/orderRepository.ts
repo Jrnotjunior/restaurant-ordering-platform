@@ -389,6 +389,16 @@ export async function updateOrderStatus(orderId: string, status: RestaurantOrder
   await supabaseRpc('update_order_status', { p_order_id: orderId, p_status: status });
 }
 
+export async function sendOrderToKitchen(orderId: string) {
+  const rows = await supabaseRpc<{ order_id: string; status: RestaurantOrderStatus }>(
+    'send_order_to_kitchen',
+    { p_order_id: orderId },
+  );
+  if (!rows[0] || rows[0].status !== 'preparing') {
+    throw new Error('The order was not confirmed as sent to the kitchen. Please refresh and check its status.');
+  }
+}
+
 export async function cancelMyPendingOrder(orderId: string) {
   await supabaseRpc('cancel_my_pending_order', { p_order_id: orderId });
 }
