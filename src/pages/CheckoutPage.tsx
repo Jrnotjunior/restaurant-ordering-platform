@@ -61,6 +61,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('');
   const [showPayment, setShowPayment] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [pendingPaymentReview, setPendingPaymentReview] = useState<{ paymentId: string; referenceNumber: string; subtotal: number; deliveryFee: number; total: number } | null>(null);
   const [showDeliveryTerms, setShowDeliveryTerms] = useState(false);
   const [thirdPartyCourierDelivery, setThirdPartyCourierDelivery] = useState(false);
   const [thirdPartyCourierTermsAccepted, setThirdPartyCourierTermsAccepted] = useState(false);
@@ -581,10 +582,10 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
       } else {
         window.localStorage.removeItem(PENDING_PAYMENT_PICKUP_METHOD_KEY);
       }
-      const checkoutUrl = await createPayMongoCheckout(pendingPayment.paymentId);
-      window.localStorage.setItem(PENDING_PAYMENT_CHECKOUT_URL_KEY, checkoutUrl);
+      setPendingPaymentReview(pendingPayment);
       setShowPaymentModal(false);
-      window.location.assign(checkoutUrl);
+      setIsSubmitting(false);
+      return;
     } catch (error) {
       console.error('Unable to start online payment.', error);
       setPaymentMethod('online');
@@ -592,6 +593,28 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
       setShowPaymentModal(true);
       setIsSubmitting(false);
     }
+  }
+
+  async function handleContinueToPayMongo() {
+    if (!pendingPaymentReview || isSubmitting) return;
+    setIsSubmitting(true);
+    setSubmitError('');
+    try {
+      const checkoutUrl = await createPayMongoCheckout(pendingPaymentReview.paymentId);
+      window.localStorage.setItem(PENDING_PAYMENT_CHECKOUT_URL_KEY, checkoutUrl);
+      setPendingPaymentReview(null);
+      window.location.assign(checkoutUrl);
+    } catch (error) {
+      console.error('Unable to start online payment.', error);
+      setSubmitError(error instanceof Error ? error.message : 'We could not start online payment. Please try again.');
+      setIsSubmitting(false);
+    }
+  }
+
+  function handleCancelPaymentReview() {
+    setPendingPaymentReview(null);
+    setSubmitError('');
+    setPaymentMethod('');
   }
 
   async function handlePlaceOrder() {
@@ -770,6 +793,41 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
             }}>{paymentMethod === 'online' ? 'Continue to Online Payment' : orderType === 'dine_in' ? 'Place Order & Pay at Counter' : 'Place Order'}</button>
           </div>
         </div>
+      </div>}
+
+      {pendingPaymentReview && <div className="payment-review-backdrop" role="presentation">
+        <section className="payment-review-modal" role="dialog" aria-modal="true" aria-labelledby="payment-review-title">
+          <div className="payment-modal-header">
+            <div>
+              <p className="eyebrow">Final review</p>
+              <h2 id="payment-review-title">Review your order before payment</h2>
+              <p>Check the item prices, loyalty discount, and delivery fee before continuing to PayMongo.</p>
+            </div>
+            <button className="payment-modal-close" type="button" aria-label="Close order review" onClick={handleCancelPaymentReview} disabled={isSubmitting}>×</button>
+          </div>
+          <div className="payment-review-restaurant">
+            <span>Restaurant</span>
+            <strong>{restaurant.name}</strong>
+          </div>
+          <div className="payment-review-items">
+            {items.map((item) => <div className="payment-review-row" key={item.product.id}>
+              <span>{item.quantity} × {item.product.name}<small>₱{item.product.price.toFixed(2)} each</small></span>
+              <strong>₱{(item.product.price * item.quantity).toFixed(2)}</strong>
+            </div>)}
+          </div>
+          <div className="payment-review-totals">
+            <div className="payment-review-row"><span>Food subtotal</span><strong>₱{pendingPaymentReview.subtotal.toFixed(2)}</strong></div>
+            {(pendingPaymentReview.subtotal + pendingPaymentReview.deliveryFee - pendingPaymentReview.total) > 0 && <div className="payment-review-row payment-review-discount"><span>Loyalty discount</span><strong>−₱{(pendingPaymentReview.subtotal + pendingPaymentReview.deliveryFee - pendingPaymentReview.total).toFixed(2)}</strong></div>}
+            <div className="payment-review-row"><span>Delivery fee</span><strong>₱{pendingPaymentReview.deliveryFee.toFixed(2)}</strong></div>
+            <div className="payment-review-total"><span>Total due</span><strong>₱{pendingPaymentReview.total.toFixed(2)}</strong></div>
+          </div>
+          <p className="payment-review-note">Your original item prices are unchanged. The loyalty discount is shown separately and is not deducted from any individual product.</p>
+          {submitError && <p className="checkout-error" role="alert">{submitError}</p>}
+          <div className="payment-modal-actions">
+            <button className="button button-secondary" type="button" onClick={handleCancelPaymentReview} disabled={isSubmitting}>Back to checkout</button>
+            <button className="button button-primary" type="button" onClick={() => { void handleContinueToPayMongo(); }} disabled={isSubmitting}>{isSubmitting ? 'Preparing secure payment…' : 'Continue to secure payment'}</button>
+          </div>
+        </section>
       </div>}
 
       {showDeliveryTerms && <div className="delivery-terms-backdrop" role="presentation"><div className="delivery-terms-modal" role="dialog" aria-modal="true" aria-labelledby="delivery-terms-title"><h2 id="delivery-terms-title">Pickup with Your Own Courier</h2><p className="terms-intro">This destination is outside the restaurant's delivery area, so the restaurant cannot deliver to this destination directly.</p><div className="terms-box"><p><strong>Choose pickup with your own courier.</strong> You may book Lalamove, Grab Express, or another courier to collect your order from the restaurant.</p><p><strong>Important:</strong> Once payment is completed, your order will be sent to the kitchen for preparation. Please make sure your courier is available to collect the order when it is ready.</p><p>If your courier is unavailable or arrives late after the order is ready, the restaurant is not responsible for that delay, and the order is not eligible for a refund solely for that reason.</p><p>You are responsible for booking and paying the courier and for providing the courier with the correct destination address.</p><p>The restaurant will pack your order securely and prepare it as fresh as possible for pickup at its listed restaurant pickup point. After the order is handed over to your courier, the restaurant is not responsible for courier-related delays, loss, spills, damage, or other issues during transit.</p><label className="delivery-terms-checkbox"><input type="checkbox" checked={thirdPartyCourierTermsAccepted} onChange={(event) => setThirdPartyCourierTermsAccepted(event.target.checked)} /><span>I understand that this is a pickup order, that my order will be prepared after payment, and that I am responsible for arranging a courier to collect it when ready.</span></label></div><div className="terms-actions"><button className="button button-secondary" type="button" onClick={handleCancelThirdPartyDelivery}>Cancel</button><button className="button button-primary" type="button" onClick={handleProceedWithThirdPartyCourier} disabled={!thirdPartyCourierTermsAccepted}>Choose Pickup</button></div></div></div>}
