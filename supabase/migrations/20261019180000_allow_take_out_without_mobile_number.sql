@@ -17,13 +17,13 @@ begin
     v_definition := pg_get_functiondef(v_function.oid);
     v_updated := replace(
       v_definition,
-      'if p_order_type<>'dine_in' and length(trim(coalesce(p_mobile_number,'')))=0 then raise exception 'Mobile number is required'; end if;',
-      'if p_order_type not in ('dine_in','take_out') and length(trim(coalesce(p_mobile_number,'')))=0 then raise exception 'Mobile number is required'; end if;'
+      $old$if p_order_type<>'dine_in' and length(trim(coalesce(p_mobile_number,'')))=0 then raise exception 'Mobile number is required'; end if;$old$,
+      $new$if p_order_type not in ('dine_in','take_out') and length(trim(coalesce(p_mobile_number,'')))=0 then raise exception 'Mobile number is required'; end if;$new$
     );
     v_updated := replace(
       v_definition,
-      'if p_order_type <> 'dine_in' and length(trim(coalesce(p_mobile_number, ''))) = 0 then raise exception 'Mobile number is required'; end if;',
-      'if p_order_type not in ('dine_in', 'take_out') and length(trim(coalesce(p_mobile_number, ''))) = 0 then raise exception 'Mobile number is required'; end if;'
+      $old2$if p_order_type <> 'dine_in' and length(trim(coalesce(p_mobile_number, ''))) = 0 then raise exception 'Mobile number is required'; end if;$old2$,
+      $new2$if p_order_type not in ('dine_in', 'take_out') and length(trim(coalesce(p_mobile_number, ''))) = 0 then raise exception 'Mobile number is required'; end if;$new2$
     );
     if v_updated is distinct from v_definition then
       execute v_updated;
