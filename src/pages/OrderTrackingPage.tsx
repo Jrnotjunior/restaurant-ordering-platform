@@ -263,7 +263,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
           </div>
         ) : null}
 
-        <div className="order-tracking-total"><span>Total</span><strong>₱{Number(order.total).toFixed(2)}</strong></div>
+        {!isCashDineIn && <div className="order-tracking-total"><span>Total</span><strong>₱{Number(order.total).toFixed(2)}</strong></div>}
         {isCashDineIn && !isCancelled ? (
           <section className="order-dine-in-number-card" aria-label="Dine-in order number for cashier">
             <p className="eyebrow">Dine-in · Tell the cashier</p>
