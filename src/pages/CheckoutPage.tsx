@@ -44,6 +44,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
   const restaurant = useRestaurant();
   const { user } = useRestaurantOwnerAuth();
   const [orderType, setOrderType] = useState<OrderType>('delivery');
+  const [deliveryModuleEnabled, setDeliveryModuleEnabled] = useState<boolean | null>(null);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const customerName = [firstName.trim(), lastName.trim()].filter(Boolean).join(' ');
@@ -78,6 +79,22 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
   const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
   const [storeAddress, setStoreAddress] = useState('');
   const restaurantId = restaurant.id;
+
+  useEffect(() => {
+    let cancelled = false;
+    async function checkDeliveryModule() {
+      if (!supabase) { setDeliveryModuleEnabled(false); return; }
+      const { data, error } = await supabase.rpc('restaurant_has_module', {
+        p_restaurant_id: restaurantId,
+        p_module_key: 'dispatch_delivery',
+      });
+      if (cancelled) return;
+      setDeliveryModuleEnabled(!error && data === true);
+      if ((error || data !== true) && orderType === 'delivery') setOrderType('take_out');
+    }
+    void checkDeliveryModule();
+    return () => { cancelled = true; };
+  }, [restaurantId]);
 
   // Once an order is confirmed (including after PayMongo redirects back),
   // go directly to its tracking page. The customer should not land on a
@@ -674,7 +691,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
       <div className="checkout-layout">
         <form className="checkout-form" onSubmit={(event) => event.preventDefault()}>
           <fieldset id="order-type-section" className="checkout-section"><legend>Order type</legend><div className="order-type-grid">
-            {orderTypes.map((type) => <label className={`order-type-card ${orderType === type.value ? 'is-selected' : ''}`} key={type.value}><input type="radio" name="orderType" checked={orderType === type.value} onChange={() => {
+            {orderTypes.filter((type) => type.value !== 'delivery' || deliveryModuleEnabled === true).map((type) => <label className={`order-type-card ${orderType === type.value ? 'is-selected' : ''}`} key={type.value}><input type="radio" name="orderType" checked={orderType === type.value} onChange={() => {
               setOrderType(type.value);
               if (type.value !== 'delivery' && !(thirdPartyCourierDelivery && type.value === 'pickup')) setSelectedDeliveryLocation(null);
               if (type.value !== 'pickup') {
