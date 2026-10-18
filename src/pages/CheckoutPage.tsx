@@ -84,7 +84,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
     let cancelled = false;
     async function checkDeliveryModule() {
       if (!supabase) { setDeliveryModuleEnabled(false); return; }
-      const { data, error } = await supabase.rpc('restaurant_has_module', {
+      const { data, error } = await supabase.rpc('public_restaurant_has_module', {
         p_restaurant_id: restaurantId,
         p_module_key: 'dispatch_delivery',
       });
