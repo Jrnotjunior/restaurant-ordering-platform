@@ -22,7 +22,7 @@ export type RiderHistoryItem = {
 type OrderRow = {
   id:string; order_number:string; customer_name:string; delivery_address:string|null;
   delivery_barangay:string|null; total:number|string; created_at:string;
-  pickup_method:'customer'|'third_party_courier'|null; order_type:'delivery'|'pickup'|'dine_in'; rider_id:string|null;
+  pickup_method:'customer'|'third_party_courier'|null; order_type:'delivery'|'take_out'|'pickup'|'dine_in'; rider_id:string|null;
 };
 type RiderRow = { id:string; name:string; mobile_number:string };
 type AssignmentRow = { rider_id:string; status:'assigned'|'delivering'|'delivered'|'cancelled'; assigned_at:string; delivered_at:string|null };
