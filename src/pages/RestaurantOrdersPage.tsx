@@ -211,7 +211,6 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
       const updated = { ...order, status: 'preparing' as RestaurantOrderStatus };
       setOrders((current) => current.map((item) => (item.orderId === order.orderId ? updated : item)));
       window.print();
-      setOrders((current) => current.map((item) => (item.orderId === order.orderId ? updated : item)));
       // Close only the order-detail modal and return to the New Orders list.
       // Keep the parent New Orders modal open for the cashier. 
       setSelectedOrder(null);
