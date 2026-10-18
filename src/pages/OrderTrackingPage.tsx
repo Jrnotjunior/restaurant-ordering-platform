@@ -380,7 +380,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
         )}
 
         <div className="order-tracking-meta">
-          <span>{order.orderType === 'dine_in' ? 'Dine-in' : order.orderType === 'pickup' ? (order.pickupMethod === 'third_party_courier' ? 'Pickup with Your Own Courier' : 'Pickup / Take-out') : 'Delivery'}</span>
+          <span>{order.orderType === 'dine_in' ? 'Dine-in' : order.orderType === 'take_out' ? 'Take-out' : order.orderType === 'pickup' ? (order.pickupMethod === 'third_party_courier' ? 'Pickup with Your Own Courier' : 'Pickup') : 'Delivery'}</span>
           <span>{order.paymentMethod === 'gcash' ? 'Online Payment' : 'Cash'}</span>
         </div>
       </div>
