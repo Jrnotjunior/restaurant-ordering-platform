@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
 
   const url = Deno.env.get("SUPABASE_URL");
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!url || !key) return json({ error: "Module check is unavailable." }, 503);
+  if (!url || !key) return json({ error: "Module check is unavailable.", stage: "configuration" }, 503);
 
   let body: { restaurantId?: unknown };
   try {
@@ -28,12 +28,12 @@ Deno.serve(async (req) => {
     if (new TextEncoder().encode(raw).byteLength > 2048) return json({ error: "Request too large." }, 413);
     body = JSON.parse(raw);
   } catch {
-    return json({ error: "Invalid request." }, 400);
+    return json({ error: "Invalid request.", stage: "body" }, 400);
   }
 
   const restaurantId = String(body.restaurantId ?? "").trim();
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(restaurantId)) {
-    return json({ error: "Invalid restaurant." }, 400);
+    return json({ error: "Invalid restaurant.", stage: "restaurant_id", receivedType: typeof body.restaurantId }, 400);
   }
 
   const admin = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
     .eq("restaurant_id", restaurantId)
     .eq("module_key", "dispatch_delivery")
     .maybeSingle();
-  if (overrideError) return json({ error: "Could not check delivery availability." }, 503);
+  if (overrideError) return json({ error: "Could not check delivery availability.", stage: "override" }, 503);
   if (override) return json({ enabled: override.enabled === true });
 
   const { data: subscription, error: subscriptionError } = await admin
@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
     .eq("status", "active")
     .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
     .maybeSingle();
-  if (subscriptionError) return json({ error: "Could not check delivery availability." }, 503);
+  if (subscriptionError) return json({ error: "Could not check active package.", stage: "subscription" }, 503);
   if (!subscription) return json({ enabled: false });
 
   const { data: packageModule, error: packageModuleError } = await admin
