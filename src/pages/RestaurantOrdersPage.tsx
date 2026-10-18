@@ -707,9 +707,11 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
               <div className="receipt-label">
                 {selectedOrder.orderType === 'dine_in'
                   ? 'DINE-IN'
-                  : selectedOrder.orderType === 'pickup'
-                    ? 'PICKUP / TAKE-OUT'
-                    : 'DELIVERY'}
+                  : selectedOrder.orderType === 'take_out'
+                    ? 'TAKE-OUT'
+                    : selectedOrder.orderType === 'pickup'
+                      ? 'PICKUP'
+                      : 'DELIVERY'}
               </div>
               {selectedOrder.customerName && <div>{selectedOrder.customerName}</div>}
             </div>
@@ -746,9 +748,11 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
               <div className="receipt-label">
                 {selectedOrder.orderType === 'dine_in'
                   ? 'DINE-IN'
-                  : selectedOrder.orderType === 'pickup'
-                    ? 'PICKUP / TAKE-OUT'
-                    : 'DELIVERY'}
+                  : selectedOrder.orderType === 'take_out'
+                    ? 'TAKE-OUT'
+                    : selectedOrder.orderType === 'pickup'
+                      ? 'PICKUP'
+                      : 'DELIVERY'}
               </div>
               <div>{paymentLabel(selectedOrder)}</div>
             </div>
