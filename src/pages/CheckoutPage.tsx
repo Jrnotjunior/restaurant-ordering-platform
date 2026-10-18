@@ -559,7 +559,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
     return createOrder({
       restaurantId: items[0].product.restaurantId,
       customerName: customerName.trim(),
-      mobileNumber: orderType === 'dine_in' ? '' : mobileNumber.trim(),
+      mobileNumber: ['dine_in', 'take_out'].includes(orderType) ? '' : mobileNumber.trim(),
       orderType: isOwnCourierPickup ? 'pickup' : orderType,
       deliveryCity: isDelivery && !thirdPartyCourierDelivery ? deliveryCity.trim() : '',
       deliveryBarangay: isDelivery && !thirdPartyCourierDelivery ? deliveryBarangay.trim() : '',
@@ -596,7 +596,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
       const pendingPayment = await createPendingOnlinePayment({
         restaurantId: items[0].product.restaurantId,
         customerName: customerName.trim(),
-        mobileNumber: orderType === 'dine_in' ? '' : mobileNumber.trim(),
+        mobileNumber: ['dine_in', 'take_out'].includes(orderType) ? '' : mobileNumber.trim(),
         orderType: isOwnCourierPickup ? 'pickup' : orderType,
         deliveryCity: isDelivery && !thirdPartyCourierDelivery ? deliveryCity.trim() : '',
         deliveryBarangay: isDelivery && !thirdPartyCourierDelivery ? deliveryBarangay.trim() : '',
