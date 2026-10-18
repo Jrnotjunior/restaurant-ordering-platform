@@ -975,7 +975,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           </label>
           <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Cash on Delivery is controlled by the System Administrator. Contact the System Administrator to request a change.</p>
           <div style={{ marginTop: 24 }}>
-            <h2>Pickup and Take-out</h2>
             <label className="restaurant-settings-switch-row">
               <span>Accept Cash for Pickup</span>
               <span className="restaurant-settings-switch">
