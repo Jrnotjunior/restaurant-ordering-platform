@@ -43,7 +43,7 @@ function paymentLabel(order: RestaurantOrder) {
 }
 
 function isPaymentReady(order: RestaurantOrder) {
-  if (order.orderType === 'dine_in' && order.paymentMethod === 'cash') return order.paymentStatus === 'paid';
+  if (['dine_in', 'take_out'].includes(order.orderType) && order.paymentMethod === 'cash') return order.paymentStatus === 'paid';
   return order.paymentMethod !== 'gcash' || order.paymentStatus === 'paid';
 }
 
@@ -181,7 +181,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
     }
   }
 
-  async function confirmDineInCashPayment(order: RestaurantOrder) {
+  async function confirmCashPayment(order: RestaurantOrder) {
     if (role !== 'cashier') return;
     try {
       setError(''); setUpdating(order.orderId);
@@ -189,7 +189,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
       setOrders((current) => current.map((item) => item.orderId === order.orderId ? { ...item, paymentStatus: 'paid', status: 'confirmed' } : item));
       setSelectedOrder(null); setOpenColumn(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to confirm dine-in payment.');
+      setError(err instanceof Error ? err.message : 'Unable to confirm cash payment.');
     } finally { setUpdating(null); }
   }
 
@@ -676,23 +676,23 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
                 <strong className="restaurant-order-modal-total">₱{selectedOrder.total.toFixed(2)}</strong>
               </div>
             )}
-            {selectedOrder.status === 'pending' && selectedOrder.orderType === 'dine_in' && selectedOrder.paymentMethod === 'cash' && selectedOrder.paymentStatus !== 'paid' && (
-              <p style={{ marginTop: 16 }}>Customer must pay at the counter before this dine-in order can enter the kitchen.</p>
+            {selectedOrder.status === 'pending' && ['dine_in', 'take_out'].includes(selectedOrder.orderType) && selectedOrder.paymentMethod === 'cash' && selectedOrder.paymentStatus !== 'paid' && (
+              <p style={{ marginTop: 16 }}>Customer must pay at the counter before this cash order can enter the kitchen.</p>
             )}
-            {selectedOrder.status === 'pending' && !isPaymentReady(selectedOrder) && !(selectedOrder.orderType === 'dine_in' && selectedOrder.paymentMethod === 'cash') && (
+            {selectedOrder.status === 'pending' && !isPaymentReady(selectedOrder) && !(['dine_in', 'take_out'].includes(selectedOrder.orderType) && selectedOrder.paymentMethod === 'cash') && (
               <p style={{ marginTop: 16 }}>Online payment is required before this order can enter the kitchen.</p>
             )}
             {role !== 'owner' && <div className="restaurant-order-modal-actions">
               {selectedOrder.status === 'pending' ? (
                 <>
-                  {selectedOrder.orderType === 'dine_in' && selectedOrder.paymentMethod === 'cash' && selectedOrder.paymentStatus !== 'paid' ? (
+                  {['dine_in', 'take_out'].includes(selectedOrder.orderType) && selectedOrder.paymentMethod === 'cash' && selectedOrder.paymentStatus !== 'paid' ? (
                     <button
                       className="button button-primary"
                       type="button"
                       disabled={updating === selectedOrder.orderId}
-                      onClick={() => void confirmDineInCashPayment(selectedOrder)}
+                      onClick={() => void confirmCashPayment(selectedOrder)}
                     >
-                      {updating === selectedOrder.orderId ? 'Confirming Payment…' : 'Confirm Payment & Send to Kitchen'}
+                      {updating === selectedOrder.orderId ? 'Confirming Payment…' : 'Confirm Cash Payment & Send to Kitchen'}
                     </button>
                   ) : (
                     <button
