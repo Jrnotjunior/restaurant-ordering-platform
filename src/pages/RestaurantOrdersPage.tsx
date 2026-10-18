@@ -318,7 +318,6 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
         <div>
           <p className="eyebrow">Restaurant operations</p>
           <h1>Orders</h1>
-          <p>Track every order from payment confirmation to completion.</p>
         </div>
         <span className={`restaurant-dashboard-live-status is-${realtimeStatus}`}>
           <span className="restaurant-dashboard-live-dot" />
