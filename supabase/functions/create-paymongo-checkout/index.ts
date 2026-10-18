@@ -129,30 +129,26 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: "The payment amount could not be verified. Please try again." }, 409);
     }
 
-    const lineItems: Array<{ name: string; description: string; amount: number; currency: "PHP"; quantity: number }> = [];
     const discountedMerchandiseTotal = subtotal - loyaltyDiscount;
-    if (discountedMerchandiseTotal > 0) {
-      lineItems.push({
-        name: loyaltyDiscount > 0 ? "Food subtotal (after loyalty discount)" : "Food subtotal",
-        description: "Merchandise total",
-        amount: discountedMerchandiseTotal,
+    const lineItems: Array<{ name: string; description: string; amount: number; currency: "PHP"; quantity: number }> = [
+      {
+        // PayMongo's hosted summary labels the sum of line items as "Subtotal".
+        // Use one all-in line item so customers do not see the delivery fee
+        // separately and mistake the displayed subtotal for an extra charge.
+        name: deliveryFee > 0 ? "Order total (delivery included)" : "Order total",
+        description: [
+          `Food subtotal PHP ${(subtotal / 100).toFixed(2)}`,
+          loyaltyDiscount > 0 ? `Loyalty discount -PHP ${(loyaltyDiscount / 100).toFixed(2)}` : "",
+          deliveryFee > 0 ? `Delivery fee PHP ${(deliveryFee / 100).toFixed(2)} (included)` : "",
+        ].filter(Boolean).join(" | "),
+        amount: expectedTotal,
         currency: "PHP",
         quantity: 1,
-      });
-    }
+      },
+    ];
 
-    if (deliveryFee > 0) {
-      lineItems.push({
-        name: "Delivery fee",
-        description: "Restaurant delivery fee",
-        amount: deliveryFee,
-        currency: "PHP",
-        quantity: 1,
-      });
-    }
-
-    if (!lineItems.length) {
-      return jsonResponse({ error: "The discounted payment amount must be greater than zero." }, 409);
+    if (expectedTotal <= 0 || discountedMerchandiseTotal + deliveryFee !== expectedTotal) {
+      return jsonResponse({ error: "The discounted payment amount could not be verified. Please try again." }, 409);
     }
 
     const lineItemTotal = lineItems.reduce((sum, item) => sum + item.amount * item.quantity, 0);
