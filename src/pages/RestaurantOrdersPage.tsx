@@ -603,7 +603,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
               {statusLabels[selectedOrder.status]} · {new Date(selectedOrder.createdAt).toLocaleString()}
             </p>
             <div className="restaurant-order-meta">
-              <span>{selectedOrder.orderType === 'dine_in' ? 'Dine-in' : selectedOrder.orderType === 'pickup' ? (selectedOrder.pickupMethod === 'third_party_courier' ? 'Customer Courier Pickup' : 'Pickup / Take-out') : 'Delivery'}</span>
+              <span>{selectedOrder.orderType === 'dine_in' ? 'Dine-in' : selectedOrder.orderType === 'take_out' ? 'Take-out' : selectedOrder.orderType === 'pickup' ? (selectedOrder.pickupMethod === 'third_party_courier' ? 'Customer Courier Pickup' : 'Pickup') : 'Delivery'}</span>
               <span>{paymentLabel(selectedOrder)}</span>
             </div>
             <div className="restaurant-order-customer">
