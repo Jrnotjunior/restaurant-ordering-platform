@@ -1019,8 +1019,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
             <strong>PayMongo connection error</strong>
             <span>{paymongoError}</span>
           </div>}
-          <h2>Pickup Payment Options</h2>
-          <p className="restaurant-settings-help" style={{ marginBottom: 18 }}>Cash payment for Pickup and Take-out is controlled by the System Administrator. Contact support to request that cash payment be disabled for this restaurant.</p>
           <h2>PayMongo Online Payments</h2>
           <p className="restaurant-settings-help">Each restaurant connects its own PayMongo merchant account. Web2Table does not ask you to paste a PayMongo secret key into the website.</p>
           <div className="restaurant-paymongo-status">
