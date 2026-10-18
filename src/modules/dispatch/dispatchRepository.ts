@@ -4,7 +4,7 @@ export type DispatchTab = 'dine_in' | 'delivery' | 'pickup';
 export type ReadyOrder = {
   id: string; orderNumber: string; customerName: string; address: string; total: number;
   readyAt: string; pickupMethod: 'customer' | 'third_party_courier' | null;
-  orderType: 'delivery' | 'pickup' | 'dine_in'; riderId: string | null;
+  orderType: 'delivery' | 'take_out' | 'pickup' | 'dine_in'; riderId: string | null;
 };
 export type Rider = {
   id: string; name: string; mobileNumber: string; status: 'available' | 'busy';
