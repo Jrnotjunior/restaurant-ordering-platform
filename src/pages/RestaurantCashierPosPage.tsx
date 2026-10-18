@@ -31,6 +31,7 @@ type PosPrintOrder = {
     netSales: number;
     total: number;
   };
+  deliveryFee: number;
   cashReceived: number;
   change: number;
 };
@@ -296,6 +297,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
           loyaltyDiscountAmount,
           total: Math.max(Number((financials.total - loyaltyDiscountAmount).toFixed(2)), 0),
         },
+        deliveryFee: orderType === 'delivery' ? created.deliveryFee : 0,
         cashReceived: cashReceivedAmount,
         change,
       });
@@ -315,7 +317,9 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
       setCustomerSuggestions([]);
       setShowCustomerSuggestions(false);
       setCashReceived('');
-      setSuccess(`Order ${created.orderNumber} was paid and sent directly to the kitchen. Print preview opened.`);
+      setSuccess(orderType === 'delivery'
+        ? `Delivery order ${created.orderNumber} was paid and sent to the kitchen workflow. It will appear in Dispatch when marked ready. Print preview opened.`
+        : `Order ${created.orderNumber} was paid and sent directly to the kitchen. Print preview opened.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to create POS order.');
     } finally {
@@ -618,6 +622,10 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             <div>
               <div className="pos-receipt-label">Customer</div>
               <div>{printOrder.customerName}</div>
+              {printOrder.orderType === 'delivery' && <>
+                <div>{printOrder.mobileNumber}</div>
+                <div>{printOrder.deliveryAddress}</div>
+              </>}
             </div>
             <div className="pos-receipt-row"><span>Cashier</span><span>{printOrder.cashierName}</span></div>
             <hr className="pos-receipt-divider" />
@@ -649,6 +657,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             ) : (
               <div className="pos-receipt-row"><span>Subtotal</span><span>₱{printOrder.financials.grossSales.toFixed(2)}</span></div>
             )}
+            {printOrder.deliveryFee > 0 && <div className="pos-receipt-row"><span>Delivery fee</span><span>₱{printOrder.deliveryFee.toFixed(2)}</span></div>}
             <div className="pos-receipt-row pos-receipt-total">
               <span>TOTAL</span>
               <span>₱{printOrder.financials.total.toFixed(2)}</span>
