@@ -209,6 +209,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [deliveryLocationLongitude, setDeliveryLocationLongitude] = useState<number | null>(null);
   const [orderingEnabled, setOrderingEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -241,6 +242,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     }
 
     setLoading(true);
+    setSettingsLoaded(false);
     setError('');
     try {
       const { data, error: loadError } = await supabase
@@ -250,7 +252,9 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .single();
 
       if (loadError) throw loadError;
+      if (!data) throw new Error('Restaurant settings were not returned. Saving is disabled until settings can be loaded.');
       setRestaurantTagline(data?.tagline ?? '');
+      setSettingsLoaded(true);
       setAddress(data?.store_address ?? '');
       setRestaurantAddress(data?.restaurant_address ?? '');
       setHours(normalizeHours(data?.operating_hours));
@@ -501,6 +505,10 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   useOwnerUnsavedChangesTracking('.restaurant-settings-page');
 
   async function saveSettings() {
+    if (!settingsLoaded) {
+      setError('Restaurant settings could not be loaded. Reload this page before saving so existing opening hours are not overwritten.');
+      return;
+    }
     if (!supabase) {
       setError('Supabase is not configured.');
       return;
@@ -601,6 +609,9 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .single();
 
       if (verifyError) throw verifyError;
+      if (JSON.stringify(normalizeHours(savedRow.operating_hours)) !== JSON.stringify(normalizedHours)) {
+        throw new Error('Opening hours did not save exactly as entered. Your settings were not confirmed; reload and check the schedule before trying again.');
+      }
       if (
         Number(savedRow.delivery_base_fee) !== parsedBaseFee ||
         Number(savedRow.delivery_distance_increment_meters) !== Math.round(parsedDistanceIncrement) ||
