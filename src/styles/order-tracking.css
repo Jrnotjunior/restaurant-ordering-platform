@@ -93,7 +93,10 @@
 .order-pickup-location-card{margin-top:1rem}
 
 
-.order-tracking-details > summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; list-style: none; }
+.order-tracking-details > summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; list-style: none; background: transparent; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+.order-tracking-details > summary::before,
+.order-tracking-details > summary::after { background: transparent; box-shadow: none; }
+.order-tracking-details > summary * { -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
 .order-tracking-details > summary:focus { outline: none; box-shadow: none; }
 .order-tracking-details > summary:focus-visible { outline: none; box-shadow: none; }
 .order-tracking-details > summary::-webkit-details-marker { display: none; }
