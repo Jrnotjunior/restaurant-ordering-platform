@@ -18,6 +18,8 @@ function getSecretKey() {
   return secretKeys.default ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 }
 
+const siteBaseUrl = "https://jrnotjunior.github.io/restaurant-ordering-platform/";
+
 function getPayMongoSecretKey(environment: "test" | "live") {
   if (environment === "live") {
     const live = Deno.env.get("PAYMONGO_LIVE_SECRET_KEY") ?? "";
@@ -65,20 +67,6 @@ Deno.serve(async (request) => {
 
     if (paymentError) throw paymentError;
     if (!pendingPayment) return jsonResponse({ error: "Pending payment not found." }, 404);
-    // Return customers to their restaurant's configured custom domain so the
-    // storefront origin (and its browser-persisted customer session) stays the same.
-    const { data: restaurantDomain, error: restaurantDomainError } = await adminClient
-      .from("restaurants")
-      .select("custom_domain")
-      .eq("id", pendingPayment.restaurant_id)
-      .maybeSingle();
-    if (restaurantDomainError) throw restaurantDomainError;
-    const configuredDomain = String(restaurantDomain?.custom_domain ?? "").trim()
-      .replace(/^https?:\/\//i, "")
-      .replace(/\/$/, "");
-    const siteBaseUrl = configuredDomain
-      ? `https://${configuredDomain}/`
-      : "https://jrnotjunior.github.io/restaurant-ordering-platform/";
     if (pendingPayment.status !== "pending") {
       return jsonResponse({ error: "This payment is no longer awaiting payment." }, 409);
     }
