@@ -13,7 +13,7 @@ import { MapboxDeliveryLocationPicker, type MapboxDeliveryAddress } from '../com
 import '../styles/checkout-mobile.css';
 
 type CartItem = { product: RestaurantProduct; quantity: number };
-type OrderType = 'delivery' | 'pickup' | 'dine_in';
+type OrderType = 'delivery' | 'take_out' | 'pickup' | 'dine_in';
 type PaymentMethod = 'cash' | 'online';
 type CheckoutPageProps = { items: CartItem[]; onClearCart: (targetUserId?: string) => void };
 type ConfirmedOrder = { orderId: string; orderNumber: string; paymentMethod: PaymentMethod; orderType: OrderType; pickupMethod?: 'customer' | 'third_party_courier'; pickupAddress?: string; total: number };
@@ -26,7 +26,8 @@ const PENDING_PAYMENT_PICKUP_METHOD_KEY = 'restaurant-ordering-pending-payment-p
 
 const orderTypes: Array<{ value: OrderType; label: string; description: string }> = [
   { value: 'delivery', label: 'Delivery', description: 'Have the restaurant deliver your order.' },
-  { value: 'pickup', label: 'Pickup', description: 'Collect your order from the restaurant. This includes take-out.' },
+  { value: 'take_out', label: 'Take-out', description: 'Order ahead and collect your food to take away.' },
+  { value: 'pickup', label: 'Pickup', description: 'Collect a pre-order from the restaurant.' },
   { value: 'dine_in', label: 'Dine-in', description: 'Order from your phone while eating at the restaurant.' },
 ];
 
