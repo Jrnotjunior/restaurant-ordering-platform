@@ -5,6 +5,7 @@ import { applyPosGroupDiscounts, confirmPosCashPayment, getCurrentCashierName, g
 import type { RestaurantProduct } from '../types/menu';
 import { MapboxDeliveryLocationPicker, type MapboxDeliveryAddress } from '../components/MapboxDeliveryLocationPicker';
 import { calculateDeliveryRoute, type DeliveryRouteQuote } from '../modules/location/locationService';
+import { supabase } from '../services/supabaseClient';
 import { attachCustomerToOrder, findCustomersByName, getLoyaltyRedemptionSettings, redeemLoyaltyReward, type LoyaltyCustomerSuggestion, type LoyaltyRedemptionSettings } from '../modules/loyalty/loyaltyService';
 
 type Props = { restaurantId: string };
@@ -58,6 +59,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orderType, setOrderType] = useState<'dine_in' | 'pickup' | 'delivery'>('dine_in');
+  const [selfOrderingEnabled, setSelfOrderingEnabled] = useState(true);
   const [mobileNumber, setMobileNumber] = useState('');
   const [deliveryCity, setDeliveryCity] = useState('');
   const [deliveryBarangay, setDeliveryBarangay] = useState('');
@@ -101,7 +103,20 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
     }
   }
 
-  useEffect(() => { void loadMenu(); void loadCashierName(); }, [restaurantId]);
+  useEffect(() => { void loadMenu(); void loadCashierName(); void loadPackageAccess(); }, [restaurantId]);
+
+  async function loadPackageAccess() {
+    const { data, error } = await supabase.rpc('restaurant_get_my_modules', { p_restaurant_id: restaurantId });
+    if (error) {
+      setSelfOrderingEnabled(true);
+      return;
+    }
+    const modules = Array.isArray(data) ? data as { module_key: string; enabled: boolean }[] : [];
+    setSelfOrderingEnabled(modules.some((module) => module.module_key === 'self_ordering' && module.enabled));
+    if (modules.some((module) => module.module_key === 'self_ordering' && module.enabled)) {
+      setOrderType((current) => current === 'delivery' ? 'dine_in' : current);
+    }
+  }
   async function loadCashierName() {
     setCashierName(await getCurrentCashierName(restaurantId));
   }
@@ -227,6 +242,10 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   async function placeOrder() {
     if (!cart.length || saving || !cashPaymentReady) return;
     const enteredCustomerName = customerName.trim();
+    if ((orderType === 'delivery' || orderType === 'pickup') && selfOrderingEnabled) {
+      setError('Pickup and Delivery are only available for restaurant packages without Self Ordering.');
+      return;
+    }
     if (orderType === 'delivery' && (!mobileNumber.trim() || !deliveryCity.trim() || !deliveryBarangay.trim() || !deliveryAddress.trim() || !selectedDeliveryLocation || !deliveryRouteQuote?.inRange || deliveryRouteLoading)) {
       setError('Enter the delivery contact and address, then select an in-range location on the map to calculate the delivery fee.');
       return;
@@ -439,7 +458,8 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
           <div className="restaurant-pos-type"><span>Order type</span><div>
             <button type="button" className={orderType === 'dine_in' ? 'is-active' : ''} onClick={() => setOrderType('dine_in')}>Dine-in</button>
             <button type="button" className={orderType === 'pickup' ? 'is-active' : ''} onClick={() => setOrderType('pickup')}>Take-out</button>
-            <button type="button" className={orderType === 'delivery' ? 'is-active' : ''} onClick={() => setOrderType('delivery')}>Delivery</button>
+            {!selfOrderingEnabled && <button type="button" className={orderType === 'pickup' ? 'is-active' : ''} onClick={() => setOrderType('pickup')}>Pickup</button>}
+            {!selfOrderingEnabled && <button type="button" className={orderType === 'delivery' ? 'is-active' : ''} onClick={() => setOrderType('delivery')}>Delivery</button>}
           </div></div>
 
           {orderType === 'delivery' && <section className="restaurant-pos-delivery-fields">
