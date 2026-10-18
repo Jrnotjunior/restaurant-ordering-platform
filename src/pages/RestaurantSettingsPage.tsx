@@ -198,6 +198,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [pricesVatInclusive, setPricesVatInclusive] = useState(false);
   const [vatRate, setVatRate] = useState('12');
   const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
+  const [cashOnPickupEnabled, setCashOnPickupEnabled] = useState(true);
   const [automaticRiderAssignmentEnabled, setAutomaticRiderAssignmentEnabled] = useState(false);
   const [deliveryBaseFee, setDeliveryBaseFee] = useState('0');
   const [deliveryDistanceIncrementMeters, setDeliveryDistanceIncrementMeters] = useState('500');
@@ -270,7 +271,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     try {
       const { data, error: loadError } = await supabase
         .from('restaurants')
-        .select('tagline,restaurant_address,store_address,ordering_enabled,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate,cash_on_delivery_enabled,automatic_rider_assignment_enabled,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,delivery_location_latitude,delivery_location_longitude')
+        .select('tagline,restaurant_address,store_address,ordering_enabled,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate,cash_on_delivery_enabled,cash_on_pickup_enabled,automatic_rider_assignment_enabled,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,delivery_location_latitude,delivery_location_longitude')
          .eq('id', restaurantId)
         .single();
 
@@ -286,6 +287,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       setPricesVatInclusive(Boolean(data?.tax_prices_vat_inclusive));
       setVatRate(String(data?.tax_vat_rate ?? 12));
       setCashOnDeliveryEnabled(data?.cash_on_delivery_enabled !== false);
+      setCashOnPickupEnabled(data?.cash_on_pickup_enabled !== false);
       setAutomaticRiderAssignmentEnabled(data?.automatic_rider_assignment_enabled === true);
       setDeliveryBaseFee(String(data?.delivery_base_fee ?? 0));
       setDeliveryDistanceIncrementMeters(String(data?.delivery_distance_increment_meters ?? 500));
@@ -576,6 +578,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           store_address: address.trim() || null,
           operating_hours: normalizedHours,
           ordering_enabled: orderingEnabled,
+          cash_on_pickup_enabled: cashOnPickupEnabled,
           tax_vat_registered: vatRegistered,
           tax_prices_vat_inclusive: vatRegistered ? pricesVatInclusive : false,
           tax_vat_rate: vatRegistered ? parsedVatRate : 0,
@@ -989,6 +992,23 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
             <strong>PayMongo connection error</strong>
             <span>{paymongoError}</span>
           </div>}
+          <h2>Pickup Payment Options</h2>
+          <label className="restaurant-settings-switch-row">
+            <span>Accept cash for Pickup and Take-out</span>
+            <span className="restaurant-settings-switch">
+              <input
+                type="checkbox"
+                checked={cashOnPickupEnabled}
+                disabled={loading || saving}
+                onChange={(event) => { setCashOnPickupEnabled(event.target.checked); setMessage(''); setError(''); }}
+                aria-label="Accept cash for Pickup and Take-out"
+              />
+              <span className="restaurant-settings-switch-track" aria-hidden="true">
+                <span className="restaurant-settings-switch-thumb" />
+              </span>
+            </span>
+          </label>
+          <p className="restaurant-settings-help" style={{ marginBottom: 18 }}>Turn this off to require online payment for Pickup and Take-out orders, helping reduce fake or uncollected orders. This does not change cash settings for Delivery or Dine-in.</p>
           <h2>PayMongo Online Payments</h2>
           <p className="restaurant-settings-help">Each restaurant connects its own PayMongo merchant account. Web2Table does not ask you to paste a PayMongo secret key into the website.</p>
           <div className="restaurant-paymongo-status">
