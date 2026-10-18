@@ -248,17 +248,19 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
   return (
     <section className="order-tracking-page">
       <div className="order-tracking-card">
-        <div className="order-tracking-header">
-          <div>
-            <p className="eyebrow">Order tracking</p>
-            <h1>Order #{order.orderNumber}</h1>
-            <p className="order-tracking-subtitle">{isDineIn ? "Show your order number to the cashier so they can find your order quickly." : "View your order summary and collection details."}</p>
+        {!isDineIn ? (
+          <div className="order-tracking-header">
+            <div>
+              <p className="eyebrow">Order tracking</p>
+              <h1>Order #{order.orderNumber}</h1>
+              <p className="order-tracking-subtitle">View your order summary and collection details.</p>
+            </div>
+            <span className={`order-tracking-live-status is-${realtimeStatus}`}>
+              <span className="order-tracking-live-dot" />
+              {realtimeStatus === 'live' ? 'Live' : realtimeStatus === 'connecting' ? 'Connecting…' : 'Reconnecting…'}
+            </span>
           </div>
-          <span className={`order-tracking-live-status is-${realtimeStatus}`}>
-            <span className="order-tracking-live-dot" />
-            {realtimeStatus === 'live' ? 'Live' : realtimeStatus === 'connecting' ? 'Connecting…' : 'Reconnecting…'}
-          </span>
-        </div>
+        ) : null}
 
         <div className="order-tracking-total"><span>Total</span><strong>₱{Number(order.total).toFixed(2)}</strong></div>
         {isDineIn && !isCancelled ? (
