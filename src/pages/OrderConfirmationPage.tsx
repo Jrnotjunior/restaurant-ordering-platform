@@ -19,7 +19,7 @@ export function OrderConfirmationPage({ orderId, orderNumber, paymentMethod, ord
     ? 'Your online payment was received. Your order has been sent to the restaurant.'
     : orderType === 'dine_in'
       ? 'Please pay the cashier at the restaurant counter. Your order will enter the kitchen after the cashier confirms your payment.'
-      : 'Your order is recorded as pending. Please pay in cash when your order is received or collected.');
+      : 'Your order is recorded as pending. Please pay the cashier in cash. Preparation will begin after your payment is confirmed.');
 
   function trackOrder() {
     window.location.hash = `#order/${encodeURIComponent(orderId)}`;
