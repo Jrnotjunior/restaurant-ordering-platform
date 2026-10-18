@@ -959,6 +959,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         </div>
 
                 <div className="restaurant-settings-card" id="store-cod" role="tabpanel" aria-labelledby="store-settings-tab-cod" hidden={!hasDispatchDelivery || activeSettingsTab !== 'cod'}>
+          <p className="restaurant-settings-help" style={{ marginTop: 0, marginBottom: 18 }}>Cash Payment Options is controlled by the System Administrator. Contact the System Administrator to request a change.</p>
           <label className="restaurant-settings-switch-row">
             <span>Accept Cash on Delivery</span>
             <span className="restaurant-settings-switch">
@@ -973,7 +974,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
               </span>
             </span>
           </label>
-          <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Cash on Delivery is controlled by the System Administrator. Contact the System Administrator to request a change.</p>
           <div style={{ marginTop: 24 }}>
             <label className="restaurant-settings-switch-row">
               <span>Accept Cash for Pickup</span>
