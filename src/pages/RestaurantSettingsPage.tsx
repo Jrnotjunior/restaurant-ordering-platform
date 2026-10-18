@@ -252,7 +252,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       if (loadError) throw loadError;
       setRestaurantTagline(data?.tagline ?? '');
       setAddress(data?.store_address ?? data?.location_text ?? '');
-      setRestaurantAddress(data?.restaurant_address ?? '');
+      setRestaurantAddress(data?.restaurant_address ?? data?.store_address ?? data?.location_text ?? '');
       setHours(normalizeHours(data?.operating_hours));
       setOrderingEnabled(data?.ordering_enabled !== false);
       setVatRegistered(Boolean(data?.tax_vat_registered));
@@ -622,6 +622,9 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
       const savedHours = normalizeHours(savedRow?.operating_hours);
       const savedAddress = savedRow?.store_address ?? '';
+      if ((savedRow?.restaurant_address ?? '') !== (restaurantAddress.trim() || '')) {
+        throw new Error('The restaurant address was not stored correctly. Please try again.');
+      }
       if (savedAddress !== (address.trim() || '')) {
         throw new Error('The store address was not stored correctly. Please try again.');
       }
