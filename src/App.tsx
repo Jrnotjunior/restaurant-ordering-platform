@@ -288,6 +288,36 @@ function AppContent() {
     trackingMatch,
   } = routeContext;
 
+  // Custom domains for POS-only tenants are staff entry points, not public
+  // customer storefronts. Resolve the module for this exact tenant before
+  // redirecting; never infer access from the hostname or restaurant name.
+  useEffect(() => {
+    const hostname = window.location.hostname.trim().toLowerCase();
+    const isCustomDomain = hostname !== 'localhost'
+      && hostname !== '127.0.0.1'
+      && hostname !== '::1'
+      && hostname !== 'github.io'
+      && !hostname.endsWith('.github.io');
+    const isPublicOrderingRoute = !route
+      || route === '#menu'
+      || route === '#cart'
+      || route === '#checkout'
+      || route.startsWith('#order/');
+    if (!isCustomDomain || !restaurant.id || !isPublicOrderingRoute || !supabase) return;
+
+    let cancelled = false;
+    void supabase.rpc('public_restaurant_has_module', {
+      p_restaurant_id: restaurant.id,
+      p_module_key: 'self_ordering',
+    }).then(({ data, error }) => {
+      if (cancelled || error || data !== false) return;
+      window.location.hash = '#account';
+    }).catch((error: unknown) => {
+      console.error('Unable to verify public self-ordering access.', error);
+    });
+    return () => { cancelled = true; };
+  }, [restaurant.id, route]);
+
   if (isTenantInviteLandingPage) return <TenantInviteLandingPage />;
   if (isTenantInvitePage) return <TenantOnboardingPage />;
   if (isEmployeeInvitePage) return <RestaurantEmployeeInvitePage />;
