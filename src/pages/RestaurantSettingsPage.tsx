@@ -867,18 +867,18 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           </label>
           <div style={{ marginTop: 24 }}>
             <h2>Cash Payment Options</h2>
-            <p className="restaurant-settings-help">Choose whether customers can pay cash for pickup and take-out orders. Save your settings to apply the changes.</p>
+            <p className="restaurant-settings-help">Cash payment for pickup and take-out is controlled by the System Administrator. Contact the System Administrator to request either option be enabled or disabled.</p>
             <label className="restaurant-settings-switch-row">
               <span>Accept Cash for Pickup</span>
               <span className="restaurant-settings-switch">
-                <input type="checkbox" checked={cashOnPickupEnabled} disabled={loading || saving} onChange={(event) => { setCashOnPickupEnabled(event.target.checked); setMessage(''); setError(''); }} aria-label="Accept cash for pickup" />
+                <input type="checkbox" checked={cashOnPickupEnabled} disabled aria-label="Cash for pickup status (System Admin controlled)" />
                 <span className="restaurant-settings-switch-track" aria-hidden="true"><span className="restaurant-settings-switch-thumb" /></span>
               </span>
             </label>
             <label className="restaurant-settings-switch-row">
               <span>Accept Cash for Take-out</span>
               <span className="restaurant-settings-switch">
-                <input type="checkbox" checked={cashOnTakeOutEnabled} disabled={loading || saving} onChange={(event) => { setCashOnTakeOutEnabled(event.target.checked); setMessage(''); setError(''); }} aria-label="Accept cash for take-out" />
+                <input type="checkbox" checked={cashOnTakeOutEnabled} disabled aria-label="Cash for take-out status (System Admin controlled)" />
                 <span className="restaurant-settings-switch-track" aria-hidden="true"><span className="restaurant-settings-switch-thumb" /></span>
               </span>
             </label>
