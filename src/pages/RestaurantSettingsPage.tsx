@@ -974,6 +974,23 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
             </span>
           </label>
           <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Cash on Delivery is controlled by the System Administrator. Contact the System Administrator to request a change.</p>
+          <div style={{ marginTop: 24 }}>
+            <h2>Pickup and Take-out</h2>
+            <label className="restaurant-settings-switch-row">
+              <span>Accept Cash for Pickup</span>
+              <span className="restaurant-settings-switch">
+                <input type="checkbox" checked={cashOnPickupEnabled} disabled aria-label="Cash for pickup status (System Admin controlled)" />
+                <span className="restaurant-settings-switch-track" aria-hidden="true"><span className="restaurant-settings-switch-thumb" /></span>
+              </span>
+            </label>
+            <label className="restaurant-settings-switch-row">
+              <span>Accept Cash for Take-out</span>
+              <span className="restaurant-settings-switch">
+                <input type="checkbox" checked={cashOnTakeOutEnabled} disabled aria-label="Cash for take-out status (System Admin controlled)" />
+                <span className="restaurant-settings-switch-track" aria-hidden="true"><span className="restaurant-settings-switch-thumb" /></span>
+              </span>
+            </label>
+          </div>
         </div>
 
                 <div className="restaurant-settings-card" id="store-rider" role="tabpanel" aria-labelledby="store-settings-tab-rider" hidden={!hasDispatchDelivery || activeSettingsTab !== 'rider'}>
