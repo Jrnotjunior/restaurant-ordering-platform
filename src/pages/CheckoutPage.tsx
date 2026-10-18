@@ -101,7 +101,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
         return;
       }
 
-      setStoreAddress(String(data?.restaurant_address ?? data?.store_address ?? data?.location_text ?? '').trim());
+      setStoreAddress(String(data?.restaurant_address || data?.store_address || data?.location_text || '').trim());
     }
 
     void loadStorePickupAddress();
