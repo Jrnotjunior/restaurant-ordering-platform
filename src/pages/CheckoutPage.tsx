@@ -32,7 +32,7 @@ const orderTypes: Array<{ value: OrderType; label: string; description: string }
 ];
 
 const paymentMethods: Array<{ value: PaymentMethod; label: string; description: string }> = [
-  { value: 'cash', label: 'Cash', description: 'Pay in cash when your order is received or collected.' },
+  { value: 'cash', label: 'Cash', description: 'Place your order, then pay the cashier before your food is prepared.' },
   { value: 'online', label: 'Online Payment', description: 'Pay securely through our online payment gateway.' },
 ];
 
