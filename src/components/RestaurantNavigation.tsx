@@ -174,6 +174,7 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
   const restaurant = useRestaurant();
   const [ownerModules, setOwnerModules] = useState<Record<string, boolean>>({});
   const [modulesLoading, setModulesLoading] = useState(role === 'owner');
+  const [cashierSelfOrderingEnabled, setCashierSelfOrderingEnabled] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!supabase || role !== 'owner' || !restaurant.id) {
@@ -197,6 +198,25 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
     return () => {
       mounted = false;
     };
+  }, [role, restaurant.id]);
+
+  useEffect(() => {
+    if (role !== 'cashier' || !restaurant.id || !supabase) {
+      setCashierSelfOrderingEnabled(null);
+      return;
+    }
+    let mounted = true;
+    void supabase.rpc('restaurant_get_my_modules', { p_restaurant_id: restaurant.id }).then(({ data, error }) => {
+      if (!mounted) return;
+      if (error) {
+        console.error('Unable to load cashier package modules.', error);
+        setCashierSelfOrderingEnabled(null);
+        return;
+      }
+      const modules = Array.isArray(data) ? data as Array<{ module_key: string; enabled: boolean }> : [];
+      setCashierSelfOrderingEnabled(modules.some((module) => module.module_key === 'self_ordering' && module.enabled));
+    });
+    return () => { mounted = false; };
   }, [role, restaurant.id]);
 
   useEffect(() => {
@@ -546,7 +566,7 @@ export function RestaurantNavigation({ role = 'owner', ownerDashboard = false }:
       <div className={`restaurant-navigation-row${role === 'dispatcher' ? ' is-dispatcher' : ''}`}>
         {role !== 'dispatcher' ? (
           <nav className="restaurant-navigation" aria-label="Restaurant operations navigation">
-            {roleNavigationItems[role].map((item) => {
+            {roleNavigationItems[role].filter((item) => !(role === 'cashier' && item.href === '#restaurant/cashier' && cashierSelfOrderingEnabled === false)).map((item) => {
               const active = currentRoute === item.href;
               return (
                 <a
