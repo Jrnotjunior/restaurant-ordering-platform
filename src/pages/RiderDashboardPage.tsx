@@ -13,11 +13,22 @@ function formatHistoryDate(value: string) {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+function localDateKey(value: string | Date) {
+  const date = typeof value === 'string' ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return '';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function RiderDashboardPage() {
   const [riderName, setRiderName] = useState('Rider');
   const [deliveries, setDeliveries] = useState<RiderDelivery[]>([]);
   const [history, setHistory] = useState<RiderHistoryItem[]>([]);
   const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
+  const [historyDate, setHistoryDate] = useState(() => localDateKey(new Date()));
+  const [showAllHistoryDates, setShowAllHistoryDates] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [accountOpen, setAccountOpen] = useState(false);
@@ -218,13 +229,30 @@ export function RiderDashboardPage() {
                 <div><p className="rider-delivery-label">Delivery history</p><h2>Your delivery history</h2></div>
               </div>
 
+              <div className="rider-history-filter">
+                <label htmlFor="rider-history-date">Delivery date</label>
+                <input
+                  id="rider-history-date"
+                  type="date"
+                  value={historyDate}
+                  max={localDateKey(new Date())}
+                  onChange={(event) => { setHistoryDate(event.target.value); setShowAllHistoryDates(false); }}
+                  disabled={loading}
+                />
+                <button type="button" onClick={() => setShowAllHistoryDates((show) => !show)} aria-pressed={showAllHistoryDates}>
+                  {showAllHistoryDates ? "Filter by date" : "All dates"}
+                </button>
+              </div>
+
               {loading ? (
                 <div className="rider-dashboard-empty">Loading order history…</div>
               ) : history.length === 0 ? (
                 <div className="rider-dashboard-empty"><strong>No delivery history yet</strong><span>Completed or failed deliveries will appear here.</span></div>
+              ) : (showAllHistoryDates ? history : history.filter((order) => localDateKey(order.createdAt) === historyDate)).length === 0 ? (
+                <div className="rider-dashboard-empty"><strong>No deliveries for this date</strong><span>Choose another date or view all dates to see older deliveries.</span></div>
               ) : (
                 <div className="rider-dashboard-list">
-                  {history.map((order) => (
+                  {(showAllHistoryDates ? history : history.filter((order) => localDateKey(order.createdAt) === historyDate)).map((order) => (
                     <a className="rider-dashboard-delivery-card rider-dashboard-history-card" href={`${import.meta.env.BASE_URL}#rider/delivery/${order.id}`} key={order.id}>
                       <div className="rider-dashboard-delivery-main">
                         <div className="rider-dashboard-delivery-top"><strong>{order.orderNumber}</strong><span className={`rider-dashboard-status is-${order.status}`}>{order.status === 'failed' ? 'Delivery failed' : 'Delivered'}</span></div>
