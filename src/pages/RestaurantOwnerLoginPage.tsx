@@ -4,7 +4,7 @@ import { supabase } from '../services/supabaseClient';
 import { getCurrentCustomerRestaurant } from '../modules/customer/customerAuthService';
 
 export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: boolean }) {
-  const { user, accountType, staffRole, loading: authLoading, signOut, error: authError } = useRestaurantOwnerAuth();
+  const { user, accountType, staffRole, staffRestaurantId, loading: authLoading, signOut, error: authError } = useRestaurantOwnerAuth();
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [email, setEmail] = useState('');
@@ -93,10 +93,32 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
   useEffect(() => {
     if (authLoading || !user || !accountType) return;
     if (accountType === 'owner') { window.location.hash = '#restaurant/orders'; return; }
-    if (accountType === 'staff') {
-      window.location.hash = staffRole === 'rider' ? '#rider/dashboard' : staffRole === 'kitchen' ? '#restaurant/kitchen' : staffRole === 'dispatcher' ? '#restaurant/dispatcher' : '#restaurant/cashier';
+    if (accountType !== 'staff') return;
+
+    let cancelled = false;
+    async function redirectStaff() {
+      let cashierPosOnly = false;
+      if (staffRole === 'cashier' && staffRestaurantId && supabase) {
+        const { data, error } = await supabase.rpc('public_restaurant_has_module', {
+          p_restaurant_id: staffRestaurantId,
+          p_module_key: 'self_ordering',
+        });
+        if (!cancelled && !error) cashierPosOnly = data === false;
+      }
+      if (cancelled) return;
+      window.location.hash = staffRole === 'rider'
+        ? '#rider/dashboard'
+        : staffRole === 'kitchen'
+          ? '#restaurant/kitchen'
+          : staffRole === 'dispatcher'
+            ? '#restaurant/dispatcher'
+            : cashierPosOnly
+              ? '#restaurant/cashier-pos'
+              : '#restaurant/cashier';
     }
-  }, [authLoading, user?.id, accountType, staffRole]);
+    void redirectStaff();
+    return () => { cancelled = true; };
+  }, [authLoading, user?.id, accountType, staffRole, staffRestaurantId]);
 
   if (authLoading) {
     return <main className="restaurant-owner-auth-page"><section className="restaurant-owner-auth-card"><p>Loading account…</p></section></main>;
