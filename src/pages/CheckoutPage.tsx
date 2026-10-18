@@ -79,6 +79,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
   const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
   const [cashOnPickupEnabled, setCashOnPickupEnabled] = useState(true);
   const [cashOnTakeOutEnabled, setCashOnTakeOutEnabled] = useState(true);
+  const [cashOnTakeOutEnabled, setCashOnTakeOutEnabled] = useState(true);
   const [storeAddress, setStoreAddress] = useState('');
   // Public storefront config may omit the database ID; the cart product carries the resolved tenant ID.
   const restaurantId = restaurant.id ?? items[0]?.product.restaurantId;
@@ -171,6 +172,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
       if (!mounted) return;
       if (!error) setCashOnDeliveryEnabled(data?.cash_on_delivery_enabled !== false);
       if (!error) setCashOnPickupEnabled(data?.cash_on_pickup_enabled !== false);
+      if (!error) setCashOnTakeOutEnabled(data?.cash_on_take_out_enabled !== false);
       if (!error) setCashOnTakeOutEnabled(data?.cash_on_take_out_enabled !== false);
     }
 
