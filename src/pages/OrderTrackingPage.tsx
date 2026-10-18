@@ -250,7 +250,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
   return (
     <section className="order-tracking-page">
       <div className="order-tracking-card">
-        {!isCashDineIn ? (
+        {!isCashDineIn && !isCashTakeOut ? (
           <div className="order-tracking-header">
             <div>
               <p className="eyebrow">Order tracking</p>
