@@ -81,10 +81,12 @@ function TimePicker({ value, disabled, label, onChange }: TimePickerProps) {
   const draftPeriod: 'AM' | 'PM' = draftHour >= 12 ? 'PM' : 'AM';
   const displayHour = draftHour % 12 || 12;
 
-  function commit(nextHour = displayHour, nextMinute = draftMinute, nextPeriod = draftPeriod) {
-    const next = to24Hour(nextHour, nextMinute, nextPeriod);
-    setDraft(next);
-    onChange(next);
+  function updateDraft(nextHour = displayHour, nextMinute = draftMinute, nextPeriod = draftPeriod) {
+    setDraft(to24Hour(nextHour, nextMinute, nextPeriod));
+  }
+
+  function commitDraft() {
+    onChange(draft);
     setOpen(false);
   }
 
@@ -109,7 +111,7 @@ function TimePicker({ value, disabled, label, onChange }: TimePickerProps) {
             <select
               aria-label="Hour"
               value={displayHour}
-              onChange={(event) => commit(Number(event.target.value), draftMinute, draftPeriod)}
+              onChange={(event) => updateDraft(Number(event.target.value), draftMinute, draftPeriod)}
             >
               {Array.from({ length: 12 }, (_, index) => index + 1).map((hour) => (
                 <option key={hour} value={hour}>{String(hour).padStart(2, '0')}</option>
@@ -119,7 +121,7 @@ function TimePicker({ value, disabled, label, onChange }: TimePickerProps) {
             <select
               aria-label="Minute"
               value={draftMinute}
-              onChange={(event) => commit(displayHour, Number(event.target.value), draftPeriod)}
+              onChange={(event) => updateDraft(displayHour, Number(event.target.value), draftPeriod)}
             >
               {Array.from({ length: 60 }, (_, minute) => minute).map((minute) => (
                 <option key={minute} value={minute}>{String(minute).padStart(2, '0')}</option>
@@ -128,7 +130,7 @@ function TimePicker({ value, disabled, label, onChange }: TimePickerProps) {
             <select
               aria-label="AM or PM"
               value={draftPeriod}
-              onChange={(event) => commit(displayHour, draftMinute, event.target.value as 'AM' | 'PM')}
+              onChange={(event) => updateDraft(displayHour, draftMinute, event.target.value as 'AM' | 'PM')}
             >
               <option value="AM">AM</option>
               <option value="PM">PM</option>
@@ -137,7 +139,7 @@ function TimePicker({ value, disabled, label, onChange }: TimePickerProps) {
           <button
             type="button"
             className="restaurant-time-picker-done"
-            onClick={() => setOpen(false)}
+            onClick={commitDraft}
           >
             Done
           </button>
