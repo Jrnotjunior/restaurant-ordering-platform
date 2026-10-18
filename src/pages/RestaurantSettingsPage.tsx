@@ -68,14 +68,10 @@ function TimePicker({ value, disabled, label, onChange }: TimePickerProps) {
     setDraft(value);
   }, [value]);
 
-  useEffect(() => {
-    if (!open) return;
-    const handlePointerDown = (event: PointerEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
-    };
-    document.addEventListener('pointerdown', handlePointerDown);
-    return () => document.removeEventListener('pointerdown', handlePointerDown);
-  }, [open]);
+  // Keep the picker open while interacting with native select menus.
+  // On some browsers, option selection can dispatch pointer events outside
+  // the wrapper and prematurely dismiss the popover. Close only via Done or
+  // by toggling the trigger, so hour/minute/AM-PM can all be selected first.
 
   const [draftHour, draftMinute] = draft.split(':').map(Number);
   const draftPeriod: 'AM' | 'PM' = draftHour >= 12 ? 'PM' : 'AM';
