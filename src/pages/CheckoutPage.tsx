@@ -824,7 +824,8 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
             {paymentMethods
               .filter((method) => !thirdPartyCourierDelivery || method.value === 'online')
               .filter((method) => !(orderType === 'delivery' && method.value === 'cash' && !cashOnDeliveryEnabled))
-              .filter((method) => !(['pickup', 'take_out'].includes(orderType) && method.value === 'cash' && !cashOnPickupEnabled))
+              .filter((method) => !(orderType === 'pickup' && method.value === 'cash' && !cashOnPickupEnabled))
+              .filter((method) => !(orderType === 'take_out' && method.value === 'cash' && !cashOnTakeOutEnabled))
               .map((method) => {
               const label = orderType === 'dine_in' && method.value === 'cash' ? 'Pay at Counter' : method.label;
               const description = orderType === 'dine_in' && method.value === 'cash' ? 'Place your order now and pay the cashier at the restaurant counter.' : method.description;
