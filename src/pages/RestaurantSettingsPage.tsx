@@ -251,8 +251,8 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
       if (loadError) throw loadError;
       setRestaurantTagline(data?.tagline ?? '');
-      setAddress(data?.store_address ?? data?.location_text ?? '');
-      setRestaurantAddress(data?.restaurant_address ?? data?.store_address ?? data?.location_text ?? '');
+      setAddress(data?.store_address ?? '');
+      setRestaurantAddress(data?.restaurant_address ?? '');
       setHours(normalizeHours(data?.operating_hours));
       setOrderingEnabled(data?.ordering_enabled !== false);
       setVatRegistered(Boolean(data?.tax_vat_registered));
