@@ -3,6 +3,8 @@ import { getMenu, subscribeToCashierMenuChanges } from '../modules/products/prod
 import { createOrder } from '../modules/ordering/orderService';
 import { applyPosGroupDiscounts, confirmPosCashPayment, getCurrentCashierName, getRestaurantTaxSettings, type PosDiscountIdType, type PosDiscountType, type RestaurantTaxSettings } from '../modules/pos/posService';
 import type { RestaurantProduct } from '../types/menu';
+import { MapboxDeliveryLocationPicker, type MapboxDeliveryAddress } from '../components/MapboxDeliveryLocationPicker';
+import { calculateDeliveryRoute, type DeliveryRouteQuote } from '../modules/location/locationService';
 import { attachCustomerToOrder, findCustomersByName, getLoyaltyRedemptionSettings, redeemLoyaltyReward, type LoyaltyCustomerSuggestion, type LoyaltyRedemptionSettings } from '../modules/loyalty/loyaltyService';
 
 type Props = { restaurantId: string };
@@ -13,7 +15,7 @@ type PosPrintOrder = {
   customerName: string;
   notes: string;
   cashierName: string;
-  orderType: 'dine_in' | 'pickup';
+  orderType: 'dine_in' | 'pickup' | 'delivery';
   createdAt: string;
   items: CartItem[];
   beneficiaries: DraftBeneficiary[];
@@ -52,7 +54,14 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const [category, setCategory] = useState('all');
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [orderType, setOrderType] = useState<'dine_in' | 'pickup'>('dine_in');
+  const [orderType, setOrderType] = useState<'dine_in' | 'pickup' | 'delivery'>('dine_in');
+  const [mobileNumber, setMobileNumber] = useState('');
+  const [deliveryCity, setDeliveryCity] = useState('');
+  const [deliveryBarangay, setDeliveryBarangay] = useState('');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [selectedDeliveryLocation, setSelectedDeliveryLocation] = useState<MapboxDeliveryAddress | null>(null);
+  const [deliveryRouteQuote, setDeliveryRouteQuote] = useState<DeliveryRouteQuote | null>(null);
+  const [deliveryRouteLoading, setDeliveryRouteLoading] = useState(false);
   const [customerName, setCustomerName] = useState('');
   const [notes, setNotes] = useState('');
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
@@ -165,7 +174,8 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const loyaltyDiscountPreview = redeemPoints && selectedCustomerId && loyaltyRedemption?.enabled
     ? Math.min(Number(loyaltyRedemption.discountAmount.toFixed(2)), preLoyaltyTotal)
     : 0;
-  const total = Math.max(Number((preLoyaltyTotal - loyaltyDiscountPreview).toFixed(2)), 0);
+  const deliveryFee = orderType === 'delivery' && deliveryRouteQuote?.inRange ? deliveryRouteQuote.deliveryFee : 0;
+  const total = Math.max(Number((preLoyaltyTotal + deliveryFee - loyaltyDiscountPreview).toFixed(2)), 0);
   const cashReceivedAmount = Number(cashReceived) || 0;
   const change = Math.max(Number((cashReceivedAmount - total).toFixed(2)), 0);
   const cashPaymentReady = cart.length > 0 && cashReceivedAmount >= total;
@@ -232,11 +242,18 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
       const created = await createOrder({
         restaurantId,
         customerName: enteredCustomerName,
-        mobileNumber: 'N/A',
+        mobileNumber: orderType === 'delivery' ? mobileNumber.trim() : 'N/A',
         orderType,
-        deliveryCity: '',
-        deliveryBarangay: '',
-        deliveryAddress: '',
+        deliveryCity: orderType === 'delivery' ? deliveryCity.trim() : '',
+        deliveryBarangay: orderType === 'delivery' ? deliveryBarangay.trim() : '',
+        deliveryAddress: orderType === 'delivery' ? deliveryAddress.trim() : '',
+        customerDeliveryAddress: orderType === 'delivery' ? deliveryAddress.trim() : undefined,
+        customerDeliveryCity: orderType === 'delivery' ? deliveryCity.trim() : undefined,
+        customerDeliveryBarangay: orderType === 'delivery' ? deliveryBarangay.trim() : undefined,
+        customerDeliveryLatitude: orderType === 'delivery' ? (selectedDeliveryLocation?.latitude ?? undefined) : undefined,
+        customerDeliveryLongitude: orderType === 'delivery' ? (selectedDeliveryLocation?.longitude ?? undefined) : undefined,
+        customerDeliveryPlaceId: orderType === 'delivery' ? selectedDeliveryLocation?.placeId : undefined,
+        deliveryQuoteId: orderType === 'delivery' ? deliveryRouteQuote?.quoteId : undefined,
         notes: notes.trim() || 'POS ORDER — cash collected by cashier.',
         paymentMethod: 'cash',
         items: cart.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
@@ -404,7 +421,35 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
           <div className="restaurant-pos-type"><span>Order type</span><div>
             <button type="button" className={orderType === 'dine_in' ? 'is-active' : ''} onClick={() => setOrderType('dine_in')}>Dine-in</button>
             <button type="button" className={orderType === 'pickup' ? 'is-active' : ''} onClick={() => setOrderType('pickup')}>Take-out</button>
+            <button type="button" className={orderType === 'delivery' ? 'is-active' : ''} onClick={() => setOrderType('delivery')}>Delivery</button>
           </div></div>
+
+          {orderType === 'delivery' && <section className="restaurant-pos-delivery-fields">
+            <label className="restaurant-pos-field"><span>Customer phone number</span><input type="tel" value={mobileNumber} onChange={(event) => setMobileNumber(event.target.value)} placeholder="09XX XXX XXXX" disabled={saving} /></label>
+            <label className="restaurant-pos-field"><span>City / Municipality</span><input value={deliveryCity} onChange={(event) => setDeliveryCity(event.target.value)} placeholder="City or municipality" disabled={saving} /></label>
+            <label className="restaurant-pos-field"><span>Barangay</span><input value={deliveryBarangay} onChange={(event) => setDeliveryBarangay(event.target.value)} placeholder="Barangay" disabled={saving} /></label>
+            <label className="restaurant-pos-field"><span>Complete delivery address</span><textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="House / unit number, street, building, landmark" rows={2} disabled={saving} /></label>
+            <MapboxDeliveryLocationPicker disabled={saving} onSelect={async (selected) => {
+              setSelectedDeliveryLocation(selected);
+              setDeliveryCity(selected.city || '');
+              setDeliveryBarangay(selected.barangay || '');
+              setDeliveryAddress(selected.address || selected.formattedAddress || '');
+              setDeliveryRouteQuote(null);
+              if (selected.latitude == null || selected.longitude == null) return;
+              setDeliveryRouteLoading(true);
+              try {
+                const quote = await calculateDeliveryRoute(restaurantId, selected.latitude, selected.longitude);
+                setDeliveryRouteQuote(quote);
+                if (!quote.inRange) setError('This delivery address is outside the restaurant delivery area.');
+                else setError('');
+              } catch (routeError) {
+                setError(routeError instanceof Error ? routeError.message : 'Unable to calculate delivery fee.');
+              } finally { setDeliveryRouteLoading(false); }
+            }} />
+            {deliveryRouteLoading && <p role="status">Calculating delivery fee…</p>}
+            {deliveryRouteQuote?.inRange && <p className="restaurant-pos-delivery-fee">Delivery fee: ₱{deliveryRouteQuote.deliveryFee.toFixed(2)} · {(deliveryRouteQuote.distanceMeters / 1000).toFixed(1)} km</p>}
+            {deliveryRouteQuote && !deliveryRouteQuote.inRange && <p role="alert">This address is outside the restaurant's delivery area.</p>}
+          </section>}
 
           <div className="restaurant-pos-discount">
             <div className="restaurant-pos-discount-header"><strong>Senior / PWD Discount</strong><span>20%</span></div>
@@ -496,8 +541,8 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
           </div>
 
           {taxSettings && <p className="restaurant-pos-tax-status">{taxSettings.vatRegistered ? `VAT registered · ${taxSettings.vatRate.toFixed(2)}%${taxSettings.pricesVatInclusive ? ' · prices VAT-inclusive' : ' · prices VAT-exclusive'}` : 'Non-VAT registered'}</p>}
-          <button className="button button-primary restaurant-pos-submit" type="button" disabled={!cart.length || saving || !discountReady || !taxSettings || !cashPaymentReady} onClick={() => void placeOrder()}>
-            {saving ? 'Creating Order…' : 'Cash Paid — Send to Kitchen'}
+          <button className="button button-primary restaurant-pos-submit" type="button" disabled={!cart.length || saving || !discountReady || !taxSettings || !cashPaymentReady || (orderType === 'delivery' && (!mobileNumber.trim() || !deliveryCity.trim() || !deliveryBarangay.trim() || !deliveryAddress.trim() || !selectedDeliveryLocation || !deliveryRouteQuote?.inRange || deliveryRouteLoading))} onClick={() => void placeOrder()}>
+            {saving ? 'Creating Order…' : orderType === 'delivery' ? 'Cash Paid — Create Delivery Order' : 'Cash Paid — Send to Kitchen'}
           </button>
         </aside>
       </div>
@@ -513,7 +558,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             <hr className="pos-receipt-divider" />
             <div className="pos-receipt-center">
               <div className="pos-receipt-label">
-                {printOrder.orderType === 'dine_in' ? 'DINE-IN' : 'PICKUP / TAKE-OUT'}
+                {printOrder.orderType === 'dine_in' ? 'DINE-IN' : printOrder.orderType === 'delivery' ? 'DELIVERY' : 'PICKUP / TAKE-OUT'}
               </div>
               <div>{printOrder.customerName}</div>
             </div>
