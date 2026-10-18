@@ -214,6 +214,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
   const [activeSettingsTab, setActiveSettingsTab] = useState('profile');
   const [hasDispatchDelivery, setHasDispatchDelivery] = useState(false);
+  const [hasSelfOrdering, setHasSelfOrdering] = useState(true);
   const [paymongoTestStatus, setPaymongoTestStatus] = useState("not_connected");
   const [paymongoLiveStatus, setPaymongoLiveStatus] = useState("not_connected");
   const [paymongoLiveAccountId, setPaymongoLiveAccountId] = useState("");
@@ -232,24 +233,26 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     async function loadPackageModules() {
       if (!supabase) {
         setHasDispatchDelivery(false);
+        setHasSelfOrdering(false);
         return;
       }
-      const { data, error: moduleError } = await supabase.rpc('restaurant_has_module', {
-        p_restaurant_id: restaurantId,
-        p_module_key: 'dispatch_delivery',
-      });
+      const [{ data: deliveryData, error: deliveryError }, { data: orderingData, error: orderingError }] = await Promise.all([
+        supabase.rpc('restaurant_has_module', { p_restaurant_id: restaurantId, p_module_key: 'dispatch_delivery' }),
+        supabase.rpc('restaurant_has_module', { p_restaurant_id: restaurantId, p_module_key: 'self_ordering' }),
+      ]);
       if (cancelled) return;
-      setHasDispatchDelivery(!moduleError && data === true);
+      setHasDispatchDelivery(!deliveryError && deliveryData === true);
+      setHasSelfOrdering(!orderingError && orderingData === true);
     }
     void loadPackageModules();
     return () => { cancelled = true; };
   }, [restaurantId]);
 
   useEffect(() => {
-    if (!hasDispatchDelivery && ["delivery", "cod", "rider"].includes(activeSettingsTab)) {
+    if ((!hasDispatchDelivery && ["delivery", "cod", "rider"].includes(activeSettingsTab)) || (!hasSelfOrdering && ["status", "hours"].includes(activeSettingsTab))) {
       setActiveSettingsTab('profile');
     }
-  }, [hasDispatchDelivery, activeSettingsTab]);
+  }, [hasDispatchDelivery, hasSelfOrdering, activeSettingsTab]);
 
   useEffect(() => {
     if (!message) return;
@@ -807,8 +810,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         <nav className="restaurant-settings-tabs" aria-label="Store settings tabs" role="tablist">
           {[
             { id: 'profile', label: 'Profile' },
-            { id: 'status', label: 'Store status' },
-            { id: 'hours', label: 'Operating hours' },
+            ...(hasSelfOrdering ? [{ id: 'status', label: 'Store status' }, { id: 'hours', label: 'Operating hours' }] : []),
             { id: 'delivery', label: 'Delivery pricing' },
             { id: 'cod', label: 'Cash on Delivery' },
             { id: 'rider', label: 'Rider assignment' },
@@ -855,7 +857,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           </label>
         </div>
 
-        <div className="restaurant-settings-card" id="store-status" role="tabpanel" aria-labelledby="store-settings-tab-status" hidden={activeSettingsTab !== 'status'}>
+        {hasSelfOrdering && <div className="restaurant-settings-card" id="store-status" role="tabpanel" aria-labelledby="store-settings-tab-status" hidden={activeSettingsTab !== 'status'}>
           <label className="restaurant-settings-switch-row">
             <span>{orderingEnabled ? 'Store is open' : 'Store is manually closed'}</span>
             <span className="restaurant-settings-switch">
@@ -872,9 +874,9 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
             </span>
           </label>
           <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Turn it off to close ordering immediately. Turn it back on to return control to the automatic operating hours.</p>
-        </div>
+        </div>}
 
-                <div className="restaurant-settings-card" id="store-hours" role="tabpanel" aria-labelledby="store-settings-tab-hours" hidden={activeSettingsTab !== 'hours'}>
+                {hasSelfOrdering && <div className="restaurant-settings-card" id="store-hours" role="tabpanel" aria-labelledby="store-settings-tab-hours" hidden={activeSettingsTab !== 'hours'}>
           <div className="restaurant-settings-days">
             <div className="restaurant-settings-hours-head" aria-hidden="true">
               <span>Day</span>
@@ -914,7 +916,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
               );
             })}
           </div>
-        </div>
+        </div>}
 
                 <div className="restaurant-settings-card" id="store-delivery" role="tabpanel" aria-labelledby="store-settings-tab-delivery" hidden={!hasDispatchDelivery || activeSettingsTab !== 'delivery'}>
           <div className="restaurant-delivery-pricing-grid">
