@@ -267,7 +267,6 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
       <header className="rider-delivery-header">
         <div>
           <a className="rider-delivery-back" href={`${import.meta.env.BASE_URL}#rider/dashboard`}>← My deliveries</a>
-          <p className="eyebrow">My delivery</p>
           <h1>{delivery.orderNumber}</h1>
           <p>Deliver this order to the customer.</p>
         </div>
