@@ -152,6 +152,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
   const isPickup = order.orderType === 'pickup';
   const isTakeOut = order.orderType === 'take_out';
   const isDineIn = order.orderType === 'dine_in';
+  const isCashDineIn = isDineIn && order.paymentMethod === 'cash';
   const isCollectionOrder = isPickup || isTakeOut;
   const isCustomerCourierPickup = isPickup && order.pickupMethod === 'third_party_courier';
   const steps = isDineIn ? dineInSteps : isCollectionOrder ? collectionSteps : deliverySteps;
@@ -248,7 +249,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
   return (
     <section className="order-tracking-page">
       <div className="order-tracking-card">
-        {!isDineIn ? (
+        {!isCashDineIn ? (
           <div className="order-tracking-header">
             <div>
               <p className="eyebrow">Order tracking</p>
@@ -263,7 +264,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
         ) : null}
 
         <div className="order-tracking-total"><span>Total</span><strong>₱{Number(order.total).toFixed(2)}</strong></div>
-        {isDineIn && !isCancelled ? (
+        {isCashDineIn && !isCancelled ? (
           <section className="order-dine-in-number-card" aria-label="Dine-in order number for cashier">
             <p className="eyebrow">Dine-in · Tell the cashier</p>
             <strong className="order-dine-in-number">{order.orderNumber}</strong>
