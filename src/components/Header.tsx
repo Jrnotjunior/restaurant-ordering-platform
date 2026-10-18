@@ -131,7 +131,6 @@ export function Header({ cartCount = 0 }: HeaderProps) {
     <header className="site-header">
       <a className="brand" href={withBasePath('/')} aria-label={`${restaurant.name} home`}>
         {restaurant.logoUrl ? <img src={restaurant.logoUrl} alt="" className="brand-logo" /> : null}
-        <span>{restaurant.name}</span>
       </a>
 
       <div className="header-actions">
