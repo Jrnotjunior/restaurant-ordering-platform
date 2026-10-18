@@ -1,12 +1,5 @@
--- Permanently remove the standalone Dispatch + Delivery package (legacy ID 5).
--- Move any existing subscriptions to Full System first so deletion cannot break
--- their foreign key or unexpectedly remove delivery capabilities.
-update public.restaurant_subscriptions
-set package_id = 1,
-    updated_at = now()
-where package_id = 5;
-
--- Remove the package mappings explicitly, then delete the package row.
+-- Permanently remove only the standalone Dispatch + Delivery package (legacy ID 5).
+-- Keep existing restaurant subscriptions and all delivery module functionality unchanged.
 delete from public.system_package_modules
 where package_id = 5;
 
