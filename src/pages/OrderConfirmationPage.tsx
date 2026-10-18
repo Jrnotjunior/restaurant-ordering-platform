@@ -4,7 +4,7 @@ type OrderConfirmationPageProps = {
   orderId: string;
   orderNumber: string;
   paymentMethod: 'cash' | 'online';
-  orderType: 'delivery' | 'pickup' | 'dine_in';
+  orderType: 'delivery' | 'take_out' | 'pickup' | 'dine_in';
   pickupMethod?: 'customer' | 'third_party_courier';
   pickupAddress?: string;
   total: number;
