@@ -590,8 +590,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           tax_vat_registered: vatRegistered,
           tax_prices_vat_inclusive: vatRegistered ? pricesVatInclusive : false,
           tax_vat_rate: vatRegistered ? parsedVatRate : 0,
-          cash_on_pickup_enabled: cashOnPickupEnabled,
-          cash_on_take_out_enabled: cashOnTakeOutEnabled,
           delivery_location_latitude: deliveryLocationLatitude,
           delivery_location_longitude: deliveryLocationLongitude,
         })
@@ -822,7 +820,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
             { id: 'profile', label: 'Profile' },
             ...(hasSelfOrdering ? [{ id: 'status', label: 'Store status' }, { id: 'hours', label: 'Operating hours' }] : []),
             { id: 'delivery', label: 'Delivery pricing' },
-            { id: 'cod', label: 'Cash on Delivery' },
+            { id: 'cod', label: 'Cash Payment Options' },
             { id: 'rider', label: 'Rider assignment' },
             ...(hasOnlinePayments ? [{ id: 'payments', label: 'Online payments' }] : []),
             { id: 'tax', label: 'Tax & receipts' },
@@ -865,24 +863,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
               onChange={(event) => { setRestaurantTagline(event.target.value); setMessage(''); setError(''); }}
             />
           </label>
-          <div style={{ marginTop: 24 }}>
-            <h2>Cash Payment Options</h2>
-            <p className="restaurant-settings-help">Cash payment for pickup and take-out is controlled by the System Administrator. Contact the System Administrator to request either option be enabled or disabled.</p>
-            <label className="restaurant-settings-switch-row">
-              <span>Accept Cash for Pickup</span>
-              <span className="restaurant-settings-switch">
-                <input type="checkbox" checked={cashOnPickupEnabled} disabled aria-label="Cash for pickup status (System Admin controlled)" />
-                <span className="restaurant-settings-switch-track" aria-hidden="true"><span className="restaurant-settings-switch-thumb" /></span>
-              </span>
-            </label>
-            <label className="restaurant-settings-switch-row">
-              <span>Accept Cash for Take-out</span>
-              <span className="restaurant-settings-switch">
-                <input type="checkbox" checked={cashOnTakeOutEnabled} disabled aria-label="Cash for take-out status (System Admin controlled)" />
-                <span className="restaurant-settings-switch-track" aria-hidden="true"><span className="restaurant-settings-switch-thumb" /></span>
-              </span>
-            </label>
-          </div>
         </div>
 
         {hasSelfOrdering && <div className="restaurant-settings-card" id="store-status" role="tabpanel" aria-labelledby="store-settings-tab-status" hidden={activeSettingsTab !== 'status'}>
@@ -993,7 +973,25 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
               </span>
             </span>
           </label>
-          <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Controlled by the System Administrator. Contact the System Administrator to request a workflow change.</p>
+          <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Cash on Delivery is controlled by the System Administrator. Contact the System Administrator to request a change.</p>
+          <div style={{ marginTop: 24 }}>
+            <h2>Pickup and Take-out</h2>
+            <p className="restaurant-settings-help">Cash payment for pickup and take-out is also controlled by the System Administrator. Contact the System Administrator to request either option be enabled or disabled.</p>
+            <label className="restaurant-settings-switch-row">
+              <span>Accept Cash for Pickup</span>
+              <span className="restaurant-settings-switch">
+                <input type="checkbox" checked={cashOnPickupEnabled} disabled aria-label="Cash for pickup status (System Admin controlled)" />
+                <span className="restaurant-settings-switch-track" aria-hidden="true"><span className="restaurant-settings-switch-thumb" /></span>
+              </span>
+            </label>
+            <label className="restaurant-settings-switch-row">
+              <span>Accept Cash for Take-out</span>
+              <span className="restaurant-settings-switch">
+                <input type="checkbox" checked={cashOnTakeOutEnabled} disabled aria-label="Cash for take-out status (System Admin controlled)" />
+                <span className="restaurant-settings-switch-track" aria-hidden="true"><span className="restaurant-settings-switch-thumb" /></span>
+              </span>
+            </label>
+          </div>
         </div>
 
                 <div className="restaurant-settings-card" id="store-rider" role="tabpanel" aria-labelledby="store-settings-tab-rider" hidden={!hasDispatchDelivery || activeSettingsTab !== 'rider'}>
