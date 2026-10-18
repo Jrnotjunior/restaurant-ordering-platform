@@ -4,7 +4,9 @@ alter table public.restaurants
 
 -- Customer tracking continues exposing the field as store_address for API compatibility,
 -- but it now returns the owner-configured customer-facing address first.
-create or replace function public.get_order_status(p_order_number text)
+drop function if exists public.get_order_status(text);
+
+create function public.get_order_status(p_order_number text)
 returns table (
   order_id uuid,
   order_number text,
