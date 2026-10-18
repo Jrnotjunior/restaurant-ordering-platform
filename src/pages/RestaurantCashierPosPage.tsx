@@ -355,7 +355,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   return (
     <section className="restaurant-page restaurant-pos-page">
       <div className="restaurant-pos-header">
-        <div><h1>POS</h1></div>
+        
         <span className="restaurant-dashboard-live-status is-live"><span className="restaurant-dashboard-live-dot" />Live</span>
       </div>
       {error && <div className="restaurant-pos-message is-error" role="alert">{error}</div>}
