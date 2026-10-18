@@ -1172,3 +1172,146 @@
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
+
+
+/* Itemized confirmation before leaving Web2Table for PayMongo */
+.payment-review-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.62);
+  backdrop-filter: blur(3px);
+}
+
+.payment-review-modal {
+  width: min(560px, 100%);
+  max-height: min(90vh, 760px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 1.4rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+}
+
+.payment-review-restaurant {
+  display: grid;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+}
+
+.payment-review-restaurant span,
+.payment-review-row small {
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.payment-review-restaurant strong {
+  overflow-wrap: anywhere;
+}
+
+.payment-review-items,
+.payment-review-totals {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.payment-review-items {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.payment-review-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: start;
+  gap: 1rem;
+  line-height: 1.4;
+}
+
+.payment-review-row > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.payment-review-row > span small {
+  display: block;
+  margin-top: 0.2rem;
+}
+
+.payment-review-row > strong {
+  white-space: nowrap;
+  text-align: right;
+  font-weight: 650;
+}
+
+.payment-review-totals {
+  padding-top: 1rem;
+}
+
+.payment-review-discount,
+.payment-review-discount strong {
+  color: #087443;
+}
+
+.payment-review-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  margin-top: 0.25rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid #e2e8f0;
+  font-weight: 800;
+}
+
+.payment-review-total strong {
+  font-size: 1.25rem;
+  white-space: nowrap;
+}
+
+.payment-review-note {
+  margin: 1rem 0 0;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.7rem;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 560px) {
+  .payment-review-backdrop {
+    padding: 0.75rem;
+  }
+
+  .payment-review-modal {
+    max-height: 92vh;
+    padding: 1rem;
+    border-radius: 0.9rem;
+  }
+
+  .payment-review-modal .payment-modal-header h2 {
+    font-size: 1.15rem;
+  }
+
+  .payment-review-modal .payment-modal-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .payment-review-modal .payment-modal-actions .button {
+    width: 100%;
+  }
+}
