@@ -4,6 +4,7 @@ export {
   getOrderStatus,
   getRestaurantOrders,
   updateOrderStatus,
+  sendOrderToKitchen,
   subscribeToOrderTrackingChanges,
 } from './orderRepository';
 
