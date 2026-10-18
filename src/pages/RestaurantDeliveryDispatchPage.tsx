@@ -62,6 +62,10 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
     () => orders.filter((order) => order.orderType === 'pickup'),
     [orders],
   );
+  const takeOutOrders = useMemo(
+    () => orders.filter((order) => order.orderType === 'take_out'),
+    [orders],
+  );
   const dineInOrders = useMemo(
     () => orders.filter((order) => order.orderType === 'dine_in'),
     [orders],
@@ -71,7 +75,9 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
     ? deliveryOrders
     : activeTab === 'pickup'
       ? pickupOrders
-      : dineInOrders;
+      : activeTab === 'take_out'
+        ? takeOutOrders
+        : dineInOrders;
 
   const statusLabel = (status: Rider['status']) => ({
     available: 'Available',
@@ -100,7 +106,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
     setAssigning(true);
     setError('');
     try {
-      await completeDispatchHandoff(restaurantId, order.id, order.orderType === 'dine_in' ? 'dine_in' : 'pickup');
+      await completeDispatchHandoff(restaurantId, order.id, order.orderType === 'dine_in' ? 'dine_in' : order.orderType === 'take_out' ? 'take_out' : 'pickup');
       await loadDispatchData();
     } catch (pickupError) {
       setError(pickupError instanceof Error ? pickupError.message : 'Unable to complete this pickup.');
@@ -147,6 +153,15 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
           </button>
           <button
             type="button"
+            className={'restaurant-dispatch-tab' + (activeTab === 'take_out' ? ' is-active' : '')}
+            aria-pressed={activeTab === 'take_out'}
+            onClick={() => setActiveTab('take_out')}
+          >
+            <span>Take Out</span>
+            <span className="restaurant-dispatch-tab-count">{takeOutOrders.length}</span>
+          </button>
+          <button
+            type="button"
             className={'restaurant-dispatch-tab' + (activeTab === 'dine_in' ? ' is-active' : '')}
             aria-pressed={activeTab === 'dine_in'}
             onClick={() => setActiveTab('dine_in')}
@@ -160,14 +175,16 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
           <div className="restaurant-panel-header">
             <div>
               <p className="restaurant-panel-label">
-                {activeTab === 'delivery' ? 'In-house delivery' : activeTab === 'pickup' ? 'Handoff' : 'Table service'}
+                {activeTab === 'delivery' ? 'In-house delivery' : activeTab === 'pickup' || activeTab === 'take_out' ? 'Handoff' : 'Table service'}
               </p>
               <h2>
                 {activeTab === 'delivery'
                   ? 'Orders waiting for a rider'
                   : activeTab === 'pickup'
                     ? 'Orders ready for pickup'
-                    : 'Orders ready to be served'}
+                    : activeTab === 'take_out'
+                      ? 'Take-out orders ready for handoff'
+                      : 'Orders ready to be served'}
               </h2>
             </div>
             <span className="restaurant-panel-count">{activeOrders.length}</span>
@@ -182,7 +199,9 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
                   ? 'There are no ready delivery orders waiting for rider assignment.'
                   : activeTab === 'pickup'
                     ? 'There are no ready pickup orders waiting for handoff.'
-                    : 'There are no ready dine-in orders waiting to be served.'}
+                    : activeTab === 'take_out'
+                      ? 'There are no ready take-out orders waiting for handoff.'
+                      : 'There are no ready dine-in orders waiting to be served.'}
               </div>
             ) : activeOrders.map((order) => (
               <article className="restaurant-list-item" key={order.id}>
@@ -199,7 +218,9 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
                         ? order.pickupMethod === 'third_party_courier'
                           ? 'Customer courier pickup'
                           : 'Customer pickup'
-                        : 'Dine-in order'}
+                        : activeTab === 'take_out'
+                          ? 'Customer take-out handoff'
+                          : 'Dine-in order'}
                   </span>
                   <small>Ready at {order.readyAt}</small>
                 </div>
@@ -211,9 +232,11 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
                   <button className="button" type="button" disabled={assigning} onClick={() => void completePickup(order)}>
                     {activeTab === 'dine_in'
                       ? 'Confirm Served'
-                      : order.pickupMethod === 'third_party_courier'
-                        ? 'Mark Handed to Courier'
-                        : 'Confirm Pickup'}
+                      : activeTab === 'take_out'
+                        ? 'Confirm Take Out'
+                        : order.pickupMethod === 'third_party_courier'
+                          ? 'Mark Handed to Courier'
+                          : 'Confirm Pickup'}
                   </button>
                 ))}
               </article>
