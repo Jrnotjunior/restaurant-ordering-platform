@@ -180,13 +180,18 @@ Deno.serve(async (request) => {
           attributes: {
             line_items: lineItems,
             payment_method_types: ["card", "gcash", "qrph", "grab_pay", "paymaya", "billease", "dob"],
-            description: `Online payment for ${pendingPayment.reference_number}`,
+            description: [
+              `Online payment for ${pendingPayment.reference_number}`,
+              `Subtotal PHP ${Number(pendingPayment.subtotal).toFixed(2)}`,
+              loyaltyDiscount > 0 ? `Loyalty discount -PHP ${(loyaltyDiscount / 100).toFixed(2)}` : "",
+              deliveryFee > 0 ? `Delivery fee PHP ${(deliveryFee / 100).toFixed(2)}` : "",
+            ].filter(Boolean).join(" | "),
             reference_number: pendingPayment.reference_number,
             success_url: `${siteBaseUrl}?payment=processing&reference=${encodeURIComponent(pendingPayment.reference_number)}#checkout`,
             cancel_url: `${siteBaseUrl}?payment=not_completed#checkout`,
             send_email_receipt: false,
             show_description: true,
-            show_line_items: true,
+            show_line_items: false,
             metadata: {
               payment_id: pendingPayment.id,
               reference_number: pendingPayment.reference_number,
