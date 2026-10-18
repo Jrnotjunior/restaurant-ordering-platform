@@ -4,7 +4,7 @@ export type PendingOnlinePaymentInput = {
   restaurantId: string;
   customerName: string;
   mobileNumber: string;
-  orderType: 'delivery' | 'pickup' | 'dine_in';
+  orderType: 'delivery' | 'take_out' | 'pickup' | 'dine_in';
   deliveryCity: string;
   deliveryBarangay: string;
   deliveryAddress: string;
