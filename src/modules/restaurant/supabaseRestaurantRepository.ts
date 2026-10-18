@@ -5,7 +5,7 @@ import { supabaseGet, supabaseRpc } from '../../services/supabaseClient';
 
 type RestaurantRow = {
   id: string; slug: string; name: string; tagline: string; logo_url: string | null;
-  location_text: string | null; contact_number: string | null; email: string | null;
+  restaurant_address: string | null; contact_number: string | null; email: string | null;
   ordering_enabled: boolean; operating_hours: RestaurantOperatingHours | null;
 };
 
@@ -45,7 +45,7 @@ async function getWebsiteCustomization(restaurantId: string): Promise<{ theme: R
 
 function toRestaurantConfig(restaurant: RestaurantRow, customization: { theme: RestaurantTheme; storefront: RestaurantStorefront }): RestaurantConfig {
   return { ...defaultRestaurant, id: restaurant.id, name: restaurant.name, tagline: restaurant.tagline,
-    logoUrl: restaurant.logo_url ?? undefined, locationText: restaurant.location_text ?? undefined,
+    logoUrl: restaurant.logo_url ?? undefined, locationText: restaurant.restaurant_address ?? undefined,
     contactNumber: restaurant.contact_number ?? undefined, email: restaurant.email ?? undefined,
     operatingHours: restaurant.operating_hours ?? undefined, orderingEnabled: restaurant.ordering_enabled !== false,
     theme: customization.theme, storefront: customization.storefront };
@@ -54,7 +54,7 @@ function toRestaurantConfig(restaurant: RestaurantRow, customization: { theme: R
 export class SupabaseRestaurantRepository implements RestaurantRepository {
   async getRestaurant(lookup: RestaurantLookup): Promise<RestaurantConfig | null> {
     if (lookup.domain) return this.getRestaurantByDomain(lookup.domain);
-    const baseQuery = { select: 'id,slug,name,tagline,logo_url,location_text,contact_number,email,ordering_enabled,operating_hours', is_active: 'eq.true', limit: '1' };
+    const baseQuery = { select: 'id,slug,name,tagline,logo_url,restaurant_address,contact_number,email,ordering_enabled,operating_hours', is_active: 'eq.true', limit: '1' };
     const rows = lookup.slug
       ? await supabaseGet<RestaurantRow>('restaurants', { ...baseQuery, slug: 'eq.' + lookup.slug })
       : await supabaseGet<RestaurantRow>('restaurants', baseQuery);
@@ -75,7 +75,7 @@ export class SupabaseRestaurantRepository implements RestaurantRepository {
       const configuredSlug = String(import.meta.env.VITE_RESTAURANT_SLUG ?? '').trim();
       if (!configuredSlug) return null;
       const fallbackRows = await supabaseGet<RestaurantRow>('restaurants', {
-        select: 'id,slug,name,tagline,logo_url,location_text,contact_number,email,ordering_enabled,operating_hours',
+        select: 'id,slug,name,tagline,logo_url,restaurant_address,contact_number,email,ordering_enabled,operating_hours',
         slug: 'eq.' + configuredSlug, is_active: 'eq.true', limit: '1'
       });
       const fallbackRestaurant = fallbackRows[0];
