@@ -21,12 +21,20 @@ const deliverySteps: Array<{ key: CustomerStatus; label: string; description: st
   { key: 'completed', label: 'Completed', description: 'Your order has been delivered.' },
 ];
 
-const pickupSteps: Array<{ key: CustomerStatus; label: string; description: string }> = [
+const collectionSteps: Array<{ key: CustomerStatus; label: string; description: string }> = [
   { key: 'pending', label: 'Order Received', description: 'Your order has been received by the restaurant.' },
   { key: 'confirmed', label: 'Confirmed', description: 'The restaurant has confirmed your order.' },
   { key: 'preparing', label: 'Preparing', description: 'The kitchen is preparing your food.' },
-  { key: 'ready', label: 'Ready for pickup', description: 'Your order is ready. Please have your courier collect it from the restaurant.' },
-  { key: 'completed', label: 'Picked up', description: 'Your order has been picked up.' },
+  { key: 'ready', label: 'Ready for collection', description: 'Your food is ready to collect from the restaurant.' },
+  { key: 'completed', label: 'Collected', description: 'Your order has been collected. Thank you!' },
+];
+
+const dineInSteps: Array<{ key: CustomerStatus; label: string; description: string }> = [
+  { key: 'pending', label: 'Order Received', description: 'Your order has been received by the restaurant.' },
+  { key: 'confirmed', label: 'Confirmed', description: 'The restaurant has confirmed your order.' },
+  { key: 'preparing', label: 'Preparing', description: 'The kitchen is preparing your food.' },
+  { key: 'ready', label: 'Ready to serve', description: 'Your food is ready. Restaurant staff will bring it to your table.' },
+  { key: 'completed', label: 'Served', description: 'Your order has been served. Thank you!' },
 ];
 
 const deliveryStatusOrder: CustomerStatus[] = ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'arrived', 'completed'];
@@ -145,9 +153,12 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
         ? 'preparing'
         : order.status;
   const isPickup = order.orderType === 'pickup';
+  const isTakeOut = order.orderType === 'take_out';
+  const isDineIn = order.orderType === 'dine_in';
+  const isCollectionOrder = isPickup || isTakeOut;
   const isCustomerCourierPickup = isPickup && order.pickupMethod === 'third_party_courier';
-  const steps = isPickup ? pickupSteps : deliverySteps;
-  const statusOrder = isPickup ? pickupStatusOrder : deliveryStatusOrder;
+  const steps = isDineIn ? dineInSteps : isCollectionOrder ? collectionSteps : deliverySteps;
+  const statusOrder = isDineIn || isCollectionOrder ? pickupStatusOrder : deliveryStatusOrder;
   const currentIndex = statusOrder.indexOf(customerStatus);
   const riderAssigned = order.orderType === 'delivery' && Boolean(order.riderName && order.riderPhone);
   const deliveryStatusLabel = order.deliveryStatus === 'delivering' || order.deliveryStatus === 'out_for_delivery'
@@ -159,7 +170,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
         : 'Rider assigned';
   const storeAddress = order.storeAddress;
   const operatingHours = order.operatingHours;
-  const showPickupLocation = isPickup && !isCancelled && Boolean(storeAddress);
+  const showPickupLocation = isCollectionOrder && !isCancelled && Boolean(storeAddress);
 
   function cancelOrder() {
     if (!order || cancellingOrder) return;
@@ -277,7 +288,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
               <div className="order-tracking-billing-row"><span>VAT ({order.taxVatRate.toFixed(2)}%)</span><span>₱{order.taxVatAmount.toFixed(2)}</span></div>
               {order.taxVatExemptSales > 0 && <div className="order-tracking-billing-row"><span>VAT-exempt sales</span><span>₱{order.taxVatExemptSales.toFixed(2)}</span></div>}
             </>}
-            <div className="order-tracking-billing-row"><span>{isPickup ? 'Pickup fee' : 'Delivery fee'}</span><span>₱{order.shippingFee.toFixed(2)}</span></div>
+            <div className="order-tracking-billing-row"><span>{isCollectionOrder ? 'Collection fee' : isDineIn ? 'Service fee' : 'Delivery fee'}</span><span>₱{order.shippingFee.toFixed(2)}</span></div>
             <div className="order-tracking-billing-row is-total"><strong>Total paid / due</strong><strong>₱{order.total.toFixed(2)}</strong></div>
             <p className="order-tracking-payment-note">{order.paymentStatus === 'paid' ? 'Payment confirmed' : order.paymentStatus === 'refunded' ? 'Payment refunded' : order.paymentStatus === 'failed' ? 'Payment failed' : 'Payment pending'} · {order.paymentMethod === 'gcash' ? 'Online payment' : 'Cash'}</p>
           </div>
@@ -343,7 +354,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
 
         {showPickupLocation && (
           <section className="order-pickup-location-card order-pickup-location-card--compact" aria-label="Store pickup location">
-            <p className="order-rider-label">PICKUP LOCATION</p>
+            <p className="order-rider-label">{isTakeOut ? "TAKE-OUT COLLECTION LOCATION" : "PICKUP LOCATION"}</p>
             <h2>{order.restaurantName}</h2>
             {getOrderDayHours() && (
               <p className="order-pickup-hours-summary order-pickup-hours-summary--centered">
