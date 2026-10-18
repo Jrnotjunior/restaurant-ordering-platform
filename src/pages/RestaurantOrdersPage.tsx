@@ -205,9 +205,12 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
     try {
       setError('');
       setUpdating(order.orderId);
-      window.print();
+      // Persist the kitchen handoff before opening the blocking browser print dialog.
+      // window.print() can pause script execution while the dialog is open.
       await sendOrderToKitchen(order.orderId);
       const updated = { ...order, status: 'preparing' as RestaurantOrderStatus };
+      setOrders((current) => current.map((item) => (item.orderId === order.orderId ? updated : item)));
+      window.print();
       setOrders((current) => current.map((item) => (item.orderId === order.orderId ? updated : item)));
       // Close only the order-detail modal and return to the New Orders list.
       // Keep the parent New Orders modal open for the cashier. 
