@@ -827,8 +827,8 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
               .filter((method) => !(orderType === 'pickup' && method.value === 'cash' && !cashOnPickupEnabled))
               .filter((method) => !(orderType === 'take_out' && method.value === 'cash' && !cashOnTakeOutEnabled))
               .map((method) => {
-              const label = orderType === 'dine_in' && method.value === 'cash' ? 'Pay at Counter' : method.label;
-              const description = orderType === 'dine_in' && method.value === 'cash' ? 'Place your order now and pay the cashier at the restaurant counter.' : method.description;
+              const label = method.value === 'cash' && ['dine_in', 'take_out'].includes(orderType) ? 'Pay cash at the counter' : method.label;
+              const description = method.value === 'cash' && ['dine_in', 'take_out'].includes(orderType) ? 'Place your order now and pay the cashier at the restaurant counter before preparation.' : method.description;
               return <button className={`payment-method-card ${paymentMethod === method.value ? 'is-selected' : ''}`} key={method.value} type="button" onClick={() => setPaymentMethod(method.value)} disabled={isSubmitting}>
                 <span className="payment-method-icon" aria-hidden="true">{method.value === 'cash' ? '₱' : '↗'}</span>
                 <span className="payment-method-content"><strong>{label}</strong><span>{description}</span></span>
@@ -842,7 +842,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
             <button className="button button-primary" type="button" disabled={!paymentMethod || isSubmitting} onClick={() => {
               if (paymentMethod === 'online') { void handleOnlinePayment(); }
               else { void handlePlaceOrder(); }
-            }}>{paymentMethod === 'online' ? 'Continue to Online Payment' : orderType === 'dine_in' ? 'Place Order & Pay at Counter' : 'Place Order'}</button>
+            }}>{paymentMethod === 'online' ? 'Continue to Online Payment' : ['dine_in', 'take_out'].includes(orderType) ? 'Place Order & Pay at Counter' : 'Place Order'}</button>
           </div>
         </div>
       </div>}
