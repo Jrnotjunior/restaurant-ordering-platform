@@ -359,7 +359,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
           </div>
         )}
 
-        {showPickupLocation && (
+        {showPickupLocation && !isTakeOut && (
           <section className="order-pickup-location-card order-pickup-location-card--compact" aria-label="Store pickup location">
             <p className="order-rider-label">{isTakeOut ? "TAKE-OUT COLLECTION LOCATION" : "PICKUP LOCATION"}</p>
             <h2>{order.restaurantName}</h2>
