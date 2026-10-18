@@ -198,6 +198,8 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [pricesVatInclusive, setPricesVatInclusive] = useState(false);
   const [vatRate, setVatRate] = useState('12');
   const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
+  const [cashOnPickupEnabled, setCashOnPickupEnabled] = useState(true);
+  const [cashOnTakeOutEnabled, setCashOnTakeOutEnabled] = useState(true);
   const [automaticRiderAssignmentEnabled, setAutomaticRiderAssignmentEnabled] = useState(false);
   const [deliveryBaseFee, setDeliveryBaseFee] = useState('0');
   const [deliveryDistanceIncrementMeters, setDeliveryDistanceIncrementMeters] = useState('500');
@@ -277,7 +279,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     try {
       const { data, error: loadError } = await supabase
         .from('restaurants')
-        .select('tagline,restaurant_address,store_address,ordering_enabled,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate,cash_on_delivery_enabled,automatic_rider_assignment_enabled,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,delivery_location_latitude,delivery_location_longitude')
+        .select('tagline,restaurant_address,store_address,ordering_enabled,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate,cash_on_delivery_enabled,cash_on_pickup_enabled,cash_on_take_out_enabled,automatic_rider_assignment_enabled,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,delivery_location_latitude,delivery_location_longitude')
          .eq('id', restaurantId)
         .single();
 
@@ -293,6 +295,8 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       setPricesVatInclusive(Boolean(data?.tax_prices_vat_inclusive));
       setVatRate(String(data?.tax_vat_rate ?? 12));
       setCashOnDeliveryEnabled(data?.cash_on_delivery_enabled !== false);
+      setCashOnPickupEnabled(data?.cash_on_pickup_enabled !== false);
+      setCashOnTakeOutEnabled(data?.cash_on_take_out_enabled !== false);
       setAutomaticRiderAssignmentEnabled(data?.automatic_rider_assignment_enabled === true);
       setDeliveryBaseFee(String(data?.delivery_base_fee ?? 0));
       setDeliveryDistanceIncrementMeters(String(data?.delivery_distance_increment_meters ?? 500));
@@ -586,6 +590,8 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           tax_vat_registered: vatRegistered,
           tax_prices_vat_inclusive: vatRegistered ? pricesVatInclusive : false,
           tax_vat_rate: vatRegistered ? parsedVatRate : 0,
+          cash_on_pickup_enabled: cashOnPickupEnabled,
+          cash_on_take_out_enabled: cashOnTakeOutEnabled,
           delivery_location_latitude: deliveryLocationLatitude,
           delivery_location_longitude: deliveryLocationLongitude,
         })
@@ -859,6 +865,24 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
               onChange={(event) => { setRestaurantTagline(event.target.value); setMessage(''); setError(''); }}
             />
           </label>
+          <div style={{ marginTop: 24 }}>
+            <h2>Cash Payment Options</h2>
+            <p className="restaurant-settings-help">Choose whether customers can pay cash for pickup and take-out orders. Save your settings to apply the changes.</p>
+            <label className="restaurant-settings-switch-row">
+              <span>Accept Cash for Pickup</span>
+              <span className="restaurant-settings-switch">
+                <input type="checkbox" checked={cashOnPickupEnabled} disabled={loading || saving} onChange={(event) => { setCashOnPickupEnabled(event.target.checked); setMessage(''); setError(''); }} aria-label="Accept cash for pickup" />
+                <span className="restaurant-settings-switch-track" aria-hidden="true"><span className="restaurant-settings-switch-thumb" /></span>
+              </span>
+            </label>
+            <label className="restaurant-settings-switch-row">
+              <span>Accept Cash for Take-out</span>
+              <span className="restaurant-settings-switch">
+                <input type="checkbox" checked={cashOnTakeOutEnabled} disabled={loading || saving} onChange={(event) => { setCashOnTakeOutEnabled(event.target.checked); setMessage(''); setError(''); }} aria-label="Accept cash for take-out" />
+                <span className="restaurant-settings-switch-track" aria-hidden="true"><span className="restaurant-settings-switch-thumb" /></span>
+              </span>
+            </label>
+          </div>
         </div>
 
         {hasSelfOrdering && <div className="restaurant-settings-card" id="store-status" role="tabpanel" aria-labelledby="store-settings-tab-status" hidden={activeSettingsTab !== 'status'}>
