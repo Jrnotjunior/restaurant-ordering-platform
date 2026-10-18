@@ -255,7 +255,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
         .restaurant-order-list-status{font-size:12px;padding:5px 8px;border-radius:999px;background:#f1f5f9;color:#475569}
         .restaurant-order-list-total{font-weight:800;color:#0f172a}
         .restaurant-order-list-empty{padding:30px 12px;text-align:center;color:#64748b;border:1px dashed #cbd5e1;border-radius:12px}
-        .restaurant-order-modal-backdrop{position:fixed;inset:0;z-index:1100;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.55);backdrop-filter:blur(3px)}
+        .restaurant-order-modal-backdrop{position:fixed;inset:0;z-index:20000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.55);backdrop-filter:blur(3px)}
         .restaurant-order-modal{position:relative;width:min(560px,100%);max-height:min(88vh,760px);overflow:auto;background:#fff;border-radius:18px;box-shadow:0 24px 70px rgba(15,23,42,.28);padding:24px;color:#0f172a}
         .restaurant-order-modal-close{position:absolute;right:14px;top:14px;width:38px;height:38px;border:0;border-radius:999px;background:#f1f5f9;font-size:22px;line-height:1;cursor:pointer}
         .restaurant-order-modal-title{padding-right:48px;margin:0 0 5px;font-size:22px}
@@ -265,7 +265,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
         .restaurant-order-customer strong{flex:0 0 auto}
         .restaurant-order-customer span{min-width:0;text-align:right;overflow-wrap:anywhere}
         .restaurant-order-modal-actions{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin-top:20px}
-        .restaurant-order-cancel-modal-backdrop{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.62);backdrop-filter:blur(4px)}
+        .restaurant-order-cancel-modal-backdrop{position:fixed;inset:0;z-index:20001;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.62);backdrop-filter:blur(4px)}
         .restaurant-order-cancel-modal{position:relative;width:min(430px,100%);background:#fff;border-radius:18px;box-shadow:0 24px 70px rgba(15,23,42,.32);padding:24px;color:#0f172a}
         .restaurant-order-cancel-modal-title{margin:0 0 8px;font-size:21px}
         .restaurant-order-cancel-modal-text{margin:0;color:#64748b;line-height:1.5}
