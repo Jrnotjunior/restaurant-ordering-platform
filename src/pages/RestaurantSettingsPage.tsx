@@ -1096,11 +1096,13 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           <p className="restaurant-settings-help" style={{ marginTop: 12 }}>For Senior Citizen/PWD transactions, the POS applies the 20% discount to the eligible VAT-exclusive share and removes the corresponding VAT when the restaurant is VAT-registered. Verify the restaurant’s actual BIR registration and pricing treatment before enabling VAT settings.</p>
         </div>
 
-                <div className="restaurant-settings-actions">
-          <button className="button button-primary restaurant-compact-action" type="submit" disabled={loading || saving}>
-            {saving ? 'Saving…' : 'Save'}
-          </button>
-        </div>
+                {!['cod', 'tax'].includes(activeSettingsTab) && (
+          <div className="restaurant-settings-actions">
+            <button className="button button-primary restaurant-compact-action" type="submit" disabled={loading || saving}>
+              {saving ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        )}
       </form>
 
       {showSaveConfirmation && (
