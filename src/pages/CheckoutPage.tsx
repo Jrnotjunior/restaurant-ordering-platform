@@ -77,6 +77,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
   const [redeemPoints, setRedeemPoints] = useState(false);
   const [loyaltyLoading, setLoyaltyLoading] = useState(false);
   const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
+  const [cashOnPickupEnabled, setCashOnPickupEnabled] = useState(true);
   const [storeAddress, setStoreAddress] = useState('');
   // Public storefront config may omit the database ID; the cart product carries the resolved tenant ID.
   const restaurantId = restaurant.id ?? items[0]?.product.restaurantId;
@@ -154,12 +155,13 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
     async function loadCashOnDeliverySetting() {
       const { data, error } = await client
         .from('restaurants')
-        .select('cash_on_delivery_enabled')
+        .select('cash_on_delivery_enabled,cash_on_pickup_enabled')
         .eq('id', restaurantId)
         .single();
 
       if (!mounted) return;
       if (!error) setCashOnDeliveryEnabled(data?.cash_on_delivery_enabled !== false);
+      if (!error) setCashOnPickupEnabled(data?.cash_on_pickup_enabled !== false);
     }
 
     void loadCashOnDeliverySetting();
@@ -811,6 +813,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
             {paymentMethods
               .filter((method) => !thirdPartyCourierDelivery || method.value === 'online')
               .filter((method) => !(orderType === 'delivery' && method.value === 'cash' && !cashOnDeliveryEnabled))
+              .filter((method) => !(['pickup', 'take_out'].includes(orderType) && method.value === 'cash' && !cashOnPickupEnabled))
               .map((method) => {
               const label = orderType === 'dine_in' && method.value === 'cash' ? 'Pay at Counter' : method.label;
               const description = orderType === 'dine_in' && method.value === 'cash' ? 'Place your order now and pay the cashier at the restaurant counter.' : method.description;
