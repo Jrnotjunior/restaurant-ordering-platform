@@ -67,8 +67,8 @@ insert into public.system_packages (id, package_key, name, description) values
 (2,'self_ordering_pos','Self Ordering + POS','Self Ordering, POS, and Sales.'),
 (3,'pos','POS','POS and Sales.'),
 (4,'self_ordering_pos_kitchen','Self Ordering + POS + Kitchen','Self Ordering, POS, Sales, and Kitchen.'),
-(6,'self_ordering_kitchen','Self Ordering + Kitchen','Self Ordering, Orders, Kitchen, and Sales.'),
-(7,'pos_delivery','POS + Delivery','POS, Sales, Orders, Dispatch, Rider, Delivery, and Shipping Fee.')
+(5,'self_ordering_kitchen','Self Ordering + Kitchen','Self Ordering, Orders, Kitchen, and Sales.'),
+(6,'pos_delivery','POS + Delivery','POS, Sales, Orders, Dispatch, Rider, Delivery, and Shipping Fee.')
 on conflict (id) do update set package_key=excluded.package_key,name=excluded.name,description=excluded.description,is_active=true,updated_at=now();
 
 insert into public.system_modules (module_key,name,description,sort_order) values
@@ -87,8 +87,8 @@ insert into public.system_package_modules (package_id,module_key) values
 (2,'self_ordering'),(2,'pos'),(2,'sales'),
 (3,'pos'),(3,'sales'),
 (4,'self_ordering'),(4,'pos'),(4,'sales'),(4,'kitchen'),
-(6,'self_ordering'),(6,'sales'),(6,'kitchen'),
-(7,'pos'),(7,'sales'),(7,'dispatch_delivery');
+(5,'self_ordering'),(5,'sales'),(5,'kitchen'),
+(6,'pos'),(6,'sales'),(6,'dispatch_delivery');
 
 create or replace function public.restaurant_has_module(p_restaurant_id uuid,p_module_key text)
 returns boolean language plpgsql security definer set search_path='' stable as $$
