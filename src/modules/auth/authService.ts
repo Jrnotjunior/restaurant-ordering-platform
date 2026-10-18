@@ -9,7 +9,7 @@ export type OwnerRestaurant = {
   name: string;
   tagline: string;
   logo_url: string | null;
-  location_text: string | null;
+  restaurant_address: string | null;
   contact_number: string | null;
   email: string | null;
   is_active: boolean;
