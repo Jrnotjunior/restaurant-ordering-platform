@@ -79,6 +79,17 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
   const [storeAddress, setStoreAddress] = useState('');
   const restaurantId = restaurant.id;
 
+  // Once an order is confirmed (including after PayMongo redirects back),
+  // go directly to its tracking page. The customer should not land on a
+  // second confirmation screen or return to the checkout form.
+  useEffect(() => {
+    if (!confirmedOrder) return;
+    const trackingHash = `#order/${encodeURIComponent(confirmedOrder.orderId)}`;
+    if (window.location.hash !== trackingHash) {
+      window.location.hash = trackingHash;
+    }
+  }, [confirmedOrder]);
+
   useEffect(() => {
     if (!supabase || !restaurantId) {
       setStoreAddress('');
@@ -422,7 +433,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
     </section>
   );
 
-  if (confirmedOrder) return <OrderConfirmationPage orderId={confirmedOrder.orderId} orderNumber={confirmedOrder.orderNumber} paymentMethod={confirmedOrder.paymentMethod} orderType={confirmedOrder.orderType} pickupMethod={confirmedOrder.pickupMethod} pickupAddress={confirmedOrder.pickupAddress} total={confirmedOrder.total} onReturnHome={() => { window.location.hash = ''; }} />;
+  if (confirmedOrder) return <section className="checkout-page"><div className="checkout-payment-notice" role="status"><strong>Order confirmed.</strong><span>Opening your order tracking page…</span></div></section>;
 
   const hasExactDeliveryLocation = Boolean(
     selectedDeliveryLocation
