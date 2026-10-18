@@ -252,7 +252,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
           <div>
             <p className="eyebrow">Order tracking</p>
             <h1>Order #{order.orderNumber}</h1>
-            <p className="order-tracking-subtitle">View your order summary and collection details.</p>
+            <p className="order-tracking-subtitle">{isDineIn ? "Show your order number to the cashier so they can find your order quickly." : "View your order summary and collection details."}</p>
           </div>
           <span className={`order-tracking-live-status is-${realtimeStatus}`}>
             <span className="order-tracking-live-dot" />
@@ -261,6 +261,13 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
         </div>
 
         <div className="order-tracking-total"><span>Total</span><strong>₱{Number(order.total).toFixed(2)}</strong></div>
+        {isDineIn && !isCancelled ? (
+          <section className="order-dine-in-number-card" aria-label="Dine-in order number for cashier">
+            <p className="eyebrow">Dine-in · Tell the cashier</p>
+            <strong className="order-dine-in-number">{order.orderNumber}</strong>
+            <p>Give this order number to the cashier to help them find your order. You do not need to track preparation progress here.</p>
+          </section>
+        ) : null}
         <details className="order-tracking-details">
           <summary className="order-tracking-section-heading">
             <span className="order-details-title"><span className="eyebrow">Your order</span><strong>Order details</strong></span>
