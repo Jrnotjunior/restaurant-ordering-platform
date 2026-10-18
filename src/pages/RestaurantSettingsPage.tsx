@@ -818,7 +818,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         <nav className="restaurant-settings-tabs" aria-label="Store settings tabs" role="tablist">
           {[
             { id: 'profile', label: 'Profile' },
-            ...(hasSelfOrdering ? [{ id: 'status', label: 'Store status' }, { id: 'hours', label: 'Operating hours' }] : []),
+            ...(hasSelfOrdering ? [{ id: 'status', label: 'Store status & hours' }] : []),
             { id: 'delivery', label: 'Delivery pricing' },
             { id: 'cod', label: 'Cash Payment Options' },
             { id: 'rider', label: 'Rider assignment' },
@@ -884,7 +884,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Turn it off to close ordering immediately. Turn it back on to return control to the automatic operating hours.</p>
         </div>}
 
-                {hasSelfOrdering && <div className="restaurant-settings-card" id="store-hours" role="tabpanel" aria-labelledby="store-settings-tab-hours" hidden={activeSettingsTab !== 'hours'}>
+                {hasSelfOrdering && <div className="restaurant-settings-card" id="store-hours" role="tabpanel" aria-labelledby="store-settings-tab-status" hidden={activeSettingsTab !== 'status'}>
           <div className="restaurant-settings-days">
             <div className="restaurant-settings-hours-head" aria-hidden="true">
               <span>Day</span>
