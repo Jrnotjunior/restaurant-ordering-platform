@@ -185,9 +185,9 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
     if (role !== 'cashier') return;
     try {
       setError(''); setUpdating(order.orderId);
+      // This RPC confirms payment and persists status='preparing' atomically.
+      // Do not call updateOrderStatus again: the database transition has already happened.
       await confirmPosCashPayment(order.orderId);
-      // Payment is now persisted as paid; transition the pending order into kitchen preparation.
-      await updateOrderStatus(order.orderId, 'preparing');
       setOrders((current) => current.map((item) => item.orderId === order.orderId ? { ...item, paymentStatus: 'paid', status: 'preparing' } : item));
       setSelectedOrder(null); setOpenColumn(null);
     } catch (err) {
