@@ -136,7 +136,7 @@ Deno.serve(async (request) => {
       // Use PayMongo's sandbox child-account context for the simulation. This
       // exercises the same Account-ID routing contract used for live tenants,
       // while remaining test-only and not proving real settlement.
-      if (paymongoConnection.connection_status !== "pending" || !String(paymongoConnection.paymongo_account_id ?? "").trim()) {
+      if (paymongoConnection.connection_status !== "pending") {
         return jsonResponse({ error: "The PayMongo test simulation is not in a valid state." }, 409);
       }
     } else {
@@ -151,7 +151,12 @@ Deno.serve(async (request) => {
       }
     }
 
-    const linkedPayMongoAccountId = String(paymongoConnection.paymongo_account_id ?? "").trim();
+    // PayMongo test keys return a shared mock account, not a real linked child.
+    // Use its documented mock ID only to exercise Account-ID request handling in
+    // sandbox. Never persist this ID or treat the result as proof of real routing.
+    const linkedPayMongoAccountId = isTestSimulation
+      ? "org_test_merchant"
+      : String(paymongoConnection.paymongo_account_id ?? "").trim();
     if (pendingPayment.checkout_url) {
       return jsonResponse({ checkoutUrl: pendingPayment.checkout_url }, 200);
     }
