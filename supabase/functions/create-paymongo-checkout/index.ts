@@ -95,7 +95,7 @@ Deno.serve(async (request) => {
     if (!pendingPayment) return jsonResponse({ error: "Pending payment not found." }, 404);
     const { data: restaurantDomain, error: restaurantDomainError } = await adminClient
       .from("restaurants")
-      .select("custom_domain")
+      .select("custom_domain,online_payment_methods")
       .eq("id", pendingPayment.restaurant_id)
       .maybeSingle();
     if (restaurantDomainError) throw restaurantDomainError;
@@ -138,6 +138,25 @@ Deno.serve(async (request) => {
 
     if (pendingPayment.checkout_url) {
       return jsonResponse({ checkoutUrl: pendingPayment.checkout_url }, 200);
+    }
+
+    // Payment methods are configured per restaurant. Optional methods are
+    // disabled unless explicitly enabled in that restaurant's settings.
+    const configuredMethods = restaurantDomain?.online_payment_methods;
+    const methodSettings = configuredMethods && typeof configuredMethods === "object" && !Array.isArray(configuredMethods)
+      ? configuredMethods as Record<string, unknown>
+      : {};
+    const paymentMethodTypes = [
+      ...(methodSettings.card === true ? ["card"] : []),
+      ...(methodSettings.gcash !== false ? ["gcash"] : []),
+      ...(methodSettings.qrph !== false ? ["qrph"] : []),
+      ...(methodSettings.grab_pay !== false ? ["grab_pay"] : []),
+      ...(methodSettings.paymaya !== false ? ["paymaya"] : []),
+      ...(methodSettings.dob !== false ? ["dob"] : []),
+      ...(methodSettings.billease === true ? ["billease"] : []),
+    ];
+    if (paymentMethodTypes.length === 0) {
+      return jsonResponse({ error: "This restaurant has no online payment methods enabled. Please contact the restaurant." }, 409);
     }
 
     const storedItems = Array.isArray(pendingPayment.items) ? pendingPayment.items : [];
@@ -216,7 +235,7 @@ Deno.serve(async (request) => {
         data: {
           attributes: {
             line_items: lineItems,
-            payment_method_types: ["gcash", "qrph", "grab_pay", "paymaya"],
+            payment_method_types: paymentMethodTypes,
             description: [
               `Online payment for ${pendingPayment.reference_number}`,
               `Subtotal PHP ${Number(pendingPayment.subtotal).toFixed(2)}`,
