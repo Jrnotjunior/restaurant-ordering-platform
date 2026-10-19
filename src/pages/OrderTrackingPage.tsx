@@ -234,7 +234,12 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
       const result = await cancelMyPendingOrder(order.orderId);
       const refreshedOrder = await getOrderStatus(order.orderId);
       setOrder(refreshedOrder);
-      setCancellationMessage(result.message);
+      // Refund completion can occur just after the cancellation API response.
+      // Prefer the refreshed order's authoritative payment status so the message
+      // cannot keep saying "being processed" after the refund is already complete.
+      setCancellationMessage(refreshedOrder.paymentStatus === 'refunded'
+        ? 'Your order has been cancelled and the refund completed successfully.'
+        : result.message);
       if (window.localStorage.getItem('restaurant-ordering-active-order-id') === refreshedOrder.orderId) {
         window.localStorage.removeItem('restaurant-ordering-active-order-id');
         window.localStorage.removeItem(ACTIVE_ORDER_KEY);
