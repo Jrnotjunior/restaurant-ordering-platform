@@ -99,6 +99,9 @@ export type RestaurantTaxSettings = {
 
 export type RestaurantOrder = {
   orderId: string;
+  branchId?: string;
+  branchName?: string;
+  branchCode?: string;
   orderNumber: string;
   customerName: string;
   notes: string;
@@ -397,6 +400,9 @@ type RawOrderItem = {
 
 type Row = {
   order_id: string;
+  branch_id?: string;
+  branch_name?: string;
+  branch_code?: string;
   order_number: string;
   customer_name?: string | null;
   notes?: string | null;
@@ -429,11 +435,17 @@ type Row = {
   discount_beneficiaries?: { discountType?: string; discount_type?: string; idType?: string; discount_id_type?: string; idNumber?: string; discount_id_number?: string; eligibleAmount?: number | string; eligible_amount?: number | string; discountAmount?: number | string; discount_amount?: number | string }[] | null;
 };
 
-export async function getRestaurantOrders(restaurantId: string): Promise<RestaurantOrder[]> {
-  const rows = await supabaseRpc<Row>('get_restaurant_orders', { p_restaurant_id: restaurantId });
+export async function getRestaurantOrders(restaurantId: string, branchId?: string | null): Promise<RestaurantOrder[]> {
+  const rows = await supabaseRpc<Row>('get_restaurant_orders_with_branch', {
+    p_restaurant_id: restaurantId,
+    p_branch_id: branchId ?? null,
+  });
 
   return rows.map((row): RestaurantOrder => ({
     orderId: row.order_id,
+    branchId: row.branch_id ?? undefined,
+    branchName: row.branch_name ?? undefined,
+    branchCode: row.branch_code ?? undefined,
     orderNumber: row.order_number,
     customerName: row.customer_name ?? '',
     notes: row.notes ?? '',
