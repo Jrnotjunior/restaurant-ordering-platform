@@ -27,7 +27,7 @@ Deno.serve(async (request) => {
     if (restaurantError) throw restaurantError;
     if (!restaurant || restaurant.owner_id !== userData.user.id) return json({ error: "You do not have access to this restaurant." }, 403);
     const { data: connection, error: connectionError } = await admin.from("restaurant_paymongo_accounts")
-      .select("paymongo_account_id,connection_status,activation_status,verification_url,identity_verification_status,onboarding_step,last_error")
+      .select("paymongo_account_id,connection_status,activation_status,verification_url,identity_verification_status,onboarding_step,last_error,webhook_id,webhook_secret_id")
       .eq("restaurant_id", restaurantId).eq("environment", "live").maybeSingle();
     if (connectionError) throw connectionError;
     if (!connection?.paymongo_account_id) return json({ error: "PayMongo onboarding has not been started." }, 409);
@@ -59,7 +59,15 @@ Deno.serve(async (request) => {
             data: {
               attributes: {
                 url: `${supabaseUrl}/functions/v1/paymongo-webhook`,
-                events: ["checkout_session.payment.paid", "payment.failed"],
+                events: [
+                  "checkout_session.payment.paid",
+                  "payment.failed",
+                  "payment.refunded",
+                  "refund.created",
+                  "refund.updated",
+                  "refund.succeeded",
+                  "refund.failed",
+                ],
               },
             },
           }),
