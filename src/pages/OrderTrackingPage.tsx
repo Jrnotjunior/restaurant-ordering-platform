@@ -343,7 +343,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
           </div>
         ) : isCancelled ? (
           <div className="order-tracking-cancelled"><strong>Order cancelled</strong><span>This order has been cancelled by the restaurant or customer.</span></div>
-        ) : order.orderType === 'delivery' ? (
+        ) : !isCancelled ? (
           <div className="order-status-timeline" aria-label="Order status">
             {steps.map((step, index) => {
               const complete = index <= currentIndex;
