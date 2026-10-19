@@ -620,7 +620,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .update({
           restaurant_address: restaurantAddress.trim() || null,
           store_address: address.trim() || null,
-          operating_hours: normalizedHours,
           ordering_enabled: orderingEnabled,
           tax_vat_registered: vatRegistered,
           tax_prices_vat_inclusive: vatRegistered ? pricesVatInclusive : false,
@@ -635,6 +634,29 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       if (saveError) throw saveError;
       if (!data) {
         throw new Error('Store settings were not saved because this account could not update the restaurant. Check that you are signed in as an active owner of this store.');
+      }
+
+      // Save operating hours through an owner-scoped RPC that returns the exact
+      // database value. This avoids treating an unconfirmed direct table update
+      // as a successful hours save.
+      const { data: savedOperatingHoursRows, error: operatingHoursSaveError } = await supabase.rpc('update_restaurant_operating_hours', {
+        p_restaurant_id: restaurantId,
+        p_operating_hours: normalizedHours,
+      });
+      if (operatingHoursSaveError) throw operatingHoursSaveError;
+      const savedOperatingHoursRow = Array.isArray(savedOperatingHoursRows) ? savedOperatingHoursRows[0] : null;
+      if (!savedOperatingHoursRow) {
+        throw new Error('Opening hours were not saved. Check that you are signed in as an active owner of this store, then try again.');
+      }
+
+      const hoursReturnedBySave = normalizeHours(savedOperatingHoursRow.operating_hours);
+      const hoursDifferingFromSaveResult = DAYS.find((day) =>
+        hoursReturnedBySave[day.key].open !== normalizedHours[day.key].open ||
+        hoursReturnedBySave[day.key].close !== normalizedHours[day.key].close ||
+        hoursReturnedBySave[day.key].isOpen !== normalizedHours[day.key].isOpen
+      );
+      if (hoursDifferingFromSaveResult) {
+        throw new Error(`The ${hoursDifferingFromSaveResult.label} operating hours did not match the database save result. Please try saving again.`);
       }
 
       // Save payment methods through an owner-scoped RPC. A direct PostgREST
@@ -698,9 +720,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .single();
 
       if (verifyError) throw verifyError;
-      if (JSON.stringify(normalizeHours(savedRow.operating_hours)) !== JSON.stringify(normalizedHours)) {
-        throw new Error('Opening hours did not save exactly as entered. Your settings were not confirmed; reload and check the schedule before trying again.');
-      }
       if (
         Number(savedRow.delivery_base_fee) !== parsedBaseFee ||
         Number(savedRow.delivery_distance_increment_meters) !== Math.round(parsedDistanceIncrement) ||
