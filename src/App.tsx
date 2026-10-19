@@ -98,6 +98,7 @@ function PublicCustomerRouteGuard({ children }: { children: ReactNode }) {
 
 function AppContent() {
   const [restaurant, setRestaurant] = useState<RestaurantConfig>(defaultRestaurant);
+  const [restaurantResolved, setRestaurantResolved] = useState(false);
   const [route, setRoute] = useState(() => normalizeHashRoute(window.location.hash || ''));
   const { user, loading: authLoading, error: authError } = useRestaurantOwnerAuth();
   useEffect(() => {
@@ -204,9 +205,14 @@ function AppContent() {
 
     restaurantRepository.getRestaurant(lookup)
       .then((loadedRestaurant) => {
-        if (!cancelled && loadedRestaurant) setRestaurant(loadedRestaurant);
+        if (cancelled) return;
+        if (loadedRestaurant) setRestaurant(loadedRestaurant);
+        setRestaurantResolved(true);
       })
-      .catch((error: unknown) => console.error('Unable to load restaurant from Supabase.', error));
+      .catch((error: unknown) => {
+        console.error('Unable to load restaurant from Supabase.', error);
+        if (!cancelled) setRestaurantResolved(true);
+      });
 
     return () => {
       cancelled = true;
@@ -337,7 +343,18 @@ function AppContent() {
   if (isRiderDashboardPage) return <RiderRouteGuard><RiderDashboardPage /></RiderRouteGuard>;
   if (riderDeliveryMatch) return <RiderRouteGuard><RiderDeliveryPage orderId={decodeURIComponent(riderDeliveryMatch[1])} /></RiderRouteGuard>;
 
-  const publicContent = trackOrderNumber ? <OrderTrackingPage orderId={trackOrderNumber} /> : isMenuPage || (!isCartPage && !isCheckoutPage && !trackingMatch) ? <MenuPage onAddToCart={addToCart} cartCount={cartCount} /> : isCartPage ? <CartPage items={cartItems} onIncrease={increaseCartItem} onDecrease={decreaseCartItem} onRemove={removeCartItem} /> : isCheckoutPage ? <CheckoutPage items={cartItems} onClearCart={clearCart} /> : <OrderTrackingPage orderId={decodeURIComponent(trackingMatch![1])} />;
+  const trackingOrderId = trackOrderNumber || (trackingMatch ? decodeURIComponent(trackingMatch[1]) : null);
+  const publicContent = trackingOrderId
+    ? restaurantResolved
+      ? <OrderTrackingPage orderId={trackingOrderId} expectedRestaurantId={restaurant.id ?? null} />
+      : <section className="order-tracking-page"><div className="order-tracking-card"><p className="eyebrow">Order tracking</p><h1>Loading restaurant…</h1><p>Please wait while we verify this storefront.</p></div></section>
+    : isMenuPage || (!isCartPage && !isCheckoutPage && !trackingMatch)
+      ? <MenuPage onAddToCart={addToCart} cartCount={cartCount} />
+      : isCartPage
+        ? <CartPage items={cartItems} onIncrease={increaseCartItem} onDecrease={decreaseCartItem} onRemove={removeCartItem} />
+        : isCheckoutPage
+          ? <CheckoutPage items={cartItems} onClearCart={clearCart} />
+          : <MenuPage onAddToCart={addToCart} cartCount={cartCount} />;
 
   if (isCashierPosPage) {
     return <StaffRoleGuard role="cashier">{(staffRestaurant) => (
