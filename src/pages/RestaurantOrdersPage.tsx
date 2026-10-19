@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { getRestaurantOrders, updateOrderStatus, sendOrderToKitchen, type RestaurantOrder, type RestaurantOrderStatus } from '../modules/ordering/orderService';
+import { getRestaurantOrders, updateOrderStatus, sendOrderToKitchen, cancelRestaurantOrder, type RestaurantOrder, type RestaurantOrderStatus } from '../modules/ordering/orderService';
 import { getKitchenOrders, updateKitchenOrderStatus } from '../modules/kitchen/kitchenService';
 import { confirmPosCashPayment } from '../modules/pos/posService';
 import { supabase } from '../services/supabaseClient';
@@ -225,12 +225,13 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
     try {
       setError('');
       setUpdating(order.orderId);
-      await updateOrderStatus(order.orderId, 'cancelled');
+      const result = await cancelRestaurantOrder(order.orderId);
       setOrders((current) =>
         current.map((item) => (item.orderId === order.orderId ? { ...item, status: 'cancelled' } : item)),
       );
       setCancelConfirmationOrder(null);
       setSelectedOrder(null);
+      setError(result.message);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to update order.');
     } finally {
@@ -858,7 +859,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
           <div className="restaurant-order-cancel-modal" role="dialog" aria-modal="true" aria-labelledby="cancel-order-title">
             <h2 id="cancel-order-title" className="restaurant-order-cancel-modal-title">Cancel Order?</h2>
             <p className="restaurant-order-cancel-modal-text">
-              Are you sure you want to cancel order <strong>{cancelConfirmationOrder.orderNumber}</strong>? This action will mark the order as cancelled.
+              Are you sure you want to cancel order <strong>{cancelConfirmationOrder.orderNumber}</strong>? If paid online, Web2Table will request a PayMongo refund. Cancellation is only allowed before confirmation.
             </p>
             <div className="restaurant-order-cancel-modal-actions">
               <button
