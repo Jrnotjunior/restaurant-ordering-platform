@@ -257,6 +257,8 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [paymongoLiveVerificationUrl, setPaymongoLiveVerificationUrl] = useState("");
   const [paymongoLiveStep, setPaymongoLiveStep] = useState("");
   const [paymongoLiveIdentityStatus, setPaymongoLiveIdentityStatus] = useState("");
+  const [paymongoBusy, setPaymongoBusy] = useState(false);
+  const [paymongoError, setPaymongoError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
