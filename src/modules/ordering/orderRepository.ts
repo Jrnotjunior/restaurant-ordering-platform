@@ -22,11 +22,14 @@ export async function createGuestOrderCancellationToken(): Promise<{ token: stri
 
 export function hasGuestOrderCancellationToken(orderId: string): boolean {
   if (typeof window === 'undefined') return false;
+  const key = `${GUEST_CANCEL_TOKEN_STORAGE_PREFIX}${orderId}`;
   try {
-    return Boolean(
-      window.localStorage.getItem(`${GUEST_CANCEL_TOKEN_STORAGE_PREFIX}${orderId}`) ||
-      window.sessionStorage.getItem(`${GUEST_CANCEL_TOKEN_STORAGE_PREFIX}${orderId}`)
-    );
+    if (window.localStorage.getItem(key)) return true;
+  } catch {
+    // Fall through to tab storage when localStorage is blocked.
+  }
+  try {
+    return Boolean(window.sessionStorage.getItem(key));
   } catch {
     return false;
   }
@@ -34,9 +37,15 @@ export function hasGuestOrderCancellationToken(orderId: string): boolean {
 
 function readGuestOrderCancellationToken(orderId: string): string | null {
   if (typeof window === 'undefined') return null;
+  const key = `${GUEST_CANCEL_TOKEN_STORAGE_PREFIX}${orderId}`;
   try {
-    return window.localStorage.getItem(`${GUEST_CANCEL_TOKEN_STORAGE_PREFIX}${orderId}`) ||
-      window.sessionStorage.getItem(`${GUEST_CANCEL_TOKEN_STORAGE_PREFIX}${orderId}`);
+    const token = window.localStorage.getItem(key);
+    if (token) return token;
+  } catch {
+    // Fall through to tab storage when localStorage is blocked.
+  }
+  try {
+    return window.sessionStorage.getItem(key);
   } catch {
     return null;
   }
