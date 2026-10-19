@@ -49,6 +49,8 @@ import './styles/cart-notification.css';
 import { resolveAuthEntry } from './app/auth/authEntry';
 import { normalizeHashRoute, resolveAppRoute } from './app/routing/routeResolver';
 import { useCart } from './modules/ordering/useCart';
+import { useRestaurantBranches } from './modules/branches/useRestaurantBranches';
+import { BranchSelector } from './modules/branches/components/BranchSelector';
 import { OwnerRestaurantGuard, RestaurantModuleGuard, RiderRouteGuard, StaffRoleGuard } from './modules/auth/authGuards';
 import type { CartItem } from './modules/ordering/cartTypes';
 
@@ -101,6 +103,7 @@ function AppContent() {
   const [restaurantResolved, setRestaurantResolved] = useState(false);
   const [route, setRoute] = useState(() => normalizeHashRoute(window.location.hash || ''));
   const { user, loading: authLoading, error: authError } = useRestaurantOwnerAuth();
+  const { branches, selectedBranch, selectBranch, loading: branchesLoading, error: branchesError } = useRestaurantBranches(restaurant.id);
   useEffect(() => {
     const favicon = restaurant.storefront.faviconUrl?.trim();
     const iconLinks = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]'));
@@ -222,24 +225,9 @@ function AppContent() {
   const [showStoreClosedModal, setShowStoreClosedModal] = useState(false);
 
   async function addToCart(product: RestaurantProduct) {
-    let storeOpen = true;
-
-    if (supabase && restaurant.id) {
-      const { data, error } = await supabase
-        .from('restaurants')
-        .select('ordering_enabled,operating_hours')
-        .eq('id', restaurant.id)
-        .single();
-
-      if (error) {
-        console.error('Unable to verify store status before adding to cart.', error);
-        storeOpen = false;
-      } else {
-        storeOpen = data?.ordering_enabled !== false && isRestaurantCurrentlyOpen(data?.operating_hours as RestaurantConfig['operatingHours'] | undefined);
-      }
-    } else {
-      storeOpen = isRestaurantCurrentlyOpen(restaurant.operatingHours);
-    }
+    if (!selectedBranch) return;
+    const storeOpen = selectedBranch.ordering_enabled !== false
+      && isRestaurantCurrentlyOpen(selectedBranch.operating_hours as RestaurantConfig['operatingHours'] | undefined);
 
     if (!storeOpen) {
       setShowStoreClosedModal(true);
@@ -247,6 +235,23 @@ function AppContent() {
     }
 
     addCartItem(product);
+  }
+
+  function handleSelectBranch(branchId: string) {
+    if (selectedBranch?.id === branchId) return;
+    if (cartCount > 0) {
+      const accepted = window.confirm('Switching branches will clear the current cart so items are not ordered from the wrong location. Continue?');
+      if (!accepted) return;
+      clearCart();
+    }
+    [
+      'restaurant-ordering-pending-payment-checkout-url',
+      'restaurant-ordering-pending-payment-reference',
+      'restaurant-ordering-pending-payment-cart-user',
+      'restaurant-ordering-pending-payment-pickup-method',
+      'restaurant-ordering-pending-payment-order',
+    ].forEach((key) => window.localStorage.removeItem(key));
+    selectBranch(branchId);
   }
 
   const routeContext = resolveAppRoute(window.location, route);
@@ -356,7 +361,7 @@ function AppContent() {
       : isCartPage
         ? <CartPage items={cartItems} onIncrease={increaseCartItem} onDecrease={decreaseCartItem} onRemove={removeCartItem} />
         : isCheckoutPage
-          ? <CheckoutPage items={cartItems} onClearCart={clearCart} />
+          ? <CheckoutPage items={cartItems} onClearCart={clearCart} branch={selectedBranch} />
           : <MenuPage onAddToCart={addToCart} cartCount={cartCount} />;
 
   if (isCashierPosPage) {
@@ -516,7 +521,16 @@ function AppContent() {
   }
 
   const isPublicMenuView = isMenuPage || (!isCartPage && !isCheckoutPage && !trackingMatch && !trackOrderNumber);
-  const publicPage = <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount} compactPublicChrome>{publicContent}{showStoreClosedModal ? (
+  const isStoreOrderingRoute = isMenuPage || isCartPage || isCheckoutPage;
+  const branchAwarePublicContent = !isStoreOrderingRoute ? publicContent : branchesLoading
+    ? <section className="order-tracking-page"><div className="order-tracking-card"><h1>Loading branches…</h1><p>Please wait while we load this restaurant's locations.</p></div></section>
+    : branchesError
+      ? <section className="order-tracking-page"><div className="order-tracking-card"><h1>Branches unavailable</h1><p role="alert">{branchesError}</p><p>Ordering is paused until the branch configuration can be verified.</p></div></section>
+      : branches.length === 0
+        ? <section className="order-tracking-page"><div className="order-tracking-card"><h1>No active branches</h1><p>This restaurant has no active branch available for ordering. Please contact the restaurant.</p></div></section>
+        : <><BranchSelector branches={branches} selectedBranch={selectedBranch} onSelect={handleSelectBranch} disabled={route === '#checkout'} />{selectedBranch ? publicContent : null}</>;
+
+  const publicPage = <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount} compactPublicChrome>{branchAwarePublicContent}{showStoreClosedModal ? (
     <div className="restaurant-closed-modal-backdrop" role="presentation" onClick={() => setShowStoreClosedModal(false)}>
       <div className="restaurant-closed-modal" role="dialog" aria-modal="true" aria-labelledby="restaurant-closed-modal-title" onClick={(event) => event.stopPropagation()}>
         <button className="restaurant-closed-modal-close" type="button" aria-label="Close" onClick={() => setShowStoreClosedModal(false)}>×</button>

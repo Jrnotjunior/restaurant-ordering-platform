@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { RestaurantProduct } from '../types/menu';
+import type { RestaurantBranch } from '../modules/branches/branchTypes';
 import { createOrder } from '../modules/ordering/orderService';
 import { createPayMongoCheckout, createPendingOnlinePayment, getOnlinePaymentStatus } from '../modules/payments/paymentService';
 import { calculateDeliveryRoute, type DeliveryRouteQuote } from '../modules/location/locationService';
@@ -15,7 +16,7 @@ import '../styles/checkout-mobile.css';
 type CartItem = { product: RestaurantProduct; quantity: number };
 type OrderType = 'delivery' | 'take_out' | 'pickup' | 'dine_in';
 type PaymentMethod = 'cash' | 'online';
-type CheckoutPageProps = { items: CartItem[]; onClearCart: (targetUserId?: string) => void };
+type CheckoutPageProps = { items: CartItem[]; onClearCart: (targetUserId?: string) => void; branch: RestaurantBranch | null };
 type ConfirmedOrder = { orderId: string; orderNumber: string; paymentMethod: PaymentMethod; orderType: OrderType; pickupMethod?: 'customer' | 'third_party_courier'; pickupAddress?: string; total: number };
 const PENDING_PAYMENT_CHECKOUT_URL_KEY = 'restaurant-ordering-pending-payment-checkout-url';
 const ACTIVE_ORDER_KEY = 'restaurant-ordering-active-order';
@@ -40,7 +41,7 @@ const outsideDeliveryAreaMessage = 'This address is outside the store delivery a
 const PENDING_PAYMENT_ORDER_KEY = 'restaurant-ordering-pending-payment-order';
 const thirdPartyCourierNote = 'THIRD-PARTY COURIER: Customer is responsible for booking and paying the delivery courier (such as Lalamove or Grab Express). The restaurant will prepare the food for courier pickup at the listed restaurant pickup point.';
 
-export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
+export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) {
   const restaurant = useRestaurant();
   const { user } = useRestaurantOwnerAuth();
   const [orderType, setOrderType] = useState<OrderType>('delivery');
@@ -384,7 +385,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
           };
           setSelectedDeliveryLocation(savedLocation);
           setDeliveryRouteLoading(true);
-          void calculateDeliveryRoute(currentRestaurantId, profile.defaultDeliveryLatitude!, profile.defaultDeliveryLongitude!)
+          void calculateDeliveryRoute(currentRestaurantId, profile.defaultDeliveryLatitude!, profile.defaultDeliveryLongitude!, branch?.id)
             .then((quote) => {
               if (!cancelled) setDeliveryRouteQuote(quote);
             })
@@ -418,7 +419,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
     };
   }, [restaurantId, user?.id]);
 
-  const restaurantPickupPoint = storeAddress;
+  const restaurantPickupPoint = branch?.store_address?.trim() || branch?.restaurant_address?.trim() || storeAddress;
   const isDelivery = orderType === 'delivery';
 
   const subtotal = useMemo(() => items.reduce((total, item) => total + item.product.price * item.quantity, 0), [items]);
@@ -554,6 +555,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
   }
 
   async function createPendingOrder(method: PaymentMethod) {
+    if (!branch?.id) throw new Error('Choose a branch before placing your order.');
     if (new Set(items.map((item) => item.product.restaurantId)).size !== 1) throw new Error('Your cart contains items from different restaurants. Please clear your cart and try again.');
     const isOwnCourierPickup = thirdPartyCourierDelivery && orderType === 'pickup';
     if (isOwnCourierPickup && !restaurantPickupPoint) throw new Error('The restaurant pickup address is not configured yet. Please contact the restaurant.');
@@ -562,6 +564,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
     const finalNotes = [notes.trim(), isOwnCourierPickup ? thirdPartyCourierNote : ''].filter(Boolean).join('\\n\\n');
     return createOrder({
       restaurantId: items[0].product.restaurantId,
+      branchId: branch.id,
       customerName: customerName.trim(),
       mobileNumber: ['dine_in', 'take_out'].includes(orderType) ? '' : mobileNumber.trim(),
       orderType: isOwnCourierPickup ? 'pickup' : orderType,
@@ -583,6 +586,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
   }
   async function handleOnlinePayment() {
     if (!canContinue || items.length === 0 || isSubmitting) return;
+    if (!branch?.id) { setSubmitError('Choose a branch before proceeding to payment.'); setShowPaymentModal(true); return; }
     setIsSubmitting(true);
     setSubmitError('');
     setPaymentMethod('online');
@@ -599,6 +603,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
       }
       const pendingPayment = await createPendingOnlinePayment({
         restaurantId: items[0].product.restaurantId,
+        branchId: branch.id,
         customerName: customerName.trim(),
         mobileNumber: ['dine_in', 'take_out'].includes(orderType) ? '' : mobileNumber.trim(),
         orderType: isOwnCourierPickup ? 'pickup' : orderType,
@@ -770,7 +775,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
                   if (!selected.latitude || !selected.longitude) throw new Error('Mapbox did not return an exact map location. Please choose the address again.');
                   setDeliveryRouteLoading(true);
                   try {
-                    const quote = await calculateDeliveryRoute(restaurantId!, selected.latitude, selected.longitude);
+                    const quote = await calculateDeliveryRoute(restaurantId!, selected.latitude, selected.longitude, branch?.id);
                     setDeliveryRouteQuote(quote);
                   } finally {
                     setDeliveryRouteLoading(false);

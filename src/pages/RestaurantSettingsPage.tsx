@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { MapboxDeliveryLocationPicker, type MapboxDeliveryAddress } from '../components/MapboxDeliveryLocationPicker';
 import { PayMongoLiveOnboardingCard } from '../components/PayMongoLiveOnboardingCard';
+import { BranchManagementPanel } from '../modules/branches/components/BranchManagementPanel';
 import { useOwnerUnsavedChanges } from '../contexts/OwnerUnsavedChangesContext';
 import { useOwnerUnsavedChangesTracking } from '../hooks/useOwnerUnsavedChangesTracking';
 
@@ -770,6 +771,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
             ...(hasSelfOrdering ? [{ id: 'status', label: 'Store status & hours' }] : []),
             { id: 'delivery', label: 'Delivery pricing' },
             { id: 'cod', label: 'Cash Payment Options' },
+            { id: 'branches', label: 'Branches' },
             { id: 'rider', label: 'Rider assignment' },
             ...(hasOnlinePayments ? [{ id: 'payments', label: 'Online payments' }] : []),
             { id: 'tax', label: 'Tax & receipts' },
@@ -1002,7 +1004,9 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
                 {hasOnlinePayments && <div id="store-live-payments" hidden={activeSettingsTab !== 'payments'}><PayMongoLiveOnboardingCard restaurantId={restaurantId} /></div>}
 
-
+        <div className="restaurant-settings-card" id="store-branches" role="tabpanel" aria-labelledby="store-settings-tab-branches" hidden={activeSettingsTab !== 'branches'}>
+          <BranchManagementPanel restaurantId={restaurantId} />
+        </div>
 
         <div className="restaurant-settings-card" id="store-tax" role="tabpanel" aria-labelledby="store-settings-tab-tax" hidden={activeSettingsTab !== 'tax'}>
           <div className="restaurant-settings-tax-grid">
@@ -1037,7 +1041,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           <p className="restaurant-settings-help" style={{ marginTop: 12 }}>For Senior Citizen/PWD transactions, the POS applies the 20% discount to the eligible VAT-exclusive share and removes the corresponding VAT when the restaurant is VAT-registered. Verify the restaurant’s actual BIR registration and pricing treatment before enabling VAT settings.</p>
         </div>
 
-                {!['cod', 'rider', 'tax', 'payments'].includes(activeSettingsTab) && (
+                {!['cod', 'rider', 'tax', 'payments', 'branches'].includes(activeSettingsTab) && (
           <div className="restaurant-settings-actions">
             <button className="button button-primary restaurant-compact-action" type="submit" disabled={loading || saving}>
               {saving ? 'Saving…' : 'Save'}

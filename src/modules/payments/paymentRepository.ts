@@ -7,6 +7,7 @@ import {
 
 export type PendingOnlinePaymentInput = {
   restaurantId: string;
+  branchId?: string;
   customerName: string;
   mobileNumber: string;
   orderType: 'delivery' | 'take_out' | 'pickup' | 'dine_in';
@@ -68,6 +69,7 @@ export async function createPendingOnlinePayment(input: PendingOnlinePaymentInpu
         p_customer_delivery_place_id: input.customerDeliveryPlaceId || null,
         p_delivery_quote_id: input.deliveryQuoteId || null,
         p_guest_cancel_token_hash: guestCancelToken.tokenHash,
+        ...(input.branchId ? { p_branch_id: input.branchId } : {}),
       }
     : {
         p_restaurant_id: input.restaurantId,
@@ -88,6 +90,7 @@ export async function createPendingOnlinePayment(input: PendingOnlinePaymentInpu
         p_customer_delivery_longitude: input.customerDeliveryLongitude ?? null,
         p_customer_delivery_place_id: input.customerDeliveryPlaceId || null,
         p_guest_cancel_token_hash: guestCancelToken.tokenHash,
+        ...(input.branchId ? { p_branch_id: input.branchId } : {}),
       };
 
   const { data, error } = await supabase.rpc(rpcName, rpcParams);

@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-type RouteRequest = { restaurantId: string; latitude: number; longitude: number };
+type RouteRequest = { restaurantId: string; branchId?: string; latitude: number; longitude: number };
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -43,20 +43,33 @@ Deno.serve(async (req) => {
   }
 
   const { data: restaurant, error: restaurantError } = await admin.from("restaurants")
-    .select("id,is_active,delivery_location_latitude,delivery_location_longitude,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters")
+    .select("id,is_active")
     .eq("id", restaurantId).single();
 
-  if (restaurantError || !restaurant) return json({ error: "Restaurant delivery settings could not be loaded." }, 404);
+  if (restaurantError || !restaurant) return json({ error: "Restaurant could not be loaded." }, 404);
   if (!restaurant.is_active) return json({ error: "Restaurant is not available." }, 409);
 
-  const originLat = Number(restaurant.delivery_location_latitude);
-  const originLng = Number(restaurant.delivery_location_longitude);
-  if (!Number.isFinite(originLat) || !Number.isFinite(originLng)) return json({ error: "This restaurant has not configured its delivery location yet." }, 409);
+  const requestedBranchId = String(payload.branchId ?? "").trim();
+  let branchQuery = admin.from("restaurant_branches")
+    .select("id,restaurant_id,is_active,ordering_enabled,delivery_location_latitude,delivery_location_longitude,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters")
+    .eq("restaurant_id", restaurantId);
+  branchQuery = requestedBranchId
+    ? branchQuery.eq("id", requestedBranchId)
+    : branchQuery.eq("is_default", true);
+  const { data: branch, error: branchError } = await branchQuery.maybeSingle();
 
-  const incrementMeters = Number(restaurant.delivery_distance_increment_meters);
-  const feePerIncrement = Number(restaurant.delivery_fee_per_increment);
-  const baseFee = Number(restaurant.delivery_base_fee);
-  const maxDistanceMeters = Number(restaurant.delivery_max_distance_meters);
+  if (branchError || !branch) return json({ error: "The selected branch could not be loaded for this restaurant." }, 404);
+  if (!branch.is_active) return json({ error: "This branch is not available." }, 409);
+  if (!branch.ordering_enabled) return json({ error: "This branch has paused online ordering." }, 409);
+
+  const originLat = Number(branch.delivery_location_latitude);
+  const originLng = Number(branch.delivery_location_longitude);
+  if (!Number.isFinite(originLat) || !Number.isFinite(originLng)) return json({ error: "This branch has not configured its delivery location yet." }, 409);
+
+  const incrementMeters = Number(branch.delivery_distance_increment_meters);
+  const feePerIncrement = Number(branch.delivery_fee_per_increment);
+  const baseFee = Number(branch.delivery_base_fee);
+  const maxDistanceMeters = Number(branch.delivery_max_distance_meters);
 
   if (!Number.isFinite(incrementMeters) || incrementMeters <= 0 || !Number.isFinite(feePerIncrement) || feePerIncrement < 0 || !Number.isFinite(baseFee) || baseFee < 0 || !Number.isFinite(maxDistanceMeters) || maxDistanceMeters <= 0) {
     return json({ error: "This restaurant has invalid delivery pricing settings." }, 409);
@@ -67,6 +80,7 @@ Deno.serve(async (req) => {
   const { data: cachedQuote } = await admin.from("delivery_quotes")
     .select("id,expires_at,distance_meters,delivery_fee,origin_latitude,origin_longitude,pricing_base_fee,pricing_distance_increment_meters,pricing_fee_per_increment")
     .eq("restaurant_id", restaurantId)
+    .eq("branch_id", branch.id)
     .eq("customer_latitude", latitude)
     .eq("customer_longitude", longitude)
     .is("consumed_at", null)
@@ -103,7 +117,7 @@ Deno.serve(async (req) => {
     req.headers.get("x-forwarded-for")?.split(",")[0] ??
     "unknown"
   ).trim().slice(0, 128);
-  const rateLimitMaterial = new TextEncoder().encode(`${restaurantId}:${clientAddress}`);
+  const rateLimitMaterial = new TextEncoder().encode(`${restaurantId}:${branch.id}:${clientAddress}`);
   const rateLimitDigest = await crypto.subtle.digest("SHA-256", rateLimitMaterial);
   const rateLimitKey = Array.from(new Uint8Array(rateLimitDigest))
     .map((byte) => byte.toString(16).padStart(2, "0"))
@@ -163,7 +177,7 @@ Deno.serve(async (req) => {
   const inRange = distanceMeters <= maxDistanceMeters;
 
   const { data: quote, error: quoteError } = await admin.from("delivery_quotes").insert({
-    restaurant_id: restaurantId, customer_latitude: latitude, customer_longitude: longitude,
+    restaurant_id: restaurantId, branch_id: branch.id, customer_latitude: latitude, customer_longitude: longitude,
     distance_meters: Math.round(distanceMeters), delivery_fee: deliveryFee,
     origin_latitude: originLat, origin_longitude: originLng,
     pricing_base_fee: baseFee, pricing_distance_increment_meters: incrementMeters,
