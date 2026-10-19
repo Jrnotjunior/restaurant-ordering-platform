@@ -5,6 +5,7 @@ import '../styles/order-tracking.css';
 
 type OrderTrackingPageProps = {
   orderId: string;
+  expectedRestaurantId: string | null;
 };
 
 const ACTIVE_ORDER_KEY = 'restaurant-ordering-active-order';
@@ -40,7 +41,7 @@ const dineInSteps: Array<{ key: CustomerStatus; label: string; description: stri
 const deliveryStatusOrder: CustomerStatus[] = ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'arrived', 'completed'];
 const pickupStatusOrder: CustomerStatus[] = ['pending', 'confirmed', 'preparing', 'ready', 'completed'];
 
-export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
+export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTrackingPageProps) {
   const [order, setOrder] = useState<Awaited<ReturnType<typeof getOrderStatus>> | null>(null);
   const [error, setError] = useState('');
   const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
@@ -65,7 +66,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
     }
     void loadTimelineEntitlement();
     return () => { cancelled = true; };
-  }, [orderId]);
+  }, [orderId, expectedRestaurantId]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -104,6 +105,9 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
 
       try {
         const result = await getOrderStatus(orderId);
+        if (expectedRestaurantId && result.restaurantId !== expectedRestaurantId) {
+          throw new Error('Order not found on this restaurant storefront.');
+        }
         if (!cancelled) {
           setOrder(result);
           if (result.status === 'completed' || result.status === 'cancelled' || result.deliveryStatus === 'delivered' || result.deliveryStatus === 'failed') {
