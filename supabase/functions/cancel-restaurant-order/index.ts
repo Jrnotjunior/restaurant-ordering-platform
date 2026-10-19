@@ -26,10 +26,27 @@ Deno.serve(async req=>{
   const {data:changed,error:ce}=await db.from("orders").update({status:"cancelled",cancellation_refund_status:initial,cancellation_refund_error:null,updated_at:new Date().toISOString()}).eq("id",id).eq("restaurant_id",o.restaurant_id).eq("status","pending").select("id").maybeSingle();
   if(ce)throw ce;if(!changed)return out({error:"Order status changed. Refresh and check its current status."},409);
   if(!paid)return out({cancelled:true,refundStatus:"not_required",message:"Order cancelled. No online refund was needed."});
-  const env:"test"|"live"=String(Deno.env.get("PAYMONGO_ENVIRONMENT")??"").trim()==="live"||(Deno.env.get("PAYMONGO_SECRET_KEY")??"").startsWith("sk_live_")?"live":"test",secret=payKey(env);
+  // Resolve the PayMongo environment for this restaurant before issuing a refund.
+  // Refunds use the stored PayMongo payment ID, regardless of whether the customer used
+  // GrabPay, Maya, GCash, cards, or another supported PayMongo payment method.
+  const configuredEnv=String(Deno.env.get("PAYMONGO_ENVIRONMENT")??"").trim();
+  const legacyKey=Deno.env.get("PAYMONGO_SECRET_KEY")??"";
+  let env:"test"|"live" = configuredEnv==="live" || configuredEnv==="test"
+    ? configuredEnv
+    : legacyKey.startsWith("sk_live_") ? "live" : "test";
+  let {data:conn,error:co}=await db.from("restaurant_paymongo_accounts").select("paymongo_account_id,connection_status,environment").eq("restaurant_id",o.restaurant_id).eq("environment",env).maybeSingle();
+  if(co)throw co;
+  // If environment was not explicitly configured, fall back to the restaurant's active
+  // connection instead of accidentally calling the wrong PayMongo environment.
+  if(!conn && configuredEnv!=="live" && configuredEnv!=="test" && !legacyKey){
+    const {data:connections,error:connectionsError}=await db.from("restaurant_paymongo_accounts").select("paymongo_account_id,connection_status,environment").eq("restaurant_id",o.restaurant_id).eq("connection_status","active");
+    if(connectionsError)throw connectionsError;
+    const selected=connections?.find((entry:any)=>entry.environment==="test")??connections?.find((entry:any)=>entry.environment==="live");
+    if(selected){conn=selected;env=selected.environment as "test"|"live";}
+  }
+  const secret=payKey(env);
   const failed=async(msg:string)=>{await db.from("orders").update({cancellation_refund_status:"failed",cancellation_refund_error:msg.slice(0,500),updated_at:new Date().toISOString()}).eq("id",id);return out({cancelled:true,refundStatus:"failed",message:"Order cancelled, but the automatic refund failed. Please arrange/check the refund in PayMongo."})};
   if(!secret)return await failed("PayMongo secret key is not configured for this environment.");
-  const {data:conn,error:co}=await db.from("restaurant_paymongo_accounts").select("paymongo_account_id,connection_status,environment").eq("restaurant_id",o.restaurant_id).eq("environment",env).maybeSingle();if(co)throw co;
   const acct=String(conn?.paymongo_account_id??"").trim();if(conn&&(conn.connection_status!=="active"||!acct))return await failed("Restaurant PayMongo account is not active.");
   const headers:Record<string,string>={Authorization:"Basic "+btoa(secret+":"),"Content-Type":"application/json",...(acct?{"Account-ID":acct}:{})};
   try{
