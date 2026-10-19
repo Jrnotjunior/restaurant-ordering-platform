@@ -165,18 +165,18 @@ Deno.serve(async (request) => {
       .eq("restaurant_id", order.restaurant_id).eq("environment", environment).maybeSingle();
     if (connectionError) throw connectionError;
     const accountId = String(connection?.paymongo_account_id ?? "").trim();
-    if (connection && (connection.connection_status !== "active" || !accountId)) {
+    if (!connection || connection.connection_status !== "active" || !accountId) {
       await admin.from("orders").update({
         cancellation_refund_status: "failed",
-        cancellation_refund_error: "The restaurant's PayMongo account is not active.",
+        cancellation_refund_error: "The restaurant's linked PayMongo child account is missing or inactive; refund was not sent to the parent account.",
       }).eq("id", orderId);
-      return jsonResponse({ cancelled: true, refundStatus: "failed", message: "Order cancelled, but the refund could not be started. Please contact the restaurant." }, 200);
+      return jsonResponse({ cancelled: true, refundStatus: "failed", message: "Order cancelled, but the restaurant's PayMongo child account could not be verified for the refund. Please contact the restaurant." }, 200);
     }
 
     const headers: Record<string, string> = {
       Authorization: `Basic ${btoa(`${secretKey}:`)}`,
       "Content-Type": "application/json",
-      ...(accountId ? { "Account-ID": accountId } : {}),
+      "Account-ID": accountId,
     };
 
     try {
