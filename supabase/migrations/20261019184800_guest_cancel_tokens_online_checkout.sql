@@ -157,3 +157,5 @@ create trigger sync_guest_cancel_token_to_finalized_order
 after insert or update on public.pending_online_payments
 for each row
 execute function public.sync_guest_cancel_token_to_finalized_order();
+
+notify pgrst, 'reload schema';
