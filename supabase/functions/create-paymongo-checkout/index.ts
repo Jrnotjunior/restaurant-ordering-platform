@@ -115,7 +115,7 @@ Deno.serve(async (request) => {
 
     const { data: paymongoConnection, error: paymongoConnectionError } = await adminClient
       .from("restaurant_paymongo_accounts")
-      .select("paymongo_account_id,connection_status,webhook_secret_id,onboarding_step")
+      .select("paymongo_account_id,connection_status,webhook_secret_id,onboarding_step,activation_status")
       .eq("restaurant_id", pendingPayment.restaurant_id)
       .eq("environment", paymongoEnvironment)
       .maybeSingle();
