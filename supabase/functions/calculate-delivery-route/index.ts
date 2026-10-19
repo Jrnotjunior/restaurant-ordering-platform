@@ -59,7 +59,26 @@ Deno.serve(async (req) => {
     : branchQuery.eq("is_default", true);
   const { data: branch, error: branchError } = await branchQuery.maybeSingle();
 
-  if (branchError || !branch) return json({ error: "The selected branch could not be loaded for this restaurant." }, 404);
+  if (branchError || !branch) {
+    // Keep tenant/branch IDs in server logs only. This distinguishes a genuine
+    // cross-tenant or stale branch ID from a database query/permission error
+    // without exposing internal IDs or database diagnostics in the public API.
+    console.error("Delivery route branch lookup failed", {
+      restaurantId,
+      requestedBranchId: requestedBranchId || null,
+      resultFound: Boolean(branch),
+      queryError: branchError ? {
+        code: branchError.code ?? null,
+        message: branchError.message ?? null,
+        details: branchError.details ?? null,
+        hint: branchError.hint ?? null,
+      } : null,
+    });
+    return json({
+      error: "The selected branch could not be loaded for this restaurant.",
+      code: branchError ? "BRANCH_LOOKUP_ERROR" : "BRANCH_NOT_FOUND",
+    }, branchError ? 500 : 404);
+  }
   if (!branch.is_active) return json({ error: "This branch is not available." }, 409);
   if (!branch.ordering_enabled) return json({ error: "This branch has paused online ordering." }, 409);
 
