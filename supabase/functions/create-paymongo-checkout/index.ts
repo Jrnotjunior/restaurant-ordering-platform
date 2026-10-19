@@ -64,11 +64,12 @@ Deno.serve(async (request) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const serviceRoleKey = getSecretKey();
+    const configuredPayMongoEnvironment = String(Deno.env.get("PAYMONGO_ENVIRONMENT") ?? "").trim();
+    const legacyPayMongoKey = Deno.env.get("PAYMONGO_SECRET_KEY") ?? "";
     const paymongoEnvironment: "test" | "live" =
-      String(Deno.env.get("PAYMONGO_ENVIRONMENT") ?? "").trim() === "live" ||
-      (Deno.env.get("PAYMONGO_SECRET_KEY") ?? "").startsWith("sk_live_")
-        ? "live"
-        : "test";
+      configuredPayMongoEnvironment === "live" || configuredPayMongoEnvironment === "test"
+        ? configuredPayMongoEnvironment
+        : legacyPayMongoKey.startsWith("sk_live_") ? "live" : "test";
     const paymongoSecretKey = getPayMongoSecretKey(paymongoEnvironment);
 
     if (!supabaseUrl || !serviceRoleKey) {
