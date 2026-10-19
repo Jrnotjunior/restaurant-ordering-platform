@@ -63,10 +63,10 @@ Deno.serve(async (request) => {
     if (!key) return jsonResponse({ error: `PayMongo ${environment} mode is not configured yet.` }, 409);
 
     const { data: existing } = await admin.from("restaurant_paymongo_accounts")
-      .select("paymongo_account_id,connection_status,invitation_id,invitation_email")
+      .select("paymongo_account_id,connection_status,invitation_id,invitation_email,webhook_id,webhook_secret_id")
       .eq("restaurant_id", restaurantId).eq("environment", environment).maybeSingle();
 
-    if (existing?.connection_status === "active" && existing.paymongo_account_id) {
+    if (environment === "live" && existing?.connection_status === "active" && existing.paymongo_account_id) {
       return jsonResponse({ status: "active", paymongoAccountId: existing.paymongo_account_id });
     }
 
@@ -81,30 +81,24 @@ Deno.serve(async (request) => {
             "Content-Type": "application/json",
             "Idempotency-Key": `restaurant-paymongo-account-${restaurantId}-${environment}`,
           },
-          body: JSON.stringify({
-            type: "merchant",
-          }),
+          body: JSON.stringify({ type: "merchant" }),
         });
 
         const createPayload = await createResponse.json().catch(() => null);
         if (!createResponse.ok) {
           const detail = createPayload?.errors?.[0]?.detail;
-          console.error("PayMongo child account creation error", {
+          console.error("PayMongo test child account creation error", {
             status: createResponse.status,
             detail: typeof detail === "string" ? detail : null,
-            payload: createPayload,
           });
           return jsonResponse({
-            error: typeof detail === "string"
-              ? detail
-              : `PayMongo child account creation returned HTTP ${createResponse.status}.`,
+            error: typeof detail === "string" ? detail : `PayMongo test child account creation returned HTTP ${createResponse.status}.`,
           }, 502);
         }
 
         paymongoAccountId = String(createPayload?.data?.id ?? "").trim();
         if (!paymongoAccountId) {
-          console.error("PayMongo child account response did not include an account id", createPayload);
-          return jsonResponse({ error: "PayMongo did not return a child account ID." }, 502);
+          return jsonResponse({ error: "PayMongo did not return a test child account ID." }, 502);
         }
       }
 
@@ -116,22 +110,125 @@ Deno.serve(async (request) => {
       if (!accountResponse.ok) {
         const detail = accountPayload?.errors?.[0]?.detail;
         return jsonResponse({
-          error: typeof detail === "string"
-            ? detail
-            : "Unable to read the PayMongo child account.",
+          error: typeof detail === "string" ? detail : "Unable to verify the PayMongo test child account.",
         }, 502);
       }
 
-      // PayMongo test Accounts API uses mock child accounts. Do not start the live
-      // identity-verification flow against a test account: there is no real KYC
-      // session to complete in test mode. Keep this branch isolated from the
-      // restaurant_paymongo_accounts table so the working test checkout path
-      // remains unchanged.
+      // PayMongo test Accounts API returns mock accounts. Persist the mock child
+      // ID server-side so checkout/refund requests can actually send Account-ID.
+      // A mock ID must not be shared across tenants in Web2Table's mapping.
+      const { data: accountOwner, error: accountOwnerError } = await admin
+        .from("restaurant_paymongo_accounts")
+        .select("restaurant_id")
+        .eq("paymongo_account_id", paymongoAccountId)
+        .maybeSingle();
+      if (accountOwnerError) throw accountOwnerError;
+      if (accountOwner && accountOwner.restaurant_id !== restaurantId) {
+        return jsonResponse({
+          error: "PayMongo returned a test-mode mock child account ID already assigned to another restaurant. Test one tenant at a time; live child accounts receive separate IDs.",
+        }, 409);
+      }
+
+      const { error: saveAccountError } = await admin.from("restaurant_paymongo_accounts").upsert({
+        restaurant_id: restaurantId,
+        environment: "test",
+        paymongo_account_id: paymongoAccountId,
+        connection_status: "pending",
+        onboarding_method: "create_account",
+        invitation_id: null,
+        invitation_email: null,
+        activation_status: "activated",
+        identity_verification_status: "simulated",
+        onboarding_step: "webhook_configuration",
+        last_error: null,
+      }, { onConflict: "restaurant_id,environment" });
+      if (saveAccountError) throw saveAccountError;
+
+      let webhookId = String(existing?.webhook_id ?? "").trim();
+      const hasStoredWebhookSecret = Boolean(existing?.webhook_secret_id);
+      if (!webhookId || !hasStoredWebhookSecret) {
+        const webhookResponse = await fetch("https://api.paymongo.com/v1/webhooks", {
+          method: "POST",
+          headers: {
+            Authorization: `Basic ${btoa(`${key}:`)}`,
+            "Content-Type": "application/json",
+            "Account-ID": paymongoAccountId,
+            "Idempotency-Key": `restaurant-paymongo-webhook-${restaurantId}-test`,
+          },
+          body: JSON.stringify({
+            data: {
+              attributes: {
+                url: `${supabaseUrl}/functions/v1/paymongo-webhook`,
+                events: [
+                  "checkout_session.payment.paid",
+                  "payment.failed",
+                  "payment.refunded",
+                  "refund.created",
+                  "refund.updated",
+                  "refund.succeeded",
+                  "refund.failed",
+                ],
+              },
+            },
+          }),
+        });
+        const webhookPayload = await webhookResponse.json().catch(() => null);
+        if (!webhookResponse.ok) {
+          const detail = webhookPayload?.errors?.[0]?.detail;
+          const message = typeof detail === "string"
+            ? detail
+            : `PayMongo test child webhook creation returned HTTP ${webhookResponse.status}.`;
+          await admin.from("restaurant_paymongo_accounts").update({
+            connection_status: "pending",
+            onboarding_step: "webhook_configuration",
+            last_error: message,
+          }).eq("restaurant_id", restaurantId).eq("environment", "test");
+          return jsonResponse({ error: message, paymongoAccountId }, 502);
+        }
+
+        webhookId = String(webhookPayload?.data?.id ?? "").trim();
+        const webhookSecret = String(webhookPayload?.data?.attributes?.secret_key ?? "").trim();
+        if (!webhookId || !webhookSecret) {
+          await admin.from("restaurant_paymongo_accounts").update({
+            connection_status: "pending",
+            onboarding_step: "webhook_configuration",
+            last_error: "PayMongo did not return test child webhook credentials.",
+          }).eq("restaurant_id", restaurantId).eq("environment", "test");
+          return jsonResponse({ error: "PayMongo did not return test child webhook credentials.", paymongoAccountId }, 502);
+        }
+
+        const { error: saveWebhookIdError } = await admin.from("restaurant_paymongo_accounts").update({
+          webhook_id: webhookId,
+          connection_status: "pending",
+          onboarding_step: "webhook_configuration",
+        }).eq("restaurant_id", restaurantId).eq("environment", "test");
+        if (saveWebhookIdError) throw saveWebhookIdError;
+
+        const { error: secretError } = await admin.rpc("set_paymongo_webhook_secret", {
+          p_restaurant_id: restaurantId,
+          p_secret: webhookSecret,
+          p_environment: "test",
+        });
+        if (secretError) throw secretError;
+      }
+
+      const { error: activateError } = await admin.from("restaurant_paymongo_accounts").update({
+        paymongo_account_id: paymongoAccountId,
+        connection_status: "active",
+        activation_status: "activated",
+        identity_verification_status: "simulated",
+        onboarding_step: "active",
+        webhook_id: webhookId,
+        last_error: null,
+      }).eq("restaurant_id", restaurantId).eq("environment", "test");
+      if (activateError) throw activateError;
+
       return jsonResponse({
         status: "active",
         paymongoAccountId,
         activationStatus: "activated",
         verificationUrl: null,
+        webhookConfigured: true,
         testMode: true,
       });
     }
