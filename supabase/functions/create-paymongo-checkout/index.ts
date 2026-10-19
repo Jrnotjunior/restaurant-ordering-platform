@@ -216,7 +216,7 @@ Deno.serve(async (request) => {
         data: {
           attributes: {
             line_items: lineItems,
-            payment_method_types: ["card", "gcash", "qrph", "grab_pay", "paymaya", "billease", "dob"],
+            payment_method_types: ["gcash", "qrph", "grab_pay", "paymaya"],
             description: [
               `Online payment for ${pendingPayment.reference_number}`,
               `Subtotal PHP ${Number(pendingPayment.subtotal).toFixed(2)}`,
