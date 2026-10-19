@@ -98,6 +98,9 @@ CREATE TRIGGER restaurants_create_initial_branch
 AFTER INSERT ON public.restaurants
 FOR EACH ROW EXECUTE FUNCTION public.create_initial_restaurant_branch();
 
+-- These helpers are invoked by triggers only; they must not be exposed as RPCs.
+REVOKE ALL ON FUNCTION public.create_initial_restaurant_branch() FROM PUBLIC, anon, authenticated;
+
 -- Additive branch references. Existing operational rows are assigned to the
 -- default branch before NOT NULL constraints are enforced.
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS branch_id uuid;
@@ -192,6 +195,9 @@ DROP TRIGGER IF EXISTS delivery_quotes_assign_default_branch ON public.delivery_
 CREATE TRIGGER delivery_quotes_assign_default_branch
 BEFORE INSERT ON public.delivery_quotes
 FOR EACH ROW EXECUTE FUNCTION public.assign_default_branch_before_insert();
+
+-- Do not expose trigger implementation details via PostgREST RPC.
+REVOKE ALL ON FUNCTION public.assign_default_branch_before_insert() FROM PUBLIC, anon, authenticated;
 
 ALTER TABLE public.restaurant_branches ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS restaurant_branches_public_active_read ON public.restaurant_branches;
