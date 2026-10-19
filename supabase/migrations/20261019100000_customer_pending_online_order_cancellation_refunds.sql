@@ -51,8 +51,8 @@ BEGIN
     RAISE EXCEPTION 'Orders can only be cancelled before the restaurant confirms them' USING ERRCODE = '23514';
   END IF;
 
-  IF v_order.payment_status = 'paid' AND v_order.payment_method <> 'gcash' THEN
-    RAISE EXCEPTION 'This payment type requires restaurant assistance before cancellation' USING ERRCODE = '23514';
+  IF v_order.payment_status = 'paid' AND NULLIF(trim(v_order.paymongo_payment_id), '') IS NULL THEN
+    RAISE EXCEPTION 'The online payment reference is missing. Please contact the restaurant for a refund.' USING ERRCODE = '23514';
   END IF;
 
   IF v_order.payment_status NOT IN ('pending', 'paid') THEN
