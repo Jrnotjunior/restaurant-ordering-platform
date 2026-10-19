@@ -622,7 +622,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           store_address: address.trim() || null,
           operating_hours: normalizedHours,
           ordering_enabled: orderingEnabled,
-          online_payment_methods: onlinePaymentMethods,
           tax_vat_registered: vatRegistered,
           tax_prices_vat_inclusive: vatRegistered ? pricesVatInclusive : false,
           tax_vat_rate: vatRegistered ? parsedVatRate : 0,
@@ -632,6 +631,21 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .eq('id', restaurantId);
 
       if (saveError) throw saveError;
+
+      // Save payment methods through an owner-scoped RPC. A direct PostgREST
+      // UPDATE may return no error when RLS filters the row, leaving settings unchanged.
+      const { data: savedPaymentMethodRows, error: paymentMethodsSaveError } = await supabase.rpc('update_restaurant_online_payment_methods', {
+        p_restaurant_id: restaurantId,
+        p_methods: onlinePaymentMethods,
+      });
+      if (paymentMethodsSaveError) throw paymentMethodsSaveError;
+      const savedPaymentMethodRow = Array.isArray(savedPaymentMethodRows) ? savedPaymentMethodRows[0] : null;
+      if (
+        !savedPaymentMethodRow ||
+        JSON.stringify(normalizeOnlinePaymentMethods(savedPaymentMethodRow.online_payment_methods)) !== JSON.stringify(onlinePaymentMethods)
+      ) {
+        throw new Error('Online payment methods were not saved exactly as selected. Please try again.');
+      }
 
       const { error: taglineSaveError } = await supabase.rpc('update_restaurant_tagline', {
         p_restaurant_id: restaurantId,
