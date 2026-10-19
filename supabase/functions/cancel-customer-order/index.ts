@@ -149,9 +149,12 @@ Deno.serve(async (request) => {
       return jsonResponse({ cancelled: true, refundStatus: "not_required", message: "Your order has been cancelled." }, 200);
     }
 
+    const configuredPayMongoEnvironment = String(Deno.env.get("PAYMONGO_ENVIRONMENT") ?? "").trim();
+    const legacyPayMongoKey = Deno.env.get("PAYMONGO_SECRET_KEY") ?? "";
     const environment: "test" | "live" =
-      String(Deno.env.get("PAYMONGO_ENVIRONMENT") ?? "").trim() === "live" ||
-      (Deno.env.get("PAYMONGO_SECRET_KEY") ?? "").startsWith("sk_live_") ? "live" : "test";
+      configuredPayMongoEnvironment === "live" || configuredPayMongoEnvironment === "test"
+        ? configuredPayMongoEnvironment
+        : legacyPayMongoKey.startsWith("sk_live_") ? "live" : "test";
     const secretKey = getPayMongoSecretKey(environment);
     if (!secretKey) {
       await admin.from("orders").update({
