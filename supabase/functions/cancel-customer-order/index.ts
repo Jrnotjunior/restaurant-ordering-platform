@@ -165,22 +165,32 @@ Deno.serve(async (request) => {
     }
 
     const { data: connection, error: connectionError } = await admin.from("restaurant_paymongo_accounts")
-      .select("paymongo_account_id,connection_status,environment")
+      .select("paymongo_account_id,connection_status,environment,onboarding_step")
       .eq("restaurant_id", order.restaurant_id).eq("environment", environment).maybeSingle();
     if (connectionError) throw connectionError;
     const accountId = String(connection?.paymongo_account_id ?? "").trim();
-    if (!connection || connection.connection_status !== "active" || !accountId) {
+    const isTestSimulation =
+      environment === "test" &&
+      connection?.onboarding_step === "test_simulation";
+
+    if (!connection || (!isTestSimulation && (
+      connection.connection_status !== "active" || !accountId
+    )) || (isTestSimulation && connection.connection_status !== "pending")) {
       await admin.from("orders").update({
         cancellation_refund_status: "failed",
-        cancellation_refund_error: "The restaurant's linked PayMongo child account is missing or inactive; refund was not sent to the parent account.",
+        cancellation_refund_error: "The restaurant's PayMongo connection is missing or inactive; refund was not sent through an unverified account.",
       }).eq("id", orderId);
-      return jsonResponse({ cancelled: true, refundStatus: "failed", message: "Order cancelled, but the restaurant's PayMongo child account could not be verified for the refund. Please contact the restaurant." }, 200);
+      return jsonResponse({ cancelled: true, refundStatus: "failed", message: "Order cancelled, but the restaurant's PayMongo connection could not be verified for the refund. Please contact the restaurant." }, 200);
     }
 
     const headers: Record<string, string> = {
       Authorization: `Basic ${btoa(`${secretKey}:`)}`,
       "Content-Type": "application/json",
-      "Account-ID": accountId,
+      // In test simulation only, the payment was intentionally created against
+      // the parent test account because PayMongo returns mock child IDs. Refund
+      // using that same parent test context. Production always requires the
+      // actual tenant child ID above.
+      ...(!isTestSimulation && accountId ? { "Account-ID": accountId } : {}),
     };
 
     try {
