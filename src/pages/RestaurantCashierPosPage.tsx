@@ -403,7 +403,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
           {loading ? <div className="restaurant-pos-empty">Loading menu…</div> : (
             <div className="restaurant-pos-products">
               {visibleProducts.map((product) => (
-                <button key={product.id} type="button" className={`restaurant-pos-product${product.isAvailable ? '' : ' is-sold-out'}`} onClick={() => addProduct(product)} disabled={!product.isAvailable} aria-label={product.isAvailable ? `Add ${product.name}` : `${product.name} is sold out`}>
+                <button key={product.id} type="button" className={`restaurant-pos-product${product.isAvailable ? '' : ' is-sold-out'}`} onClick={() => addProduct(product)} disabled={!selectedBranch || branchesLoading || Boolean(branchesError) || !product.isAvailable} aria-label={product.isAvailable ? `Add ${product.name}` : `${product.name} is sold out`}>
                   <span className="restaurant-pos-product-image-wrap">
                     {product.imageUrl
                       ? <img className="restaurant-pos-product-image" src={product.imageUrl} alt="" loading="lazy" />
