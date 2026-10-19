@@ -46,7 +46,7 @@ Deno.serve(async (request) => {
     else if (identityStatus === "failed") onboardingStep = "identity_verification";
     if (activationStatus === "activated") {
       let webhookId = String(connection.webhook_id ?? "").trim();
-      if (!webhookId) {
+      if (!webhookId || !connection.webhook_secret_id) {
         const webhookResponse = await fetch("https://api.paymongo.com/v1/webhooks", {
           method: "POST",
           headers: {
