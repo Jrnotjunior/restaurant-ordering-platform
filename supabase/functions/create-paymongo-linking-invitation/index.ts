@@ -72,165 +72,76 @@ Deno.serve(async (request) => {
     }
 
     if (environment === "test") {
-      let paymongoAccountId = String(existing?.paymongo_account_id ?? "").trim();
+      // PayMongo explicitly returns mock account resources when test keys are
+      // used. The mock ID (often org_test_merchant) is not a real linked child
+      // relationship, so do not try to register a child webhook or mark the
+      // mock as a connected merchant. Save a clearly labeled sandbox simulation
+      // instead; checkout/refunds will run against the parent test account only.
+      let mockAccountId = String(existing?.paymongo_account_id ?? "").trim();
 
-      if (!paymongoAccountId) {
+      if (!mockAccountId) {
         const createResponse = await fetch("https://api.paymongo.com/v2/accounts", {
           method: "POST",
           headers: {
             Authorization: `Basic ${btoa(`${key}:`)}`,
             "Content-Type": "application/json",
-            "Idempotency-Key": `restaurant-paymongo-account-${restaurantId}-${environment}`,
+            "Idempotency-Key": `restaurant-paymongo-account-${restaurantId}-test`,
           },
           body: JSON.stringify({ type: "merchant" }),
         });
-
         const createPayload = await createResponse.json().catch(() => null);
         if (!createResponse.ok) {
           const detail = createPayload?.errors?.[0]?.detail;
-          console.error("PayMongo test child account creation error", {
-            status: createResponse.status,
-            detail: typeof detail === "string" ? detail : null,
-          });
           return jsonResponse({
-            error: typeof detail === "string" ? detail : `PayMongo test child account creation returned HTTP ${createResponse.status}.`,
+            error: typeof detail === "string" ? detail : `PayMongo test account simulation returned HTTP ${createResponse.status}.`,
           }, 502);
         }
-
-        paymongoAccountId = String(createPayload?.data?.id ?? "").trim();
-        if (!paymongoAccountId) {
-          return jsonResponse({ error: "PayMongo did not return a test child account ID." }, 502);
+        mockAccountId = String(createPayload?.data?.id ?? "").trim();
+        if (!mockAccountId) {
+          return jsonResponse({ error: "PayMongo did not return its test-mode mock account response." }, 502);
         }
       }
 
       const accountResponse = await fetch(
-        `https://api.paymongo.com/v2/accounts/${encodeURIComponent(paymongoAccountId)}`,
+        `https://api.paymongo.com/v2/accounts/${encodeURIComponent(mockAccountId)}`,
         { headers: { Authorization: `Basic ${btoa(`${key}:`)}`, Accept: "application/json" } },
       );
       const accountPayload = await accountResponse.json().catch(() => null);
       if (!accountResponse.ok) {
         const detail = accountPayload?.errors?.[0]?.detail;
         return jsonResponse({
-          error: typeof detail === "string" ? detail : "Unable to verify the PayMongo test child account.",
+          error: typeof detail === "string" ? detail : "Unable to verify PayMongo's test-mode mock response.",
         }, 502);
       }
 
-      // PayMongo test Accounts API returns mock accounts. Persist the mock child
-      // ID server-side so checkout/refund requests can actually send Account-ID.
-      // A mock ID must not be shared across tenants in Web2Table's mapping.
-      const { data: accountOwner, error: accountOwnerError } = await admin
-        .from("restaurant_paymongo_accounts")
-        .select("restaurant_id")
-        .eq("paymongo_account_id", paymongoAccountId)
-        .maybeSingle();
-      if (accountOwnerError) throw accountOwnerError;
-      if (accountOwner && accountOwner.restaurant_id !== restaurantId) {
-        return jsonResponse({
-          error: "PayMongo returned a test-mode mock child account ID already assigned to another restaurant. Test one tenant at a time; live child accounts receive separate IDs.",
-        }, 409);
-      }
-
-      const { error: saveAccountError } = await admin.from("restaurant_paymongo_accounts").upsert({
+      const { error: saveError } = await admin.from("restaurant_paymongo_accounts").upsert({
         restaurant_id: restaurantId,
         environment: "test",
-        paymongo_account_id: paymongoAccountId,
+        // Never persist the shared mock ID as a real child ID. It is not a
+        // relationship and would collide across independent tenants.
+        paymongo_account_id: null,
         connection_status: "pending",
         onboarding_method: "create_account",
         invitation_id: null,
         invitation_email: null,
-        activation_status: "activated",
+        activation_status: "mock",
         identity_verification_status: "simulated",
-        onboarding_step: "webhook_configuration",
-        last_error: null,
+        onboarding_step: "test_simulation",
+        webhook_id: null,
+        webhook_secret_id: null,
+        last_error: "Sandbox-only simulation. PayMongo test keys return mock accounts and do not establish a real child relationship. Checkout/refunds use the parent test account; child routing is not verified.",
       }, { onConflict: "restaurant_id,environment" });
-      if (saveAccountError) throw saveAccountError;
-
-      let webhookId = String(existing?.webhook_id ?? "").trim();
-      const hasStoredWebhookSecret = Boolean(existing?.webhook_secret_id);
-      if (!webhookId || !hasStoredWebhookSecret) {
-        const webhookResponse = await fetch("https://api.paymongo.com/v1/webhooks", {
-          method: "POST",
-          headers: {
-            Authorization: `Basic ${btoa(`${key}:`)}`,
-            "Content-Type": "application/json",
-            "Account-ID": paymongoAccountId,
-            "Idempotency-Key": `restaurant-paymongo-webhook-${restaurantId}-test`,
-          },
-          body: JSON.stringify({
-            data: {
-              attributes: {
-                url: `${supabaseUrl}/functions/v1/paymongo-webhook`,
-                events: [
-                  "checkout_session.payment.paid",
-                  "payment.failed",
-                  "payment.refunded",
-                  "refund.created",
-                  "refund.updated",
-                  "refund.succeeded",
-                  "refund.failed",
-                ],
-              },
-            },
-          }),
-        });
-        const webhookPayload = await webhookResponse.json().catch(() => null);
-        if (!webhookResponse.ok) {
-          const detail = webhookPayload?.errors?.[0]?.detail;
-          const message = typeof detail === "string"
-            ? detail
-            : `PayMongo test child webhook creation returned HTTP ${webhookResponse.status}.`;
-          await admin.from("restaurant_paymongo_accounts").update({
-            connection_status: "pending",
-            onboarding_step: "webhook_configuration",
-            last_error: message,
-          }).eq("restaurant_id", restaurantId).eq("environment", "test");
-          return jsonResponse({ error: message, paymongoAccountId }, 502);
-        }
-
-        webhookId = String(webhookPayload?.data?.id ?? "").trim();
-        const webhookSecret = String(webhookPayload?.data?.attributes?.secret_key ?? "").trim();
-        if (!webhookId || !webhookSecret) {
-          await admin.from("restaurant_paymongo_accounts").update({
-            connection_status: "pending",
-            onboarding_step: "webhook_configuration",
-            last_error: "PayMongo did not return test child webhook credentials.",
-          }).eq("restaurant_id", restaurantId).eq("environment", "test");
-          return jsonResponse({ error: "PayMongo did not return test child webhook credentials.", paymongoAccountId }, 502);
-        }
-
-        const { error: saveWebhookIdError } = await admin.from("restaurant_paymongo_accounts").update({
-          webhook_id: webhookId,
-          connection_status: "pending",
-          onboarding_step: "webhook_configuration",
-        }).eq("restaurant_id", restaurantId).eq("environment", "test");
-        if (saveWebhookIdError) throw saveWebhookIdError;
-
-        const { error: secretError } = await admin.rpc("set_paymongo_webhook_secret", {
-          p_restaurant_id: restaurantId,
-          p_secret: webhookSecret,
-          p_environment: "test",
-        });
-        if (secretError) throw secretError;
-      }
-
-      const { error: activateError } = await admin.from("restaurant_paymongo_accounts").update({
-        paymongo_account_id: paymongoAccountId,
-        connection_status: "active",
-        activation_status: "activated",
-        identity_verification_status: "simulated",
-        onboarding_step: "active",
-        webhook_id: webhookId,
-        last_error: null,
-      }).eq("restaurant_id", restaurantId).eq("environment", "test");
-      if (activateError) throw activateError;
+      if (saveError) throw saveError;
 
       return jsonResponse({
-        status: "active",
-        paymongoAccountId,
-        activationStatus: "activated",
-        verificationUrl: null,
-        webhookConfigured: true,
+        status: "simulated",
+        paymongoAccountId: null,
+        activationStatus: "mock",
+        onboardingStep: "test_simulation",
+        webhookConfigured: false,
         testMode: true,
+        linkedTransactionsSupported: false,
+        message: "Test simulation is ready. Payments and refunds use Web2Table's parent test account; this does not verify PayMongo child-account routing.",
       });
     }
 
