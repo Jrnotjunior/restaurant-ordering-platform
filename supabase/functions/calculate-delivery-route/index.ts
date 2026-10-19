@@ -43,11 +43,12 @@ Deno.serve(async (req) => {
   }
 
   const { data: restaurant, error: restaurantError } = await admin.from("restaurants")
-    .select("id,is_active")
+    .select("id,is_active,ordering_enabled")
     .eq("id", restaurantId).single();
 
   if (restaurantError || !restaurant) return json({ error: "Restaurant could not be loaded." }, 404);
   if (!restaurant.is_active) return json({ error: "Restaurant is not available." }, 409);
+  if (restaurant.ordering_enabled === false) return json({ error: "This restaurant has paused online ordering." }, 409);
 
   const requestedBranchId = String(payload.branchId ?? "").trim();
   let branchQuery = admin.from("restaurant_branches")

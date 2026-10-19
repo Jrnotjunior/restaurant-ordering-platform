@@ -282,9 +282,15 @@ BEGIN
   SELECT b.* INTO v_branch
   FROM public.restaurant_branches b
   JOIN public.restaurants r ON r.id = b.restaurant_id
-  WHERE b.id = p_branch_id AND b.restaurant_id = p_restaurant_id AND r.is_active = true;
+  WHERE b.id = p_branch_id
+    AND b.restaurant_id = p_restaurant_id
+    AND r.is_active = true
+    AND coalesce(r.ordering_enabled, true) = true;
 
-  IF NOT FOUND OR NOT v_branch.is_active THEN
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Restaurant is not accepting orders';
+  END IF;
+  IF NOT v_branch.is_active THEN
     RAISE EXCEPTION 'Selected restaurant branch is not available';
   END IF;
   IF NOT v_branch.ordering_enabled THEN

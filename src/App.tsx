@@ -226,7 +226,8 @@ function AppContent() {
 
   async function addToCart(product: RestaurantProduct) {
     if (!selectedBranch) return;
-    const storeOpen = selectedBranch.ordering_enabled !== false
+    const storeOpen = restaurant.orderingEnabled !== false
+      && selectedBranch.ordering_enabled !== false
       && isRestaurantCurrentlyOpen(selectedBranch.operating_hours as RestaurantConfig['operatingHours'] | undefined);
 
     if (!storeOpen) {
