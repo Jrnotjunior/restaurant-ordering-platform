@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-const cors = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type","Access-Control-Allow-Methods":"POST, OPTIONS"};
+const cors = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type, x-restaurant-domain","Access-Control-Allow-Methods":"POST, OPTIONS"};
 const out=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,"Content-Type":"application/json"}});
 function serviceKey(){try{return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")??"{}").default??Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??""}catch{return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??""}}
 function payKey(env:"test"|"live"){if(env==="live"){const k=Deno.env.get("PAYMONGO_LIVE_SECRET_KEY")??"";if(k)return k;const old=Deno.env.get("PAYMONGO_SECRET_KEY")??"";return old.startsWith("sk_live_")?old:""}return Deno.env.get("PAYMONGO_TEST_SECRET_KEY")??Deno.env.get("PAYMONGO_SECRET_KEY")??""}
