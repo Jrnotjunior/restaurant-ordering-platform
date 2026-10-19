@@ -261,7 +261,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [paymongoTestAccountId, setPaymongoTestAccountId] = useState("");
   const [paymongoTestInvitationId, setPaymongoTestInvitationId] = useState("");
   const [paymongoTestSignupUrl, setPaymongoTestSignupUrl] = useState("");
-  const paymongoTestStorageKey = `web2table.paymongo.test.${restaurantId}`;
   const [paymongoBusy, setPaymongoBusy] = useState(false);
   const [paymongoError, setPaymongoError] = useState('');
 
@@ -342,31 +341,21 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
       const { data: paymongoConnection, error: paymongoError } = await supabase
         .from('restaurant_paymongo_accounts')
-        .select('connection_status,paymongo_account_id,invitation_id')
+        .select('connection_status,paymongo_account_id,invitation_id,webhook_secret_id')
         .eq('restaurant_id', restaurantId)
         .eq('environment', 'test')
         .maybeSingle();
 
       if (paymongoError) throw paymongoError;
-      const simulatedTestAccount = (() => {
-        try {
-          const raw = window.localStorage.getItem(paymongoTestStorageKey);
-          return raw ? JSON.parse(raw) as { accountId?: string; status?: string } : null;
-        } catch {
-          return null;
-        }
-      })();
-
-      if (paymongoConnection?.connection_status && paymongoConnection.connection_status !== 'not_connected') {
-        setPaymongoTestStatus(paymongoConnection.connection_status);
-        setPaymongoTestAccountId(paymongoConnection.paymongo_account_id ?? '');
-      } else if (simulatedTestAccount?.status === 'active' && simulatedTestAccount.accountId) {
-        setPaymongoTestStatus('active');
-        setPaymongoTestAccountId(simulatedTestAccount.accountId);
-      } else {
-        setPaymongoTestStatus('not_connected');
-        setPaymongoTestAccountId('');
-      }
+      const testConnectionReady = Boolean(
+        paymongoConnection?.connection_status === 'active' &&
+        paymongoConnection.paymongo_account_id &&
+        paymongoConnection.webhook_secret_id
+      );
+      setPaymongoTestStatus(testConnectionReady
+        ? 'active'
+        : paymongoConnection?.connection_status ?? 'not_connected');
+      setPaymongoTestAccountId(paymongoConnection?.paymongo_account_id ?? '');
       setPaymongoTestInvitationId(paymongoConnection?.invitation_id ?? '');
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load store settings.');
@@ -415,12 +404,8 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       setPaymongoTestInvitationId(data?.invitationId ?? '');
       setPaymongoTestSignupUrl(data?.signupUrl ?? data?.verificationUrl ?? '');
 
-      if (data?.testMode && data?.paymongoAccountId) {
-        window.localStorage.setItem(paymongoTestStorageKey, JSON.stringify({
-          accountId: data.paymongoAccountId,
-          status: 'active',
-        }));
-        setMessage('PayMongo test connection is ready. Test mode uses a simulated merchant account; no real identity verification is required.');
+      if (data?.testMode && data?.paymongoAccountId && data?.webhookConfigured) {
+        setMessage('PayMongo test child account is connected in Supabase and ready for linked checkout/refund simulation.');
       } else {
         const onboardingUrl = data?.signupUrl ?? data?.verificationUrl ?? '';
         if (onboardingUrl) window.open(onboardingUrl, '_blank', 'noopener,noreferrer');
@@ -442,43 +427,33 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     setPaymongoBusy(true);
     setPaymongoError('');
     try {
-      const simulatedTestAccount = (() => {
-        try {
-          const raw = window.localStorage.getItem(paymongoTestStorageKey);
-          return raw ? JSON.parse(raw) as { accountId?: string; status?: string } : null;
-        } catch {
-          return null;
-        }
-      })();
+      const { data, error: connectionError } = await supabase
+        .from('restaurant_paymongo_accounts')
+        .select('connection_status,paymongo_account_id,invitation_id,webhook_secret_id')
+        .eq('restaurant_id', restaurantId)
+        .eq('environment', 'test')
+        .maybeSingle();
+      if (connectionError) throw connectionError;
 
-      if (simulatedTestAccount?.status === 'active' && simulatedTestAccount.accountId) {
-        setPaymongoTestStatus('active');
-        setPaymongoTestAccountId(simulatedTestAccount.accountId);
-        setPaymongoTestInvitationId('');
-        setPaymongoTestSignupUrl('');
-        setMessage('PayMongo test connection is ready. Test mode uses a simulated merchant account; no real identity verification is required.');
-        return;
-      }
+      const ready = Boolean(
+        data?.connection_status === 'active' &&
+        data.paymongo_account_id &&
+        data.webhook_secret_id
+      );
+      setPaymongoTestStatus(ready ? 'active' : data?.connection_status ?? 'not_connected');
+      setPaymongoTestAccountId(data?.paymongo_account_id ?? '');
+      setPaymongoTestInvitationId(data?.invitation_id ?? '');
+      setPaymongoTestSignupUrl('');
 
-      const { data, error: invokeError } = await supabase.functions.invoke('sync-paymongo-linking-invitation', {
-        body: { restaurantId, environment: 'test' },
-      });
-      if (invokeError) throw invokeError;
-      setPaymongoTestStatus(data?.status ?? 'not_connected');
-      setPaymongoTestAccountId(data?.paymongoAccountId ?? '');
-      if (data?.status === 'active') {
-        setMessage('PayMongo test account is connected and ready for online payments.');
-      } else {
-        setMessage(data?.activationStatus ? `PayMongo onboarding status: ${data.activationStatus}.` : 'PayMongo onboarding is still in progress.');
-      }
+      setMessage(ready
+        ? 'PayMongo test child account is connected in Supabase and ready for linked checkout/refund simulation.'
+        : 'The PayMongo test child account is not fully connected yet. Complete the connection before testing checkout.');
     } catch (syncError) {
       setPaymongoError(syncError instanceof Error ? syncError.message : 'Unable to check PayMongo onboarding.');
     } finally {
       setPaymongoBusy(false);
     }
   }
-
-
 
   async function startPayMongoLiveConnection() {
     if (!supabase) {
