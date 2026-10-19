@@ -1,6 +1,71 @@
 import { supabase, supabaseRpc } from '../../services/supabaseClient';
 import type { PosDiscountType } from '../../types/discount';
 
+const GUEST_CANCEL_TOKEN_STORAGE_PREFIX = 'restaurant-ordering-guest-cancel-token:';
+
+function bytesToHex(bytes: Uint8Array): string {
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+async function createGuestCancelToken(): Promise<{ token: string; tokenHash: string }> {
+  const secureCrypto = globalThis.crypto;
+  if (!secureCrypto?.getRandomValues || !secureCrypto.subtle) {
+    throw new Error('Your browser cannot create a secure cancellation token. Please update your browser before placing an order.');
+  }
+
+  const randomBytes = new Uint8Array(32);
+  secureCrypto.getRandomValues(randomBytes);
+  const token = bytesToHex(randomBytes);
+  const digest = await secureCrypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
+  return { token, tokenHash: bytesToHex(new Uint8Array(digest)) };
+}
+
+export function hasGuestOrderCancellationToken(orderId: string): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return Boolean(
+      window.localStorage.getItem(`${GUEST_CANCEL_TOKEN_STORAGE_PREFIX}${orderId}`) ||
+      window.sessionStorage.getItem(`${GUEST_CANCEL_TOKEN_STORAGE_PREFIX}${orderId}`)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function readGuestOrderCancellationToken(orderId: string): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.localStorage.getItem(`${GUEST_CANCEL_TOKEN_STORAGE_PREFIX}${orderId}`) ||
+      window.sessionStorage.getItem(`${GUEST_CANCEL_TOKEN_STORAGE_PREFIX}${orderId}`);
+  } catch {
+    return null;
+  }
+}
+
+function saveGuestOrderCancellationToken(orderId: string, token: string): void {
+  if (typeof window === 'undefined') return;
+  const key = `${GUEST_CANCEL_TOKEN_STORAGE_PREFIX}${orderId}`;
+  try {
+    window.localStorage.setItem(key, token);
+    return;
+  } catch {
+    // Private browsing configurations can block localStorage; try per-tab storage.
+  }
+  try {
+    window.sessionStorage.setItem(key, token);
+  } catch {
+    // Keep checkout operational if browser storage is blocked. This order will
+    // still be tracked normally, but guest cancellation won't be available here.
+  }
+}
+
+function clearGuestOrderCancellationToken(orderId: string): void {
+  if (typeof window === 'undefined') return;
+  const key = `${GUEST_CANCEL_TOKEN_STORAGE_PREFIX}${orderId}`;
+  try { window.localStorage.removeItem(key); } catch { /* ignore unavailable storage */ }
+  try { window.sessionStorage.removeItem(key); } catch { /* ignore unavailable storage */ }
+}
+
 export type RestaurantOrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'completed' | 'cancelled';
 export type RestaurantPaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 
@@ -160,9 +225,10 @@ type TrackedOrderRow = {
 };
 
 export async function createOrder(input: CreateOrderInput): Promise<CreatedOrder> {
+  const guestCancelToken = await createGuestCancelToken();
   const rpcName = input.orderType === 'delivery' && !input.isThirdPartyCourier
-    ? 'create_order_from_delivery_quote'
-    : 'create_order';
+    ? 'create_order_from_delivery_quote_with_guest_cancel_token'
+    : 'create_order_with_guest_cancel_token';
 
   const rpcParams = input.orderType === 'delivery' && !input.isThirdPartyCourier
     ? {
@@ -182,6 +248,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreatedOrder
         p_customer_delivery_longitude: input.customerDeliveryLongitude ?? null,
         p_customer_delivery_place_id: input.customerDeliveryPlaceId || null,
         p_delivery_quote_id: input.deliveryQuoteId || null,
+        p_guest_cancel_token_hash: guestCancelToken.tokenHash,
       }
     : {
         p_restaurant_id: input.restaurantId,
@@ -201,12 +268,15 @@ export async function createOrder(input: CreateOrderInput): Promise<CreatedOrder
         p_customer_delivery_latitude: input.customerDeliveryLatitude ?? null,
         p_customer_delivery_longitude: input.customerDeliveryLongitude ?? null,
         p_customer_delivery_place_id: input.customerDeliveryPlaceId || null,
+        p_guest_cancel_token_hash: guestCancelToken.tokenHash,
       };
 
   const rows = await supabaseRpc<CreatedOrderRow>(rpcName, rpcParams);
 
   const row = rows[0];
   if (!row) throw new Error('The order could not be created. Please try again.');
+
+  saveGuestOrderCancellationToken(row.order_id, guestCancelToken.token);
 
   return {
     orderId: row.order_id,
@@ -401,8 +471,9 @@ export async function sendOrderToKitchen(orderId: string) {
 
 export async function cancelMyPendingOrder(orderId: string): Promise<{ message: string; refundStatus: string }> {
   if (!supabase) throw new Error('Order cancellation is unavailable. Please try again later.');
+  const guestCancelToken = readGuestOrderCancellationToken(orderId);
   const { data, error } = await supabase.functions.invoke('cancel-customer-order', {
-    body: { orderId },
+    body: { orderId, guestCancelToken },
   });
   if (error) {
     const context = (error as { context?: { json?: () => Promise<{ error?: string }> } }).context;
@@ -412,6 +483,7 @@ export async function cancelMyPendingOrder(orderId: string): Promise<{ message: 
   if (!data || data.cancelled !== true) {
     throw new Error(typeof data?.error === 'string' ? data.error : 'Unable to cancel this order.');
   }
+  clearGuestOrderCancellationToken(orderId);
   return {
     message: typeof data.message === 'string' ? data.message : 'Your order has been cancelled.',
     refundStatus: typeof data.refundStatus === 'string' ? data.refundStatus : 'not_required',
