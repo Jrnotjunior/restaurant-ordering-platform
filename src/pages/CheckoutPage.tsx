@@ -386,7 +386,7 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
           };
           setSelectedDeliveryLocation(savedLocation);
           setDeliveryRouteError('');
-          if (!branchBelongsToRestaurant(branch, currentRestaurantId)) {
+          if (!branch || !branchBelongsToRestaurant(branch, currentRestaurantId)) {
             setDeliveryRouteQuote(null);
             setDeliveryRouteLoading(false);
             setDeliveryRouteError('The selected branch is not available for this restaurant. Refresh checkout and select the branch again.');
@@ -792,7 +792,7 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
                   setDeliveryRouteError('');
 
                   if (thirdPartyCourierDelivery) return;
-                  if (!branchBelongsToRestaurant(branch, restaurantId)) {
+                  if (!branch || !branchBelongsToRestaurant(branch, restaurantId)) {
                     setDeliveryRouteError('The selected branch is not available for this restaurant. Refresh checkout and select the branch again.');
                     return;
                   }
