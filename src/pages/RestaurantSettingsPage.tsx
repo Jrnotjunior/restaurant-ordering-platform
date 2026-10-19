@@ -989,10 +989,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
               </label>
             ))}
           </div>
-          <div style={{ marginTop: 20 }}>
-            <h2>PayMongo Online Payments</h2>
-            <p className="restaurant-settings-help">Each restaurant connects its own PayMongo merchant account. Web2Table does not ask you to paste a PayMongo secret key into the website.</p>
-          </div>
         </div>}
 
                 {hasOnlinePayments && <div id="store-live-payments" hidden={activeSettingsTab !== 'payments'}><PayMongoLiveOnboardingCard restaurantId={restaurantId} /></div>}
