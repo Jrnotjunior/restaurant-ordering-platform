@@ -7,7 +7,7 @@ function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
-async function createGuestCancelToken(): Promise<{ token: string; tokenHash: string }> {
+export async function createGuestOrderCancellationToken(): Promise<{ token: string; tokenHash: string }> {
   const secureCrypto = globalThis.crypto;
   if (!secureCrypto?.getRandomValues || !secureCrypto.subtle) {
     throw new Error('Your browser cannot create a secure cancellation token. Please update your browser before placing an order.');
@@ -42,7 +42,7 @@ function readGuestOrderCancellationToken(orderId: string): string | null {
   }
 }
 
-function saveGuestOrderCancellationToken(orderId: string, token: string): void {
+export function saveGuestOrderCancellationToken(orderId: string, token: string): void {
   if (typeof window === 'undefined') return;
   const key = `${GUEST_CANCEL_TOKEN_STORAGE_PREFIX}${orderId}`;
   try {
@@ -59,11 +59,24 @@ function saveGuestOrderCancellationToken(orderId: string, token: string): void {
   }
 }
 
-function clearGuestOrderCancellationToken(orderId: string): void {
+export function clearGuestOrderCancellationToken(orderId: string): void {
   if (typeof window === 'undefined') return;
   const key = `${GUEST_CANCEL_TOKEN_STORAGE_PREFIX}${orderId}`;
   try { window.localStorage.removeItem(key); } catch { /* ignore unavailable storage */ }
   try { window.sessionStorage.removeItem(key); } catch { /* ignore unavailable storage */ }
+}
+
+/**
+ * Move the guest's temporary online-payment token onto the finalized order ID.
+ * This preserves the raw capability in this browser only; the database stores
+ * only its SHA-256 hash.
+ */
+export function linkGuestOrderCancellationTokenToOrder(paymentReferenceNumber: string, orderId: string): void {
+  const temporaryOrderKey = `payment:${paymentReferenceNumber}`;
+  const token = readGuestOrderCancellationToken(temporaryOrderKey);
+  if (!token) return;
+  saveGuestOrderCancellationToken(orderId, token);
+  clearGuestOrderCancellationToken(temporaryOrderKey);
 }
 
 export type RestaurantOrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'completed' | 'cancelled';
@@ -225,7 +238,7 @@ type TrackedOrderRow = {
 };
 
 export async function createOrder(input: CreateOrderInput): Promise<CreatedOrder> {
-  const guestCancelToken = await createGuestCancelToken();
+  const guestCancelToken = await createGuestOrderCancellationToken();
   const rpcName = input.orderType === 'delivery' && !input.isThirdPartyCourier
     ? 'create_order_from_delivery_quote_with_guest_cancel_token'
     : 'create_order_with_guest_cancel_token';
