@@ -24,7 +24,8 @@ CREATE TABLE IF NOT EXISTS public.restaurant_branches (
   delivery_max_distance_meters integer NOT NULL DEFAULT 10000 CHECK (delivery_max_distance_meters > 0),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (restaurant_id, branch_code)
+  UNIQUE (restaurant_id, branch_code),
+  UNIQUE (id, restaurant_id)
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS restaurant_branches_one_default_per_restaurant
@@ -122,15 +123,15 @@ DO $constraints$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'orders_branch_id_fkey' AND conrelid = 'public.orders'::regclass) THEN
     ALTER TABLE public.orders ADD CONSTRAINT orders_branch_id_fkey
-      FOREIGN KEY (branch_id) REFERENCES public.restaurant_branches(id) ON DELETE RESTRICT;
+      FOREIGN KEY (branch_id, restaurant_id) REFERENCES public.restaurant_branches(id, restaurant_id) ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED;
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'pending_online_payments_branch_id_fkey' AND conrelid = 'public.pending_online_payments'::regclass) THEN
     ALTER TABLE public.pending_online_payments ADD CONSTRAINT pending_online_payments_branch_id_fkey
-      FOREIGN KEY (branch_id) REFERENCES public.restaurant_branches(id) ON DELETE RESTRICT;
+      FOREIGN KEY (branch_id, restaurant_id) REFERENCES public.restaurant_branches(id, restaurant_id) ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED;
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'delivery_quotes_branch_id_fkey' AND conrelid = 'public.delivery_quotes'::regclass) THEN
     ALTER TABLE public.delivery_quotes ADD CONSTRAINT delivery_quotes_branch_id_fkey
-      FOREIGN KEY (branch_id) REFERENCES public.restaurant_branches(id) ON DELETE RESTRICT;
+      FOREIGN KEY (branch_id, restaurant_id) REFERENCES public.restaurant_branches(id, restaurant_id) ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED;
   END IF;
 END;
 $constraints$;
