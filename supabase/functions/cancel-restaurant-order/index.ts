@@ -48,7 +48,8 @@ Deno.serve(async req=>{
   const failed=async(msg:string)=>{await db.from("orders").update({cancellation_refund_status:"failed",cancellation_refund_error:msg.slice(0,500),updated_at:new Date().toISOString()}).eq("id",id);return out({cancelled:true,refundStatus:"failed",message:"Order cancelled, but the automatic refund failed. Please arrange/check the refund in PayMongo."})};
   if(!secret)return await failed("PayMongo secret key is not configured for this environment.");
   const isTestSimulation=env==="test"&&conn?.onboarding_step==="test_simulation";
-  const acct=String(conn?.paymongo_account_id??"").trim();
+  // Sandbox mock only: exercises Account-ID request handling, not real child routing.
+  const acct=isTestSimulation?"org_test_merchant":String(conn?.paymongo_account_id??"").trim();
   if(conn&&((!isTestSimulation&&conn.connection_status!=="active")||(isTestSimulation&&conn.connection_status!=="pending")||!acct))return await failed("Restaurant PayMongo account is not active.");
   const headers:Record<string,string>={Authorization:"Basic "+btoa(secret+":"),"Content-Type":"application/json",...(acct?{"Account-ID":acct}:{})};
   try{
