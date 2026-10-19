@@ -77,7 +77,7 @@ Deno.serve(async (request) => {
     let guestTokenHash: string | null = null;
     if (order.customer_id === null) {
       if (!/^[0-9a-f]{64}$/.test(guestCancelToken)) {
-        return jsonResponse({ error: "This older guest order has no secure cancellation token. Please contact the restaurant to cancel it." }, 403);
+        return jsonResponse({ error: "Guest cancellation could not be verified in this browser. Please reopen the order in the browser where you placed it." }, 403);
       }
       const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(guestCancelToken));
       guestTokenHash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
