@@ -528,7 +528,7 @@ function AppContent() {
       ? <section className="order-tracking-page"><div className="order-tracking-card"><h1>Branches unavailable</h1><p role="alert">{branchesError}</p><p>Ordering is paused until the branch configuration can be verified.</p></div></section>
       : branches.length === 0
         ? <section className="order-tracking-page"><div className="order-tracking-card"><h1>No active branches</h1><p>This restaurant has no active branch available for ordering. Please contact the restaurant.</p></div></section>
-        : <><BranchSelector branches={branches} selectedBranch={selectedBranch} onSelect={handleSelectBranch} disabled={route === '#checkout'} />{selectedBranch ? publicContent : null}</>;
+        : <><BranchSelector branches={branches} selectedBranch={selectedBranch} onSelect={handleSelectBranch} disabled={Boolean(selectedBranch && route === '#checkout')} />{selectedBranch ? publicContent : null}</>;
 
   const publicPage = <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount} compactPublicChrome>{branchAwarePublicContent}{showStoreClosedModal ? (
     <div className="restaurant-closed-modal-backdrop" role="presentation" onClick={() => setShowStoreClosedModal(false)}>
