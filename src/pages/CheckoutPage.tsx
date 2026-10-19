@@ -873,7 +873,6 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
             <div className="payment-review-row"><span>Delivery fee</span><strong>₱{pendingPaymentReview.deliveryFee.toFixed(2)}</strong></div>
             <div className="payment-review-total"><span>Total due</span><strong>₱{pendingPaymentReview.total.toFixed(2)}</strong></div>
           </div>
-          <p className="payment-review-note">Your original item prices are unchanged. The loyalty discount is shown separately and is not deducted from any individual product.</p>
           <section className="payment-review-refund-policy" aria-labelledby="payment-review-refund-policy-title">
             <h3 id="payment-review-refund-policy-title">Cancellation &amp; Refund Policy</h3>
             <p>You may cancel your order while its status is Pending. Once the restaurant confirms the order or sends it to the kitchen, cancellation is no longer available.</p>
