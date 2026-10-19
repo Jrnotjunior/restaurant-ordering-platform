@@ -184,6 +184,52 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: message }, status);
     };
 
+    if (eventType === "refund.succeeded" || eventType === "payment.refund.updated") {
+      const refund = session;
+      const refundId = String(refund?.id ?? "").trim();
+      const refundStatus = String(refund?.attributes?.status ?? "").trim();
+      const paymentId = String(refund?.attributes?.payment_id ?? "").trim();
+      if (!refundId || !paymentId) {
+        return await rejectWebhookEvent(400, "Refund webhook is missing its refund or payment ID.");
+      }
+
+      const { data: matchingOrder, error: matchingOrderError } = await adminClient
+        .from("orders")
+        .select("id,paymongo_payment_id,paymongo_refund_id")
+        .eq("paymongo_payment_id", paymentId)
+        .maybeSingle();
+      if (matchingOrderError) throw matchingOrderError;
+
+      if (matchingOrder) {
+        const normalizedStatus = refundStatus === "succeeded"
+          ? "succeeded"
+          : refundStatus === "failed"
+            ? "failed"
+            : ["pending", "processing"].includes(refundStatus)
+              ? refundStatus
+              : null;
+        if (normalizedStatus) {
+          const updates: Record<string, unknown> = {
+            paymongo_refund_id: refundId,
+            cancellation_refund_status: normalizedStatus,
+            cancellation_refund_error: normalizedStatus === "failed" ? "PayMongo reported that the refund failed." : null,
+            updated_at: new Date().toISOString(),
+          };
+          if (normalizedStatus === "succeeded") updates.payment_status = "refunded";
+          const { error: refundUpdateError } = await adminClient.from("orders")
+            .update(updates)
+            .eq("id", matchingOrder.id)
+            .eq("status", "cancelled");
+          if (refundUpdateError) throw refundUpdateError;
+        }
+      }
+
+      await adminClient.from("paymongo_webhook_events")
+        .update({ status: "processed", processed_at: new Date().toISOString(), last_error: null })
+        .eq("event_id", eventId);
+      return jsonResponse({ received: true, refundStatus }, 200);
+    }
+
     if (
       eventType !== "checkout_session.payment.paid" &&
       eventType !== "checkout_session.payment.failed" &&
