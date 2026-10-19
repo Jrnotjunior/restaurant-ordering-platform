@@ -836,6 +836,11 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
               </button>;
             })}
           </div>
+          {paymentMethod === 'cash' && <section className="payment-review-refund-policy" aria-labelledby="cash-cancellation-policy-title">
+            <h3 id="cash-cancellation-policy-title">Cancellation &amp; Refund Policy</h3>
+            <p>You may cancel your order while its status is Pending. Once the restaurant confirms the order or sends it to the kitchen, cancellation is no longer available.</p>
+            <p>Cash orders remain pending until the cashier confirms your payment. If an eligible online-paid order is cancelled while Pending, a refund will be requested through the payment provider. Refund availability and processing times depend on the payment method and provider.</p>
+          </section>}
           {submitError && <p className="checkout-error" role="alert">{submitError}</p>}
           <div className="payment-modal-actions">
             <button className="button button-secondary" type="button" onClick={() => setShowPaymentModal(false)} disabled={isSubmitting}>Cancel</button>
