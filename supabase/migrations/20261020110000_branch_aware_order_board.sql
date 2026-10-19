@@ -81,4 +81,4 @@ AS $function$
 $function$;
 
 REVOKE ALL ON FUNCTION public.get_restaurant_orders_with_branch(uuid, uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_restaurant_orders_with_branch(uuid, uuid) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_restaurant_orders_with_branch(uuid, uuid) TO authenticated;
