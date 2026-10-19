@@ -133,11 +133,10 @@ Deno.serve(async (request) => {
       paymongoConnection.onboarding_step === "test_simulation";
 
     if (isTestSimulation) {
-      // Test API keys return a mock child ID rather than a real relationship.
-      // Allow checkout only through the parent test account in this explicitly
-      // labeled mode. No Account-ID header is sent, and this is not evidence of
-      // real tenant-level PayMongo settlement.
-      if (paymongoConnection.connection_status !== "pending") {
+      // Use PayMongo's sandbox child-account context for the simulation. This
+      // exercises the same Account-ID routing contract used for live tenants,
+      // while remaining test-only and not proving real settlement.
+      if (paymongoConnection.connection_status !== "pending" || !String(paymongoConnection.paymongo_account_id ?? "").trim()) {
         return jsonResponse({ error: "The PayMongo test simulation is not in a valid state." }, 409);
       }
     } else {
@@ -152,9 +151,7 @@ Deno.serve(async (request) => {
       }
     }
 
-    const linkedPayMongoAccountId = isTestSimulation
-      ? ""
-      : String(paymongoConnection.paymongo_account_id).trim();
+    const linkedPayMongoAccountId = String(paymongoConnection.paymongo_account_id ?? "").trim();
     if (pendingPayment.checkout_url) {
       return jsonResponse({ checkoutUrl: pendingPayment.checkout_url }, 200);
     }
