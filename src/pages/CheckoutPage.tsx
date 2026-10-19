@@ -874,6 +874,11 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
             <div className="payment-review-total"><span>Total due</span><strong>₱{pendingPaymentReview.total.toFixed(2)}</strong></div>
           </div>
           <p className="payment-review-note">Your original item prices are unchanged. The loyalty discount is shown separately and is not deducted from any individual product.</p>
+          <section className="payment-review-refund-policy" aria-labelledby="payment-review-refund-policy-title">
+            <h3 id="payment-review-refund-policy-title">Cancellation &amp; Refund Policy</h3>
+            <p>You may cancel your order while its status is Pending. Once the restaurant confirms the order or sends it to the kitchen, cancellation is no longer available.</p>
+            <p>For eligible online-paid orders cancelled while Pending, a refund will be requested through the payment provider. Refund availability and processing times depend on the payment method and provider.</p>
+          </section>
           {submitError && <p className="checkout-error" role="alert">{submitError}</p>}
           <div className="payment-modal-actions">
             <button className="button button-secondary" type="button" onClick={handleCancelPaymentReview} disabled={isSubmitting}>Back to checkout</button>
