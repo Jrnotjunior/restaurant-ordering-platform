@@ -1,4 +1,9 @@
 import { supabase } from '../../services/supabaseClient';
+import {
+  createGuestOrderCancellationToken,
+  linkGuestOrderCancellationTokenToOrder,
+  saveGuestOrderCancellationToken,
+} from '../ordering/orderRepository';
 
 export type PendingOnlinePaymentInput = {
   restaurantId: string;
@@ -39,9 +44,10 @@ export type OnlinePaymentStatus = {
 export async function createPendingOnlinePayment(input: PendingOnlinePaymentInput): Promise<PendingOnlinePayment> {
   if (!supabase) throw new Error('Supabase environment variables are not configured.');
 
+  const guestCancelToken = await createGuestOrderCancellationToken();
   const rpcName = input.orderType === 'delivery' && !input.isThirdPartyCourier
-    ? 'create_pending_online_payment_from_delivery_quote'
-    : 'create_pending_online_payment';
+    ? 'create_pending_online_payment_from_delivery_quote_with_guest_cancel_token'
+    : 'create_pending_online_payment_with_guest_cancel_token';
 
   const rpcParams = input.orderType === 'delivery' && !input.isThirdPartyCourier
     ? {
@@ -61,6 +67,7 @@ export async function createPendingOnlinePayment(input: PendingOnlinePaymentInpu
         p_customer_delivery_longitude: input.customerDeliveryLongitude ?? null,
         p_customer_delivery_place_id: input.customerDeliveryPlaceId || null,
         p_delivery_quote_id: input.deliveryQuoteId || null,
+        p_guest_cancel_token_hash: guestCancelToken.tokenHash,
       }
     : {
         p_restaurant_id: input.restaurantId,
@@ -80,6 +87,7 @@ export async function createPendingOnlinePayment(input: PendingOnlinePaymentInpu
         p_customer_delivery_latitude: input.customerDeliveryLatitude ?? null,
         p_customer_delivery_longitude: input.customerDeliveryLongitude ?? null,
         p_customer_delivery_place_id: input.customerDeliveryPlaceId || null,
+        p_guest_cancel_token_hash: guestCancelToken.tokenHash,
       };
 
   const { data, error } = await supabase.rpc(rpcName, rpcParams);
@@ -87,6 +95,10 @@ export async function createPendingOnlinePayment(input: PendingOnlinePaymentInpu
   if (error) throw new Error(error.message || 'Unable to prepare online payment.');
   const row = Array.isArray(data) ? data[0] : null;
   if (!row) throw new Error('The online payment could not be prepared. Please try again.');
+
+  // Keep the raw token in this browser under the payment reference while the
+  // customer is redirected to PayMongo. Only its hash is stored server-side.
+  saveGuestOrderCancellationToken(`payment:${row.reference_number}`, guestCancelToken.token);
 
   return {
     paymentId: row.payment_id,
@@ -108,10 +120,15 @@ export async function getOnlinePaymentStatus(referenceNumber: string): Promise<O
   const row = Array.isArray(data) ? data[0] : null;
   if (!row) throw new Error('Online payment not found.');
 
+  const orderId = row.order_id ?? null;
+  if (row.status === 'paid' && orderId) {
+    linkGuestOrderCancellationTokenToOrder(referenceNumber, orderId);
+  }
+
   return {
     status: row.status,
     orderNumber: row.order_number ?? null,
-    orderId: row.order_id ?? null,
+    orderId,
     total: Number(row.total),
   };
 }
