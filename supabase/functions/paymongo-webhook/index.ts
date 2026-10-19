@@ -184,13 +184,21 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: message }, status);
     };
 
-    if (["refund.succeeded", "refund.updated", "refund.failed", "refund.created", "payment.refund.updated"].includes(eventType)) {
+    if (["payment.refunded", "refund.succeeded", "refund.updated", "refund.failed", "refund.created", "payment.refund.updated"].includes(eventType)) {
+      // PayMongo's payment.refunded event carries a Payment resource; refund
+      // events carry a Refund resource. Handle both shapes explicitly.
+      const isPaymentRefundedEvent = eventType === "payment.refunded";
       const refund = session;
-      const refundId = String(refund?.id ?? "").trim();
-      const refundStatus = String(refund?.attributes?.status ?? "").trim();
-      const paymentId = String(refund?.attributes?.payment_id ?? refund?.attributes?.payment?.id ?? "").trim();
-      if (!refundId || !paymentId) {
-        return await rejectWebhookEvent(400, "Refund webhook is missing its refund or payment ID.");
+      const resourceId = String(refund?.id ?? "").trim();
+      const refundStatus = isPaymentRefundedEvent
+        ? "succeeded"
+        : String(refund?.attributes?.status ?? "").trim();
+      const paymentId = isPaymentRefundedEvent
+        ? resourceId
+        : String(refund?.attributes?.payment_id ?? refund?.attributes?.payment?.id ?? "").trim();
+
+      if (!resourceId || !paymentId) {
+        return await rejectWebhookEvent(400, "Refund webhook is missing its refund/payment resource ID.");
       }
 
       const { data: matchingOrder, error: matchingOrderError } = await adminClient
@@ -201,7 +209,7 @@ Deno.serve(async (request) => {
       if (matchingOrderError) throw matchingOrderError;
 
       if (matchingOrder) {
-        const normalizedStatus = refundStatus === "succeeded"
+        const normalizedStatus = ["succeeded", "refunded"].includes(refundStatus)
           ? "succeeded"
           : refundStatus === "failed"
             ? "failed"
@@ -210,11 +218,13 @@ Deno.serve(async (request) => {
               : null;
         if (normalizedStatus) {
           const updates: Record<string, unknown> = {
-            paymongo_refund_id: refundId,
             cancellation_refund_status: normalizedStatus,
             cancellation_refund_error: normalizedStatus === "failed" ? "PayMongo reported that the refund failed." : null,
             updated_at: new Date().toISOString(),
           };
+          // A payment.refunded event identifies the payment, not the refund.
+          // Preserve a refund ID already stored by the cancellation function.
+          if (!isPaymentRefundedEvent) updates.paymongo_refund_id = resourceId;
           if (normalizedStatus === "succeeded") updates.payment_status = "refunded";
           const { error: refundUpdateError } = await adminClient.from("orders")
             .update(updates)
@@ -224,9 +234,10 @@ Deno.serve(async (request) => {
         }
       }
 
-      await adminClient.from("paymongo_webhook_events")
+      const { error: auditError } = await adminClient.from("paymongo_webhook_events")
         .update({ status: "processed", processed_at: new Date().toISOString(), last_error: null })
         .eq("event_id", eventId);
+      if (auditError) throw auditError;
       return jsonResponse({ received: true, refundStatus }, 200);
     }
 
