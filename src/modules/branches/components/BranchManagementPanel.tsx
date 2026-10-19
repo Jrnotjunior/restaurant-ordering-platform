@@ -6,10 +6,10 @@ import {
 import type { BranchDayHours, RestaurantBranch, RestaurantBranchDraft } from '../branchTypes';
 import '../branch.css';
 
-type Props = { restaurantId: string };
+type Props = { restaurantId: string; refreshToken?: number; onBranchSettingsChanged?: () => void | Promise<void> };
 const numberOrNull = (value: string) => value.trim() === '' ? null : Number(value);
 
-export function BranchManagementPanel({ restaurantId }: Props) {
+export function BranchManagementPanel({ restaurantId, refreshToken = 0, onBranchSettingsChanged }: Props) {
   const [branches, setBranches] = useState<RestaurantBranch[]>([]);
   const [draft, setDraft] = useState<RestaurantBranchDraft | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export function BranchManagementPanel({ restaurantId }: Props) {
     }
   }
 
-  useEffect(() => { void reload(); }, [restaurantId]);
+  useEffect(() => { void reload(); }, [restaurantId, refreshToken]);
 
   function startNew() {
     setEditingId(null);
@@ -68,6 +68,7 @@ export function BranchManagementPanel({ restaurantId }: Props) {
       return;
     }
     if (!draft.name.trim()) { setError('Enter a branch name.'); return; }
+    if (!draft.store_address.trim() && !draft.restaurant_address.trim()) { setError('Enter this branch’s store / pickup address before saving.'); return; }
     const lat = draft.delivery_location_latitude;
     const lng = draft.delivery_location_longitude;
     if ((lat === null) !== (lng === null)) {
@@ -105,6 +106,7 @@ export function BranchManagementPanel({ restaurantId }: Props) {
       setEditingId(null);
       await reload();
       setMessage(editingId ? 'Branch settings saved.' : 'Branch created.');
+      await onBranchSettingsChanged?.();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Unable to save branch.');
     } finally {
@@ -121,6 +123,7 @@ export function BranchManagementPanel({ restaurantId }: Props) {
       await setDefaultRestaurantBranch(restaurantId, branch.id);
       await reload();
       setMessage(`${branch.name} is now the default branch.`);
+      await onBranchSettingsChanged?.();
     } catch (defaultBranchError) {
       setError(defaultBranchError instanceof Error ? defaultBranchError.message : 'Unable to change the default branch.');
     } finally {

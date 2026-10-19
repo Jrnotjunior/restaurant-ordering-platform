@@ -250,6 +250,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [error, setError] = useState('');
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
   const [activeSettingsTab, setActiveSettingsTab] = useState('profile');
+  const [branchSettingsRevision, setBranchSettingsRevision] = useState(0);
   const [hasDispatchDelivery, setHasDispatchDelivery] = useState(false);
   const [hasSelfOrdering, setHasSelfOrdering] = useState(true);
   const [hasOnlinePayments, setHasOnlinePayments] = useState(true);
@@ -634,6 +635,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       setRestaurantAddress(savedRow?.restaurant_address ?? restaurantAddress.trim());
       setHours(savedHours);
       setMessage('Store settings saved successfully.');
+      setBranchSettingsRevision((revision) => revision + 1);
       setUnsavedChanges(false);
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Unable to save store settings.');
@@ -1005,7 +1007,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
                 {hasOnlinePayments && <div id="store-live-payments" hidden={activeSettingsTab !== 'payments'}><PayMongoLiveOnboardingCard restaurantId={restaurantId} /></div>}
 
         <div className="restaurant-settings-card" id="store-branches" role="tabpanel" aria-labelledby="store-settings-tab-branches" hidden={activeSettingsTab !== 'branches'}>
-          <BranchManagementPanel restaurantId={restaurantId} />
+          <BranchManagementPanel restaurantId={restaurantId} refreshToken={branchSettingsRevision} onBranchSettingsChanged={loadSettings} />
         </div>
 
         <div className="restaurant-settings-card" id="store-tax" role="tabpanel" aria-labelledby="store-settings-tab-tax" hidden={activeSettingsTab !== 'tax'}>
