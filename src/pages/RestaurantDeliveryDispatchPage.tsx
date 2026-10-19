@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { assignDelivery, completeDispatchHandoff, getDispatchData, subscribeToDispatchChanges, type DispatchTab, type ReadyOrder, type Rider } from '../modules/dispatch/dispatchService';
+import { useRestaurantBranches } from '../modules/branches/useRestaurantBranches';
+import { BranchSelector } from '../modules/branches/components/BranchSelector';
 
 type Props = { restaurantId: string; role?: 'owner' | 'dispatcher' };
 
 export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }: Props) {
+  const { branches, selectedBranch, selectBranch, loading: branchesLoading, error: branchesError } = useRestaurantBranches(restaurantId);
+  const branchId = selectedBranch?.id ?? null;
   const [orders, setOrders] = useState<ReadyOrder[]>([]);
   const [activeTab, setActiveTab] = useState<DispatchTab>('delivery');
   const [riders, setRiders] = useState<Rider[]>([]);
@@ -14,9 +18,10 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
   const [error, setError] = useState('');
   const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
   async function loadDispatchData() {
+    if (!branchId) { setOrders([]); setLoading(false); return; }
     try {
       setError('');
-      const data = await getDispatchData(restaurantId);
+      const data = await getDispatchData(restaurantId, branchId);
       setOrders(data.orders);
       setRiders(data.riders);
     } catch (loadError) {
@@ -27,6 +32,16 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
   }
 
   useEffect(() => {
+    if (branchesLoading) {
+      setLoading(true);
+      return;
+    }
+    if (branchesError || !branchId) {
+      setOrders([]);
+      setRiders([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     void loadDispatchData();
 
@@ -52,7 +67,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
       window.clearInterval(refreshInterval);
       unsubscribe?.();
     };
-  }, [restaurantId]);
+  }, [restaurantId, branchId, branchesLoading, branchesError]);
 
   const deliveryOrders = useMemo(
     () => orders.filter((order) => order.orderType === 'delivery' && order.riderId === null),
@@ -129,6 +144,7 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
         </span>
       </header>}
 
+      {branchesLoading ? <div className="restaurant-dispatch-message">Loading branches…</div> : branchesError ? <div className="restaurant-dispatch-message" role="alert">Branch configuration could not be loaded; dispatch is paused until it can be verified. {branchesError}</div> : branches.length === 0 ? <div className="restaurant-dispatch-message" role="alert">No active branch is configured for this business.</div> : <BranchSelector branches={branches} selectedBranch={selectedBranch} onSelect={(id) => { selectBranch(id); setSelectedOrder(null); }} />}
       {error ? <div className="restaurant-dispatch-message" role="alert">{error}</div> : null}
 
       <main className="restaurant-dispatch-workflow">
