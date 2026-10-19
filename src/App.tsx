@@ -37,8 +37,6 @@ import { RiderDeliveryPage } from './pages/RiderDeliveryPage';
 import { RiderDashboardPage } from './pages/RiderDashboardPage';
 import { TenantOnboardingPage } from './pages/TenantOnboardingPage';
 import { TenantInviteLandingPage } from './pages/TenantInviteLandingPage';
-import { PlatformSaaSPage } from './pages/PlatformSaaSPage';
-import { isParentSaaSDomain } from './app/routing/platformDomain';
 import { defaultRestaurant } from './config/defaultRestaurant';
 import { currentRestaurantLookup } from './config/restaurant';
 import { SupabaseRestaurantRepository } from './modules/restaurant/supabaseRestaurantRepository';
@@ -195,12 +193,6 @@ function AppContent() {
 
     let cancelled = false;
     const hostname = window.location.hostname.trim().toLowerCase();
-    if (isParentSaaSDomain(hostname)) {
-      // The parent app host is the SaaS control plane, not a restaurant storefront.
-      // Tenant configuration is resolved only on tenant domains.
-      setRestaurantResolved(true);
-      return () => { cancelled = true; };
-    }
     const configuredSlug = currentRestaurantLookup.slug;
     const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
     // GitHub Pages hosts the app under a shared github.io hostname, not the
@@ -337,17 +329,6 @@ function AppContent() {
 
   const isCustomerConfirmationCallback = isCustomerEmailConfirmationPage
     || new URLSearchParams(window.location.search).get('customer-confirmation') === '1';
-
-  // app.web2table.io is always the SaaS control plane, not a tenant storefront.
-  // Preserve explicit invitation, password-recovery, and email-confirmation callbacks.
-  if (
-    isParentSaaSDomain(window.location.hostname)
-    && !isCustomerPasswordResetPage
-    && !isCustomerForgotPasswordPage
-    && !isCustomerConfirmationCallback
-  ) {
-    return <PlatformSaaSPage />;
-  }
 
   if (isCustomerPasswordResetPage) return <CustomerPasswordRecoveryPage mode="reset" />;
   if (isCustomerForgotPasswordPage) return <CustomerPasswordRecoveryPage mode="request" />;
