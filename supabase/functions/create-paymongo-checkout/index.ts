@@ -47,13 +47,14 @@ function getRestaurantSiteBaseUrl(customDomain: unknown): string | null {
 }
 
 function getPayMongoSecretKey(environment: "test" | "live") {
-  if (environment === "live") {
-    const live = Deno.env.get("PAYMONGO_LIVE_SECRET_KEY") ?? "";
-    if (live) return live;
-    const legacy = Deno.env.get("PAYMONGO_SECRET_KEY") ?? "";
-    return legacy.startsWith("sk_live_") ? legacy : "";
-  }
-  return Deno.env.get("PAYMONGO_TEST_SECRET_KEY") ?? Deno.env.get("PAYMONGO_SECRET_KEY") ?? "";
+  const dedicated = environment === "live"
+    ? Deno.env.get("PAYMONGO_LIVE_SECRET_KEY") ?? ""
+    : Deno.env.get("PAYMONGO_TEST_SECRET_KEY") ?? "";
+  const expectedPrefix = environment === "live" ? "sk_live_" : "sk_test_";
+  if (dedicated.startsWith(expectedPrefix)) return dedicated;
+
+  const legacy = Deno.env.get("PAYMONGO_SECRET_KEY") ?? "";
+  return legacy.startsWith(expectedPrefix) ? legacy : "";
 }
 
 Deno.serve(async (request) => {
