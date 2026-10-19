@@ -252,17 +252,11 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [hasDispatchDelivery, setHasDispatchDelivery] = useState(false);
   const [hasSelfOrdering, setHasSelfOrdering] = useState(true);
   const [hasOnlinePayments, setHasOnlinePayments] = useState(true);
-  const [paymongoTestStatus, setPaymongoTestStatus] = useState("not_connected");
   const [paymongoLiveStatus, setPaymongoLiveStatus] = useState("not_connected");
   const [paymongoLiveAccountId, setPaymongoLiveAccountId] = useState("");
   const [paymongoLiveVerificationUrl, setPaymongoLiveVerificationUrl] = useState("");
   const [paymongoLiveStep, setPaymongoLiveStep] = useState("");
   const [paymongoLiveIdentityStatus, setPaymongoLiveIdentityStatus] = useState("");
-  const [paymongoTestAccountId, setPaymongoTestAccountId] = useState("");
-  const [paymongoTestInvitationId, setPaymongoTestInvitationId] = useState("");
-  const [paymongoTestSignupUrl, setPaymongoTestSignupUrl] = useState("");
-  const [paymongoBusy, setPaymongoBusy] = useState(false);
-  const [paymongoError, setPaymongoError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -339,30 +333,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       setDeliveryLocationLatitude(data?.delivery_location_latitude ?? null);
       setDeliveryLocationLongitude(data?.delivery_location_longitude ?? null);
 
-      const { data: paymongoConnection, error: paymongoError } = await supabase
-        .from('restaurant_paymongo_accounts')
-        .select('connection_status,paymongo_account_id,invitation_id,webhook_secret_id,onboarding_step')
-        .eq('restaurant_id', restaurantId)
-        .eq('environment', 'test')
-        .maybeSingle();
-
-      if (paymongoError) throw paymongoError;
-      const testConnectionSimulated = paymongoConnection?.onboarding_step === 'test_simulation';
-      const testConnectionReady = Boolean(
-        paymongoConnection?.connection_status === 'active' &&
-        paymongoConnection.paymongo_account_id &&
-        paymongoConnection.webhook_secret_id
-      );
-      setPaymongoTestStatus(testConnectionSimulated
-        ? 'simulated'
-        : testConnectionReady
-          ? 'active'
-          : paymongoConnection?.connection_status ?? 'not_connected');
-      setPaymongoTestAccountId(paymongoConnection?.paymongo_account_id ?? '');
-      setPaymongoTestInvitationId(paymongoConnection?.invitation_id ?? '');
-      if (testConnectionSimulated) {
-        setMessage('Test simulation is ready. Payments and refunds use Web2Table’s parent test account; actual PayMongo child-account routing is not being tested.');
-      }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load store settings.');
     } finally {
@@ -373,98 +343,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   useEffect(() => {
     void loadSettings();
   }, [restaurantId]);
-
-  async function startPayMongoTestConnection() {
-    if (!supabase) {
-      setPaymongoError('Supabase is not configured.');
-      return;
-    }
-
-    setPaymongoBusy(true);
-    setPaymongoError('');
-    setMessage('');
-    try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError || !userData.user?.email) throw new Error('Your account email could not be determined.');
-
-      const { data, error: invokeError } = await supabase.functions.invoke('create-paymongo-linking-invitation', {
-        body: {
-          restaurantId,
-          environment: 'test',
-          email: userData.user.email,
-        },
-      });
-
-      if (invokeError) {
-        const response = (invokeError as { context?: Response }).context;
-        if (response) {
-          const responseBody = await response.clone().json().catch(() => null);
-          if (typeof responseBody?.error === 'string' && responseBody.error.trim()) {
-            throw new Error(responseBody.error);
-          }
-        }
-        throw invokeError;
-      }
-      setPaymongoTestStatus(data?.status ?? 'active');
-      setPaymongoTestAccountId(data?.paymongoAccountId ?? '');
-      setPaymongoTestInvitationId(data?.invitationId ?? '');
-      setPaymongoTestSignupUrl(data?.signupUrl ?? data?.verificationUrl ?? '');
-
-      if (data?.status === 'simulated') {
-        setMessage(data?.message ?? 'Test simulation is ready. It does not verify real child-account routing.');
-      } else if (data?.testMode && data?.paymongoAccountId && data?.webhookConfigured) {
-        setMessage('PayMongo test child account is connected and ready for linked checkout/refund simulation.');
-      } else {
-        const onboardingUrl = data?.signupUrl ?? data?.verificationUrl ?? '';
-        if (onboardingUrl) window.open(onboardingUrl, '_blank', 'noopener,noreferrer');
-        setMessage(
-          data?.verificationUrl
-            ? 'PayMongo test identity verification is ready. Complete the verification flow in the PayMongo window.'
-            : 'PayMongo test onboarding link is ready. Complete the PayMongo signup, then return here and check the connection.',
-        );
-      }
-    } catch (connectError) {
-      setPaymongoError(connectError instanceof Error ? connectError.message : 'Unable to start PayMongo onboarding.');
-    } finally {
-      setPaymongoBusy(false);
-    }
-  }
-
-  async function syncPayMongoTestConnection() {
-    if (!supabase) return;
-    setPaymongoBusy(true);
-    setPaymongoError('');
-    try {
-      const { data, error: connectionError } = await supabase
-        .from('restaurant_paymongo_accounts')
-        .select('connection_status,paymongo_account_id,invitation_id,webhook_secret_id,onboarding_step')
-        .eq('restaurant_id', restaurantId)
-        .eq('environment', 'test')
-        .maybeSingle();
-      if (connectionError) throw connectionError;
-
-      const simulated = data?.onboarding_step === 'test_simulation';
-      const ready = Boolean(
-        data?.connection_status === 'active' &&
-        data.paymongo_account_id &&
-        data.webhook_secret_id
-      );
-      setPaymongoTestStatus(simulated ? 'simulated' : ready ? 'active' : data?.connection_status ?? 'not_connected');
-      setPaymongoTestAccountId(data?.paymongo_account_id ?? '');
-      setPaymongoTestInvitationId(data?.invitation_id ?? '');
-      setPaymongoTestSignupUrl('');
-
-      setMessage(simulated
-        ? 'Test simulation is ready. Checkout/refunds use the Web2Table parent test account; real child-account routing is not verified.'
-        : ready
-          ? 'PayMongo test child account is connected and ready for linked checkout/refund simulation.'
-          : 'The PayMongo test connection is not fully connected yet. Complete the connection before testing checkout.');
-    } catch (syncError) {
-      setPaymongoError(syncError instanceof Error ? syncError.message : 'Unable to check PayMongo onboarding.');
-    } finally {
-      setPaymongoBusy(false);
-    }
-  }
 
   async function startPayMongoLiveConnection() {
     if (!supabase) {
@@ -1076,10 +954,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         </div>
 
                 {hasOnlinePayments && <div className="restaurant-settings-card restaurant-paymongo-card" id="store-payments" role="tabpanel" aria-labelledby="store-settings-tab-payments" hidden={activeSettingsTab !== 'payments'}>
-          {paymongoError && <div className="restaurant-paymongo-error" role="alert">
-            <strong>PayMongo connection error</strong>
-            <span>{paymongoError}</span>
-          </div>}
           <h2>Accepted Payment Methods</h2>
           <p className="restaurant-settings-help">Choose which methods this restaurant accepts. These settings apply only to this restaurant; each tenant manages its own options. A method must also be supported by its connected PayMongo account.</p>
           <div className="restaurant-settings-tax-grid" style={{ marginTop: 14 }}>
@@ -1117,48 +991,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
             <h2>PayMongo Online Payments</h2>
             <p className="restaurant-settings-help">Each restaurant connects its own PayMongo merchant account. Web2Table does not ask you to paste a PayMongo secret key into the website.</p>
           </div>
-          <div className="restaurant-paymongo-status">
-            <div>
-              <strong>Test environment</strong>
-              <span className={`restaurant-paymongo-badge is-${paymongoTestStatus}`}>{paymongoTestStatus.replace('_', ' ')}</span>
-            </div>
-            {paymongoTestAccountId && <small>Connected account: {paymongoTestAccountId}</small>}
-            {paymongoTestInvitationId && !paymongoTestAccountId && <small>Invitation: {paymongoTestInvitationId}</small>}
-          </div>
-          <div className="restaurant-paymongo-actions">
-            {(paymongoTestStatus === 'not_connected' || paymongoTestStatus === 'error' || paymongoTestStatus === 'revoked') && (
-              <button type="button" className="button button-primary restaurant-compact-action" disabled={paymongoBusy || loading || saving} onClick={() => void startPayMongoTestConnection()}>
-                {paymongoBusy ? 'Starting…' : 'Connect PayMongo'}
-              </button>
-            )}
-            {paymongoTestStatus === 'pending' && (
-              <>
-                {paymongoTestSignupUrl && (
-                  <a className="button button-secondary restaurant-compact-action" href={paymongoTestSignupUrl} target="_blank" rel="noreferrer">
-                    {paymongoTestInvitationId ? 'Open PayMongo' : 'Open Verification'}
-                  </a>
-                )}
-                <button type="button" className="button button-primary" disabled={paymongoBusy || loading || saving} onClick={() => void startPayMongoTestConnection()}>
-                  {paymongoBusy ? 'Checking…' : 'Refresh Test Connection'}
-                </button>
-              </>
-            )}
-            {paymongoTestStatus === 'linked' && (
-              <button type="button" className="button button-primary restaurant-compact-action" disabled={paymongoBusy} onClick={() => void syncPayMongoTestConnection()}>
-                {paymongoBusy ? 'Checking…' : 'Finish Connection'}
-              </button>
-            )}
-            {(paymongoTestStatus === 'active' || paymongoTestStatus === 'simulated') && (
-              <button type="button" className="button button-secondary restaurant-compact-action" disabled={paymongoBusy} onClick={() => void syncPayMongoTestConnection()}>
-                {paymongoBusy ? 'Checking…' : paymongoTestStatus === 'simulated' ? 'Refresh Test Simulation' : 'Refresh Status'}
-              </button>
-            )}
-          </div>
-          {paymongoTestStatus === 'simulated' ? (
-            <p className="restaurant-settings-help" style={{ marginTop: 12 }}>Sandbox simulation only: checkout and refund tests use Web2Table’s parent Test Mode account because PayMongo’s test API returns mock child accounts. This does not prove PayMongo parent–child routing or separate settlement. Production requires a real linked child account.</p>
-          ) : (
-            <p className="restaurant-settings-help" style={{ marginTop: 12 }}>Use Test Mode to verify the checkout flow safely. Real child-account routing is only verified when PayMongo has an actual linked child relationship. Production live payments require merchant onboarding and activation.</p>
-          )}
         </div>}
 
                 {hasOnlinePayments && <div id="store-live-payments" hidden={activeSettingsTab !== 'payments'}><PayMongoLiveOnboardingCard restaurantId={restaurantId} /></div>}
