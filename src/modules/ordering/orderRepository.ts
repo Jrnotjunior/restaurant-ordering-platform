@@ -451,3 +451,16 @@ export function subscribeToOrderTrackingChanges(
     if (supabase) void supabase.removeChannel(channel);
   };
 }
+
+
+export async function cancelRestaurantOrder(orderId: string): Promise<{ message: string; refundStatus: string }> {
+  if (!supabase) throw new Error('Order cancellation is unavailable. Please try again later.');
+  const { data, error } = await supabase.functions.invoke('cancel-restaurant-order', { body: { orderId } });
+  if (error) {
+    const context = (error as { context?: { json?: () => Promise<{ error?: string }> } }).context;
+    const payload = await context?.json?.().catch(() => null);
+    throw new Error(payload?.error || error.message || 'Unable to cancel this order.');
+  }
+  if (!data || data.cancelled !== true) throw new Error(typeof data?.error === 'string' ? data.error : 'Unable to cancel this order.');
+  return { message: String(data.message || 'Order cancelled.'), refundStatus: String(data.refundStatus || 'not_required') };
+}
