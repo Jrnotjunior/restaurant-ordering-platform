@@ -1,6 +1,7 @@
 export {
   createOrder,
   cancelMyPendingOrder,
+  hasGuestOrderCancellationToken,
   getOrderStatus,
   getRestaurantOrders,
   updateOrderStatus,
