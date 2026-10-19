@@ -334,18 +334,25 @@ function AppContent() {
   if (isTenantInvitePage) return <TenantOnboardingPage />;
   if (isEmployeeInvitePage) return <RestaurantEmployeeInvitePage />;
   if (isLegacyEmployeeInvitePage) return <RestaurantEmployeeInvitePage />;
+
+  const isCustomerConfirmationCallback = isCustomerEmailConfirmationPage
+    || new URLSearchParams(window.location.search).get('customer-confirmation') === '1';
+
+  // app.web2table.io is always the SaaS control plane, not a tenant storefront.
+  // Preserve explicit invitation, password-recovery, and email-confirmation callbacks.
+  if (
+    isParentSaaSDomain(window.location.hostname)
+    && !isCustomerPasswordResetPage
+    && !isCustomerForgotPasswordPage
+    && !isCustomerConfirmationCallback
+  ) {
+    return <PlatformSaaSPage />;
+  }
+
   if (isCustomerPasswordResetPage) return <CustomerPasswordRecoveryPage mode="reset" />;
   if (isCustomerForgotPasswordPage) return <CustomerPasswordRecoveryPage mode="request" />;
   if (isSignUpPage) return <CustomerSignUpPage />;
-  if (isCustomerEmailConfirmationPage || new URLSearchParams(window.location.search).get('customer-confirmation') === '1') {
-    return <CustomerEmailConfirmationPage />;
-  }
-
-  // Reserved SaaS host: keep the parent admin console separate from tenant storefront routing.
-  // Invitation and customer-auth callback routes above retain their existing behavior.
-  if (isParentSaaSDomain(window.location.hostname)) {
-    return <PlatformSaaSPage />;
-  }
+  if (isCustomerConfirmationCallback) return <CustomerEmailConfirmationPage />;
 
   if (isLegalPoliciesPage) return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}><LegalPoliciesPage /></RestaurantLayout></ThemeProvider></RestaurantProvider>;
   if (isPrivacyPage) return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><PrivacyNoticePage /></ThemeProvider></RestaurantProvider>;
