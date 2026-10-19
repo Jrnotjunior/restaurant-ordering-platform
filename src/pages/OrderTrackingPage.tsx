@@ -72,11 +72,15 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
 
   useEffect(() => {
     let cancelled = false;
+    let latestRequest = 0;
 
     async function load() {
+      const requestId = ++latestRequest;
       try {
         const result = await getOrderStatus(orderId);
-        if (!cancelled) {
+        // Realtime notifications and polling can overlap. Never let an older,
+        // slower response overwrite a newer saved order status.
+        if (!cancelled && requestId === latestRequest) {
           setOrder(result);
           if (result.status === 'completed' || result.status === 'cancelled' || result.deliveryStatus === 'delivered' || result.deliveryStatus === 'failed') {
             if (window.localStorage.getItem('restaurant-ordering-active-order-id') === result.orderId) {
@@ -95,7 +99,9 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
           }
         }
       } catch (loadError) {
-        if (!cancelled) setError(loadError instanceof Error ? loadError.message : 'Unable to load this order.');
+        if (!cancelled && requestId === latestRequest) {
+          setError(loadError instanceof Error ? loadError.message : 'Unable to load this order.');
+        }
       }
     }
 
