@@ -1315,3 +1315,30 @@
     width: 100%;
   }
 }
+
+.payment-review-refund-policy {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0.8rem;
+  padding: 0.8rem 0.85rem;
+  border: 1px solid #dbe4ee;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+  text-align: left;
+}
+
+.payment-review-refund-policy h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 0.9rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.payment-review-refund-policy p {
+  margin: 0;
+  color: #475569;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
