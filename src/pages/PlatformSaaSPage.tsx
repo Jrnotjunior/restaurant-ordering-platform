@@ -50,7 +50,8 @@ function formatDate(value: string) {
 
 export function PlatformSaaSPage() {
   const { user, loading: authLoading, signOut } = useRestaurantOwnerAuth();
-  const isSystemAdmin = user?.app_metadata?.role === 'system_admin';
+  // Active System Admin access is validated server-side by the access-level RPC.
+  // This intentionally supports approved read-only admins whose account is also a restaurant owner.
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginBusy, setLoginBusy] = useState(false);
@@ -82,7 +83,7 @@ export function PlatformSaaSPage() {
   const [actionError, setActionError] = useState('');
 
   async function loadDashboard() {
-    if (!supabase || !isSystemAdmin) {
+    if (!supabase || !user) {
       setDashboardLoading(false);
       return;
     }
@@ -140,14 +141,15 @@ export function PlatformSaaSPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!isSystemAdmin) {
+    if (!user) {
       setDashboardLoading(false);
       return;
     }
     void loadDashboard();
-    // loadDashboard intentionally runs when the authenticated system admin changes.
+    // loadDashboard verifies access using database-backed System Admin access,
+    // not only the Auth role claim.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authLoading, user?.id, isSystemAdmin]);
+  }, [authLoading, user?.id]);
 
   const filteredTenants = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -307,23 +309,6 @@ export function PlatformSaaSPage() {
             <button className="saas-button saas-button-primary" type="submit" disabled={loginBusy}>{loginBusy ? 'Signing in…' : 'Sign in securely'}</button>
             <p className="saas-footnote">This is not a restaurant customer login. Access is limited to approved Web2Table administrators.</p>
           </form>
-        </section>
-      </main>
-    );
-  }
-
-  if (!isSystemAdmin) {
-    return (
-      <main className="saas-page">
-        <div className="saas-topbar">
-          <a className="saas-brand" href="/"><span className="saas-brand-mark">W2</span><span><strong>Web2Table</strong><small>Parent SaaS platform</small></span></a>
-          <button className="saas-button saas-button-quiet" type="button" onClick={() => void handleSignOut()}>Sign out</button>
-        </div>
-        <section className="saas-centered-card">
-          <p className="saas-eyebrow">Restricted area</p>
-          <h1>This account cannot access the parent console.</h1>
-          <p className="saas-muted">Use an approved System Administrator account. Restaurant owners and staff should sign in through their own tenant workspace.</p>
-          <button className="saas-button saas-button-primary" type="button" onClick={() => void handleSignOut()}>Sign out and switch account</button>
         </section>
       </main>
     );
