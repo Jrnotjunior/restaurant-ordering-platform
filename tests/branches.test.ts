@@ -2,12 +2,22 @@ import { describe, expect, it } from 'vitest';
 import {
   BRANCH_DAYS,
   DEFAULT_BRANCH_HOURS,
+  branchBelongsToRestaurant,
   branchToDraft,
   makeDefaultBranchDraft,
   type RestaurantBranch,
 } from '../src/modules/branches/branchTypes';
 
 describe('multi-branch domain defaults', () => {
+  it('rejects a branch that does not belong to the active restaurant tenant', () => {
+    const branch = { restaurant_id: 'restaurant-a' };
+
+    expect(branchBelongsToRestaurant(branch, 'restaurant-a')).toBe(true);
+    expect(branchBelongsToRestaurant(branch, 'restaurant-b')).toBe(false);
+    expect(branchBelongsToRestaurant(branch, undefined)).toBe(false);
+    expect(branchBelongsToRestaurant(null, 'restaurant-a')).toBe(false);
+  });
+
   it('creates a fresh branch draft with safe location defaults', () => {
     const first = makeDefaultBranchDraft();
     const second = makeDefaultBranchDraft();
