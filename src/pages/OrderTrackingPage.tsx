@@ -89,15 +89,22 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
 
   useEffect(() => {
     let cancelled = false;
-    let latestRequest = 0;
+    let loadInProgress = false;
+    let refreshQueued = false;
 
     async function load() {
-      const requestId = ++latestRequest;
+      // Keep only one status fetch in flight. If Realtime fires during a fetch,
+      // immediately fetch once more afterward instead of discarding a response
+      // just because a newer request started but has not completed yet.
+      if (loadInProgress) {
+        refreshQueued = true;
+        return;
+      }
+      loadInProgress = true;
+
       try {
         const result = await getOrderStatus(orderId);
-        // Realtime notifications and polling can overlap. Never let an older,
-        // slower response overwrite a newer saved order status.
-        if (!cancelled && requestId === latestRequest) {
+        if (!cancelled) {
           setOrder(result);
           if (result.status === 'completed' || result.status === 'cancelled' || result.deliveryStatus === 'delivered' || result.deliveryStatus === 'failed') {
             if (window.localStorage.getItem('restaurant-ordering-active-order-id') === result.orderId) {
@@ -116,8 +123,14 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
           }
         }
       } catch (loadError) {
-        if (!cancelled && requestId === latestRequest) {
+        if (!cancelled) {
           setError(loadError instanceof Error ? loadError.message : 'Unable to load this order.');
+        }
+      } finally {
+        loadInProgress = false;
+        if (refreshQueued && !cancelled) {
+          refreshQueued = false;
+          void load();
         }
       }
     }
