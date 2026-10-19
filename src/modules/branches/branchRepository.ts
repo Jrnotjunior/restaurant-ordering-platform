@@ -20,7 +20,7 @@ export async function createRestaurantBranch(restaurantId: string, draft: Restau
   if (!supabase) throw new Error('Supabase is not configured.');
   const { data, error } = await supabase
     .from('restaurant_branches')
-    .insert({ restaurant_id: restaurantId, ...normalizeDraft(draft), is_default: false })
+    .insert({ restaurant_id: restaurantId, ...normalizeDraft(draft) })
     .select('id,restaurant_id,branch_code,name,store_address,restaurant_address,contact_number,is_active,is_default,ordering_enabled,operating_hours,delivery_location_latitude,delivery_location_longitude,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,created_at,updated_at')
     .single();
   if (error) throw new Error(error.message || 'Unable to create branch.');

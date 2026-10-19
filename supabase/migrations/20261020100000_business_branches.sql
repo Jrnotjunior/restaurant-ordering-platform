@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS public.restaurant_branches (
   restaurant_address text,
   contact_number text,
   is_active boolean NOT NULL DEFAULT true,
-  is_default boolean NOT NULL DEFAULT false,
+  is_default boolean NOT NULL DEFAULT false CHECK (NOT is_default OR is_active),
   ordering_enabled boolean NOT NULL DEFAULT true,
   operating_hours jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(operating_hours) = 'object'),
   delivery_location_latitude double precision CHECK (delivery_location_latitude IS NULL OR delivery_location_latitude BETWEEN -90 AND 90),
@@ -214,8 +214,20 @@ CREATE POLICY restaurant_branches_owner_manage ON public.restaurant_branches
     WHERE r.id = restaurant_id AND r.owner_id = auth.uid()
   ));
 
+REVOKE ALL ON public.restaurant_branches FROM anon, authenticated;
 GRANT SELECT ON public.restaurant_branches TO anon, authenticated;
-GRANT INSERT, UPDATE, DELETE ON public.restaurant_branches TO authenticated;
+GRANT INSERT (
+  restaurant_id, branch_code, name, store_address, restaurant_address, contact_number,
+  is_active, ordering_enabled, operating_hours, delivery_location_latitude,
+  delivery_location_longitude, delivery_base_fee, delivery_distance_increment_meters,
+  delivery_fee_per_increment, delivery_max_distance_meters
+) ON public.restaurant_branches TO authenticated;
+GRANT UPDATE (
+  branch_code, name, store_address, restaurant_address, contact_number,
+  is_active, ordering_enabled, operating_hours, delivery_location_latitude,
+  delivery_location_longitude, delivery_base_fee, delivery_distance_increment_meters,
+  delivery_fee_per_increment, delivery_max_distance_meters, updated_at
+) ON public.restaurant_branches TO authenticated;
 
 -- The default branch can change only through this owner-authorized transaction.
 CREATE OR REPLACE FUNCTION public.set_default_restaurant_branch(p_restaurant_id uuid, p_branch_id uuid)
