@@ -120,21 +120,26 @@ Deno.serve(async (request) => {
 
     if (paymongoConnectionError) throw paymongoConnectionError;
 
-    if (paymongoEnvironment === "live" && !paymongoConnection) {
+    // Always fail closed if this tenant has no linked PayMongo child account.
+    // Falling back to the parent account would charge the wrong merchant and
+    // would make test-mode verification falsely appear to prove child routing.
+    if (!paymongoConnection) {
       return jsonResponse({
-        error: "This restaurant has not connected its live PayMongo account yet.",
+        error: `This restaurant has not connected its PayMongo ${paymongoEnvironment} child account yet.`,
       }, 409);
     }
 
-    let linkedPayMongoAccountId = "";
-    if (paymongoConnection) {
-      if (paymongoConnection.connection_status !== "active" || !paymongoConnection.paymongo_account_id || !paymongoConnection.webhook_secret_id) {
-        return jsonResponse({
-          error: "This restaurant's PayMongo account is not ready for online payments yet.",
-        }, 409);
-      }
-      linkedPayMongoAccountId = String(paymongoConnection.paymongo_account_id).trim();
+    if (
+      paymongoConnection.connection_status !== "active" ||
+      !paymongoConnection.paymongo_account_id ||
+      !paymongoConnection.webhook_secret_id
+    ) {
+      return jsonResponse({
+        error: `This restaurant's PayMongo ${paymongoEnvironment} child account is not ready for online payments yet.`,
+      }, 409);
     }
+
+    const linkedPayMongoAccountId = String(paymongoConnection.paymongo_account_id).trim();
 
     if (pendingPayment.checkout_url) {
       return jsonResponse({ checkoutUrl: pendingPayment.checkout_url }, 200);
