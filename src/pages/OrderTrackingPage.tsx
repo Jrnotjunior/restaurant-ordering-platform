@@ -220,10 +220,10 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
     setCancellationError('');
     setCancellationMessage('');
     try {
-      await cancelMyPendingOrder(order.orderId);
+      const result = await cancelMyPendingOrder(order.orderId);
       const refreshedOrder = await getOrderStatus(order.orderId);
       setOrder(refreshedOrder);
-      setCancellationMessage('Your order has been cancelled.');
+      setCancellationMessage(result.message);
       if (window.localStorage.getItem('restaurant-ordering-active-order-id') === refreshedOrder.orderId) {
         window.localStorage.removeItem('restaurant-ordering-active-order-id');
         window.localStorage.removeItem(ACTIVE_ORDER_KEY);
@@ -335,7 +335,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
             <div className="order-tracking-billing-row is-total"><strong>Total paid / due</strong><strong>₱{order.total.toFixed(2)}</strong></div>
             <p className="order-tracking-payment-note">{order.paymentStatus === 'paid' ? 'Payment confirmed' : order.paymentStatus === 'refunded' ? 'Payment refunded' : order.paymentStatus === 'failed' ? 'Payment failed' : 'Payment pending'} · {order.paymentMethod === 'gcash' ? 'Online payment' : 'Cash'}</p>
           </div>
-          {isAuthenticatedCustomer && order.status === 'pending' && order.paymentMethod === 'cash' && order.paymentStatus === 'pending' ? (
+          {isAuthenticatedCustomer && order.status === 'pending' && order.paymentStatus === 'pending' || isAuthenticatedCustomer && order.status === 'pending' && order.paymentMethod === 'gcash' && order.paymentStatus === 'paid' ? (
             <div className="order-tracking-cancel order-tracking-cancel--details">
               <button className="button" type="button" onClick={() => void cancelOrder()} disabled={cancellingOrder}>
                 {cancellingOrder ? 'Cancelling…' : 'Cancel order'}
@@ -353,7 +353,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
             <section className="order-cancel-modal" role="dialog" aria-modal="true" aria-labelledby="order-cancel-modal-title" aria-describedby="order-cancel-modal-description">
               <div className="order-cancel-modal-icon" aria-hidden="true">!</div>
               <h2 id="order-cancel-modal-title">Cancel this order?</h2>
-              <p id="order-cancel-modal-description">Are you sure you want to cancel this unpaid cash order? This action cannot be undone.</p>
+              <p id="order-cancel-modal-description">{order.paymentStatus === 'paid' ? 'This order was paid online. Cancelling it will also request a refund to the original payment method. Refund timing depends on the payment provider.' : 'Are you sure you want to cancel this order? This action cannot be undone.'}</p>
               <div className="order-cancel-modal-actions">
                 <button className="button order-cancel-modal-confirm" type="button" onClick={() => void confirmCancelOrder()} disabled={cancellingOrder}>
                   {cancellingOrder ? 'Cancelling…' : 'Yes, cancel order'}
