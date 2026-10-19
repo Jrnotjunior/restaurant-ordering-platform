@@ -615,7 +615,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         return result;
       }, {} as OperatingHours);
 
-      const { error: saveError } = await supabase
+      const { data, error: saveError } = await supabase
         .from('restaurants')
         .update({
           restaurant_address: restaurantAddress.trim() || null,
