@@ -168,10 +168,13 @@ Deno.serve(async (request) => {
       .select("paymongo_account_id,connection_status,environment,onboarding_step")
       .eq("restaurant_id", order.restaurant_id).eq("environment", environment).maybeSingle();
     if (connectionError) throw connectionError;
-    const accountId = String(connection?.paymongo_account_id ?? "").trim();
     const isTestSimulation =
       environment === "test" &&
       connection?.onboarding_step === "test_simulation";
+    // Sandbox mock only: exercises Account-ID handling, not real child routing.
+    const accountId = isTestSimulation
+      ? "org_test_merchant"
+      : String(connection?.paymongo_account_id ?? "").trim();
 
     if (!connection || (!isTestSimulation && (
       connection.connection_status !== "active" || !accountId
@@ -186,9 +189,8 @@ Deno.serve(async (request) => {
     const headers: Record<string, string> = {
       Authorization: `Basic ${btoa(`${secretKey}:`)}`,
       "Content-Type": "application/json",
-      // Keep refund requests in the same account context as checkout. Test
-      // simulation uses PayMongo's sandbox child ID; live always uses the
-      // verified tenant child account ID.
+      // Keep refund requests in the same account context as checkout. The
+      // sandbox mock ID only tests request handling; live uses a verified child ID.
       ...(accountId ? { "Account-ID": accountId } : {}),
     };
 
