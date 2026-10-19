@@ -335,7 +335,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
             <div className="order-tracking-billing-row is-total"><strong>Total paid / due</strong><strong>₱{order.total.toFixed(2)}</strong></div>
             <p className="order-tracking-payment-note">{order.paymentStatus === 'paid' ? 'Payment confirmed' : order.paymentStatus === 'refunded' ? 'Payment refunded' : order.paymentStatus === 'failed' ? 'Payment failed' : 'Payment pending'} · {order.paymentMethod === 'gcash' ? 'Online payment' : 'Cash'}</p>
           </div>
-          {isAuthenticatedCustomer && order.status === 'pending' && order.paymentStatus === 'pending' || isAuthenticatedCustomer && order.status === 'pending' && order.paymentMethod === 'gcash' && order.paymentStatus === 'paid' ? (
+          {isAuthenticatedCustomer && order.status === 'pending' && (order.paymentStatus === 'pending' || order.paymentStatus === 'paid') ? (
             <div className="order-tracking-cancel order-tracking-cancel--details">
               <button className="button" type="button" onClick={() => void cancelOrder()} disabled={cancellingOrder}>
                 {cancellingOrder ? 'Cancelling…' : 'Cancel order'}
