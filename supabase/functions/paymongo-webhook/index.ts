@@ -184,11 +184,11 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: message }, status);
     };
 
-    if (eventType === "refund.succeeded" || eventType === "payment.refund.updated") {
+    if (["refund.succeeded", "refund.updated", "refund.failed", "refund.created", "payment.refund.updated"].includes(eventType)) {
       const refund = session;
       const refundId = String(refund?.id ?? "").trim();
       const refundStatus = String(refund?.attributes?.status ?? "").trim();
-      const paymentId = String(refund?.attributes?.payment_id ?? "").trim();
+      const paymentId = String(refund?.attributes?.payment_id ?? refund?.attributes?.payment?.id ?? "").trim();
       if (!refundId || !paymentId) {
         return await rejectWebhookEvent(400, "Refund webhook is missing its refund or payment ID.");
       }
