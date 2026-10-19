@@ -91,3 +91,10 @@ export function branchToDraft(branch: RestaurantBranch): RestaurantBranchDraft {
     delivery_max_distance_meters: Number(branch.delivery_max_distance_meters ?? 10000),
   };
 }
+
+export function branchBelongsToRestaurant(
+  branch: Pick<RestaurantBranch, 'restaurant_id'> | null | undefined,
+  restaurantId: string | null | undefined,
+): boolean {
+  return Boolean(branch && restaurantId && branch.restaurant_id === restaurantId);
+}
