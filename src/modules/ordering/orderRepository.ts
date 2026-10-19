@@ -399,8 +399,23 @@ export async function sendOrderToKitchen(orderId: string) {
   }
 }
 
-export async function cancelMyPendingOrder(orderId: string) {
-  await supabaseRpc('cancel_my_pending_order', { p_order_id: orderId });
+export async function cancelMyPendingOrder(orderId: string): Promise<{ message: string; refundStatus: string }> {
+  if (!supabase) throw new Error('Order cancellation is unavailable. Please try again later.');
+  const { data, error } = await supabase.functions.invoke('cancel-customer-order', {
+    body: { orderId },
+  });
+  if (error) {
+    const context = (error as { context?: { json?: () => Promise<{ error?: string }> } }).context;
+    const payload = await context?.json?.().catch(() => null);
+    throw new Error(payload?.error || error.message || 'Unable to cancel this order.');
+  }
+  if (!data || data.cancelled !== true) {
+    throw new Error(typeof data?.error === 'string' ? data.error : 'Unable to cancel this order.');
+  }
+  return {
+    message: typeof data.message === 'string' ? data.message : 'Your order has been cancelled.',
+    refundStatus: typeof data.refundStatus === 'string' ? data.refundStatus : 'not_required',
+  };
 }
 
 
