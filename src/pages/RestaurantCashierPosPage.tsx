@@ -7,12 +7,16 @@ import { MapboxDeliveryLocationPicker, type MapboxDeliveryAddress } from '../com
 import { calculateDeliveryRoute, type DeliveryRouteQuote } from '../modules/location/locationService';
 import { supabase } from '../services/supabaseClient';
 import { attachCustomerToOrder, findCustomersByName, getLoyaltyRedemptionSettings, redeemLoyaltyReward, type LoyaltyCustomerSuggestion, type LoyaltyRedemptionSettings } from '../modules/loyalty/loyaltyService';
+import { useRestaurantBranches } from '../modules/branches/useRestaurantBranches';
+import { BranchSelector } from '../modules/branches/components/BranchSelector';
 
 type Props = { restaurantId: string };
 type CartItem = { product: RestaurantProduct; quantity: number };
 type DraftBeneficiary = { discountType: PosDiscountType; idType: PosDiscountIdType; idNumber: string };
 type PosPrintOrder = {
   orderNumber: string;
+  branchName: string;
+  branchCode: string;
   customerName: string;
   mobileNumber: string;
   deliveryAddress: string;
@@ -53,6 +57,7 @@ const idOptions: Record<PosDiscountType, { value: PosDiscountIdType; label: stri
 const defaultIdType = (type: PosDiscountType): PosDiscountIdType => type === 'senior' ? 'osca_id' : 'pwd_id';
 
 export function RestaurantCashierPosPage({ restaurantId }: Props) {
+  const { branches, selectedBranch, selectBranch, loading: branchesLoading, error: branchesError } = useRestaurantBranches(restaurantId);
   const [products, setProducts] = useState<RestaurantProduct[]>([]);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [category, setCategory] = useState('all');
@@ -202,7 +207,26 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const change = Math.max(Number((cashReceivedAmount - total).toFixed(2)), 0);
   const cashPaymentReady = cart.length > 0 && cashReceivedAmount >= total;
 
+  function handleSelectBranch(branchId: string) {
+    if (selectedBranch?.id === branchId || saving) return;
+    if (cart.length > 0) {
+      const accepted = window.confirm('Switching branches will clear this POS cart so the order is recorded at the correct location. Continue?');
+      if (!accepted) return;
+    }
+    setCart([]);
+    clearDiscounts();
+    setSelectedDeliveryLocation(null);
+    setDeliveryRouteQuote(null);
+    setDeliveryCity('');
+    setDeliveryBarangay('');
+    setDeliveryAddress('');
+    setError('');
+    setSuccess('');
+    selectBranch(branchId);
+  }
+
   function addProduct(product: RestaurantProduct) {
+    if (!selectedBranch) return;
     setCart((current) => {
       const existing = current.find((item) => item.product.id === product.id);
       if (existing) return current.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
@@ -269,8 +293,10 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
         ? { customerId: selectedCustomerId, name: enteredCustomerName }
         : null;
 
+      if (!selectedBranch) throw new Error('Choose a branch before creating a POS order.');
       const created = await createOrder({
         restaurantId,
+        branchId: selectedBranch.id,
         customerName: enteredCustomerName,
         mobileNumber: orderType === 'delivery' ? mobileNumber.trim() : 'N/A',
         orderType,
@@ -306,6 +332,8 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
 
       setPrintOrder({
         orderNumber: created.orderNumber,
+        branchName: selectedBranch.name,
+        branchCode: selectedBranch.branch_code,
         customerName: enteredCustomerName,
         mobileNumber: orderType === 'delivery' ? mobileNumber.trim() : '',
         deliveryAddress: orderType === 'delivery' ? deliveryAddress.trim() : '',
@@ -358,8 +386,10 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
         
         <span className="restaurant-dashboard-live-status is-live"><span className="restaurant-dashboard-live-dot" />Live</span>
       </div>
+      {branchesError && <div className="restaurant-pos-message is-error" role="alert">Branches could not be loaded; POS orders are disabled until the branch can be verified. {branchesError}</div>}
       {error && <div className="restaurant-pos-message is-error" role="alert">{error}</div>}
       {success && <div className="restaurant-pos-message is-success" role="status">{success}</div>}
+      {branchesLoading ? <div className="restaurant-pos-empty">Loading branches…</div> : branches.length === 0 ? <div className="restaurant-pos-message is-error" role="alert">No active branch is configured. Add an active branch before creating orders.</div> : <BranchSelector branches={branches} selectedBranch={selectedBranch} onSelect={handleSelectBranch} disabled={saving} />}
 
       <div className="restaurant-pos-layout">
         <div className="restaurant-pos-menu">
@@ -373,7 +403,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
           {loading ? <div className="restaurant-pos-empty">Loading menu…</div> : (
             <div className="restaurant-pos-products">
               {visibleProducts.map((product) => (
-                <button key={product.id} type="button" className={`restaurant-pos-product${product.isAvailable ? '' : ' is-sold-out'}`} onClick={() => addProduct(product)} disabled={!product.isAvailable} aria-label={product.isAvailable ? `Add ${product.name}` : `${product.name} is sold out`}>
+                <button key={product.id} type="button" className={`restaurant-pos-product${product.isAvailable ? '' : ' is-sold-out'}`} onClick={() => addProduct(product)} disabled={!selectedBranch || branchesLoading || Boolean(branchesError) || !product.isAvailable} aria-label={product.isAvailable ? `Add ${product.name}` : `${product.name} is sold out`}>
                   <span className="restaurant-pos-product-image-wrap">
                     {product.imageUrl
                       ? <img className="restaurant-pos-product-image" src={product.imageUrl} alt="" loading="lazy" />
@@ -480,7 +510,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
               if (selected.latitude == null || selected.longitude == null) return;
               setDeliveryRouteLoading(true);
               try {
-                const quote = await calculateDeliveryRoute(restaurantId, selected.latitude, selected.longitude);
+                const quote = await calculateDeliveryRoute(restaurantId, selected.latitude, selected.longitude, selectedBranch?.id);
                 setDeliveryRouteQuote(quote);
                 if (!quote.inRange) setError('This delivery address is outside the restaurant delivery area.');
                 else setError('');
@@ -584,7 +614,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
           </div>
 
           {taxSettings && <p className="restaurant-pos-tax-status">{taxSettings.vatRegistered ? `VAT registered · ${taxSettings.vatRate.toFixed(2)}%${taxSettings.pricesVatInclusive ? ' · prices VAT-inclusive' : ' · prices VAT-exclusive'}` : 'Non-VAT registered'}</p>}
-          <button className="button button-primary restaurant-pos-submit" type="button" disabled={!cart.length || saving || !discountReady || !taxSettings || !cashPaymentReady || (orderType === 'delivery' && (!mobileNumber.trim() || !deliveryCity.trim() || !deliveryBarangay.trim() || !deliveryAddress.trim() || !selectedDeliveryLocation || !deliveryRouteQuote?.inRange || deliveryRouteLoading))} onClick={() => void placeOrder()}>
+          <button className="button button-primary restaurant-pos-submit" type="button" disabled={!selectedBranch || branchesLoading || Boolean(branchesError) || !cart.length || saving || !discountReady || !taxSettings || !cashPaymentReady || (orderType === 'delivery' && (!mobileNumber.trim() || !deliveryCity.trim() || !deliveryBarangay.trim() || !deliveryAddress.trim() || !selectedDeliveryLocation || !deliveryRouteQuote?.inRange || deliveryRouteLoading))} onClick={() => void placeOrder()}>
             {saving ? 'Creating Order…' : orderType === 'delivery' ? 'Cash Paid — Create Delivery Order' : 'Cash Paid — Send to Kitchen'}
           </button>
         </aside>
@@ -596,6 +626,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             <div className="pos-receipt-center">
               <div className="pos-receipt-title">KITCHEN ORDER</div>
               <div className="pos-receipt-order-number">{printOrder.orderNumber}</div>
+              <div className="pos-receipt-muted">Branch: {printOrder.branchName} ({printOrder.branchCode})</div>
               <div className="pos-receipt-muted">{new Date(printOrder.createdAt).toLocaleString()}</div>
             </div>
             <hr className="pos-receipt-divider" />
@@ -633,6 +664,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             <div className="pos-receipt-center">
               <div className="pos-receipt-title">CUSTOMER RECEIPT</div>
               <div className="pos-receipt-order-number">{printOrder.orderNumber}</div>
+              <div className="pos-receipt-muted">Branch: {printOrder.branchName} ({printOrder.branchCode})</div>
               <div className="pos-receipt-muted">{new Date(printOrder.createdAt).toLocaleString()}</div>
             </div>
             <hr className="pos-receipt-divider" />

@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { getRestaurantOrders, updateOrderStatus, sendOrderToKitchen, cancelRestaurantOrder, type RestaurantOrder, type RestaurantOrderStatus } from '../modules/ordering/orderService';
 import { getKitchenOrders, updateKitchenOrderStatus } from '../modules/kitchen/kitchenService';
 import { confirmPosCashPayment } from '../modules/pos/posService';
 import { supabase } from '../services/supabaseClient';
+import { useRestaurantBranches } from '../modules/branches/useRestaurantBranches';
+import { BranchSelector } from '../modules/branches/components/BranchSelector';
 
 type Props = { restaurantId: string; role?: 'owner' | 'cashier' | 'kitchen' };
 type BoardColumn = 'new' | 'kitchen' | 'ready' | 'completed';
@@ -69,6 +71,11 @@ const columns: Array<{ key: BoardColumn; title: string; description: string }> =
 ];
 
 export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
+  const { branches, selectedBranch, selectBranch, loading: branchesLoading, error: branchesError } = useRestaurantBranches(restaurantId);
+  const branchId = selectedBranch?.id ?? null;
+  const branchIdRef = useRef<string | null>(branchId);
+  branchIdRef.current = branchId;
+  const orderLoadSequence = useRef(0);
   const isCashier = role === 'cashier';
   const isKitchen = role === 'kitchen';
   const [orders, setOrders] = useState<RestaurantOrder[]>([]);
@@ -84,21 +91,44 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
   const [newOrderPaymentFilter, setNewOrderPaymentFilter] = useState<'all' | 'online-paid' | 'unpaid'>('all');
   const [hasKitchenModule, setHasKitchenModule] = useState(true);
 
-  async function loadOrders() {
+  async function loadOrders(targetBranchId: string | null = branchId) {
+    const requestId = ++orderLoadSequence.current;
+    if (!targetBranchId) {
+      setOrders([]);
+      setLoading(false);
+      return;
+    }
     try {
       setError('');
-      const data = isKitchen ? await getKitchenOrders(restaurantId) : await getRestaurantOrders(restaurantId);
+      const data = isKitchen
+        ? await getKitchenOrders(restaurantId, targetBranchId)
+        : await getRestaurantOrders(restaurantId, targetBranchId);
+      if (requestId !== orderLoadSequence.current || targetBranchId !== branchIdRef.current) return;
       setOrders(data);
-
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to load orders.');
+      if (requestId === orderLoadSequence.current && targetBranchId === branchIdRef.current) {
+        setError(err instanceof Error ? err.message : 'Unable to load orders.');
+      }
     } finally {
-      setLoading(false);
+      if (requestId === orderLoadSequence.current && targetBranchId === branchIdRef.current) setLoading(false);
     }
   }
 
   useEffect(() => {
     let cancelled = false;
+    if (branchesLoading) {
+      setLoading(true);
+      return () => { cancelled = true; };
+    }
+    if (branchesError || !branchId) {
+      orderLoadSequence.current += 1;
+      setOrders([]);
+      setLoading(false);
+      if (branchesError) setError(branchesError);
+      return () => { cancelled = true; };
+    }
+
+    setLoading(true);
     async function loadKitchenModule() {
       if (!supabase) return;
       const { data, error: moduleError } = await supabase.rpc('restaurant_has_module', { p_restaurant_id: restaurantId, p_module_key: 'kitchen' });
@@ -106,17 +136,17 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
       if (!moduleError) setHasKitchenModule(Boolean(data));
     }
     void loadKitchenModule();
-    void loadOrders();
+    void loadOrders(branchId);
     const client = supabase;
     if (!client) {
       setRealtimeStatus('error');
-      return;
+      return () => { cancelled = true; };
     }
 
     const channel = client
-      .channel(`restaurant-orders:${restaurantId}`)
+      .channel(`restaurant-orders:${restaurantId}:${branchId}`)
       .on('broadcast', { event: 'restaurant_order_changed' }, () => {
-        void loadOrders();
+        void loadOrders(branchId);
       })
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') setRealtimeStatus('live');
@@ -127,9 +157,10 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
 
     return () => {
       cancelled = true;
+      orderLoadSequence.current += 1;
       void client.removeChannel(channel);
     };
-  }, [restaurantId]);
+  }, [restaurantId, branchId, branchesLoading, branchesError]);
 
   const activeOrders = useMemo(
     () => orders.filter((o) => !['completed', 'cancelled'].includes(o.status)),
@@ -351,6 +382,11 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
           All ({orders.length})
         </button>
       </div>}
+
+      {branchesLoading ? <div className="restaurant-orders-empty">Loading branches…</div>
+        : branchesError ? <div className="restaurant-orders-error" role="alert">Branch configuration could not be loaded. Orders are paused until it can be verified. {branchesError}</div>
+        : branches.length === 0 ? <div className="restaurant-orders-error" role="alert">No active branch is configured for this business.</div>
+        : <BranchSelector branches={branches} selectedBranch={selectedBranch} onSelect={(id) => { selectBranch(id); closeOrderList(); }} />}
 
       {error && <div className="restaurant-orders-error" role="alert">{error}</div>}
 

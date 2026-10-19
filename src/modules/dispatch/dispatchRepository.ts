@@ -32,10 +32,12 @@ function formatReadyTime(value:string) {
 }
 function todayStartIso(){ const now=new Date(); return new Date(now.getFullYear(),now.getMonth(),now.getDate()).toISOString(); }
 
-export async function getDispatchData(restaurantId:string):Promise<{orders:ReadyOrder[]; riders:Rider[]}> {
+export async function getDispatchData(restaurantId:string, branchId?:string | null):Promise<{orders:ReadyOrder[]; riders:Rider[]}> {
   if(!supabase) throw new Error('Supabase is not configured.');
+  let orderQuery = supabase.from('orders').select('id,order_number,customer_name,delivery_address,delivery_barangay,total,created_at,pickup_method,order_type,rider_id').eq('restaurant_id',restaurantId).in('order_type',['delivery','pickup','take_out','dine_in']).eq('status','ready').order('created_at',{ascending:true});
+  if (branchId) orderQuery = orderQuery.eq('branch_id', branchId);
   const [orderResult,riderResult,activeOrderResult,assignmentResult]=await Promise.all([
-    supabase.from('orders').select('id,order_number,customer_name,delivery_address,delivery_barangay,total,created_at,pickup_method,order_type,rider_id').eq('restaurant_id',restaurantId).in('order_type',['delivery','pickup','take_out','dine_in']).eq('status','ready').order('created_at',{ascending:true}),
+    orderQuery,
     supabase.from('restaurant_staff').select('id,name,mobile_number').eq('restaurant_id',restaurantId).eq('role','rider').eq('is_active',true).order('name',{ascending:true}),
     supabase.from('orders').select('rider_id,delivery_status').eq('restaurant_id',restaurantId).not('rider_id','is',null).in('delivery_status',['assigned','delivering']),
     supabase.from('delivery_assignments').select('rider_id,status,delivered_at').eq('restaurant_id',restaurantId),
