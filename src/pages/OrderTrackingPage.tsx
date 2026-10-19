@@ -49,6 +49,23 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
   const [cancellationError, setCancellationError] = useState('');
   const [cancellationMessage, setCancellationMessage] = useState('');
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
+  const [showNonDeliveryTimeline, setShowNonDeliveryTimeline] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadTimelineEntitlement() {
+      if (!supabase) return;
+      const { data, error: entitlementError } = await supabase.rpc(
+        'customer_order_tracking_timeline_enabled',
+        { p_order_id: orderId },
+      );
+      if (!cancelled) {
+        setShowNonDeliveryTimeline(!entitlementError && data === true);
+      }
+    }
+    void loadTimelineEntitlement();
+    return () => { cancelled = true; };
+  }, [orderId]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -343,7 +360,7 @@ export function OrderTrackingPage({ orderId }: OrderTrackingPageProps) {
           </div>
         ) : isCancelled ? (
           <div className="order-tracking-cancelled"><strong>Order cancelled</strong><span>This order has been cancelled by the restaurant or customer.</span></div>
-        ) : !isCancelled ? (
+        ) : !isCancelled && (order.orderType === 'delivery' || showNonDeliveryTimeline) ? (
           <div className="order-status-timeline" aria-label="Order status">
             {steps.map((step, index) => {
               const complete = index <= currentIndex;
