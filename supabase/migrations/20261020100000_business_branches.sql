@@ -50,7 +50,7 @@ SELECT
   r.contact_number,
   true,
   true,
-  coalesce(r.ordering_enabled, true),
+  true,
   coalesce(r.operating_hours, '{}'::jsonb),
   r.delivery_location_latitude,
   r.delivery_location_longitude,
@@ -83,7 +83,7 @@ BEGIN
     nullif(btrim(coalesce(NEW.store_address, '')), ''),
     nullif(btrim(coalesce(NEW.restaurant_address, '')), ''),
     NEW.contact_number,
-    true, true, coalesce(NEW.ordering_enabled, true), coalesce(NEW.operating_hours, '{}'::jsonb),
+    true, true, true, coalesce(NEW.operating_hours, '{}'::jsonb),
     NEW.delivery_location_latitude, NEW.delivery_location_longitude,
     coalesce(NEW.delivery_base_fee, 0), coalesce(NEW.delivery_distance_increment_meters, 500),
     coalesce(NEW.delivery_fee_per_increment, 10), coalesce(NEW.delivery_max_distance_meters, 10000)
