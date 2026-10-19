@@ -115,34 +115,46 @@ Deno.serve(async (request) => {
 
     const { data: paymongoConnection, error: paymongoConnectionError } = await adminClient
       .from("restaurant_paymongo_accounts")
-      .select("paymongo_account_id,connection_status,webhook_secret_id")
+      .select("paymongo_account_id,connection_status,webhook_secret_id,onboarding_step")
       .eq("restaurant_id", pendingPayment.restaurant_id)
       .eq("environment", paymongoEnvironment)
       .maybeSingle();
 
     if (paymongoConnectionError) throw paymongoConnectionError;
 
-    // Always fail closed if this tenant has no linked PayMongo child account.
-    // Falling back to the parent account would charge the wrong merchant and
-    // would make test-mode verification falsely appear to prove child routing.
     if (!paymongoConnection) {
       return jsonResponse({
-        error: `This restaurant has not connected its PayMongo ${paymongoEnvironment} child account yet.`,
+        error: `This restaurant has not configured its PayMongo ${paymongoEnvironment} payment connection yet.`,
       }, 409);
     }
 
-    if (
-      paymongoConnection.connection_status !== "active" ||
-      !paymongoConnection.paymongo_account_id ||
-      !paymongoConnection.webhook_secret_id
-    ) {
-      return jsonResponse({
-        error: `This restaurant's PayMongo ${paymongoEnvironment} child account is not ready for online payments yet.`,
-      }, 409);
+    const isTestSimulation =
+      paymongoEnvironment === "test" &&
+      paymongoConnection.onboarding_step === "test_simulation";
+
+    if (isTestSimulation) {
+      // Test API keys return a mock child ID rather than a real relationship.
+      // Allow checkout only through the parent test account in this explicitly
+      // labeled mode. No Account-ID header is sent, and this is not evidence of
+      // real tenant-level PayMongo settlement.
+      if (paymongoConnection.connection_status !== "pending") {
+        return jsonResponse({ error: "The PayMongo test simulation is not in a valid state." }, 409);
+      }
+    } else {
+      if (
+        paymongoConnection.connection_status !== "active" ||
+        !paymongoConnection.paymongo_account_id ||
+        !paymongoConnection.webhook_secret_id
+      ) {
+        return jsonResponse({
+          error: `This restaurant's PayMongo ${paymongoEnvironment} child account is not ready for online payments yet.`,
+        }, 409);
+      }
     }
 
-    const linkedPayMongoAccountId = String(paymongoConnection.paymongo_account_id).trim();
-
+    const linkedPayMongoAccountId = isTestSimulation
+      ? ""
+      : String(paymongoConnection.paymongo_account_id).trim();
     if (pendingPayment.checkout_url) {
       return jsonResponse({ checkoutUrl: pendingPayment.checkout_url }, 200);
     }
