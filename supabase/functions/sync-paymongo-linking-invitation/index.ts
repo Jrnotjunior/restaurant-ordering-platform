@@ -143,7 +143,15 @@ Deno.serve(async (request) => {
           data: {
             attributes: {
               url: `${supabaseUrl}/functions/v1/paymongo-webhook`,
-              events: ["checkout_session.payment.paid"],
+              events: [
+            "checkout_session.payment.paid",
+            "payment.failed",
+            "payment.refunded",
+            "refund.created",
+            "refund.updated",
+            "refund.succeeded",
+            "refund.failed",
+          ],
             },
           },
         }),
