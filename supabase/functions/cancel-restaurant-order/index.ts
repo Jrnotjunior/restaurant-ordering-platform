@@ -34,7 +34,7 @@ Deno.serve(async req=>{
   let env:"test"|"live" = configuredEnv==="live" || configuredEnv==="test"
     ? configuredEnv
     : legacyKey.startsWith("sk_live_") ? "live" : "test";
-  let {data:conn,error:co}=await db.from("restaurant_paymongo_accounts").select("paymongo_account_id,connection_status,environment").eq("restaurant_id",o.restaurant_id).eq("environment",env).maybeSingle();
+  let {data:conn,error:co}=await db.from("restaurant_paymongo_accounts").select("paymongo_account_id,connection_status,environment,onboarding_step").eq("restaurant_id",o.restaurant_id).eq("environment",env).maybeSingle();
   if(co)throw co;
   // If environment was not explicitly configured, fall back to the restaurant's active
   // connection instead of accidentally calling the wrong PayMongo environment.
