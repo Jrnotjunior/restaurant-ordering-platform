@@ -19,6 +19,39 @@ type DayHours = {
 
 type OperatingHours = Record<DayKey, DayHours>;
 
+type OnlinePaymentMethods = {
+  card: boolean;
+  gcash: boolean;
+  qrph: boolean;
+  grab_pay: boolean;
+  paymaya: boolean;
+  dob: boolean;
+  billease: boolean;
+};
+
+const DEFAULT_ONLINE_PAYMENT_METHODS: OnlinePaymentMethods = {
+  card: false,
+  gcash: true,
+  qrph: true,
+  grab_pay: true,
+  paymaya: true,
+  dob: true,
+  billease: false,
+};
+
+function normalizeOnlinePaymentMethods(value: unknown): OnlinePaymentMethods {
+  const source = value && typeof value === 'object' ? value as Partial<OnlinePaymentMethods> : {};
+  return {
+    card: source.card === true,
+    gcash: source.gcash !== false,
+    qrph: source.qrph !== false,
+    grab_pay: source.grab_pay !== false,
+    paymaya: source.paymaya !== false,
+    dob: source.dob !== false,
+    billease: source.billease === true,
+  };
+}
+
 const DAYS: Array<{ key: DayKey; label: string }> = [
   { key: 'monday', label: 'Monday' },
   { key: 'tuesday', label: 'Tuesday' },
@@ -208,6 +241,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [deliveryLocationLatitude, setDeliveryLocationLatitude] = useState<number | null>(null);
   const [deliveryLocationLongitude, setDeliveryLocationLongitude] = useState<number | null>(null);
   const [orderingEnabled, setOrderingEnabled] = useState(true);
+  const [onlinePaymentMethods, setOnlinePaymentMethods] = useState<OnlinePaymentMethods>(DEFAULT_ONLINE_PAYMENT_METHODS);
   const [loading, setLoading] = useState(true);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -279,7 +313,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     try {
       const { data, error: loadError } = await supabase
         .from('restaurants')
-        .select('tagline,restaurant_address,store_address,ordering_enabled,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate,cash_on_delivery_enabled,cash_on_pickup_enabled,cash_on_take_out_enabled,automatic_rider_assignment_enabled,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,delivery_location_latitude,delivery_location_longitude')
+        .select('tagline,restaurant_address,store_address,ordering_enabled,operating_hours,tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate,cash_on_delivery_enabled,cash_on_pickup_enabled,cash_on_take_out_enabled,automatic_rider_assignment_enabled,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,delivery_location_latitude,delivery_location_longitude,online_payment_methods')
          .eq('id', restaurantId)
         .single();
 
@@ -291,6 +325,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       setRestaurantAddress(data?.restaurant_address ?? '');
       setHours(normalizeHours(data?.operating_hours));
       setOrderingEnabled(data?.ordering_enabled !== false);
+      setOnlinePaymentMethods(normalizeOnlinePaymentMethods(data?.online_payment_methods));
       setVatRegistered(Boolean(data?.tax_vat_registered));
       setPricesVatInclusive(Boolean(data?.tax_prices_vat_inclusive));
       setVatRate(String(data?.tax_vat_rate ?? 12));
@@ -587,6 +622,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           store_address: address.trim() || null,
           operating_hours: normalizedHours,
           ordering_enabled: orderingEnabled,
+          online_payment_methods: onlinePaymentMethods,
           tax_vat_registered: vatRegistered,
           tax_prices_vat_inclusive: vatRegistered ? pricesVatInclusive : false,
           tax_vat_rate: vatRegistered ? parsedVatRate : 0,
@@ -638,7 +674,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
       const { data: savedRow, error: verifyError } = await supabase
         .from('restaurants')
-        .select('tagline,restaurant_address,store_address,operating_hours,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,delivery_location_latitude,delivery_location_longitude')
+        .select('tagline,restaurant_address,store_address,operating_hours,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,delivery_location_latitude,delivery_location_longitude,online_payment_methods')
         .eq('id', restaurantId)
         .single();
 
@@ -666,6 +702,11 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       }
 
       const savedHours = normalizeHours(savedRow?.operating_hours);
+      const savedOnlinePaymentMethods = normalizeOnlinePaymentMethods(savedRow?.online_payment_methods);
+      if (JSON.stringify(savedOnlinePaymentMethods) !== JSON.stringify(onlinePaymentMethods)) {
+        throw new Error('Online payment methods were not saved exactly as selected. Please try again.');
+      }
+      setOnlinePaymentMethods(savedOnlinePaymentMethods);
       const savedAddress = savedRow?.store_address ?? '';
       if ((savedRow?.restaurant_address ?? '') !== (restaurantAddress.trim() || '')) {
         throw new Error('The restaurant address was not stored correctly. Please try again.');
@@ -1015,8 +1056,43 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
             <strong>PayMongo connection error</strong>
             <span>{paymongoError}</span>
           </div>}
-          <h2>PayMongo Online Payments</h2>
-          <p className="restaurant-settings-help">Each restaurant connects its own PayMongo merchant account. Web2Table does not ask you to paste a PayMongo secret key into the website.</p>
+          <h2>Accepted Payment Methods</h2>
+          <p className="restaurant-settings-help">Choose which methods this restaurant accepts. These settings apply only to this restaurant; each tenant manages its own options. A method must also be supported by its connected PayMongo account.</p>
+          <div className="restaurant-settings-tax-grid" style={{ marginTop: 14 }}>
+            {([
+              ['card', 'Card payments'],
+              ['gcash', 'GCash'],
+              ['qrph', 'QR Ph'],
+              ['grab_pay', 'GrabPay'],
+              ['paymaya', 'Maya'],
+              ['dob', 'Online Banking'],
+              ['billease', 'Buy Now, Pay Later (BillEase)'],
+            ] as Array<[keyof OnlinePaymentMethods, string]>).map(([key, label]) => (
+              <label className="restaurant-settings-switch-row" key={key}>
+                <span>{label}</span>
+                <span className="restaurant-settings-switch">
+                  <input
+                    type="checkbox"
+                    checked={onlinePaymentMethods[key]}
+                    disabled={loading || saving}
+                    onChange={(event) => {
+                      setOnlinePaymentMethods((current) => ({ ...current, [key]: event.target.checked }));
+                      setMessage('');
+                      setError('');
+                    }}
+                    aria-label={label}
+                  />
+                  <span className="restaurant-settings-switch-track" aria-hidden="true">
+                    <span className="restaurant-settings-switch-thumb" />
+                  </span>
+                </span>
+              </label>
+            ))}
+          </div>
+          <div style={{ marginTop: 20 }}>
+            <h2>PayMongo Online Payments</h2>
+            <p className="restaurant-settings-help">Each restaurant connects its own PayMongo merchant account. Web2Table does not ask you to paste a PayMongo secret key into the website.</p>
+          </div>
           <div className="restaurant-paymongo-status">
             <div>
               <strong>Test environment</strong>
