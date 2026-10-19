@@ -355,7 +355,7 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
           ) : null}
           {isLegacyGuestOrderWithoutCancelToken ? (
             <p className="order-tracking-muted order-cancellation-unavailable" role="note">
-              This guest order was created before secure guest cancellation was enabled. Please contact the restaurant to cancel it.
+              This guest order's cancellation token isn't available in this browser. Please reopen the order in the browser where you placed it.
             </p>
           ) : null}
           {cancellationError ? <p className="checkout-error" role="alert">{cancellationError}</p> : null}
