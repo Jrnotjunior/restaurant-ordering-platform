@@ -121,8 +121,8 @@ export function BranchManagementPanel({ restaurantId }: Props) {
       await setDefaultRestaurantBranch(restaurantId, branch.id);
       await reload();
       setMessage(`${branch.name} is now the default branch.`);
-    } catch (setError) {
-      setError(setError instanceof Error ? setError.message : 'Unable to change the default branch.');
+    } catch (defaultBranchError) {
+      setError(defaultBranchError instanceof Error ? defaultBranchError.message : 'Unable to change the default branch.');
     } finally {
       setSaving(false);
     }
