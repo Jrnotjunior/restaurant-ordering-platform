@@ -190,7 +190,7 @@ function normalizeTimeForStorage(value: unknown, fallback: string): string {
     }
   }
 
-  const match12 = trimmed.match(/^(\d{1,2}):(\d{2})\\s*(AM|PM)$/i);
+  const match12 = trimmed.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
   if (match12) {
     let hour = Number(match12[1]);
     const minute = Number(match12[2]);
@@ -628,9 +628,14 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           delivery_location_latitude: deliveryLocationLatitude,
           delivery_location_longitude: deliveryLocationLongitude,
         })
-        .eq('id', restaurantId);
+        .eq('id', restaurantId)
+        .select('id')
+        .maybeSingle();
 
       if (saveError) throw saveError;
+      if (!data) {
+        throw new Error('Store settings were not saved because this account could not update the restaurant. Check that you are signed in as an active owner of this store.');
+      }
 
       // Save payment methods through an owner-scoped RPC. A direct PostgREST
       // UPDATE may return no error when RLS filters the row, leaving settings unchanged.
