@@ -186,11 +186,10 @@ Deno.serve(async (request) => {
     const headers: Record<string, string> = {
       Authorization: `Basic ${btoa(`${secretKey}:`)}`,
       "Content-Type": "application/json",
-      // In test simulation only, the payment was intentionally created against
-      // the parent test account because PayMongo returns mock child IDs. Refund
-      // using that same parent test context. Production always requires the
-      // actual tenant child ID above.
-      ...(!isTestSimulation && accountId ? { "Account-ID": accountId } : {}),
+      // Keep refund requests in the same account context as checkout. Test
+      // simulation uses PayMongo's sandbox child ID; live always uses the
+      // verified tenant child account ID.
+      ...(accountId ? { "Account-ID": accountId } : {}),
     };
 
     try {
