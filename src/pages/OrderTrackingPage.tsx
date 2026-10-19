@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { cancelMyPendingOrder, getOrderStatus, subscribeToOrderTrackingChanges, type OrderStatus } from '../modules/ordering/orderService';
+import { cancelMyPendingOrder, getOrderStatus, hasGuestOrderCancellationToken, subscribeToOrderTrackingChanges, type OrderStatus } from '../modules/ordering/orderService';
 import { supabase } from '../services/supabaseClient';
 import '../styles/order-tracking.css';
 
@@ -210,6 +210,13 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
   const storeAddress = order.storeAddress;
   const operatingHours = order.operatingHours;
   const showPickupLocation = isCollectionOrder && !isCancelled && Boolean(storeAddress);
+  const guestCancelTokenAvailable = hasGuestOrderCancellationToken(order.orderId);
+  const cancellationEligibleStatus = order.status === 'pending' &&
+    (order.paymentStatus === 'pending' || order.paymentStatus === 'paid');
+  const canCancelOrder = cancellationEligibleStatus &&
+    (isAuthenticatedCustomer || guestCancelTokenAvailable);
+  const isLegacyGuestOrderWithoutCancelToken = cancellationEligibleStatus &&
+    !isAuthenticatedCustomer && !guestCancelTokenAvailable;
 
   function cancelOrder() {
     if (!order || cancellingOrder) return;
@@ -339,12 +346,17 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
             <div className="order-tracking-billing-row is-total"><strong>Total paid / due</strong><strong>₱{order.total.toFixed(2)}</strong></div>
             <p className="order-tracking-payment-note">{order.paymentStatus === 'paid' ? 'Payment confirmed' : order.paymentStatus === 'refunded' ? 'Payment refunded' : order.paymentStatus === 'failed' ? 'Payment failed' : 'Payment pending'} · {order.paymentMethod === 'gcash' ? 'Online payment' : 'Cash'}</p>
           </div>
-          {isAuthenticatedCustomer && order.status === 'pending' && (order.paymentStatus === 'pending' || order.paymentStatus === 'paid') ? (
+          {canCancelOrder ? (
             <div className="order-tracking-cancel order-tracking-cancel--details">
-              <button className="button" type="button" onClick={() => void cancelOrder()} disabled={cancellingOrder}>
+              <button className="button order-cancel-action" type="button" onClick={() => void cancelOrder()} disabled={cancellingOrder}>
                 {cancellingOrder ? 'Cancelling…' : 'Cancel order'}
               </button>
             </div>
+          ) : null}
+          {isLegacyGuestOrderWithoutCancelToken ? (
+            <p className="order-tracking-muted order-cancellation-unavailable" role="note">
+              This guest order was created before secure guest cancellation was enabled. Please contact the restaurant to cancel it.
+            </p>
           ) : null}
           {cancellationError ? <p className="checkout-error" role="alert">{cancellationError}</p> : null}
           {cancellationMessage ? <p className="checkout-success" role="status">{cancellationMessage}</p> : null}
