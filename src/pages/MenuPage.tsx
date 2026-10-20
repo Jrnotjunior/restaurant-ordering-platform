@@ -50,13 +50,13 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
     return () => {
       cancelled = true;
     };
-  }, [restaurant.id]);
+  }, [restaurant.id, restaurant.storefrontBranchId]);
 
   useEffect(() => {
     if (!restaurant.id) return;
 
     const unsubscribe = subscribeToMenuChanges(restaurant.id, () => {
-      void getMenu(restaurant.id!, true)
+      void getMenu(restaurant.id!, true, restaurant.storefrontBranchId)
         .then((menu) => {
           setCategories(menu.categories);
           setProducts(menu.products);
