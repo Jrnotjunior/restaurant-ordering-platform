@@ -1,5 +1,6 @@
 import type { RestaurantCategory, RestaurantProduct } from '../../types/menu';
 import { supabase, supabaseRpc } from '../../services/supabaseClient';
+import { applyBranchProductSetting, getBranchProductSettings } from './branchProductRepository';
 
 type CategoryRow = {
   id: string;
@@ -28,7 +29,7 @@ type ProductRow = {
   updated_at: string;
 };
 
-export async function getMenu(restaurantId: string, includeUnavailable = false): Promise<{ categories: RestaurantCategory[]; products: RestaurantProduct[] }> {
+export async function getMenu(restaurantId: string, includeUnavailable = false, branchId?: string | null): Promise<{ categories: RestaurantCategory[]; products: RestaurantProduct[] }> {
   if (!supabase) throw new Error('Supabase environment variables are not configured.');
 
   let categoryQuery = supabase
@@ -56,19 +57,11 @@ export async function getMenu(restaurantId: string, includeUnavailable = false):
   const productRows = (productResult.data ?? []) as ProductRow[];
   const usedCategoryIds = new Set(productRows.map((product) => product.category_id));
 
-  return {
-    categories: categoryRows.filter((category) => usedCategoryIds.has(category.id)).map((category) => ({
-      id: category.id,
-      restaurantId: category.restaurant_id,
-      name: category.name,
-      slug: category.slug,
-      description: category.description,
-      sortOrder: category.sort_order,
-      isActive: category.is_active,
-      createdAt: category.created_at,
-      updatedAt: category.updated_at,
-    })),
-    products: productRows.map((product) => ({
+  let branchSettings: Awaited<ReturnType<typeof getBranchProductSettings>> = {};
+  if (branchId) branchSettings = await getBranchProductSettings(restaurantId, branchId);
+
+  const products = productRows.map((product): RestaurantProduct => {
+    const baseProduct: RestaurantProduct = {
       id: product.id,
       restaurantId: product.restaurant_id,
       categoryId: product.category_id,
@@ -81,7 +74,23 @@ export async function getMenu(restaurantId: string, includeUnavailable = false):
       isAvailable: product.is_available,
       createdAt: product.created_at,
       updatedAt: product.updated_at,
+    };
+    return branchId ? applyBranchProductSetting(baseProduct, branchSettings[product.id]) : baseProduct;
+  });
+
+  return {
+    categories: categoryRows.filter((category) => usedCategoryIds.has(category.id)).map((category) => ({
+      id: category.id,
+      restaurantId: category.restaurant_id,
+      name: category.name,
+      slug: category.slug,
+      description: category.description,
+      sortOrder: category.sort_order,
+      isActive: category.is_active,
+      createdAt: category.created_at,
+      updatedAt: category.updated_at,
     })),
+    products,
   };
 }
 
