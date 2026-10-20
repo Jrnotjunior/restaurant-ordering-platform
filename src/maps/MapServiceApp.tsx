@@ -121,7 +121,6 @@ export function MapServiceApp() {
         const updated = { ...existing, ...options };
         validatedSessionRef.current = updated;
         setSession(updated);
-        postToParent(event.origin, { type: 'ready' });
         return;
       }
       if (setupOriginRef.current === event.origin) return;
@@ -147,7 +146,6 @@ export function MapServiceApp() {
         validatedSessionRef.current = next;
         setSession(next);
         setStatus('');
-        postToParent(event.origin, { type: 'ready' });
       } catch (error) {
         if (disposed || generation !== setupGenerationRef.current) return;
         const message = error instanceof Error ? error.message : 'The central map service could not be initialized.';
