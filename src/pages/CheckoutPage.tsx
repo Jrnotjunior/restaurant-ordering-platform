@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { RestaurantProduct } from '../types/menu';
-import { branchBelongsToRestaurant, type RestaurantBranch } from '../modules/branches/branchTypes';
 import { createOrder } from '../modules/ordering/orderService';
 import { createPayMongoCheckout, createPendingOnlinePayment, getOnlinePaymentStatus } from '../modules/payments/paymentService';
 import { calculateDeliveryRoute, type DeliveryRouteQuote } from '../modules/location/locationService';
@@ -16,7 +15,7 @@ import '../styles/checkout-mobile.css';
 type CartItem = { product: RestaurantProduct; quantity: number };
 type OrderType = 'delivery' | 'take_out' | 'pickup' | 'dine_in';
 type PaymentMethod = 'cash' | 'online';
-type CheckoutPageProps = { items: CartItem[]; onClearCart: (targetUserId?: string) => void; branch: RestaurantBranch | null };
+type CheckoutPageProps = { items: CartItem[]; onClearCart: (targetUserId?: string) => void };
 type ConfirmedOrder = { orderId: string; orderNumber: string; paymentMethod: PaymentMethod; orderType: OrderType; pickupMethod?: 'customer' | 'third_party_courier'; pickupAddress?: string; total: number };
 const PENDING_PAYMENT_CHECKOUT_URL_KEY = 'restaurant-ordering-pending-payment-checkout-url';
 const ACTIVE_ORDER_KEY = 'restaurant-ordering-active-order';
@@ -41,7 +40,7 @@ const outsideDeliveryAreaMessage = 'This address is outside the store delivery a
 const PENDING_PAYMENT_ORDER_KEY = 'restaurant-ordering-pending-payment-order';
 const thirdPartyCourierNote = 'THIRD-PARTY COURIER: Customer is responsible for booking and paying the delivery courier (such as Lalamove or Grab Express). The restaurant will prepare the food for courier pickup at the listed restaurant pickup point.';
 
-export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) {
+export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
   const restaurant = useRestaurant();
   const { user } = useRestaurantOwnerAuth();
   const [orderType, setOrderType] = useState<OrderType>('delivery');
@@ -59,16 +58,11 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
   const [selectedDeliveryLocation, setSelectedDeliveryLocation] = useState<MapboxDeliveryAddress | null>(null);
   const [deliveryRouteQuote, setDeliveryRouteQuote] = useState<DeliveryRouteQuote | null>(null);
   const [deliveryRouteLoading, setDeliveryRouteLoading] = useState(false);
-  const [deliveryRouteError, setDeliveryRouteError] = useState('');
   const [notes, setNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('');
   const [showPayment, setShowPayment] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [pendingPaymentReview, setPendingPaymentReview] = useState<
-    | { method: 'online'; paymentId: string; referenceNumber: string; subtotal: number; deliveryFee: number; total: number }
-    | { method: 'cash'; subtotal: number; deliveryFee: number; total: number }
-    | null
-  >(null);
+  const [pendingPaymentReview, setPendingPaymentReview] = useState<{ paymentId: string; referenceNumber: string; subtotal: number; deliveryFee: number; total: number } | null>(null);
   const [showDeliveryTerms, setShowDeliveryTerms] = useState(false);
   const [thirdPartyCourierDelivery, setThirdPartyCourierDelivery] = useState(false);
   const [thirdPartyCourierTermsAccepted, setThirdPartyCourierTermsAccepted] = useState(false);
@@ -389,26 +383,15 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
             longitude: profile.defaultDeliveryLongitude,
           };
           setSelectedDeliveryLocation(savedLocation);
-          setDeliveryRouteError('');
-          if (!branch || !branchBelongsToRestaurant(branch, currentRestaurantId)) {
-            setDeliveryRouteQuote(null);
-            setDeliveryRouteLoading(false);
-            setDeliveryRouteError('The selected branch is not available for this restaurant. Refresh checkout and select the branch again.');
-            return;
-          }
           setDeliveryRouteLoading(true);
-          void calculateDeliveryRoute(currentRestaurantId, profile.defaultDeliveryLatitude!, profile.defaultDeliveryLongitude!, branch.id)
+          void calculateDeliveryRoute(currentRestaurantId, profile.defaultDeliveryLatitude!, profile.defaultDeliveryLongitude!)
             .then((quote) => {
-              if (!cancelled) {
-                setDeliveryRouteQuote(quote);
-                setDeliveryRouteError('');
-              }
+              if (!cancelled) setDeliveryRouteQuote(quote);
             })
             .catch((error) => {
               if (!cancelled) {
                 console.error('Unable to calculate delivery for saved address.', error);
                 setDeliveryRouteQuote(null);
-                setDeliveryRouteError(error instanceof Error ? error.message : 'Unable to calculate delivery for this address. Please try again.');
               }
             })
             .finally(() => {
@@ -433,9 +416,9 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
     return () => {
       cancelled = true;
     };
-  }, [restaurantId, user?.id, branch?.id, branch?.restaurant_id]);
+  }, [restaurantId, user?.id]);
 
-  const restaurantPickupPoint = branch?.store_address?.trim() || branch?.restaurant_address?.trim() || storeAddress;
+  const restaurantPickupPoint = storeAddress;
   const isDelivery = orderType === 'delivery';
 
   const subtotal = useMemo(() => items.reduce((total, item) => total + item.product.price * item.quantity, 0), [items]);
@@ -559,7 +542,7 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
     const completeAddress = address.trim();
     if (!city || !barangay || !completeAddress || !deliveryRouteQuote?.inRange) return;
     await saveMyDefaultDeliveryAddress(
-      branch?.restaurant_id ?? restaurantId ?? items[0].product.restaurantId,
+      items[0].product.restaurantId,
       city,
       barangay,
       completeAddress,
@@ -571,13 +554,6 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
   }
 
   async function createPendingOrder(method: PaymentMethod) {
-    if (!branch?.id) throw new Error('Choose a branch before placing your order.');
-    if (!restaurantId || !branchBelongsToRestaurant(branch, restaurantId)) {
-      throw new Error('The selected branch does not match this restaurant. Refresh checkout and select the branch again.');
-    }
-    if (items.some((item) => item.product.restaurantId !== branch.restaurant_id)) {
-      throw new Error('Your cart does not match the selected restaurant. Clear the cart and add the items again.');
-    }
     if (new Set(items.map((item) => item.product.restaurantId)).size !== 1) throw new Error('Your cart contains items from different restaurants. Please clear your cart and try again.');
     const isOwnCourierPickup = thirdPartyCourierDelivery && orderType === 'pickup';
     if (isOwnCourierPickup && !restaurantPickupPoint) throw new Error('The restaurant pickup address is not configured yet. Please contact the restaurant.');
@@ -586,7 +562,6 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
     const finalNotes = [notes.trim(), isOwnCourierPickup ? thirdPartyCourierNote : ''].filter(Boolean).join('\\n\\n');
     return createOrder({
       restaurantId: items[0].product.restaurantId,
-      branchId: branch.id,
       customerName: customerName.trim(),
       mobileNumber: ['dine_in', 'take_out'].includes(orderType) ? '' : mobileNumber.trim(),
       orderType: isOwnCourierPickup ? 'pickup' : orderType,
@@ -608,7 +583,6 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
   }
   async function handleOnlinePayment() {
     if (!canContinue || items.length === 0 || isSubmitting) return;
-    if (!branch?.id) { setSubmitError('Choose a branch before proceeding to payment.'); setShowPaymentModal(true); return; }
     setIsSubmitting(true);
     setSubmitError('');
     setPaymentMethod('online');
@@ -625,7 +599,6 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
       }
       const pendingPayment = await createPendingOnlinePayment({
         restaurantId: items[0].product.restaurantId,
-        branchId: branch.id,
         customerName: customerName.trim(),
         mobileNumber: ['dine_in', 'take_out'].includes(orderType) ? '' : mobileNumber.trim(),
         orderType: isOwnCourierPickup ? 'pickup' : orderType,
@@ -659,7 +632,7 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
       } else {
         window.localStorage.removeItem(PENDING_PAYMENT_PICKUP_METHOD_KEY);
       }
-      setPendingPaymentReview({ method: 'online', ...pendingPayment });
+      setPendingPaymentReview(pendingPayment);
       setShowPaymentModal(false);
       setIsSubmitting(false);
       return;
@@ -673,7 +646,7 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
   }
 
   async function handleContinueToPayMongo() {
-    if (!pendingPaymentReview || pendingPaymentReview.method !== 'online' || isSubmitting) return;
+    if (!pendingPaymentReview || isSubmitting) return;
     setIsSubmitting(true);
     setSubmitError('');
     try {
@@ -689,14 +662,8 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
   }
 
   function handleCancelPaymentReview() {
-    const reviewMethod = pendingPaymentReview?.method;
     setPendingPaymentReview(null);
     setSubmitError('');
-    if (reviewMethod === 'cash') {
-      setPaymentMethod('cash');
-      setShowPaymentModal(true);
-      return;
-    }
     setPaymentMethod('');
   }
 
@@ -722,8 +689,6 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
       window.localStorage.setItem(ACTIVE_ORDER_KEY, createdOrder.orderNumber);
       window.localStorage.setItem(ACTIVE_ORDER_ID_KEY, createdOrder.orderId);
       window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
-      setPendingPaymentReview(null);
-      setShowPaymentModal(false);
       onClearCart();
       setConfirmedOrder({ orderId: createdOrder.orderId, orderNumber: createdOrder.orderNumber, paymentMethod: 'cash', orderType: isOwnCourierPickup ? 'pickup' : orderType, pickupMethod: isOwnCourierPickup ? 'third_party_courier' : undefined, pickupAddress: isOwnCourierPickup ? restaurantPickupPoint : undefined, total: confirmedTotal });
     } catch (error) {
@@ -787,7 +752,6 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
                   setDeliveryBarangay('');
                   setAddress('');
                   setDeliveryRouteQuote(null);
-                  setDeliveryRouteError('');
                   setHasDefaultAddress(false);
                   resetPayment();
                 }}
@@ -801,25 +765,13 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
                   setShowDeliveryTerms(false);
                   resetPayment();
                   setDeliveryRouteQuote(null);
-                  setDeliveryRouteError('');
 
                   if (thirdPartyCourierDelivery) return;
-                  if (!branch || !branchBelongsToRestaurant(branch, restaurantId)) {
-                    setDeliveryRouteError('The selected branch is not available for this restaurant. Refresh checkout and select the branch again.');
-                    return;
-                  }
-                  if (!selected.latitude || !selected.longitude) {
-                    setDeliveryRouteError('Mapbox did not return an exact map location. Please choose the address again.');
-                    return;
-                  }
+                  if (!selected.latitude || !selected.longitude) throw new Error('Mapbox did not return an exact map location. Please choose the address again.');
                   setDeliveryRouteLoading(true);
                   try {
-                    const quote = await calculateDeliveryRoute(restaurantId, selected.latitude, selected.longitude, branch.id);
+                    const quote = await calculateDeliveryRoute(restaurantId!, selected.latitude, selected.longitude);
                     setDeliveryRouteQuote(quote);
-                    setDeliveryRouteError('');
-                  } catch (error) {
-                    setDeliveryRouteQuote(null);
-                    setDeliveryRouteError(error instanceof Error ? error.message : 'Unable to calculate delivery for this address. Please try again.');
                   } finally {
                     setDeliveryRouteLoading(false);
                   }
@@ -841,7 +793,6 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
               {deliveryCity.trim() && deliveryBarangay.trim() && <label><span>Unit/Bldg./Street Address</span><textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Add your unit, building, house number, or other delivery details" rows={3} required /></label>}
             </div>}
             {!thirdPartyCourierDelivery && deliveryRouteLoading && <p className="checkout-hint">Calculating driving distance…</p>}
-            {!thirdPartyCourierDelivery && !deliveryRouteLoading && deliveryRouteError && <p className="checkout-error" role="alert">{deliveryRouteError}</p>}
             {!thirdPartyCourierDelivery && !deliveryRouteLoading && deliveryRouteQuote && !deliveryRouteQuote.inRange && <div className="checkout-outside-scope-card"><p className="checkout-error" role="alert">{outsideDeliveryAreaMessage}</p><button className="button button-secondary" type="button" onClick={openThirdPartyCourierTerms}>Use my own courier instead</button></div>}
             {!thirdPartyCourierDelivery && !deliveryRouteLoading && deliveryRouteQuote?.inRange && <p className="checkout-hint">Driving distance: {(deliveryRouteQuote.distanceMeters / 1000).toFixed(1)} km · Delivery fee: ₱{deliveryFee.toFixed(2)}</p>}
           </fieldset>}
@@ -857,7 +808,7 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
           </div>}
           {redeemPoints && loyaltyDiscountPreview > 0 && <div className="checkout-summary-row checkout-loyalty-discount"><span>Loyalty Discount</span><strong>-₱{loyaltyDiscountPreview.toFixed(2)}</strong></div>}
           <div className="checkout-summary-total"><span>Total</span><strong>₱{checkoutTotal.toFixed(2)}</strong></div></div>
-          <button className="button button-primary" type="button" disabled={!canContinue} onClick={() => { setSubmitError(''); setPaymentMethod(''); setShowPaymentModal(true); }}>Choose Payment Method</button>
+          <button className="button button-primary" type="button" disabled={!canContinue} onClick={() => { setSubmitError(''); setPaymentMethod(''); setShowPaymentModal(true); }}>Continue to Payment</button>
           {!canContinue && checkoutValidationMessage && <div className="checkout-validation-notice" role="status" aria-live="polite"><span className="checkout-validation-notice-icon" aria-hidden="true">!</span><div className="checkout-validation-notice-content"><strong>Before you continue</strong><p>{checkoutValidationMessage}</p></div></div>}
         </aside>
       </div>
@@ -885,18 +836,18 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
               </button>;
             })}
           </div>
+          {paymentMethod === 'cash' && <section className="payment-review-refund-policy" aria-labelledby="cash-cancellation-policy-title">
+            <h3 id="cash-cancellation-policy-title">Cancellation &amp; Refund Policy</h3>
+            <p>You may cancel your order while its status is Pending. Once the restaurant confirms the order or sends it to the kitchen, cancellation is no longer available.</p>
+            <p>Cash orders remain pending until the cashier confirms your payment. If an eligible online-paid order is cancelled while Pending, a refund will be requested through the payment provider. Refund availability and processing times depend on the payment method and provider.</p>
+          </section>}
           {submitError && <p className="checkout-error" role="alert">{submitError}</p>}
           <div className="payment-modal-actions">
             <button className="button button-secondary" type="button" onClick={() => setShowPaymentModal(false)} disabled={isSubmitting}>Cancel</button>
             <button className="button button-primary" type="button" disabled={!paymentMethod || isSubmitting} onClick={() => {
-              if (paymentMethod === 'online') {
-                void handleOnlinePayment();
-              } else {
-                setSubmitError('');
-                setPendingPaymentReview({ method: 'cash', subtotal, deliveryFee, total: checkoutTotal });
-                setShowPaymentModal(false);
-              }
-            }}>{paymentMethod === 'online' ? 'Continue to Online Payment' : 'Continue to Cash Payment'}</button>
+              if (paymentMethod === 'online') { void handleOnlinePayment(); }
+              else { void handlePlaceOrder(); }
+            }}>{paymentMethod === 'online' ? 'Continue to Online Payment' : ['dine_in', 'take_out'].includes(orderType) ? 'Place Order & Pay at Counter' : 'Place Order'}</button>
           </div>
         </div>
       </div>}
@@ -906,8 +857,8 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
           <div className="payment-modal-header">
             <div>
               <p className="eyebrow">Final review</p>
-              <h2 id="payment-review-title">{pendingPaymentReview.method === 'cash' ? 'Review your order before placing it' : 'Review your order before payment'}</h2>
-              <p>{pendingPaymentReview.method === 'cash' ? 'Check your items, discount, and total before placing your order.' : 'Check the item prices, loyalty discount, and delivery fee before continuing to PayMongo.'}</p>
+              <h2 id="payment-review-title">Review your order before payment</h2>
+              <p>Check the item prices, loyalty discount, and delivery fee before continuing to PayMongo.</p>
             </div>
             <button className="payment-modal-close" type="button" aria-label="Close order review" onClick={handleCancelPaymentReview} disabled={isSubmitting}>×</button>
           </div>
@@ -930,19 +881,12 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
           <section className="payment-review-refund-policy" aria-labelledby="payment-review-refund-policy-title">
             <h3 id="payment-review-refund-policy-title">Cancellation &amp; Refund Policy</h3>
             <p>You may cancel your order while its status is Pending. Once the restaurant confirms the order or sends it to the kitchen, cancellation is no longer available.</p>
-            <p>Cash orders remain pending until the cashier confirms payment. For eligible online-paid orders cancelled while Pending, a refund will be requested through the payment provider. Refund availability and processing times depend on the payment method and provider.</p>
+            <p>For eligible online-paid orders cancelled while Pending, a refund will be requested through the payment provider. Refund availability and processing times depend on the payment method and provider.</p>
           </section>
           {submitError && <p className="checkout-error" role="alert">{submitError}</p>}
           <div className="payment-modal-actions">
-            <button className="button button-secondary" type="button" onClick={handleCancelPaymentReview} disabled={isSubmitting}>{pendingPaymentReview.method === 'cash' ? 'Back to payment method' : 'Back to checkout'}</button>
-            <button className="button button-primary" type="button" onClick={() => {
-              if (pendingPaymentReview.method === 'cash') void handlePlaceOrder();
-              else void handleContinueToPayMongo();
-            }} disabled={isSubmitting}>{isSubmitting
-              ? pendingPaymentReview.method === 'cash' ? 'Placing order…' : 'Preparing secure payment…'
-              : pendingPaymentReview.method === 'cash'
-                ? ['dine_in', 'take_out'].includes(orderType) ? 'Place Order & Pay at Counter' : 'Place Order'
-                : 'Continue to secure payment'}</button>
+            <button className="button button-secondary" type="button" onClick={handleCancelPaymentReview} disabled={isSubmitting}>Back to checkout</button>
+            <button className="button button-primary" type="button" onClick={() => { void handleContinueToPayMongo(); }} disabled={isSubmitting}>{isSubmitting ? 'Preparing secure payment…' : 'Continue to secure payment'}</button>
           </div>
         </section>
       </div>}

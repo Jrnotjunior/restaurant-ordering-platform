@@ -115,7 +115,7 @@ Deno.serve(async (request) => {
 
     const { data: paymongoConnection, error: paymongoConnectionError } = await adminClient
       .from("restaurant_paymongo_accounts")
-      .select("paymongo_account_id,connection_status,webhook_secret_id,onboarding_step,activation_status")
+      .select("paymongo_account_id,connection_status,webhook_secret_id,onboarding_step")
       .eq("restaurant_id", pendingPayment.restaurant_id)
       .eq("environment", paymongoEnvironment)
       .maybeSingle();
@@ -128,33 +128,34 @@ Deno.serve(async (request) => {
       }, 409);
     }
 
-    const isParentTestSandbox =
+    const isTestSimulation =
       paymongoEnvironment === "test" &&
-      paymongoConnection.onboarding_step === "test_parent_account" &&
-      paymongoConnection.connection_status === "pending" &&
-      !paymongoConnection.paymongo_account_id &&
-      !paymongoConnection.webhook_secret_id;
+      paymongoConnection.onboarding_step === "test_simulation";
 
-    if (isParentTestSandbox) {
-      // Parent-account sandbox checkout only. No fake child ID or Account-ID
-      // header is used, so this does not claim or simulate child account routing.
-      if (paymongoConnection.activation_status !== "mock") {
-        return jsonResponse({ error: "The PayMongo parent sandbox is not in a valid state." }, 409);
+    if (isTestSimulation) {
+      // Use PayMongo's sandbox child-account context for the simulation. This
+      // exercises the same Account-ID routing contract used for live tenants,
+      // while remaining test-only and not proving real settlement.
+      if (paymongoConnection.connection_status !== "pending") {
+        return jsonResponse({ error: "The PayMongo test simulation is not in a valid state." }, 409);
       }
-    } else if (
-      paymongoConnection.connection_status !== "active" ||
-      !paymongoConnection.paymongo_account_id ||
-      !paymongoConnection.webhook_secret_id
-    ) {
-      return jsonResponse({
-        error: `This restaurant's PayMongo ${paymongoEnvironment} child account is not ready for online payments yet.`,
-      }, 409);
+    } else {
+      if (
+        paymongoConnection.connection_status !== "active" ||
+        !paymongoConnection.paymongo_account_id ||
+        !paymongoConnection.webhook_secret_id
+      ) {
+        return jsonResponse({
+          error: `This restaurant's PayMongo ${paymongoEnvironment} child account is not ready for online payments yet.`,
+        }, 409);
+      }
     }
 
-    // Test parent sandbox deliberately omits Account-ID. A real active child
-    // connection always uses its own persisted tenant account ID.
-    const linkedPayMongoAccountId = isParentTestSandbox
-      ? ""
+    // PayMongo test keys return a shared mock account, not a real linked child.
+    // Use its documented mock ID only to exercise Account-ID request handling in
+    // sandbox. Never persist this ID or treat the result as proof of real routing.
+    const linkedPayMongoAccountId = isTestSimulation
+      ? "org_test_merchant"
       : String(paymongoConnection.paymongo_account_id ?? "").trim();
     if (pendingPayment.checkout_url) {
       return jsonResponse({ checkoutUrl: pendingPayment.checkout_url }, 200);

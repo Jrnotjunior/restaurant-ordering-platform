@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { MapboxDeliveryLocationPicker, type MapboxDeliveryAddress } from '../components/MapboxDeliveryLocationPicker';
 import { PayMongoLiveOnboardingCard } from '../components/PayMongoLiveOnboardingCard';
-import { BranchManagementPanel } from '../modules/branches/components/BranchManagementPanel';
 import { useOwnerUnsavedChanges } from '../contexts/OwnerUnsavedChangesContext';
 import { useOwnerUnsavedChangesTracking } from '../hooks/useOwnerUnsavedChangesTracking';
 
@@ -250,7 +249,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [error, setError] = useState('');
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
   const [activeSettingsTab, setActiveSettingsTab] = useState('profile');
-  const [branchSettingsRevision, setBranchSettingsRevision] = useState(0);
   const [hasDispatchDelivery, setHasDispatchDelivery] = useState(false);
   const [hasSelfOrdering, setHasSelfOrdering] = useState(true);
   const [hasOnlinePayments, setHasOnlinePayments] = useState(true);
@@ -635,7 +633,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       setRestaurantAddress(savedRow?.restaurant_address ?? restaurantAddress.trim());
       setHours(savedHours);
       setMessage('Store settings saved successfully.');
-      setBranchSettingsRevision((revision) => revision + 1);
       setUnsavedChanges(false);
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Unable to save store settings.');
@@ -753,10 +750,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         @media(max-width:480px){.restaurant-settings-confirm-actions{flex-direction:column-reverse}.restaurant-settings-confirm-actions .button{width:100%}}
         .restaurant-settings-actions{display:flex;justify-content:flex-end}
 .restaurant-paymongo-card{position:relative}
-        .restaurant-paymongo-card .restaurant-settings-tax-grid{gap:8px}
-        .restaurant-paymongo-card .restaurant-settings-switch-row{margin-top:0;min-height:34px}
-        .restaurant-paymongo-card .restaurant-settings-actions{margin-top:14px}
-        .restaurant-paymongo-card .restaurant-settings-actions .button{min-height:36px;padding:8px 16px}
         .restaurant-paymongo-error{display:grid;gap:4px;margin:0 0 16px;padding:13px 15px;border:1px solid #fecaca;border-radius:10px;background:#fef2f2;color:#991b1b;line-height:1.4}
         .restaurant-paymongo-error strong{font-size:14px}
         .restaurant-paymongo-error span{font-size:13px;font-weight:600;overflow-wrap:anywhere}
@@ -773,7 +766,6 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
             ...(hasSelfOrdering ? [{ id: 'status', label: 'Store status & hours' }] : []),
             { id: 'delivery', label: 'Delivery pricing' },
             { id: 'cod', label: 'Cash Payment Options' },
-            { id: 'branches', label: 'Branches' },
             { id: 'rider', label: 'Rider assignment' },
             ...(hasOnlinePayments ? [{ id: 'payments', label: 'Online payments' }] : []),
             { id: 'tax', label: 'Tax & receipts' },
@@ -1006,9 +998,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
                 {hasOnlinePayments && <div id="store-live-payments" hidden={activeSettingsTab !== 'payments'}><PayMongoLiveOnboardingCard restaurantId={restaurantId} /></div>}
 
-        <div className="restaurant-settings-card" id="store-branches" role="tabpanel" aria-labelledby="store-settings-tab-branches" hidden={activeSettingsTab !== 'branches'}>
-          <BranchManagementPanel restaurantId={restaurantId} refreshToken={branchSettingsRevision} onBranchSettingsChanged={loadSettings} />
-        </div>
+
 
         <div className="restaurant-settings-card" id="store-tax" role="tabpanel" aria-labelledby="store-settings-tab-tax" hidden={activeSettingsTab !== 'tax'}>
           <div className="restaurant-settings-tax-grid">
@@ -1043,7 +1033,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           <p className="restaurant-settings-help" style={{ marginTop: 12 }}>For Senior Citizen/PWD transactions, the POS applies the 20% discount to the eligible VAT-exclusive share and removes the corresponding VAT when the restaurant is VAT-registered. Verify the restaurant’s actual BIR registration and pricing treatment before enabling VAT settings.</p>
         </div>
 
-                {!['cod', 'rider', 'tax', 'payments', 'branches'].includes(activeSettingsTab) && (
+                {!['cod', 'rider', 'tax', 'payments'].includes(activeSettingsTab) && (
           <div className="restaurant-settings-actions">
             <button className="button button-primary restaurant-compact-action" type="submit" disabled={loading || saving}>
               {saving ? 'Saving…' : 'Save'}

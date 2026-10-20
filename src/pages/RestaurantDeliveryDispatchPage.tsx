@@ -1,16 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { assignDelivery, completeDispatchHandoff, getDispatchData, subscribeToDispatchChanges, type DispatchTab, type ReadyOrder, type Rider } from '../modules/dispatch/dispatchService';
-import { useRestaurantBranches } from '../modules/branches/useRestaurantBranches';
-import { BranchSelector } from '../modules/branches/components/BranchSelector';
 
 type Props = { restaurantId: string; role?: 'owner' | 'dispatcher' };
 
 export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }: Props) {
-  const { branches, selectedBranch, selectBranch, loading: branchesLoading, error: branchesError } = useRestaurantBranches(restaurantId);
-  const branchId = selectedBranch?.id ?? null;
-  const branchIdRef = useRef<string | null>(branchId);
-  branchIdRef.current = branchId;
-  const dispatchLoadSequence = useRef(0);
   const [orders, setOrders] = useState<ReadyOrder[]>([]);
   const [activeTab, setActiveTab] = useState<DispatchTab>('delivery');
   const [riders, setRiders] = useState<Rider[]>([]);
@@ -20,48 +13,27 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
   const [assigningRiderId, setAssigningRiderId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
-  async function loadDispatchData(targetBranchId: string | null = branchId) {
-    const requestId = ++dispatchLoadSequence.current;
-    if (!targetBranchId) {
-      setOrders([]);
-      setRiders([]);
-      setLoading(false);
-      return;
-    }
+  async function loadDispatchData() {
     try {
       setError('');
-      const data = await getDispatchData(restaurantId, targetBranchId);
-      if (requestId !== dispatchLoadSequence.current || targetBranchId !== branchIdRef.current) return;
+      const data = await getDispatchData(restaurantId);
       setOrders(data.orders);
       setRiders(data.riders);
     } catch (loadError) {
-      if (requestId === dispatchLoadSequence.current && targetBranchId === branchIdRef.current) {
-        setError(loadError instanceof Error ? loadError.message : 'Unable to load delivery dispatch data.');
-      }
+      setError(loadError instanceof Error ? loadError.message : 'Unable to load delivery dispatch data.');
     } finally {
-      if (requestId === dispatchLoadSequence.current && targetBranchId === branchIdRef.current) setLoading(false);
+      setLoading(false);
     }
   }
 
   useEffect(() => {
-    if (branchesLoading) {
-      setLoading(true);
-      return;
-    }
-    if (branchesError || !branchId) {
-      dispatchLoadSequence.current += 1;
-      setOrders([]);
-      setRiders([]);
-      setLoading(false);
-      return;
-    }
     setLoading(true);
-    void loadDispatchData(branchId);
+    void loadDispatchData();
 
     const unsubscribe = subscribeToDispatchChanges(
       restaurantId,
       () => {
-        void loadDispatchData(branchId);
+        void loadDispatchData();
       },
       (status) => {
         if (status === 'SUBSCRIBED') setRealtimeStatus('live');
@@ -73,15 +45,14 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
 
     // Keep dispatch fresh even if a Realtime event is missed or the channel drops.
     const refreshInterval = window.setInterval(() => {
-      void loadDispatchData(branchId);
+      void loadDispatchData();
     }, 15000);
 
     return () => {
       window.clearInterval(refreshInterval);
-      dispatchLoadSequence.current += 1;
       unsubscribe?.();
     };
-  }, [restaurantId, branchId, branchesLoading, branchesError]);
+  }, [restaurantId]);
 
   const deliveryOrders = useMemo(
     () => orders.filter((order) => order.orderType === 'delivery' && order.riderId === null),
@@ -158,7 +129,6 @@ export function RestaurantDeliveryDispatchPage({ restaurantId, role = 'owner' }:
         </span>
       </header>}
 
-      {branchesLoading ? <div className="restaurant-dispatch-message">Loading branches…</div> : branchesError ? <div className="restaurant-dispatch-message" role="alert">Branch configuration could not be loaded; dispatch is paused until it can be verified. {branchesError}</div> : branches.length === 0 ? <div className="restaurant-dispatch-message" role="alert">No active branch is configured for this business.</div> : <BranchSelector branches={branches} selectedBranch={selectedBranch} onSelect={(id) => { selectBranch(id); setSelectedOrder(null); }} />}
       {error ? <div className="restaurant-dispatch-message" role="alert">{error}</div> : null}
 
       <main className="restaurant-dispatch-workflow">

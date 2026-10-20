@@ -13,11 +13,10 @@ export async function calculateDeliveryRoute(
   restaurantId: string,
   latitude: number,
   longitude: number,
-  branchId?: string,
 ): Promise<DeliveryRouteQuote> {
   if (!supabase) throw new Error('Supabase environment variables are not configured.');
   const { data, error } = await supabase.functions.invoke('calculate-delivery-route', {
-    body: { restaurantId, ...(branchId ? { branchId } : {}), latitude, longitude },
+    body: { restaurantId, latitude, longitude },
   });
   if (error) {
     // Supabase wraps non-2xx Edge Function responses in a FunctionsHttpError.

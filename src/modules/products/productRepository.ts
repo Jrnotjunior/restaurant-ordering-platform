@@ -1,6 +1,5 @@
 import type { RestaurantCategory, RestaurantProduct } from '../../types/menu';
 import { supabase, supabaseRpc } from '../../services/supabaseClient';
-import { applyBranchProductSetting, getBranchProductSettings } from './branchProductRepository';
 
 type CategoryRow = {
   id: string;
@@ -29,7 +28,7 @@ type ProductRow = {
   updated_at: string;
 };
 
-export async function getMenu(restaurantId: string, includeUnavailable = false, branchId?: string | null): Promise<{ categories: RestaurantCategory[]; products: RestaurantProduct[] }> {
+export async function getMenu(restaurantId: string, includeUnavailable = false): Promise<{ categories: RestaurantCategory[]; products: RestaurantProduct[] }> {
   if (!supabase) throw new Error('Supabase environment variables are not configured.');
 
   let categoryQuery = supabase
@@ -57,27 +56,6 @@ export async function getMenu(restaurantId: string, includeUnavailable = false, 
   const productRows = (productResult.data ?? []) as ProductRow[];
   const usedCategoryIds = new Set(productRows.map((product) => product.category_id));
 
-  let branchSettings: Awaited<ReturnType<typeof getBranchProductSettings>> = {};
-  if (branchId) branchSettings = await getBranchProductSettings(restaurantId, branchId);
-
-  const products = productRows.map((product): RestaurantProduct => {
-    const baseProduct: RestaurantProduct = {
-      id: product.id,
-      restaurantId: product.restaurant_id,
-      categoryId: product.category_id,
-      name: product.name,
-      slug: product.slug,
-      description: product.description,
-      price: Number(product.price),
-      imageUrl: product.image_url ?? undefined,
-      sortOrder: product.sort_order,
-      isAvailable: product.is_available,
-      createdAt: product.created_at,
-      updatedAt: product.updated_at,
-    };
-    return branchId ? applyBranchProductSetting(baseProduct, branchSettings[product.id]) : baseProduct;
-  });
-
   return {
     categories: categoryRows.filter((category) => usedCategoryIds.has(category.id)).map((category) => ({
       id: category.id,
@@ -90,7 +68,20 @@ export async function getMenu(restaurantId: string, includeUnavailable = false, 
       createdAt: category.created_at,
       updatedAt: category.updated_at,
     })),
-    products,
+    products: productRows.map((product) => ({
+      id: product.id,
+      restaurantId: product.restaurant_id,
+      categoryId: product.category_id,
+      name: product.name,
+      slug: product.slug,
+      description: product.description,
+      price: Number(product.price),
+      imageUrl: product.image_url ?? undefined,
+      sortOrder: product.sort_order,
+      isAvailable: product.is_available,
+      createdAt: product.created_at,
+      updatedAt: product.updated_at,
+    })),
   };
 }
 
@@ -166,20 +157,12 @@ export async function deleteProduct(productId: string) {
   await supabaseRpc('delete_restaurant_product', { p_product_id: productId });
 }
 
-export function subscribeToMenuChanges(
-  restaurantId: string,
-  onChange: () => void,
-  branchId?: string | null,
-): (() => void) | null {
+export function subscribeToMenuChanges(restaurantId: string, onChange: () => void): (() => void) | null {
   if (!supabase) return null;
 
   const channel = supabase
     .channel(`restaurant-menu-changes:${restaurantId}`)
-    .on('broadcast', { event: 'restaurant_menu_changed' }, (message) => {
-      const eventBranchId = typeof message.payload?.branchId === 'string' ? message.payload.branchId : null;
-      if (eventBranchId && branchId && eventBranchId !== branchId) return;
-      onChange();
-    })
+    .on('broadcast', { event: 'restaurant_menu_changed' }, onChange)
     .subscribe();
 
   return () => {
@@ -187,20 +170,12 @@ export function subscribeToMenuChanges(
   };
 }
 
-export function subscribeToCashierMenuChanges(
-  restaurantId: string,
-  onChange: () => void,
-  branchId?: string | null,
-): (() => void) | null {
+export function subscribeToCashierMenuChanges(restaurantId: string, onChange: () => void): (() => void) | null {
   if (!supabase) return null;
 
   const channel = supabase
     .channel(`restaurant-menu-changes:${restaurantId}`)
-    .on('broadcast', { event: 'restaurant_menu_changed' }, (message) => {
-      const eventBranchId = typeof message.payload?.branchId === 'string' ? message.payload.branchId : null;
-      if (eventBranchId && branchId && eventBranchId !== branchId) return;
-      onChange();
-    })
+    .on('broadcast', { event: 'restaurant_menu_changed' }, onChange)
     .subscribe();
 
   return () => {

@@ -99,9 +99,6 @@ export type RestaurantTaxSettings = {
 
 export type RestaurantOrder = {
   orderId: string;
-  branchId?: string;
-  branchName?: string;
-  branchCode?: string;
   orderNumber: string;
   customerName: string;
   notes: string;
@@ -144,7 +141,6 @@ type CreateOrderItem = {
 
 export type CreateOrderInput = {
   restaurantId: string;
-  branchId?: string;
   customerName: string;
   mobileNumber: string;
   orderType: 'delivery' | 'take_out' | 'pickup' | 'dine_in';
@@ -275,7 +271,6 @@ export async function createOrder(input: CreateOrderInput): Promise<CreatedOrder
         p_customer_delivery_place_id: input.customerDeliveryPlaceId || null,
         p_delivery_quote_id: input.deliveryQuoteId || null,
         p_guest_cancel_token_hash: guestCancelToken.tokenHash,
-        ...(input.branchId ? { p_branch_id: input.branchId } : {}),
       }
     : {
         p_restaurant_id: input.restaurantId,
@@ -296,7 +291,6 @@ export async function createOrder(input: CreateOrderInput): Promise<CreatedOrder
         p_customer_delivery_longitude: input.customerDeliveryLongitude ?? null,
         p_customer_delivery_place_id: input.customerDeliveryPlaceId || null,
         p_guest_cancel_token_hash: guestCancelToken.tokenHash,
-        ...(input.branchId ? { p_branch_id: input.branchId } : {}),
       };
 
   const rows = await supabaseRpc<CreatedOrderRow>(rpcName, rpcParams);
@@ -400,9 +394,6 @@ type RawOrderItem = {
 
 type Row = {
   order_id: string;
-  branch_id?: string;
-  branch_name?: string;
-  branch_code?: string;
   order_number: string;
   customer_name?: string | null;
   notes?: string | null;
@@ -435,17 +426,11 @@ type Row = {
   discount_beneficiaries?: { discountType?: string; discount_type?: string; idType?: string; discount_id_type?: string; idNumber?: string; discount_id_number?: string; eligibleAmount?: number | string; eligible_amount?: number | string; discountAmount?: number | string; discount_amount?: number | string }[] | null;
 };
 
-export async function getRestaurantOrders(restaurantId: string, branchId?: string | null): Promise<RestaurantOrder[]> {
-  const rows = await supabaseRpc<Row>('get_restaurant_orders_with_branch', {
-    p_restaurant_id: restaurantId,
-    p_branch_id: branchId ?? null,
-  });
+export async function getRestaurantOrders(restaurantId: string): Promise<RestaurantOrder[]> {
+  const rows = await supabaseRpc<Row>('get_restaurant_orders', { p_restaurant_id: restaurantId });
 
   return rows.map((row): RestaurantOrder => ({
     orderId: row.order_id,
-    branchId: row.branch_id ?? undefined,
-    branchName: row.branch_name ?? undefined,
-    branchCode: row.branch_code ?? undefined,
     orderNumber: row.order_number,
     customerName: row.customer_name ?? '',
     notes: row.notes ?? '',
@@ -506,7 +491,7 @@ export async function sendOrderToKitchen(orderId: string) {
   }
 }
 
-export async function cancelMyPendingOrder(orderId: string): Promise<{ message: string; refundStatus: string; refundTransferLink: string | null }> {
+export async function cancelMyPendingOrder(orderId: string): Promise<{ message: string; refundStatus: string }> {
   if (!supabase) throw new Error('Order cancellation is unavailable. Please try again later.');
   const guestCancelToken = readGuestOrderCancellationToken(orderId);
   const { data, error } = await supabase.functions.invoke('cancel-customer-order', {
@@ -524,7 +509,6 @@ export async function cancelMyPendingOrder(orderId: string): Promise<{ message: 
   return {
     message: typeof data.message === 'string' ? data.message : 'Your order has been cancelled.',
     refundStatus: typeof data.refundStatus === 'string' ? data.refundStatus : 'not_required',
-    refundTransferLink: typeof data.refundTransferLink === 'string' ? data.refundTransferLink : null,
   };
 }
 
@@ -563,7 +547,7 @@ export function subscribeToOrderTrackingChanges(
 }
 
 
-export async function cancelRestaurantOrder(orderId: string): Promise<{ message: string; refundStatus: string; refundTransferLink: string | null }> {
+export async function cancelRestaurantOrder(orderId: string): Promise<{ message: string; refundStatus: string }> {
   if (!supabase) throw new Error('Order cancellation is unavailable. Please try again later.');
   const { data, error } = await supabase.functions.invoke('cancel-restaurant-order', { body: { orderId } });
   if (error) {
@@ -572,9 +556,5 @@ export async function cancelRestaurantOrder(orderId: string): Promise<{ message:
     throw new Error(payload?.error || error.message || 'Unable to cancel this order.');
   }
   if (!data || data.cancelled !== true) throw new Error(typeof data?.error === 'string' ? data.error : 'Unable to cancel this order.');
-  return {
-    message: String(data.message || 'Order cancelled.'),
-    refundStatus: String(data.refundStatus || 'not_required'),
-    refundTransferLink: typeof data.refundTransferLink === 'string' ? data.refundTransferLink : null,
-  };
+  return { message: String(data.message || 'Order cancelled.'), refundStatus: String(data.refundStatus || 'not_required') };
 }

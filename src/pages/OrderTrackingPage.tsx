@@ -49,7 +49,6 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
   const [cancellingOrder, setCancellingOrder] = useState(false);
   const [cancellationError, setCancellationError] = useState('');
   const [cancellationMessage, setCancellationMessage] = useState('');
-  const [cancellationRefundTransferLink, setCancellationRefundTransferLink] = useState<string | null>(null);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const [showNonDeliveryTimeline, setShowNonDeliveryTimeline] = useState(false);
 
@@ -231,21 +230,16 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
     setCancellingOrder(true);
     setCancellationError('');
     setCancellationMessage('');
-    setCancellationRefundTransferLink(null);
     try {
       const result = await cancelMyPendingOrder(order.orderId);
       const refreshedOrder = await getOrderStatus(order.orderId);
       setOrder(refreshedOrder);
-      setCancellationRefundTransferLink(result.refundTransferLink);
-      // Test-only simulations must never be presented as a real PayMongo refund.
-      // QR Ph requires the customer to claim its PayMongo refund transfer link.
-      setCancellationMessage(result.refundStatus === 'simulated'
-        ? result.message
-        : result.refundTransferLink
-          ? result.message
-          : refreshedOrder.paymentStatus === 'refunded'
-            ? 'Your order has been cancelled and the refund completed successfully.'
-            : result.message);
+      // Refund completion can occur just after the cancellation API response.
+      // Prefer the refreshed order's authoritative payment status so the message
+      // cannot keep saying "being processed" after the refund is already complete.
+      setCancellationMessage(refreshedOrder.paymentStatus === 'refunded'
+        ? 'Your order has been cancelled and the refund completed successfully.'
+        : result.message);
       if (window.localStorage.getItem('restaurant-ordering-active-order-id') === refreshedOrder.orderId) {
         window.localStorage.removeItem('restaurant-ordering-active-order-id');
         window.localStorage.removeItem(ACTIVE_ORDER_KEY);
@@ -371,14 +365,6 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
           ) : null}
           {cancellationError ? <p className="checkout-error" role="alert">{cancellationError}</p> : null}
           {cancellationMessage ? <p className="checkout-success" role="status">{cancellationMessage}</p> : null}
-          {cancellationRefundTransferLink?.startsWith('https://') ? (
-            <p className="order-tracking-payment-note" role="note">
-              <a href={cancellationRefundTransferLink} target="_blank" rel="noopener noreferrer">
-                Open PayMongo QR Ph refund claim link
-              </a>
-              {' '}to choose where PayMongo sends the refunded funds. The link expires after the provider's stated validity window.
-            </p>
-          ) : null}
         </details>
 
         {showCancelConfirmation ? (

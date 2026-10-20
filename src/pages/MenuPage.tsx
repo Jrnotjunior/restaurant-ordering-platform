@@ -32,7 +32,7 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
     setLoading(true);
     setError('');
 
-    getMenu(restaurant.id, true, restaurant.storefrontBranchId)
+    getMenu(restaurant.id, true)
       .then((menu) => {
         if (cancelled) return;
         setCategories(menu.categories);
@@ -50,24 +50,24 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
     return () => {
       cancelled = true;
     };
-  }, [restaurant.id, restaurant.storefrontBranchId]);
+  }, [restaurant.id]);
 
   useEffect(() => {
     if (!restaurant.id) return;
 
     const unsubscribe = subscribeToMenuChanges(restaurant.id, () => {
-      void getMenu(restaurant.id!, true, restaurant.storefrontBranchId)
+      void getMenu(restaurant.id!, true)
         .then((menu) => {
           setCategories(menu.categories);
           setProducts(menu.products);
         })
         .catch((loadError: unknown) => console.error('Unable to refresh menu availability.', loadError));
-    }, restaurant.storefrontBranchId);
+    });
 
     return () => {
       unsubscribe?.();
     };
-  }, [restaurant.id, restaurant.storefrontBranchId]);
+  }, [restaurant.id]);
 
   useEffect(() => {
     function handleOutsideClick(event: MouseEvent) {
