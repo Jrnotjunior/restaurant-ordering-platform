@@ -4,7 +4,7 @@ import type { RestaurantBranch } from './branchTypes';
 
 const storageKey = (restaurantId: string) => `web2table:selected-branch:${restaurantId}`;
 
-export function useRestaurantBranches(restaurantId: string | undefined) {
+export function useRestaurantBranches(restaurantId: string | undefined, preferredBranchId?: string | null) {
   const [branches, setBranches] = useState<RestaurantBranch[]>([]);
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -29,8 +29,9 @@ export function useRestaurantBranches(restaurantId: string | undefined) {
         setBranches(active);
         const key = storageKey(restaurantId);
         const stored = window.localStorage.getItem(key);
+        const domainBranch = preferredBranchId ? active.find((branch) => branch.id === preferredBranchId) : undefined;
         const storedBranch = stored ? active.find((branch) => branch.id === stored) : undefined;
-        const chosen = storedBranch ?? (active.length === 1 ? active[0] : undefined);
+        const chosen = domainBranch ?? storedBranch ?? (active.length === 1 ? active[0] : undefined);
         setSelectedBranchId(chosen?.id ?? null);
         if (chosen) window.localStorage.setItem(key, chosen.id);
         else window.localStorage.removeItem(key);
@@ -44,7 +45,7 @@ export function useRestaurantBranches(restaurantId: string | undefined) {
       });
 
     return () => { cancelled = true; };
-  }, [restaurantId]);
+  }, [restaurantId, preferredBranchId]);
 
   const selectedBranch = useMemo(
     () => branches.find((branch) => branch.id === selectedBranchId) ?? null,
