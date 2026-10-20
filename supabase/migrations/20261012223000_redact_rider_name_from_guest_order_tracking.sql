@@ -10,8 +10,8 @@ begin
     into v_definition;
   v_updated := replace(
     v_definition,
-    'o.status, o.payment_status, o.total, o.delivery_status, rs.name,',
-    'o.status, o.payment_status, o.total, o.delivery_status, CASE WHEN auth.uid() IS NULL THEN NULL ELSE rs.name END,'
+    '    o.delivery_status,\n    rs.name,',
+    '    o.delivery_status,\n    CASE WHEN auth.uid() IS NULL THEN NULL ELSE rs.name END,'
   );
   if v_updated = v_definition then
     if position('CASE WHEN auth.uid() IS NULL THEN NULL ELSE rs.name END' in v_definition) > 0 then
