@@ -1,9 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { useRestaurant } from '../components/RestaurantProvider';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
 import { supabase } from '../services/supabaseClient';
 import { getCurrentCustomerRestaurant } from '../modules/customer/customerAuthService';
 
 export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: boolean }) {
+  const restaurant = useRestaurant();
   const { user, accountType, staffRole, staffRestaurantId, loading: authLoading, signOut, error: authError } = useRestaurantOwnerAuth();
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -121,7 +123,7 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
   }, [authLoading, user?.id, accountType, staffRole, staffRestaurantId]);
 
   if (authLoading) {
-    return <main className="restaurant-owner-auth-page"><section className="restaurant-owner-auth-card"><p>Loading account…</p></section></main>;
+    return <main className="restaurant-owner-auth-page tenant-auth-page"><section className="restaurant-owner-auth-card"><p>Loading account…</p></section></main>;
   }
 
   // Keep the account screen hidden until the current restaurant's customer profile is verified.
@@ -140,7 +142,12 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
 
   return (
     <main className="restaurant-owner-auth-page">
-      <section className="restaurant-owner-auth-card" aria-labelledby="account-login-title">
+      <section className="restaurant-owner-auth-card tenant-auth-card" aria-labelledby="account-login-title">
+        <div className="tenant-auth-brand">
+          {restaurant.logoUrl?.trim() ? <img className="tenant-auth-logo" src={restaurant.logoUrl} alt={`${restaurant.name || 'Restaurant'} logo`} /> : <span className="tenant-auth-logo-fallback" aria-hidden="true">{(restaurant.name || 'R').trim().slice(0, 1).toUpperCase()}</span>}
+          <span className="tenant-auth-brand-name">{restaurant.name?.trim() || 'Welcome'}</span>
+        </div>
+        <p className="tenant-auth-intro">{staffOnly ? 'Sign in to your restaurant team account.' : 'Welcome back. Sign in to continue your ordering experience.'}</p>
         <h1 className="restaurant-login-title" id="account-login-title">{staffOnly ? 'Team Login' : 'Login'}</h1>
         {(error || authError) && <div className="restaurant-dashboard-error" role="alert">{error || authError}</div>}
 
