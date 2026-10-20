@@ -186,6 +186,26 @@ export function MapServiceApp() {
     };
   }, []);
 
+
+  useEffect(() => {
+    if (!session || window.parent === window || typeof ResizeObserver === 'undefined') return;
+    const page = document.querySelector<HTMLElement>('.map-service-page');
+    if (!page) return;
+
+    const reportHeight = () => {
+      const current = validatedSessionRef.current;
+      if (!current || current.parentOrigin !== session.parentOrigin) return;
+      const height = Math.ceil(page.getBoundingClientRect().height);
+      if (!Number.isFinite(height) || height < 320 || height > 1200) return;
+      postToParent(current.parentOrigin, { type: 'frame-resize', height });
+    };
+
+    const observer = new ResizeObserver(reportHeight);
+    observer.observe(page);
+    reportHeight();
+    return () => observer.disconnect();
+  }, [session?.parentOrigin]);
+
   async function confirmLocation(address: MapboxDeliveryAddress) {
     const current = validatedSessionRef.current;
     if (!current) throw new Error('The map service is not connected to the storefront.');
