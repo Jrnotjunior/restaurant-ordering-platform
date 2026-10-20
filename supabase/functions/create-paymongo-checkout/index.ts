@@ -134,7 +134,7 @@ Deno.serve(async (request) => {
 
     const isParentTestSandbox =
       paymongoEnvironment === "test" &&
-      paymongoConnection.onboarding_step === "test_parent_account" &&
+      paymongoConnection.onboarding_step === "test_simulation" &&
       paymongoConnection.connection_status === "pending" &&
       !paymongoConnection.paymongo_account_id &&
       !paymongoConnection.webhook_secret_id;
