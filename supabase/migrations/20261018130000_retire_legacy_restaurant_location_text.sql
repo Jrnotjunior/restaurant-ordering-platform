@@ -1,5 +1,6 @@
 -- Retire restaurants.location_text after preserving its remaining customer-facing data.
 -- restaurant_address is the public/profile address; store_address remains the delivery origin.
+ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS restaurant_address text;
 update public.restaurants
 set restaurant_address = nullif(trim(location_text), '')
 where nullif(trim(restaurant_address), '') is null
