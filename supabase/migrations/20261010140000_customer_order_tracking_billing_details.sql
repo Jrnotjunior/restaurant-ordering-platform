@@ -85,7 +85,10 @@ as $function$
     ), '[]'::jsonb)
   from public.orders o
   join public.restaurants r on r.id = o.restaurant_id
-  left join public.restaurant_riders rr on rr.id = o.rider_id
+  left join public.restaurant_staff rs
+    on rs.id = o.rider_id
+   and rs.restaurant_id = o.restaurant_id
+   and rs.role = 'rider'
   where o.order_number = p_order_number
   limit 1;
 $function$;
