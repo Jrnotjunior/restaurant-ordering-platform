@@ -148,7 +148,7 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
           <span className="tenant-auth-brand-name">{restaurant.name?.trim() || 'Welcome'}</span>
         </div>
         <p className="tenant-auth-intro">{staffOnly ? 'Sign in to your restaurant team account.' : 'Welcome back. Sign in to continue your ordering experience.'}</p>
-        <h1 className="restaurant-login-title" id="account-login-title">{staffOnly ? 'Team Login' : 'Login'}</h1>
+        <h1 className="restaurant-login-title" id="account-login-title">{staffOnly ? 'Team Sign In' : 'Sign In'}</h1>
         {(error || authError) && <div className="restaurant-dashboard-error" role="alert">{error || authError}</div>}
 
         {staffOnly ? (
@@ -178,11 +178,11 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
                 <a href="#forgot-password">Forgot password?</a>
               </div>
             </div>
-            <button className="button" type="submit" disabled={submitting}>{submitting ? 'Logging in…' : 'Log in'}</button>
+            <button className="button" type="submit" disabled={submitting}>{submitting ? 'Signing in…' : 'Sign In'}</button>
           </form>
         )}
 
-        {!staffOnly && <p className="restaurant-auth-switch">New customer? <a href="#signup">Register</a></p>}
+        {!staffOnly && <p className="restaurant-auth-switch">New customer? <a href="#signup">Sign Up</a></p>}
         {staffOnly && <p className="restaurant-auth-switch"><a href="#account">Back to sign in</a></p>}
       </section>
     </main>
