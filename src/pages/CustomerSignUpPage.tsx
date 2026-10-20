@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react';
+import { useRestaurant } from '../components/RestaurantProvider';
 import { signUpCustomer } from '../modules/customer/customerAuthService';
 import { getPasswordPolicyError, getPasswordGuidance, PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '../utils/passwordPolicy';
 
 export function CustomerSignUpPage() {
+  const restaurant = useRestaurant();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
@@ -90,9 +92,14 @@ export function CustomerSignUpPage() {
   }
 
   return (
-    <main className="restaurant-owner-auth-page">
-      <section className="restaurant-owner-auth-card customer-signup-card" aria-labelledby="customer-signup-title">
-        <h1 id="customer-signup-title">Register</h1>
+    <main className="restaurant-owner-auth-page tenant-auth-page">
+      <section className="restaurant-owner-auth-card customer-signup-card tenant-auth-card" aria-labelledby="customer-signup-title">
+        <div className="tenant-auth-brand">
+          {restaurant.logoUrl?.trim() ? <img className="tenant-auth-logo" src={restaurant.logoUrl} alt={`${restaurant.name || 'Restaurant'} logo`} /> : <span className="tenant-auth-logo-fallback" aria-hidden="true">{(restaurant.name || 'R').trim().slice(0, 1).toUpperCase()}</span>}
+          <span className="tenant-auth-brand-name">{restaurant.name?.trim() || 'Welcome'}</span>
+        </div>
+        <p className="tenant-auth-intro">Create an account to make ordering with us quicker and easier.</p>
+        <h1 id="customer-signup-title">Create your account</h1>
 
         {error && <div className="restaurant-dashboard-error" role="alert">{error}</div>}
         {message && (
