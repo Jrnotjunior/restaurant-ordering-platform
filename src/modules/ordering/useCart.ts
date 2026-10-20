@@ -111,20 +111,33 @@ export function useCart(userId: string | undefined, authLoading: boolean): UseCa
 
   function addItem(product: RestaurantProduct) {
     clearedUserIdRef.current = null;
-    setItems((current) => addCartItem(current, product));
-    setNotification(`${product.name} added to cart`);
+    const nextItems = addCartItem(itemsRef.current, product);
+    itemsRef.current = nextItems;
+    setItems(nextItems);
+    const cartSubtotal = nextItems.reduce(
+      (total, item) => total + item.product.price * item.quantity,
+      0,
+    );
+    // Keep the toast focused on the running cart subtotal, not the last product.
+    setNotification(`₱${cartSubtotal.toFixed(2)}`);
   }
 
   function increase(productId: string) {
-    setItems((current) => changeCartItemQuantity(current, productId, 1));
+    const nextItems = changeCartItemQuantity(itemsRef.current, productId, 1);
+    itemsRef.current = nextItems;
+    setItems(nextItems);
   }
 
   function decrease(productId: string) {
-    setItems((current) => changeCartItemQuantity(current, productId, -1));
+    const nextItems = changeCartItemQuantity(itemsRef.current, productId, -1);
+    itemsRef.current = nextItems;
+    setItems(nextItems);
   }
 
   function remove(productId: string) {
-    setItems((current) => removeCartItem(current, productId));
+    const nextItems = removeCartItem(itemsRef.current, productId);
+    itemsRef.current = nextItems;
+    setItems(nextItems);
   }
 
   function clear(targetUserId?: string) {
