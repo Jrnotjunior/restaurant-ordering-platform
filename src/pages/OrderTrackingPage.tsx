@@ -10,6 +10,7 @@ type OrderTrackingPageProps = {
 };
 
 const ACTIVE_ORDER_KEY = 'restaurant-ordering-active-order';
+const ACTIVE_ORDER_ID_KEY = 'restaurant-ordering-active-order-id';
 
 type CustomerStatus = OrderStatus | 'out_for_delivery' | 'arrived';
 
@@ -112,10 +113,21 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
         if (!cancelled) {
           setOrder(result);
           if (result.status === 'completed' || result.status === 'cancelled' || result.deliveryStatus === 'delivered' || result.deliveryStatus === 'failed') {
-            if (window.localStorage.getItem('restaurant-ordering-active-order-id') === result.orderId) {
-              window.localStorage.removeItem('restaurant-ordering-active-order-id');
+            if (window.localStorage.getItem(ACTIVE_ORDER_ID_KEY) === result.orderId) {
+              window.localStorage.removeItem(ACTIVE_ORDER_ID_KEY);
               window.localStorage.removeItem(ACTIVE_ORDER_KEY);
               window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
+            }
+          } else {
+            // Visiting an active order's tracking page re-establishes the saved
+            // browser reference. This recovers guests who still have the order
+            // URL but lost the header shortcut during an interrupted cancellation.
+            try {
+              window.localStorage.setItem(ACTIVE_ORDER_ID_KEY, result.orderId);
+              window.localStorage.setItem(ACTIVE_ORDER_KEY, result.orderNumber);
+              window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
+            } catch {
+              // URL-based tracking continues even if browser storage is unavailable.
             }
           }
           setError('');

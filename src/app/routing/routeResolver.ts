@@ -60,6 +60,47 @@ export function buildOrderTrackingUrl(pathname: string, orderId: string): string
   return `${normalizedPath}?trackOrder=${encodeURIComponent(orderId)}`;
 }
 
+/**
+ * Resolve an explicitly requested tracking order first. On a hard refresh of
+ * the storefront root, recover the saved active order ID if the URL no longer
+ * contains its tracking query. Explicit routes (menu/cart/account/etc.) win.
+ */
+export function resolveTrackingOrderId(
+  location: Pick<Location, 'pathname' | 'search' | 'hash'>,
+  route: string,
+  savedActiveOrderId: string | null,
+  basePath = '/',
+  allowStoredFallback = false,
+): string | null {
+  const searchParams = new URLSearchParams(location.search);
+  const queryOrderId = searchParams.get('trackOrder')?.trim();
+  if (queryOrderId) return queryOrderId;
+
+  const hashMatch = route.match(/^#order\/(.+)$/);
+  if (hashMatch) {
+    try {
+      return decodeURIComponent(hashMatch[1]);
+    } catch {
+      return hashMatch[1];
+    }
+  }
+
+  if (!allowStoredFallback || route || location.hash) return null;
+
+  const normalizePath = (path: string) => {
+    const normalized = path.replace(/\\/+$/, '');
+    return normalized || '/';
+  };
+  const currentPath = normalizePath(location.pathname);
+  const normalizedBasePath = normalizePath(basePath);
+  // Only recover on the site's base landing path, never a deliberate /menu,
+  // /cart, /checkout, or account URL.
+  if (currentPath !== '/' && currentPath !== normalizedBasePath) return null;
+
+  const saved = savedActiveOrderId?.trim();
+  return saved || null;
+}
+
 export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' | 'hash'>, route: string): AppRouteContext {
   const hashParams = new URLSearchParams(location.hash.replace(/^#/, ''));
   const searchParams = new URLSearchParams(location.search);

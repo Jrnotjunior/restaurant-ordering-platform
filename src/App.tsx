@@ -46,7 +46,7 @@ import { isRestaurantCurrentlyOpen } from './utils/restaurantHours';
 import './styles/cart-empty.css';
 import './styles/cart-notification.css';
 import { resolveAuthEntry } from './app/auth/authEntry';
-import { normalizeHashRoute, resolveAppRoute } from './app/routing/routeResolver';
+import { normalizeHashRoute, resolveAppRoute, resolveTrackingOrderId } from './app/routing/routeResolver';
 import { useCart } from './modules/ordering/useCart';
 import { OwnerRestaurantGuard, RestaurantModuleGuard, RiderRouteGuard, StaffRoleGuard } from './modules/auth/authGuards';
 import type { CartItem } from './modules/ordering/cartTypes';
@@ -268,7 +268,6 @@ function AppContent() {
     isTermsPage,
     isRefundsPage,
     isCheckoutPage,
-    trackOrderNumber,
     isRestaurantOrdersPage,
     isRestaurantMenuPage,
     isRestaurantSalesPage,
@@ -349,7 +348,23 @@ function AppContent() {
   if (isRiderDashboardPage) return <RiderRouteGuard><RiderDashboardPage /></RiderRouteGuard>;
   if (riderDeliveryMatch) return <RiderRouteGuard><RiderDeliveryPage orderId={decodeURIComponent(riderDeliveryMatch[1])} /></RiderRouteGuard>;
 
-  const trackingOrderId = trackOrderNumber || (trackingMatch ? decodeURIComponent(trackingMatch[1]) : null);
+  let savedActiveOrderId: string | null = null;
+  try {
+    savedActiveOrderId = window.localStorage.getItem('restaurant-ordering-active-order-id');
+  } catch {
+    // Keep URL-based order tracking available if browser storage is blocked.
+  }
+  const navigationEntry = typeof performance !== 'undefined'
+    && typeof performance.getEntriesByType === 'function'
+    ? performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined
+    : undefined;
+  const trackingOrderId = resolveTrackingOrderId(
+    window.location,
+    route,
+    savedActiveOrderId,
+    import.meta.env.BASE_URL,
+    navigationEntry?.type === 'reload',
+  );
   const publicContent = trackingOrderId
     ? restaurantResolved
       ? <OrderTrackingPage orderId={trackingOrderId} expectedRestaurantId={restaurant.id ?? null} />

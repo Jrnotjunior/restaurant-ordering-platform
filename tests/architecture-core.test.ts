@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildOrderTrackingUrl, normalizeHashRoute, resolveAppRoute } from '../src/app/routing/routeResolver';
+import { buildOrderTrackingUrl, normalizeHashRoute, resolveAppRoute, resolveTrackingOrderId } from '../src/app/routing/routeResolver';
 import { addCartItem, changeCartItemQuantity, getCartCount, removeCartItem } from '../src/modules/ordering/cartService';
 import { isInvitationType } from '../src/modules/invitations/invitationTypes';
 import { staffRouteForRole } from '../src/modules/auth/staffRoleRouting';
@@ -41,6 +41,29 @@ describe('refund status presentation', () => {
     expect(getTrackedPaymentStatusLabel('refunded', 'succeeded')).toBe('Payment refunded');
     expect(getCancellationResultMessage('refunded', 'succeeded', 'Fallback'))
       .toBe('Your order has been cancelled and the refund completed successfully.');
+  });
+});
+
+describe('refresh-safe guest tracking recovery', () => {
+  it('restores a saved active order on a hard refresh at the custom-domain root or GitHub Pages base path', () => {
+    expect(resolveTrackingOrderId(location('/', '', ''), '', 'order-006', '/', true)).toBe('order-006');
+    expect(resolveTrackingOrderId(
+      location('/restaurant-ordering-platform/', '', ''),
+      '',
+      'order-006',
+      '/restaurant-ordering-platform/',
+      true,
+    )).toBe('order-006');
+  });
+
+  it('prioritizes explicit tracking URLs and never overrides deliberate routes', () => {
+    expect(resolveTrackingOrderId(location('/', '?trackOrder=url-order', ''), '', 'saved-order', '/', true))
+      .toBe('url-order');
+    expect(resolveTrackingOrderId(location('/', '', '#order/hash-order'), '#order/hash-order', 'saved-order', '/', true))
+      .toBe('hash-order');
+    expect(resolveTrackingOrderId(location('/menu', '', ''), '', 'saved-order', '/', true)).toBeNull();
+    expect(resolveTrackingOrderId(location('/', '', '#cart'), '#cart', 'saved-order', '/', true)).toBeNull();
+    expect(resolveTrackingOrderId(location('/', '', ''), '', 'saved-order', '/', false)).toBeNull();
   });
 });
 
