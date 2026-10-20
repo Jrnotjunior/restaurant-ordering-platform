@@ -224,7 +224,16 @@ Deno.serve(async (request) => {
           };
           // A payment.refunded event identifies the payment, not the refund.
           // Preserve a refund ID already stored by the cancellation function.
-          if (!isPaymentRefundedEvent) updates.paymongo_refund_id = resourceId;
+          if (!isPaymentRefundedEvent) {
+            updates.paymongo_refund_id = resourceId;
+            const transferLink = String(refund?.attributes?.transfer_link ?? "").trim();
+            if (transferLink && normalizedStatus !== "succeeded") {
+              updates.paymongo_refund_transfer_link = transferLink;
+            }
+            if (normalizedStatus === "succeeded") {
+              updates.paymongo_refund_transfer_link = null;
+            }
+          }
           if (normalizedStatus === "succeeded") updates.payment_status = "refunded";
           const { error: refundUpdateError } = await adminClient.from("orders")
             .update(updates)
