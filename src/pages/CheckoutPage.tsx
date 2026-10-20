@@ -63,6 +63,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
   const [showPayment, setShowPayment] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [pendingPaymentReview, setPendingPaymentReview] = useState<{ paymentId: string; referenceNumber: string; subtotal: number; deliveryFee: number; total: number } | null>(null);
+  const [showCashReview, setShowCashReview] = useState(false);
   const [showDeliveryTerms, setShowDeliveryTerms] = useState(false);
   const [thirdPartyCourierDelivery, setThirdPartyCourierDelivery] = useState(false);
   const [thirdPartyCourierTermsAccepted, setThirdPartyCourierTermsAccepted] = useState(false);
@@ -845,11 +846,55 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
           <div className="payment-modal-actions">
             <button className="button button-secondary" type="button" onClick={() => setShowPaymentModal(false)} disabled={isSubmitting}>Cancel</button>
             <button className="button button-primary" type="button" disabled={!paymentMethod || isSubmitting} onClick={() => {
-              if (paymentMethod === 'online') { void handleOnlinePayment(); }
-              else { void handlePlaceOrder(); }
-            }}>{paymentMethod === 'online' ? 'Continue to Online Payment' : ['dine_in', 'take_out'].includes(orderType) ? 'Place Order & Pay at Counter' : 'Place Order'}</button>
+              if (paymentMethod === 'online') {
+                void handleOnlinePayment();
+              } else {
+                setSubmitError('');
+                setShowPaymentModal(false);
+                setShowCashReview(true);
+              }
+            }}>{paymentMethod === 'online' ? 'Continue to Online Payment' : ['dine_in', 'take_out'].includes(orderType) ? 'Review Cash Order' : 'Review Cash Order'}</button>
           </div>
         </div>
+      </div>}
+
+      {showCashReview && <div className="payment-review-backdrop" role="presentation">
+        <section className="payment-review-modal" role="dialog" aria-modal="true" aria-labelledby="cash-review-title">
+          <div className="payment-modal-header">
+            <div>
+              <p className="eyebrow">Final review</p>
+              <h2 id="cash-review-title">Review your cash order</h2>
+              <p>Check your items and total before placing your order. Payment will be collected at the restaurant counter or on delivery, depending on your order type.</p>
+            </div>
+            <button className="payment-modal-close" type="button" aria-label="Close cash order review" onClick={() => { if (!isSubmitting) { setShowCashReview(false); setShowPaymentModal(true); } }} disabled={isSubmitting}>×</button>
+          </div>
+          <div className="payment-review-restaurant">
+            <span>Restaurant</span>
+            <strong>{restaurant.name}</strong>
+          </div>
+          <div className="payment-review-items">
+            {items.map((item) => <div className="payment-review-row" key={item.product.id}>
+              <span>{item.quantity} × {item.product.name}<small>₱{item.product.price.toFixed(2)} each</small></span>
+              <strong>₱{(item.product.price * item.quantity).toFixed(2)}</strong>
+            </div>)}
+          </div>
+          <div className="payment-review-totals">
+            <div className="payment-review-row"><span>Food subtotal</span><strong>₱{subtotal.toFixed(2)}</strong></div>
+            {loyaltyDiscountPreview > 0 && <div className="payment-review-row payment-review-discount"><span>Loyalty discount</span><strong>−₱{loyaltyDiscountPreview.toFixed(2)}</strong></div>}
+            <div className="payment-review-row"><span>{orderType === 'dine_in' ? 'Service fee' : orderType === 'delivery' ? 'Delivery fee' : 'Collection fee'}</span><strong>₱{deliveryFee.toFixed(2)}</strong></div>
+            <div className="payment-review-total"><span>Total due</span><strong>₱{checkoutTotal.toFixed(2)}</strong></div>
+          </div>
+          <section className="payment-review-refund-policy" aria-labelledby="cash-review-policy-title">
+            <h3 id="cash-review-policy-title">Cancellation &amp; Refund Policy</h3>
+            <p>You may cancel your order while its status is Pending. Once the restaurant confirms the order or sends it to the kitchen, cancellation is no longer available.</p>
+            <p>Cash orders remain pending until the cashier or restaurant confirms payment. Cash orders are not charged through PayMongo; any eligible refund is handled by the restaurant according to its policies.</p>
+          </section>
+          {submitError && <p className="checkout-error" role="alert">{submitError}</p>}
+          <div className="payment-modal-actions">
+            <button className="button button-secondary" type="button" onClick={() => { setShowCashReview(false); setShowPaymentModal(true); }} disabled={isSubmitting}>Back to checkout</button>
+            <button className="button button-primary" type="button" onClick={() => { void handlePlaceOrder().then(() => { if (!isSubmitting) setShowCashReview(false); }); }} disabled={isSubmitting || items.length === 0}>{isSubmitting ? 'Placing order…' : 'Place Cash Order'}</button>
+          </div>
+        </section>
       </div>}
 
       {pendingPaymentReview && <div className="payment-review-backdrop" role="presentation">
