@@ -207,6 +207,7 @@ main { flex: 1; }
 .menu-state-error { color: var(--color-error); }
 .cart-empty { display: grid; justify-items: start; gap: var(--space-5); margin-top: var(--space-10); padding: var(--space-8); border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
 .cart-empty p { margin: 0; color: var(--color-muted); }
+.cart-empty > .button { width: 100%; }
 .cart-layout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.8fr); gap: var(--space-8); margin-top: var(--space-10); align-items: start; }
 .cart-items { display: grid; gap: var(--space-4); }
 .cart-add-more { width: 100%; margin-top: var(--space-2); }
@@ -756,11 +757,11 @@ textarea {
 }
 
 
-/* Keep the checkout payment action separated from and centered under the summary. */
+/* Standardize primary customer-flow actions to the full available card width. */
 .checkout-summary > .button.button-primary {
   display: flex;
-  width: fit-content;
-  margin: 1.5rem auto 0;
+  width: 100%;
+  margin: 1.5rem 0 0;
 }
 
 
