@@ -96,7 +96,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
     try {
       setLoading(true);
       setError('');
-      const [menu, tax, redemption] = await Promise.all([getMenu(restaurantId, true), getRestaurantTaxSettings(restaurantId), getLoyaltyRedemptionSettings(restaurantId)]);
+      const [menu, tax, redemption] = await Promise.all([getMenu(restaurantId, true, selectedBranch?.id), getRestaurantTaxSettings(restaurantId), getLoyaltyRedemptionSettings(restaurantId)]);
       setTaxSettings(tax);
       setLoyaltyRedemption(redemption);
       setProducts(menu.products);
@@ -108,7 +108,8 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
     }
   }
 
-  useEffect(() => { void loadMenu(); void loadCashierName(); void loadPackageAccess(); }, [restaurantId]);
+  useEffect(() => { void loadMenu(); }, [restaurantId, selectedBranch?.id]);
+  useEffect(() => { void loadCashierName(); void loadPackageAccess(); }, [restaurantId]);
 
   async function loadPackageAccess() {
     if (!supabase) {
