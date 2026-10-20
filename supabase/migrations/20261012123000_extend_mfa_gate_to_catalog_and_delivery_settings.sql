@@ -14,11 +14,16 @@ on public.categories as restrictive for all to authenticated
 using (public.privileged_restaurant_mfa_verified())
 with check (public.privileged_restaurant_mfa_verified());
 
-drop policy if exists "Require MFA for privileged delivery zone management" on public.restaurant_delivery_zones;
-create policy "Require MFA for privileged delivery zone management"
-on public.restaurant_delivery_zones as restrictive for all to authenticated
-using (public.privileged_restaurant_mfa_verified())
-with check (public.privileged_restaurant_mfa_verified());
+-- Legacy barangay-zone delivery was retired in favor of delivery_quotes.
+-- Keep a conditional policy repair for older schemas that still have the table.
+DO $delivery_zone_policy$
+BEGIN
+  IF to_regclass('public.restaurant_delivery_zones') IS NOT NULL THEN
+    EXECUTE 'drop policy if exists "Require MFA for privileged delivery zone management" on public.restaurant_delivery_zones';
+    EXECUTE 'create policy "Require MFA for privileged delivery zone management" on public.restaurant_delivery_zones as restrictive for all to authenticated using (public.privileged_restaurant_mfa_verified()) with check (public.privileged_restaurant_mfa_verified())';
+  END IF;
+END;
+$delivery_zone_policy$;
 
 drop policy if exists "Require MFA for privileged discount beneficiary access" on public.order_discount_beneficiaries;
 create policy "Require MFA for privileged discount beneficiary access"
