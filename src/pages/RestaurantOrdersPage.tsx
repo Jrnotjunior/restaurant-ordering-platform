@@ -260,7 +260,15 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
       setUpdating(order.orderId);
       const result = await cancelRestaurantOrder(order.orderId);
       setOrders((current) =>
-        current.map((item) => (item.orderId === order.orderId ? { ...item, status: 'cancelled' } : item)),
+        current.map((item) => item.orderId === order.orderId
+          ? {
+              ...item,
+              status: 'cancelled',
+              ...(result.refundStatus === 'simulated' || result.refundStatus === 'succeeded'
+                ? { paymentStatus: 'refunded' as const }
+                : {}),
+            }
+          : item),
       );
       setCancelConfirmationOrder(null);
       setSelectedOrder(null);
