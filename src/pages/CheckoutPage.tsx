@@ -84,12 +84,18 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
 
   useEffect(() => {
     let cancelled = false;
+    // Render an explicit loading state while the tenant-specific module check runs.
+    setDeliveryModuleEnabled(null);
     async function checkDeliveryModule() {
       // The public storefront can render before its restaurant ID and cart
       // products have finished resolving. Never send an empty module-check
       // request; wait for a real tenant ID and let this effect rerun.
       if (!restaurantId) return;
-      if (!supabase) { setDeliveryModuleEnabled(false); return; }
+      if (!supabase) {
+        setDeliveryModuleEnabled(false);
+        setOrderType((current) => current === 'delivery' ? 'take_out' : current);
+        return;
+      }
       // Use the public, SECURITY DEFINER module check directly. The Edge Function
       // wrapper has been returning 503 despite this database RPC working correctly.
       const { data, error } = await supabase.rpc('public_restaurant_has_module', {
@@ -100,7 +106,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
       if (error) console.error('Unable to check delivery module availability.', error);
       const enabled = !error && data === true;
       setDeliveryModuleEnabled(enabled);
-      if (!enabled && orderType === 'delivery') setOrderType('take_out');
+      if (!enabled) setOrderType((current) => current === 'delivery' ? 'take_out' : current);
     }
     void checkDeliveryModule();
     return () => { cancelled = true; };
@@ -690,7 +696,13 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
       <div className="menu-intro"><p className="eyebrow">Checkout</p><h1>How would you like your order?</h1><p>Choose how you will receive your food, then provide the details we need.</p></div>
       <div className="checkout-layout">
         <form className="checkout-form" onSubmit={(event) => event.preventDefault()}>
-          <fieldset id="order-type-section" className="checkout-section"><legend>Order type</legend><div className="order-type-grid">
+          <fieldset id="order-type-section" className="checkout-section"><legend>Order type</legend>
+            {deliveryModuleEnabled === null && (
+              <p className="checkout-order-type-status" role="status" aria-live="polite">
+                Checking delivery availability…
+              </p>
+            )}
+            <div className="order-type-grid">
             {orderTypes.filter((type) => type.value !== 'delivery' || deliveryModuleEnabled === true).map((type) => <label className={`order-type-card ${orderType === type.value ? 'is-selected' : ''}`} key={type.value}><input type="radio" name="orderType" checked={orderType === type.value} onChange={() => {
               setOrderType(type.value);
               if (type.value !== 'delivery' && !(thirdPartyCourierDelivery && type.value === 'pickup')) setSelectedDeliveryLocation(null);
