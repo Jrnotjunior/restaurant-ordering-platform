@@ -909,7 +909,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
               } else {
                 void handlePlaceOrder();
               }
-            }}>Place Order</button>
+            }}>{isSubmitting ? 'Placing order…' : 'Place Order'}</button>
           </div>
         </div>
       </div>}
