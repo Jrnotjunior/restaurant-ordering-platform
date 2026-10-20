@@ -15,6 +15,8 @@ concurrency:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
+    # Reuse the environment where the deployment credentials are configured.
+    environment: github-pages
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -31,11 +33,8 @@ jobs:
         run: |
           test -n "$VITE_SUPABASE_URL" || { echo "Missing VITE_SUPABASE_URL secret"; exit 1; }
           test -n "$VITE_SUPABASE_ANON_KEY" || { echo "Missing VITE_SUPABASE_ANON_KEY secret"; exit 1; }
-          if [ -n "$VITE_MAPBOX_PUBLIC_TOKEN" ]; then
-            case "$VITE_MAPBOX_PUBLIC_TOKEN" in pk.*) ;; *) echo "VITE_MAPBOX_PUBLIC_TOKEN must be a browser-safe public token beginning pk."; exit 1 ;; esac
-          else
-            echo "Mapbox is not configured; storefront and ordering will build, but map address search stays unavailable until a public pk. token is configured."
-          fi
+          test -n "$VITE_MAPBOX_PUBLIC_TOKEN" || { echo "Missing environment secret: VITE_MAPBOX_PUBLIC_TOKEN. Configure it in the github-pages Actions environment."; exit 1; }
+          case "$VITE_MAPBOX_PUBLIC_TOKEN" in pk.*) ;; *) echo "VITE_MAPBOX_PUBLIC_TOKEN must be a browser-safe public token beginning pk."; exit 1 ;; esac
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
