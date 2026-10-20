@@ -68,6 +68,11 @@ export function BranchManagementPanel({ restaurantId, refreshToken = 0, onBranch
       return;
     }
     if (!draft.name.trim()) { setError('Enter a branch name.'); return; }
+    const domain = draft.custom_domain.trim().toLowerCase().replace(/\\.$/, '');
+    if (domain && (!/^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/.test(domain) || domain.includes('..'))) {
+      setError('Enter a hostname only, such as north.example.com. Do not include https:// or a path.');
+      return;
+    }
     if (!draft.store_address.trim() && !draft.restaurant_address.trim()) { setError('Enter this branch’s store / pickup address before saving.'); return; }
     const lat = draft.delivery_location_latitude;
     const lng = draft.delivery_location_longitude;
@@ -99,7 +104,7 @@ export function BranchManagementPanel({ restaurantId, refreshToken = 0, onBranch
     setError('');
     setMessage('');
     try {
-      const normalized = { ...draft, branch_code: code };
+      const normalized = { ...draft, branch_code: code, custom_domain: domain };
       if (editingId) await updateRestaurantBranch(editingId, restaurantId, normalized);
       else await createRestaurantBranch(restaurantId, normalized);
       setDraft(null);
@@ -156,7 +161,7 @@ export function BranchManagementPanel({ restaurantId, refreshToken = 0, onBranch
   return (
     <section className="w2t-branches-manager" aria-label="Branch management">
       <div className="w2t-branches-manager-header">
-        <div><h3>Business branches</h3><p>Manage multiple locations under this restaurant business. Branches share the business menu and PayMongo configuration.</p></div>
+        <div><h3>Business branches</h3><p>Each branch can have its own storefront domain and styling, managed from this one owner platform. Branches currently share the restaurant menu and PayMongo connection.</p></div>
         <button type="button" className="button button-primary" onClick={startNew} disabled={saving || Boolean(draft)}>Add branch</button>
       </div>
       {error && <div className="w2t-branch-manager-error" role="alert">{error}</div>}
@@ -173,6 +178,7 @@ export function BranchManagementPanel({ restaurantId, refreshToken = 0, onBranch
                   {!branch.is_active && <span className="w2t-branch-admin-badge is-inactive">Inactive</span>}
                 </div>
                 <p>{branch.restaurant_address || branch.store_address || 'No address configured'}</p>
+                <p>{branch.custom_domain ? `Website: ${branch.custom_domain}` : 'Website domain not assigned'}</p>
                 <p>{branch.ordering_enabled ? 'Online ordering enabled' : 'Online ordering paused'} · {branch.is_active ? 'Branch active' : 'Branch inactive'}</p>
               </div>
               <div className="w2t-branch-admin-actions">
@@ -191,6 +197,7 @@ export function BranchManagementPanel({ restaurantId, refreshToken = 0, onBranch
           <div className="w2t-branch-editor-grid">
             <label className="w2t-branch-editor-field"><span>Branch name</span><input value={draft.name} maxLength={100} onChange={(event) => updateDraft('name', event.target.value)} disabled={saving} placeholder="e.g. Quezon City" /></label>
             <label className="w2t-branch-editor-field"><span>Branch code</span><input value={draft.branch_code} maxLength={20} onChange={(event) => updateDraft('branch_code', event.target.value.toUpperCase())} disabled={saving} placeholder="e.g. QC01" /></label>
+            <label className="w2t-branch-editor-field"><span>Storefront website domain</span><input value={draft.custom_domain} maxLength={253} onChange={(event) => updateDraft('custom_domain', event.target.value.toLowerCase())} disabled={saving} placeholder="e.g. north.example.com" /><small className="w2t-branch-domain-hint">Enter the hostname only. DNS and HTTPS hosting must also be configured for this domain to go live.</small></label>
             <label className="w2t-branch-editor-field"><span>Store / pickup address</span><input value={draft.store_address} maxLength={300} onChange={(event) => { updateDraft('store_address', event.target.value); updateDraft('restaurant_address', event.target.value); }} disabled={saving} placeholder="Branch street address" /></label>
             <label className="w2t-branch-editor-field"><span>Contact number</span><input value={draft.contact_number} maxLength={40} onChange={(event) => updateDraft('contact_number', event.target.value)} disabled={saving} placeholder="Branch contact number" /></label>
             <label className="w2t-branch-editor-field"><span>Delivery origin latitude</span><input inputMode="decimal" value={draft.delivery_location_latitude ?? ''} onChange={(event) => updateDraft('delivery_location_latitude', numberOrNull(event.target.value))} disabled={saving} placeholder="e.g. 14.5995" /></label>
