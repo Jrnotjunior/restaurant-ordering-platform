@@ -208,7 +208,7 @@ Deno.serve(async (req) => {
       if (isParentTestSandbox && environment === "test" && paymentAttributes.livemode === false) {
         const { data: simulated, error: simulationError } = await db.from("orders").update({
           status: "cancelled",
-          payment_status: "refunded",
+          payment_status: "paid",
           cancellation_refund_status: "simulated",
           cancellation_refund_error: "TEST MODE ONLY: refund flow simulated locally. No funds were moved by PayMongo.",
           paymongo_refund_id: null,
