@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import type { MapboxDeliveryAddress } from './MapboxLocationPickerUi';
+import { parseMapboxDeliveryAddress, type MapboxDeliveryAddress } from '../modules/location/mapServiceProtocol';
 
-export type { MapboxDeliveryAddress } from './MapboxLocationPickerUi';
+export type { MapboxDeliveryAddress } from '../modules/location/mapServiceProtocol';
 
 type PickerVariant = 'delivery' | 'restaurant';
 type InitMessage = {
@@ -23,30 +23,6 @@ function mapServiceUrl() {
     throw new Error('The central map service must use HTTPS.');
   }
   return { href: url.href, origin: url.origin };
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  return value !== null && typeof value === 'object' ? value as Record<string, unknown> : null;
-}
-
-function parseAddress(value: unknown): MapboxDeliveryAddress | null {
-  const item = asRecord(value);
-  if (!item) return null;
-  const textFields = ['formattedAddress', 'city', 'barangay', 'address', 'placeId'] as const;
-  if (!textFields.every((key) => typeof item[key] === 'string')) return null;
-  const latitude = item.latitude;
-  const longitude = item.longitude;
-  if (typeof latitude !== 'number' || !Number.isFinite(latitude) || latitude < -90 || latitude > 90) return null;
-  if (typeof longitude !== 'number' || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) return null;
-  return {
-    formattedAddress: item.formattedAddress as string,
-    city: item.city as string,
-    barangay: item.barangay as string,
-    address: item.address as string,
-    placeId: item.placeId as string,
-    latitude,
-    longitude,
-  };
 }
 
 export function MapboxDeliveryLocationPicker({
@@ -111,7 +87,7 @@ export function MapboxDeliveryLocationPicker({
       }
       if (message.type === 'location-selected') {
         const requestId = typeof message.requestId === 'string' ? message.requestId : '';
-        const address = parseAddress(message.address);
+        const address = parseMapboxDeliveryAddress(message.address);
         if (!requestId || !address) {
           iframeRef.current?.contentWindow?.postMessage({
             source: 'web2table-storefront',
