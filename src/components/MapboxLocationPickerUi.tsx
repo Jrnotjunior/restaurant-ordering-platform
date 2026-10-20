@@ -102,7 +102,7 @@ export function MapboxLocationPickerUi({
 
       try {
         const token = getMapboxPublicToken();
-        if (!token.startsWith('pk.')) throw new Error('Mapbox needs a public browser token beginning pk. Configure VITE_MAPBOX_PUBLIC_TOKEN; secret sk. tokens must never be used in browser apps.');
+        if (!token.startsWith('pk.')) throw new Error('The central map service is not configured. Please try again later.');
         if (!mapContainerRef.current || cancelled) return;
 
         const defaultCenter: [number, number] = Number.isFinite(initialLatitude) && Number.isFinite(initialLongitude)
