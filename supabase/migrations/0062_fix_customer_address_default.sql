@@ -1,3 +1,5 @@
+drop function if exists public.set_my_customer_address_default(uuid, uuid);
+
 create or replace function public.set_my_customer_address_default(
   p_restaurant_id uuid,
   p_address_id uuid
