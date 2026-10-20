@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { cancelMyPendingOrder, getOrderStatus, hasGuestOrderCancellationToken, subscribeToOrderTrackingChanges, type OrderStatus } from '../modules/ordering/orderService';
+import { cancelMyPendingOrder, getOrderStatus, hasGuestOrderCancellationToken, saveGuestOrderCancellationToken, subscribeToOrderTrackingChanges, type OrderStatus } from '../modules/ordering/orderService';
 import { supabase } from '../services/supabaseClient';
 import { getCancellationResultMessage, getTrackedPaymentStatusLabel } from '../modules/payments/refundStatusPresentation';
 import '../styles/order-tracking.css';
@@ -53,6 +53,23 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
   const [cancellationMessage, setCancellationMessage] = useState('');
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const [showNonDeliveryTimeline, setShowNonDeliveryTimeline] = useState(false);
+  const [guestCancelTokenRecoveredForOrder, setGuestCancelTokenRecoveredForOrder] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Secure one-time recovery links deliver the raw guest cancellation token
+    // only in the URL fragment, which is not sent to the web server. Store it
+    // locally and immediately remove it from the visible/history URL.
+    const match = window.location.hash.match(/^#guest-cancel-token=([0-9a-f]{64})$/i);
+    if (!match) {
+      setGuestCancelTokenRecoveredForOrder(null);
+      return;
+    }
+    const token = match[1].toLowerCase();
+    saveGuestOrderCancellationToken(orderId, token);
+    const recovered = hasGuestOrderCancellationToken(orderId);
+    setGuestCancelTokenRecoveredForOrder(recovered ? orderId : null);
+    window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search);
+  }, [orderId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -223,7 +240,8 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
   const storeAddress = order.storeAddress;
   const operatingHours = order.operatingHours;
   const showPickupLocation = isCollectionOrder && !isCancelled && Boolean(storeAddress);
-  const guestCancelTokenAvailable = hasGuestOrderCancellationToken(order.orderId);
+  const guestCancelTokenAvailable = hasGuestOrderCancellationToken(order.orderId)
+    || guestCancelTokenRecoveredForOrder === order.orderId;
   const cancellationEligibleStatus = order.status === 'pending' &&
     (order.paymentStatus === 'pending' || order.paymentStatus === 'paid');
   const canCancelOrder = cancellationEligibleStatus &&
