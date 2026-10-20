@@ -1039,7 +1039,7 @@ BEGIN
     )
   );
 END;
-$function$
+$function$;
 
 
 -- Every SECURITY DEFINER endpoint has an intentional grant list. Keep guest
