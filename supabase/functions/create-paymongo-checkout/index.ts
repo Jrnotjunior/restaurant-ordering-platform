@@ -18,7 +18,12 @@ function getSecretKey() {
   return secretKeys.default ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 }
 
-function getRestaurantSiteBaseUrl(customDomain: unknown): string | null {
+const GITHUB_PAGES_ORIGIN = "https://jrnotjunior.github.io";
+const GITHUB_PAGES_RETURN_BASE = "https://jrnotjunior.github.io/restaurant-ordering-platform/";
+
+function getRestaurantSiteBaseUrl(customDomain: unknown, requestOrigin: string | null): string | null {
+  if (requestOrigin === GITHUB_PAGES_ORIGIN) return GITHUB_PAGES_RETURN_BASE;
+
   const configuredDomain = String(customDomain ?? "").trim();
   if (!configuredDomain) return null;
 
@@ -26,9 +31,6 @@ function getRestaurantSiteBaseUrl(customDomain: unknown): string | null {
     const candidate = new URL(
       configuredDomain.includes("://") ? configuredDomain : `https://${configuredDomain}`,
     );
-    // Only accept a plain HTTPS origin from the restaurant's trusted DB field.
-    // Reject paths, credentials, ports, query strings, and fragments so a
-    // malformed value cannot redirect checkout to an arbitrary URL.
     if (
       candidate.protocol !== "https:" ||
       !candidate.hostname ||
@@ -101,7 +103,9 @@ Deno.serve(async (request) => {
       .eq("id", pendingPayment.restaurant_id)
       .maybeSingle();
     if (restaurantDomainError) throw restaurantDomainError;
-    const siteBaseUrl = getRestaurantSiteBaseUrl(restaurantDomain?.custom_domain);
+    const requestOrigin = request.headers.get("origin");
+    const isGitHubPagesTest = requestOrigin === GITHUB_PAGES_ORIGIN;
+    const siteBaseUrl = getRestaurantSiteBaseUrl(restaurantDomain?.custom_domain, requestOrigin);
     if (!siteBaseUrl) {
       console.error("PayMongo checkout blocked: restaurant custom domain is missing or invalid", {
         paymentId: pendingPayment.id,
@@ -115,7 +119,7 @@ Deno.serve(async (request) => {
 
     const { data: paymongoConnection, error: paymongoConnectionError } = await adminClient
       .from("restaurant_paymongo_accounts")
-      .select("paymongo_account_id,connection_status,webhook_secret_id,onboarding_step")
+      .select("paymongo_account_id,connection_status,webhook_secret_id,onboarding_step,activation_status")
       .eq("restaurant_id", pendingPayment.restaurant_id)
       .eq("environment", paymongoEnvironment)
       .maybeSingle();
@@ -128,36 +132,35 @@ Deno.serve(async (request) => {
       }, 409);
     }
 
-    const isTestSimulation =
+    const isParentTestSandbox =
       paymongoEnvironment === "test" &&
-      paymongoConnection.onboarding_step === "test_simulation";
+      paymongoConnection.onboarding_step === "test_parent_account" &&
+      paymongoConnection.connection_status === "pending" &&
+      !paymongoConnection.paymongo_account_id &&
+      !paymongoConnection.webhook_secret_id;
 
-    if (isTestSimulation) {
-      // Use PayMongo's sandbox child-account context for the simulation. This
-      // exercises the same Account-ID routing contract used for live tenants,
-      // while remaining test-only and not proving real settlement.
-      if (paymongoConnection.connection_status !== "pending") {
-        return jsonResponse({ error: "The PayMongo test simulation is not in a valid state." }, 409);
+    if (isParentTestSandbox) {
+      // Parent-account sandbox checkout only. No fake child ID or Account-ID
+      // header is used, so this does not claim or simulate child account routing.
+      if (paymongoConnection.activation_status !== "mock") {
+        return jsonResponse({ error: "The PayMongo parent sandbox is not in a valid state." }, 409);
       }
-    } else {
-      if (
-        paymongoConnection.connection_status !== "active" ||
-        !paymongoConnection.paymongo_account_id ||
-        !paymongoConnection.webhook_secret_id
-      ) {
-        return jsonResponse({
-          error: `This restaurant's PayMongo ${paymongoEnvironment} child account is not ready for online payments yet.`,
-        }, 409);
-      }
+    } else if (
+      paymongoConnection.connection_status !== "active" ||
+      !paymongoConnection.paymongo_account_id ||
+      !paymongoConnection.webhook_secret_id
+    ) {
+      return jsonResponse({
+        error: `This restaurant's PayMongo ${paymongoEnvironment} child account is not ready for online payments yet.`,
+      }, 409);
     }
 
-    // PayMongo test keys return a shared mock account, not a real linked child.
-    // Use its documented mock ID only to exercise Account-ID request handling in
-    // sandbox. Never persist this ID or treat the result as proof of real routing.
-    const linkedPayMongoAccountId = isTestSimulation
-      ? "org_test_merchant"
+    // Test parent sandbox deliberately omits Account-ID. A real active child
+    // connection always uses its own persisted tenant account ID.
+    const linkedPayMongoAccountId = isParentTestSandbox
+      ? ""
       : String(paymongoConnection.paymongo_account_id ?? "").trim();
-    if (pendingPayment.checkout_url) {
+    if (pendingPayment.checkout_url && !isGitHubPagesTest) {
       return jsonResponse({ checkoutUrl: pendingPayment.checkout_url }, 200);
     }
 
@@ -249,7 +252,9 @@ Deno.serve(async (request) => {
       headers: {
         Authorization: `Basic ${btoa(`${paymongoSecretKey}:`)}`,
         "Content-Type": "application/json",
-        "Idempotency-Key": `online-payment-${pendingPayment.id}`,
+        "Idempotency-Key": isGitHubPagesTest
+          ? `online-payment-${pendingPayment.id}-github-pages`
+          : `online-payment-${pendingPayment.id}`,
         ...(linkedPayMongoAccountId ? { "Account-ID": linkedPayMongoAccountId } : {}),
       },
       body: JSON.stringify({
