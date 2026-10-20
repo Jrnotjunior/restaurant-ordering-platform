@@ -226,7 +226,7 @@ export function MapServiceApp() {
 
   if (!session) {
     return (
-      <main className={session?.variant === 'restaurant' ? 'map-service-page map-service-page--restaurant' : 'map-service-page'}>
+      <main className="map-service-page">
         <div className={serviceError ? 'map-service-status is-error' : 'map-service-status'} role={serviceError ? 'alert' : 'status'}>
           <strong>{serviceError ? 'Map unavailable' : 'Web2Table central map'}</strong>
           <p>{serviceError || status}</p>
