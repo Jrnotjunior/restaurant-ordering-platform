@@ -4,6 +4,7 @@ import { addCartItem, changeCartItemQuantity, getCartCount, removeCartItem } fro
 import { isInvitationType } from '../src/modules/invitations/invitationTypes';
 import { staffRouteForRole } from '../src/modules/auth/staffRoleRouting';
 import { resolveInvitationTypeFromMetadata } from '../src/modules/invitations/invitationResolver';
+import { getCancellationResultMessage, getTrackedPaymentStatusLabel } from '../src/modules/payments/refundStatusPresentation';
 import type { RestaurantProduct } from '../src/types/menu';
 
 const product = (id: string, overrides: Partial<RestaurantProduct> = {}): RestaurantProduct => ({
@@ -22,6 +23,26 @@ const product = (id: string, overrides: Partial<RestaurantProduct> = {}): Restau
 });
 
 const location = (pathname = '/', search = '', hash = '') => ({ pathname, search, hash });
+
+describe('refund status presentation', () => {
+  it('never labels a local test refund simulation as a PayMongo refund', () => {
+    expect(getTrackedPaymentStatusLabel('paid', 'simulated'))
+      .toBe('PayMongo still marks this payment PAID · Test refund simulated');
+
+    expect(getCancellationResultMessage('paid', 'simulated', 'Order cancelled.'))
+      .toContain('PayMongo still shows the payment as PAID');
+    expect(getCancellationResultMessage('paid', 'simulated', 'Order cancelled.'))
+      .toContain('No refund was issued by PayMongo.');
+  });
+
+  it('keeps real provider-refund states distinct from simulations', () => {
+    expect(getTrackedPaymentStatusLabel('paid', 'processing'))
+      .toBe('PayMongo still marks this payment PAID · Refund processing');
+    expect(getTrackedPaymentStatusLabel('refunded', 'succeeded')).toBe('Payment refunded');
+    expect(getCancellationResultMessage('refunded', 'succeeded', 'Fallback'))
+      .toBe('Your order has been cancelled and the refund completed successfully.');
+  });
+});
 
 describe('guest active-order recovery contract', () => {
   it('creates a refresh-safe tracking URL while preserving custom and GitHub Pages base paths', () => {
