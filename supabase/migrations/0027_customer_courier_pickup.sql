@@ -167,7 +167,7 @@ begin
 end;
 $$;
 
-grant execute on function public.create_order(uuid, text, text, text, text, text, text, text, boolean, jsonb)
+grant execute on function public.create_order(uuid, text, text, text, text, text, text, text, text, boolean, jsonb)
 to anon, authenticated;
 
 -- Update the pending-online-payment function so customer courier orders
