@@ -14,9 +14,15 @@ ALTER FUNCTION public.protect_system_admin_restaurant_tax_settings()
 REVOKE ALL ON FUNCTION public.protect_system_admin_restaurant_tax_settings()
   FROM PUBLIC, anon, authenticated;
 
--- The event trigger is database-internal and must never be an API RPC.
-REVOKE ALL ON FUNCTION public.rls_auto_enable()
-  FROM PUBLIC, anon, authenticated;
+-- Some hosted projects provide this event-trigger helper outside the checked-in
+-- migration chain. Restrict it when present, but do not require it on clean installs.
+DO $event_trigger_acl$
+BEGIN
+  IF to_regprocedure('public.rls_auto_enable()') IS NOT NULL THEN
+    EXECUTE 'REVOKE ALL ON FUNCTION public.rls_auto_enable() FROM PUBLIC, anon, authenticated';
+  END IF;
+END;
+$event_trigger_acl$;
 
 -- System-admin RPCs are for signed-in callers only. Their function bodies retain
 -- their own owner/manage/view-only authorization checks.
