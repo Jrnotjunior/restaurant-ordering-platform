@@ -10,6 +10,7 @@ import { useOwnerUnsavedChangesTracking } from '../hooks/useOwnerUnsavedChangesT
 
 type Props = { restaurantId: string };
 type ProductForm = { name: string; description: string; price: string; categoryName: string };
+type BranchProductDraft = { isAvailable: boolean; priceOverride: string };
 
 const emptyForm: ProductForm = { name: '', description: '', price: '', categoryName: '' };
 
@@ -17,6 +18,13 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
   const { setUnsavedChanges } = useOwnerUnsavedChanges();
   const [categories, setCategories] = useState<RestaurantCategory[]>([]);
   const [products, setProducts] = useState<RestaurantProduct[]>([]);
+  const [branches, setBranches] = useState<RestaurantBranch[]>([]);
+  const [selectedBranchId, setSelectedBranchId] = useState('');
+  const [branchSettings, setBranchSettings] = useState<Record<string, BranchProductSetting>>({});
+  const [branchDrafts, setBranchDrafts] = useState<Record<string, BranchProductDraft>>({});
+  const [branchSettingsLoading, setBranchSettingsLoading] = useState(false);
+  const [branchSavingId, setBranchSavingId] = useState<string | null>(null);
+  const [branchSettingsMessage, setBranchSettingsMessage] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showUnavailable, setShowUnavailable] = useState(true);
   const [searchProduct, setSearchProduct] = useState('');
