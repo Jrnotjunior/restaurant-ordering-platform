@@ -898,7 +898,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
             })}
           </div>
           <section className="payment-review-refund-policy payment-policy-compact" aria-label="Cancellation and refund policy">
-            <p>By clicking <strong>Place Order</strong>, you agree to our <a href="#refunds">Cancellation &amp; Refund Policy</a>. Orders may be cancelled while Pending only; eligible online refunds are handled by the payment provider, while cash payments are handled by the restaurant.</p>
+            <p>By placing your order, you agree to our <a href="#refunds">Cancellation &amp; Refund Policy</a>.</p>
           </section>
           {submitError && <p className="checkout-error" role="alert">{submitError}</p>}
           <div className="payment-modal-actions">
