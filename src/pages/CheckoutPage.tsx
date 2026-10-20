@@ -64,7 +64,11 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('');
   const [showPayment, setShowPayment] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [pendingPaymentReview, setPendingPaymentReview] = useState<{ paymentId: string; referenceNumber: string; subtotal: number; deliveryFee: number; total: number } | null>(null);
+  const [pendingPaymentReview, setPendingPaymentReview] = useState<
+    | { method: 'online'; paymentId: string; referenceNumber: string; subtotal: number; deliveryFee: number; total: number }
+    | { method: 'cash'; subtotal: number; deliveryFee: number; total: number }
+    | null
+  >(null);
   const [showDeliveryTerms, setShowDeliveryTerms] = useState(false);
   const [thirdPartyCourierDelivery, setThirdPartyCourierDelivery] = useState(false);
   const [thirdPartyCourierTermsAccepted, setThirdPartyCourierTermsAccepted] = useState(false);
@@ -655,7 +659,7 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
       } else {
         window.localStorage.removeItem(PENDING_PAYMENT_PICKUP_METHOD_KEY);
       }
-      setPendingPaymentReview(pendingPayment);
+      setPendingPaymentReview({ method: 'online', ...pendingPayment });
       setShowPaymentModal(false);
       setIsSubmitting(false);
       return;
@@ -669,7 +673,7 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
   }
 
   async function handleContinueToPayMongo() {
-    if (!pendingPaymentReview || isSubmitting) return;
+    if (!pendingPaymentReview || pendingPaymentReview.method !== 'online' || isSubmitting) return;
     setIsSubmitting(true);
     setSubmitError('');
     try {
@@ -685,8 +689,14 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
   }
 
   function handleCancelPaymentReview() {
+    const reviewMethod = pendingPaymentReview?.method;
     setPendingPaymentReview(null);
     setSubmitError('');
+    if (reviewMethod === 'cash') {
+      setPaymentMethod('cash');
+      setShowPaymentModal(true);
+      return;
+    }
     setPaymentMethod('');
   }
 
@@ -712,6 +722,8 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
       window.localStorage.setItem(ACTIVE_ORDER_KEY, createdOrder.orderNumber);
       window.localStorage.setItem(ACTIVE_ORDER_ID_KEY, createdOrder.orderId);
       window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
+      setPendingPaymentReview(null);
+      setShowPaymentModal(false);
       onClearCart();
       setConfirmedOrder({ orderId: createdOrder.orderId, orderNumber: createdOrder.orderNumber, paymentMethod: 'cash', orderType: isOwnCourierPickup ? 'pickup' : orderType, pickupMethod: isOwnCourierPickup ? 'third_party_courier' : undefined, pickupAddress: isOwnCourierPickup ? restaurantPickupPoint : undefined, total: confirmedTotal });
     } catch (error) {
@@ -873,17 +885,17 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
               </button>;
             })}
           </div>
-          {paymentMethod === 'cash' && <section className="payment-review-refund-policy" aria-labelledby="cash-cancellation-policy-title">
-            <h3 id="cash-cancellation-policy-title">Cancellation &amp; Refund Policy</h3>
-            <p>You may cancel your order while its status is Pending. Once the restaurant confirms the order or sends it to the kitchen, cancellation is no longer available.</p>
-            <p>Cash orders remain pending until the cashier confirms your payment. If an eligible online-paid order is cancelled while Pending, a refund will be requested through the payment provider. Refund availability and processing times depend on the payment method and provider.</p>
-          </section>}
           {submitError && <p className="checkout-error" role="alert">{submitError}</p>}
           <div className="payment-modal-actions">
             <button className="button button-secondary" type="button" onClick={() => setShowPaymentModal(false)} disabled={isSubmitting}>Cancel</button>
             <button className="button button-primary" type="button" disabled={!paymentMethod || isSubmitting} onClick={() => {
-              if (paymentMethod === 'online') { void handleOnlinePayment(); }
-              else { void handlePlaceOrder(); }
+              if (paymentMethod === 'online') {
+                void handleOnlinePayment();
+              } else {
+                setSubmitError('');
+                setPendingPaymentReview({ method: 'cash', subtotal, deliveryFee, total: checkoutTotal });
+                setShowPaymentModal(false);
+              }
             }}>{paymentMethod === 'online' ? 'Continue to Online Payment' : ['dine_in', 'take_out'].includes(orderType) ? 'Place Order & Pay at Counter' : 'Place Order'}</button>
           </div>
         </div>
@@ -894,8 +906,8 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
           <div className="payment-modal-header">
             <div>
               <p className="eyebrow">Final review</p>
-              <h2 id="payment-review-title">Review your order before payment</h2>
-              <p>Check the item prices, loyalty discount, and delivery fee before continuing to PayMongo.</p>
+              <h2 id="payment-review-title">{pendingPaymentReview.method === 'cash' ? 'Review your order before placing it' : 'Review your order before payment'}</h2>
+              <p>{pendingPaymentReview.method === 'cash' ? 'Check your items, discount, and total before placing your order.' : 'Check the item prices, loyalty discount, and delivery fee before continuing to PayMongo.'}</p>
             </div>
             <button className="payment-modal-close" type="button" aria-label="Close order review" onClick={handleCancelPaymentReview} disabled={isSubmitting}>×</button>
           </div>
@@ -918,12 +930,19 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
           <section className="payment-review-refund-policy" aria-labelledby="payment-review-refund-policy-title">
             <h3 id="payment-review-refund-policy-title">Cancellation &amp; Refund Policy</h3>
             <p>You may cancel your order while its status is Pending. Once the restaurant confirms the order or sends it to the kitchen, cancellation is no longer available.</p>
-            <p>For eligible online-paid orders cancelled while Pending, a refund will be requested through the payment provider. Refund availability and processing times depend on the payment method and provider.</p>
+            <p>Cash orders remain pending until the cashier confirms payment. For eligible online-paid orders cancelled while Pending, a refund will be requested through the payment provider. Refund availability and processing times depend on the payment method and provider.</p>
           </section>
           {submitError && <p className="checkout-error" role="alert">{submitError}</p>}
           <div className="payment-modal-actions">
-            <button className="button button-secondary" type="button" onClick={handleCancelPaymentReview} disabled={isSubmitting}>Back to checkout</button>
-            <button className="button button-primary" type="button" onClick={() => { void handleContinueToPayMongo(); }} disabled={isSubmitting}>{isSubmitting ? 'Preparing secure payment…' : 'Continue to secure payment'}</button>
+            <button className="button button-secondary" type="button" onClick={handleCancelPaymentReview} disabled={isSubmitting}>{pendingPaymentReview.method === 'cash' ? 'Back to payment method' : 'Back to checkout'}</button>
+            <button className="button button-primary" type="button" onClick={() => {
+              if (pendingPaymentReview.method === 'cash') void handlePlaceOrder();
+              else void handleContinueToPayMongo();
+            }} disabled={isSubmitting}>{isSubmitting
+              ? pendingPaymentReview.method === 'cash' ? 'Placing order…' : 'Preparing secure payment…'
+              : pendingPaymentReview.method === 'cash'
+                ? ['dine_in', 'take_out'].includes(orderType) ? 'Place Order & Pay at Counter' : 'Place Order'
+                : 'Continue to secure payment'}</button>
           </div>
         </section>
       </div>}
