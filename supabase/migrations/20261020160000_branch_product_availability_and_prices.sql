@@ -78,6 +78,7 @@ BEGIN
   RETURN v_branch_id;
 END;
 $function$;
+
 REVOKE ALL ON FUNCTION public.get_effective_restaurant_branch_id(uuid) FROM PUBLIC, anon, authenticated;
 
 CREATE OR REPLACE FUNCTION public.set_restaurant_branch_product_settings(
@@ -123,6 +124,7 @@ BEGIN
       price_override = EXCLUDED.price_override, updated_at = now();
 END;
 $function$;
+
 REVOKE ALL ON FUNCTION public.set_restaurant_branch_product_settings(uuid, uuid, uuid, boolean, numeric) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.set_restaurant_branch_product_settings(uuid, uuid, uuid, boolean, numeric) TO authenticated;
 
@@ -269,7 +271,7 @@ begin
  return query
  select v_order_id,v_order_number,v_subtotal,v_delivery_fee,v_subtotal+v_delivery_fee;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.create_order_from_delivery_quote(p_restaurant_id uuid, p_customer_name text, p_mobile_number text, p_delivery_city text, p_delivery_barangay text, p_delivery_address text, p_notes text, p_payment_method text, p_items jsonb, p_customer_delivery_address text, p_customer_delivery_city text, p_customer_delivery_barangay text, p_customer_delivery_latitude double precision, p_customer_delivery_longitude double precision, p_customer_delivery_place_id text, p_delivery_quote_id uuid)
  RETURNS TABLE(order_id uuid, order_number text, subtotal numeric, delivery_fee numeric, total numeric)
@@ -367,7 +369,7 @@ begin
 
   return query select v_order_id,v_order_number,v_subtotal,v_delivery_fee,v_subtotal+v_delivery_fee;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.create_pending_online_payment(p_restaurant_id uuid, p_customer_name text, p_mobile_number text, p_order_type text, p_delivery_city text, p_delivery_barangay text, p_delivery_address text, p_notes text, p_is_third_party_courier boolean, p_items jsonb, p_redeem_loyalty boolean DEFAULT false)
  RETURNS TABLE(payment_id uuid, reference_number text, subtotal numeric, delivery_fee numeric, total numeric)
@@ -439,7 +441,7 @@ begin
 
  return query select v_payment_id,v_reference_number,v_subtotal,0::numeric,greatest(round(v_subtotal-v_discount,2),0);
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.create_pending_online_payment(p_restaurant_id uuid, p_customer_name text, p_mobile_number text, p_order_type text, p_delivery_city text, p_delivery_barangay text, p_delivery_address text, p_notes text, p_is_third_party_courier boolean, p_items jsonb, p_redeem_loyalty boolean, p_customer_delivery_address text, p_customer_delivery_city text, p_customer_delivery_barangay text, p_customer_delivery_latitude double precision, p_customer_delivery_longitude double precision, p_customer_delivery_place_id text)
  RETURNS TABLE(payment_id uuid, reference_number text, subtotal numeric, delivery_fee numeric, total numeric)
@@ -513,7 +515,7 @@ begin
  customer_delivery_place_id=case when p_order_type='delivery' then nullif(trim(p_customer_delivery_place_id),'') else null end,
  updated_at=now() where id=v_payment_id;
  return query select v_payment_id,v_reference_number,v_subtotal,v_delivery_fee,v_total;
-end; $function$
+end; $function$;
 
 CREATE OR REPLACE FUNCTION public.create_pending_online_payment_from_delivery_quote(p_restaurant_id uuid, p_customer_name text, p_mobile_number text, p_delivery_city text, p_delivery_barangay text, p_delivery_address text, p_notes text, p_items jsonb, p_redeem_loyalty boolean, p_customer_delivery_address text, p_customer_delivery_city text, p_customer_delivery_barangay text, p_customer_delivery_latitude double precision, p_customer_delivery_longitude double precision, p_customer_delivery_place_id text, p_delivery_quote_id uuid)
  RETURNS TABLE(payment_id uuid, reference_number text, subtotal numeric, delivery_fee numeric, total numeric)
@@ -591,6 +593,6 @@ begin
     case when p_redeem_loyalty then v_restaurant.loyalty_redemption_points else 0 end,v_discount
   ) returning id into v_payment_id;
   return query select v_payment_id,v_reference_number,v_subtotal,v_delivery_fee,greatest(round(v_subtotal+v_delivery_fee-v_discount,2),0);
-end; $function$
+end; $function$;
 
 NOTIFY pgrst, 'reload schema';
