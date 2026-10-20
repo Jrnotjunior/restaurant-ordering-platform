@@ -6,7 +6,7 @@ export async function listRestaurantBranches(restaurantId: string, includeInacti
   if (!restaurantId) return [];
   let query = supabase
     .from('restaurant_branches')
-    .select('id,restaurant_id,branch_code,name,store_address,restaurant_address,contact_number,is_active,is_default,ordering_enabled,operating_hours,delivery_location_latitude,delivery_location_longitude,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,created_at,updated_at')
+    .select('id,restaurant_id,branch_code,name,custom_domain,store_address,restaurant_address,contact_number,is_active,is_default,ordering_enabled,operating_hours,delivery_location_latitude,delivery_location_longitude,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,created_at,updated_at')
     .eq('restaurant_id', restaurantId)
     .order('is_default', { ascending: false })
     .order('name', { ascending: true });
@@ -21,7 +21,7 @@ export async function createRestaurantBranch(restaurantId: string, draft: Restau
   const { data, error } = await supabase
     .from('restaurant_branches')
     .insert({ restaurant_id: restaurantId, ...normalizeDraft(draft) })
-    .select('id,restaurant_id,branch_code,name,store_address,restaurant_address,contact_number,is_active,is_default,ordering_enabled,operating_hours,delivery_location_latitude,delivery_location_longitude,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,created_at,updated_at')
+    .select('id,restaurant_id,branch_code,name,custom_domain,store_address,restaurant_address,contact_number,is_active,is_default,ordering_enabled,operating_hours,delivery_location_latitude,delivery_location_longitude,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,created_at,updated_at')
     .single();
   if (error) throw new Error(error.message || 'Unable to create branch.');
   return data as RestaurantBranch;
@@ -34,7 +34,7 @@ export async function updateRestaurantBranch(branchId: string, restaurantId: str
     .update({ ...normalizeDraft(draft), updated_at: new Date().toISOString() })
     .eq('id', branchId)
     .eq('restaurant_id', restaurantId)
-    .select('id,restaurant_id,branch_code,name,store_address,restaurant_address,contact_number,is_active,is_default,ordering_enabled,operating_hours,delivery_location_latitude,delivery_location_longitude,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,created_at,updated_at')
+    .select('id,restaurant_id,branch_code,name,custom_domain,store_address,restaurant_address,contact_number,is_active,is_default,ordering_enabled,operating_hours,delivery_location_latitude,delivery_location_longitude,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters,created_at,updated_at')
     .single();
   if (error) throw new Error(error.message || 'Unable to save branch settings.');
   return data as RestaurantBranch;
@@ -53,6 +53,7 @@ function normalizeDraft(draft: RestaurantBranchDraft) {
   return {
     branch_code: draft.branch_code.trim().toUpperCase(),
     name: draft.name.trim(),
+    custom_domain: draft.custom_domain.trim().toLowerCase().replace(/\\.$/, '') || null,
     store_address: draft.store_address.trim() || null,
     restaurant_address: draft.restaurant_address.trim() || null,
     contact_number: draft.contact_number.trim() || null,
