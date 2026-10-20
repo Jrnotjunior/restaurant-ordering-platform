@@ -49,6 +49,7 @@ export function MapboxDeliveryLocationPicker({
   const readyRef = useRef(false);
   const service = mapServiceUrl();
   const [serviceError, setServiceError] = useState('');
+  const [frameHeight, setFrameHeight] = useState(520);
 
   callbacksRef.current = { onSelect, onLocationChange, disabled, variant, initialLatitude, initialLongitude };
 
@@ -80,6 +81,14 @@ export function MapboxDeliveryLocationPicker({
         return;
       }
       if (!readyRef.current) return;
+
+      if (message.type === 'frame-resize') {
+        const height = typeof message.height === 'number' ? message.height : Number(message.height);
+        if (Number.isFinite(height) && height >= 320 && height <= 1200) {
+          setFrameHeight(Math.ceil(height));
+        }
+        return;
+      }
 
       if (message.type === 'service-error') {
         setServiceError(typeof message.message === 'string' ? message.message : 'The central map service is unavailable.');
@@ -145,6 +154,7 @@ export function MapboxDeliveryLocationPicker({
         src={service.href}
         title={variant === 'restaurant' ? 'Restaurant map location' : 'Delivery address map'}
         loading="eager"
+        style={{ height: `${frameHeight}px`, minHeight: 0 }}
         allow="geolocation"
         referrerPolicy="strict-origin-when-cross-origin"
         onLoad={sendInit}
