@@ -475,10 +475,7 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
               </div>
               <span className="order-rider-status">{deliveryStatusLabel}</span>
             </div>
-            <p className="order-rider-message">Hi! I'm {order.riderName}, and I'll be delivering your order shortly. You can contact me at {order.riderPhone} if you need assistance.</p>
-            <a className="order-rider-phone" href={`tel:${order.riderPhone}`} aria-label={`Call ${order.riderName}`}>
-              <span>📞</span>{order.riderPhone}
-            </a>
+            <p className="order-rider-message">Hi! I'm {order.riderName}, and I'll be delivering your order shortly. You can contact me if you need assistance.</p>
             <div className="order-rider-actions">
               <a className="button button-primary" href={`tel:${order.riderPhone}`}>Call Rider</a>
               <a className="button button-secondary" href={`sms:${order.riderPhone}`}>Text Rider</a>
