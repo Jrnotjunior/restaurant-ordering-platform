@@ -50,6 +50,16 @@ export function normalizeHashRoute(hash: string) {
   return normalized;
 }
 
+/**
+ * Build a stable, refresh-safe tracking URL without losing a deployment base
+ * path (for example, GitHub Pages' /restaurant-ordering-platform/ prefix).
+ */
+export function buildOrderTrackingUrl(pathname: string, orderId: string): string {
+  const basePath = pathname.trim() || '/';
+  const normalizedPath = basePath.startsWith('/') ? basePath : `/${basePath}`;
+  return `${normalizedPath}?trackOrder=${encodeURIComponent(orderId)}`;
+}
+
 export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' | 'hash'>, route: string): AppRouteContext {
   const hashParams = new URLSearchParams(location.hash.replace(/^#/, ''));
   const searchParams = new URLSearchParams(location.search);
