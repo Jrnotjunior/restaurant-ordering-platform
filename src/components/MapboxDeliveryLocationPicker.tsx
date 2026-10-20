@@ -101,8 +101,8 @@ export function MapboxDeliveryLocationPicker({
       setError('');
 
       try {
-        const token = String(import.meta.env.VITE_MAPBOX_ACCESS_TOKEN ?? '').trim();
-        if (!token) throw new Error('Mapbox is not configured yet. Add VITE_MAPBOX_ACCESS_TOKEN to the environment.');
+        const token = String(import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN ?? '').trim();
+        if (!token.startsWith('pk.')) throw new Error('Mapbox needs a public browser token beginning pk. Configure VITE_MAPBOX_PUBLIC_TOKEN; secret sk. tokens must never be used in browser apps.');
         if (!mapContainerRef.current || cancelled) return;
 
         const defaultCenter: [number, number] = Number.isFinite(initialLatitude) && Number.isFinite(initialLongitude)
