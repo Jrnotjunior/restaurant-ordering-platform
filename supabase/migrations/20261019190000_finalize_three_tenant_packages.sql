@@ -73,6 +73,19 @@ SET name = 'Self Ordering + POS + Kitchen',
     updated_at = now()
 WHERE package_key = 'self_ordering_pos_kitchen';
 
+-- The entitlement set below includes online_payments. Seed that module here
+-- because its separate later migration runs after this one in a clean replay.
+INSERT INTO public.system_modules (module_key, name, description, sort_order, is_active)
+VALUES (
+  'online_payments',
+  'Online Payments',
+  'PayMongo online payment configuration and checkout',
+  70,
+  true
+)
+ON CONFLICT (module_key) DO UPDATE
+SET is_active = true;
+
 -- Ensure the intended module entitlements exist for the three packages.
 -- Existing rows are preserved; missing rows are added idempotently.
 INSERT INTO public.system_package_modules (package_id, module_key)
