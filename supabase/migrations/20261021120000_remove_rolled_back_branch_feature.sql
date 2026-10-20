@@ -56,7 +56,7 @@ REVOKE ALL ON FUNCTION public.normalize_restaurant_custom_domain() FROM PUBLIC, 
 
 -- Remove branch-aware RPC overloads. The non-branch checkout RPCs remain in place.
 DROP FUNCTION IF EXISTS public.create_order_with_guest_cancel_token(
-  uuid, text, text, text, text, text, text, text, text, boolean, jsonb,
+  uuid, text, text, text, text, text, text, text, boolean, jsonb,
   text, text, text, double precision, double precision, text, text, uuid
 );
 DROP FUNCTION IF EXISTS public.create_order_from_delivery_quote_with_guest_cancel_token(
