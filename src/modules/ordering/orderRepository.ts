@@ -563,7 +563,7 @@ export function subscribeToOrderTrackingChanges(
 }
 
 
-export async function cancelRestaurantOrder(orderId: string): Promise<{ message: string; refundStatus: string }> {
+export async function cancelRestaurantOrder(orderId: string): Promise<{ message: string; refundStatus: string; refundTransferLink: string | null }> {
   if (!supabase) throw new Error('Order cancellation is unavailable. Please try again later.');
   const { data, error } = await supabase.functions.invoke('cancel-restaurant-order', { body: { orderId } });
   if (error) {
@@ -572,5 +572,9 @@ export async function cancelRestaurantOrder(orderId: string): Promise<{ message:
     throw new Error(payload?.error || error.message || 'Unable to cancel this order.');
   }
   if (!data || data.cancelled !== true) throw new Error(typeof data?.error === 'string' ? data.error : 'Unable to cancel this order.');
-  return { message: String(data.message || 'Order cancelled.'), refundStatus: String(data.refundStatus || 'not_required') };
+  return {
+    message: String(data.message || 'Order cancelled.'),
+    refundStatus: String(data.refundStatus || 'not_required'),
+    refundTransferLink: typeof data.refundTransferLink === 'string' ? data.refundTransferLink : null,
+  };
 }
