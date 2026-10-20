@@ -21,7 +21,6 @@ import { RestaurantWebsiteCustomizationPage } from './pages/RestaurantWebsiteCus
 import { RestaurantLoyaltyPage } from './pages/RestaurantLoyaltyPage';
 import { RestaurantOwnerLoginPage } from './pages/RestaurantOwnerLoginPage';
 import { RestaurantEmployeesPage } from './pages/RestaurantEmployeesPage';
-import { RestaurantPayrollPage } from './pages/RestaurantPayrollPage';
 import { RestaurantEmployeeInvitePage } from './pages/RestaurantEmployeeInvitePage';
 import { RestaurantRoleDashboardPage } from './pages/RestaurantRoleDashboardPage';
 import { RestaurantKitchenPage } from './pages/RestaurantKitchenPage';
@@ -278,7 +277,6 @@ function AppContent() {
     isRestaurantWebsiteCustomizationPage,
     isRestaurantLoyaltyPage,
     isRestaurantEmployeesPage,
-    isRestaurantPayrollPage,
     isCashierPage,
     isKitchenPage,
     isKitchenMenuPage,
@@ -479,7 +477,6 @@ function AppContent() {
                   <RestaurantMenuPage restaurantId={ownerRestaurant.id!} />
                 </RestaurantModuleGuard>
               ) : isRestaurantEmployeesPage ? <RestaurantEmployeesPage restaurantId={ownerRestaurant.id!} />
-              : isRestaurantPayrollPage ? <RestaurantModuleGuard restaurantId={ownerRestaurant.id!} anyOf={['payroll']}><RestaurantPayrollPage restaurantId={ownerRestaurant.id!} /></RestaurantModuleGuard>
               : isRestaurantDeliveryDispatchPage ? (
                 <RestaurantModuleGuard restaurantId={ownerRestaurant.id!} anyOf={['dispatch_delivery']}>
                   <RestaurantDeliveryDispatchPage restaurantId={ownerRestaurant.id!} />
