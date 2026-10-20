@@ -35,11 +35,8 @@ jobs:
         run: |
           test -n "$VITE_SUPABASE_URL" || { echo "Missing GitHub Actions secret: VITE_SUPABASE_URL"; exit 1; }
           test -n "$VITE_SUPABASE_ANON_KEY" || { echo "Missing GitHub Actions secret: VITE_SUPABASE_ANON_KEY"; exit 1; }
-          if [ -n "$VITE_MAPBOX_PUBLIC_TOKEN" ]; then
-            case "$VITE_MAPBOX_PUBLIC_TOKEN" in pk.*) ;; *) echo "VITE_MAPBOX_PUBLIC_TOKEN must be a browser-safe public token beginning pk."; exit 1 ;; esac
-          else
-            echo "Mapbox address search unavailable until a public pk. token is configured."
-          fi
+          test -n "$VITE_MAPBOX_PUBLIC_TOKEN" || { echo "Missing GitHub Actions secret: VITE_MAPBOX_PUBLIC_TOKEN. Add it in Settings > Secrets and variables > Actions, then rerun this workflow."; exit 1; }
+          case "$VITE_MAPBOX_PUBLIC_TOKEN" in pk.*) ;; *) echo "VITE_MAPBOX_PUBLIC_TOKEN must be a browser-safe public token beginning pk."; exit 1 ;; esac
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
