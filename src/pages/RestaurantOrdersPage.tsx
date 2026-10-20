@@ -81,6 +81,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
   const [orders, setOrders] = useState<RestaurantOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [refundTransferLink, setRefundTransferLink] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
   const [filter, setFilter] = useState<'active' | 'all'>('active');
   const [openColumn, setOpenColumn] = useState<BoardColumn | null>(null);
@@ -255,6 +256,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
   async function cancel(order: RestaurantOrder) {
     try {
       setError('');
+      setRefundTransferLink(null);
       setUpdating(order.orderId);
       const result = await cancelRestaurantOrder(order.orderId);
       setOrders((current) =>
@@ -263,6 +265,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
       setCancelConfirmationOrder(null);
       setSelectedOrder(null);
       setError(result.message);
+      setRefundTransferLink(result.refundTransferLink);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to update order.');
     } finally {
@@ -389,6 +392,14 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
         : <BranchSelector branches={branches} selectedBranch={selectedBranch} onSelect={(id) => { selectBranch(id); closeOrderList(); }} />}
 
       {error && <div className="restaurant-orders-error" role="alert">{error}</div>}
+      {refundTransferLink?.startsWith('https://') && (
+        <p role="note" style={{ margin: '0 0 16px', fontSize: 14 }}>
+          <a href={refundTransferLink} target="_blank" rel="noopener noreferrer">
+            Open PayMongo QR Ph refund claim link
+          </a>
+          {' '}and share it securely with the customer. The refund completes after the customer claims the transfer.
+        </p>
+      )}
 
       {loading ? (
         <div className="restaurant-orders-empty">Loading orders…</div>
