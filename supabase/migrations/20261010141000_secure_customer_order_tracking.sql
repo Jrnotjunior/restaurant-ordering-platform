@@ -52,6 +52,7 @@ DECLARE
   v_function record;
   v_definition text;
   v_replaced text;
+  v_generators_updated integer := 0;
 BEGIN
   FOR v_function IN
     SELECT p.oid, p.proname, pg_get_function_identity_arguments(p.oid) AS identity_args
@@ -76,12 +77,39 @@ BEGIN
     );
 
     IF v_replaced = v_definition THEN
-      RAISE EXCEPTION 'Could not lengthen payment reference generator for % (%)',
-        v_function.proname, v_function.identity_args;
+      -- Some compatibility overloads delegate to the base RPC and do not
+      -- generate their own reference. Skip those safely.
+      IF position('from public.create_pending_online_payment(' in lower(v_definition)) > 0 THEN
+        CONTINUE;
+      END IF;
+
+      -- Also allow a migration replay where this function already uses 32
+      -- hexadecimal UUID characters. An unrecognized short generator is an
+      -- error, because it would otherwise leave a weak bearer reference.
+      IF position('pay-' in lower(v_definition)) > 0
+         AND position('substr(replace(gen_random_uuid()::text' in lower(v_definition)) > 0
+         AND (
+           position(',1,32)' in lower(v_definition)) > 0
+           OR position(', 1, 32)' in lower(v_definition)) > 0
+         ) THEN
+        CONTINUE;
+      END IF;
+
+      IF position('pay-' in lower(v_definition)) > 0 THEN
+        RAISE EXCEPTION 'Unrecognized payment reference generator for % (%)',
+          v_function.proname, v_function.identity_args;
+      END IF;
+
+      CONTINUE;
     END IF;
 
     EXECUTE v_replaced;
+    v_generators_updated := v_generators_updated + 1;
   END LOOP;
+
+  IF v_generators_updated = 0 THEN
+    RAISE EXCEPTION 'No payment reference generators were hardened; migration rolled back';
+  END IF;
 END;
 $migration$;
 
