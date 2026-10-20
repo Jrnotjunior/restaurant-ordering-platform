@@ -41,6 +41,7 @@ describe('multi-branch domain defaults', () => {
       restaurant_id: 'business-1',
       branch_code: 'QC01',
       name: 'Quezon City',
+      custom_domain: null,
       store_address: null,
       restaurant_address: '123 Main Street',
       contact_number: null,
@@ -65,6 +66,7 @@ describe('multi-branch domain defaults', () => {
     expect(draft.store_address).toBe('123 Main Street');
     expect(draft.restaurant_address).toBe('123 Main Street');
     expect(draft.contact_number).toBe('');
+    expect(draft.custom_domain).toBe('');
     expect(draft.operating_hours.monday).toEqual({ isOpen: false, open: '10:00', close: '20:00' });
     expect(draft.operating_hours.tuesday).toEqual(DEFAULT_BRANCH_HOURS.tuesday);
     expect(draft.delivery_location_latitude).toBe(14.6);
