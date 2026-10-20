@@ -92,7 +92,7 @@ BEGIN
 
   RETURN v_log_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.customer_touch_presence()
  RETURNS void
@@ -115,7 +115,7 @@ BEGIN
     RAISE EXCEPTION 'Customer profile not found';
   END IF;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.upsert_customer_profile(p_restaurant_id uuid, p_first_name text, p_last_name text, p_phone text DEFAULT NULL::text)
  RETURNS TABLE(customer_id uuid, restaurant_id uuid, first_name text, last_name text, phone text)
@@ -246,7 +246,7 @@ BEGIN
       updated_at = now()
   WHERE inventory_item_id = v_item.id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.send_order_to_kitchen(p_order_id uuid)
  RETURNS TABLE(order_id uuid, status text)
@@ -315,7 +315,7 @@ BEGIN
   WHERE o.id = p_order_id AND o.restaurant_id = v_restaurant_id
   RETURNING o.id, o.status;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.system_admin_get_audit_logs(p_restaurant_id uuid DEFAULT NULL::uuid, p_event_type text DEFAULT NULL::text, p_limit integer DEFAULT 50, p_offset integer DEFAULT 0, p_search text DEFAULT NULL::text, p_start_date timestamp with time zone DEFAULT NULL::timestamp with time zone, p_end_date timestamp with time zone DEFAULT NULL::timestamp with time zone)
  RETURNS TABLE(id uuid, admin_user_id uuid, admin_email text, admin_name text, restaurant_id uuid, restaurant_name text, event_type text, action text, entity_type text, entity_id uuid, details jsonb, created_at timestamp with time zone)
@@ -388,7 +388,7 @@ BEGIN
   LIMIT p_limit
   OFFSET p_offset;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.system_admin_get_dashboard_summary()
  RETURNS TABLE(total_restaurants bigint, active_restaurants bigint, inactive_restaurants bigint, active_system_administrators bigint, pending_system_administrators bigint)
@@ -433,7 +433,7 @@ BEGIN
       WHERE status = 'pending'
     ) AS pending_system_administrators;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.system_admin_get_restaurant_monitoring()
  RETURNS TABLE(restaurant_id uuid, restaurant_name text, is_active boolean, customer_accounts bigint, customers_ordered_today bigint, orders_today bigint, processing_orders bigint, last_activity timestamp with time zone, logged_in_now bigint)
@@ -522,7 +522,7 @@ BEGIN
   FROM public.restaurants r
   ORDER BY r.name ASC;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.system_admin_get_restaurant_settings(p_restaurant_id uuid)
  RETURNS TABLE(cash_on_delivery_enabled boolean, cash_on_pickup_enabled boolean, cash_on_take_out_enabled boolean, automatic_rider_assignment_enabled boolean, tax_vat_registered boolean, tax_prices_vat_inclusive boolean, tax_vat_rate numeric)
@@ -538,7 +538,7 @@ begin
          r.tax_prices_vat_inclusive, r.tax_vat_rate
   from public.restaurants r where r.id = p_restaurant_id;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.system_admin_update_restaurant_settings(p_restaurant_id uuid, p_cash_on_delivery_enabled boolean, p_cash_on_pickup_enabled boolean, p_cash_on_take_out_enabled boolean, p_online_payment_enabled boolean, p_automatic_rider_assignment_enabled boolean, p_tax_vat_registered boolean, p_tax_prices_vat_inclusive boolean, p_tax_vat_rate numeric)
  RETURNS TABLE(cash_on_delivery_enabled boolean, cash_on_pickup_enabled boolean, cash_on_take_out_enabled boolean, online_payment_enabled boolean, automatic_rider_assignment_enabled boolean, tax_vat_registered boolean, tax_prices_vat_inclusive boolean, tax_vat_rate numeric)
@@ -577,7 +577,7 @@ begin
       r.automatic_rider_assignment_enabled,r.tax_vat_registered,r.tax_prices_vat_inclusive,r.tax_vat_rate
   from public.restaurants r where r.id=p_restaurant_id;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.system_admin_add_user(p_admin_user_id uuid, p_access_level text)
  RETURNS uuid
@@ -648,7 +648,7 @@ BEGIN
 
   RETURN v_access_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.system_admin_delete_revoked_access(p_admin_user_id uuid)
  RETURNS void
@@ -721,7 +721,7 @@ BEGIN
     RAISE EXCEPTION 'Auth account could not be deleted';
   END IF;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.system_admin_restore_access(p_admin_user_id uuid)
  RETURNS void
@@ -773,7 +773,7 @@ BEGIN
     )
   );
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.system_admin_revoke_access(p_admin_user_id uuid)
  RETURNS void
@@ -823,7 +823,7 @@ BEGIN
     )
   );
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.system_admin_set_access_level(p_admin_user_id uuid, p_access_level text)
  RETURNS void
@@ -874,7 +874,7 @@ BEGIN
     )
   );
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.system_admin_set_restaurant_staff_active(p_staff_id uuid, p_is_active boolean)
  RETURNS void
@@ -936,7 +936,7 @@ BEGIN
     RAISE EXCEPTION 'Staff member could not be updated';
   END IF;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.system_admin_delete_restaurant_staff(p_staff_id uuid)
  RETURNS void
