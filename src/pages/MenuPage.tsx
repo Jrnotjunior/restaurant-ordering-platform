@@ -23,8 +23,13 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!restaurant.id || !isSupabaseConfigured) {
+    if (!isSupabaseConfigured) {
       setLoading(false);
+      return;
+    }
+    // Keep the storefront loading until the tenant ID is resolved.
+    if (!restaurant.id) {
+      setLoading(true);
       return;
     }
 
@@ -162,7 +167,22 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
         </>
       ) : null}
 
-      {loading ? <p className="menu-state">Loading menu…</p> : null}
+      {loading ? (
+        <div className="menu-loading-skeleton" role="status" aria-label="Loading menu products" aria-live="polite">
+          <span className="menu-loading-message">Loading menu…</span>
+          {Array.from({ length: 4 }, (_, index) => (
+            <div className="menu-skeleton-card" key={index} aria-hidden="true">
+              <div className="menu-skeleton-image" />
+              <div className="menu-skeleton-details">
+                <span className="menu-skeleton-line menu-skeleton-title" />
+                <span className="menu-skeleton-line menu-skeleton-price" />
+                <span className="menu-skeleton-line" />
+                <span className="menu-skeleton-line menu-skeleton-line-short" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
       {!loading && error ? <p className="menu-state menu-state-error">{error}</p> : null}
       {!loading && !error && !isSupabaseConfigured ? (
         <p className="menu-state">Connect Supabase to load the restaurant menu.</p>
