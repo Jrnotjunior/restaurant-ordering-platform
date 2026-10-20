@@ -4,22 +4,22 @@
 
 BEGIN;
 
--- Remove helper functions created solely for Payroll & HR.
-DROP FUNCTION IF EXISTS public.restaurant_record_salary_profile_history() CASCADE;
-DROP FUNCTION IF EXISTS public.restaurant_guard_finalized_payroll_item() CASCADE;
-DROP FUNCTION IF EXISTS public.restaurant_guard_payroll_run_state() CASCADE;
+-- Remove the Payroll & HR-only triggers and helper functions.
+DROP TRIGGER IF EXISTS restaurant_salary_history_trigger ON public.restaurant_employee_salary_profiles;
+DROP TRIGGER IF EXISTS restaurant_payroll_item_guard ON public.restaurant_payroll_items;
+DROP TRIGGER IF EXISTS restaurant_payroll_run_state_guard ON public.restaurant_payroll_runs;
 
--- Drop all feature-only tables and their stored test records.
--- CASCADE removes only objects dependent on these retired tables, such as their
--- indexes, row-security policies, triggers, and foreign-key constraints.
-DROP TABLE IF EXISTS
-  public.restaurant_employee_documents,
-  public.restaurant_payroll_items,
-  public.restaurant_payroll_runs,
-  public.restaurant_employee_shifts,
-  public.restaurant_employee_salary_history,
-  public.restaurant_employee_salary_profiles
-CASCADE;
+DROP FUNCTION IF EXISTS public.restaurant_record_salary_profile_history();
+DROP FUNCTION IF EXISTS public.restaurant_guard_finalized_payroll_item();
+DROP FUNCTION IF EXISTS public.restaurant_guard_payroll_run_state();
+
+-- Delete feature-only test tables in foreign-key dependency order.
+DROP TABLE IF EXISTS public.restaurant_employee_documents;
+DROP TABLE IF EXISTS public.restaurant_payroll_items;
+DROP TABLE IF EXISTS public.restaurant_payroll_runs;
+DROP TABLE IF EXISTS public.restaurant_employee_shifts;
+DROP TABLE IF EXISTS public.restaurant_employee_salary_history;
+DROP TABLE IF EXISTS public.restaurant_employee_salary_profiles;
 
 -- The composite unique index was introduced solely to support the retired
 -- payroll/employee foreign keys. Current orders and delivery assignments use id.
