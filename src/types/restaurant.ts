@@ -58,6 +58,8 @@ export type RestaurantStorefront = {
 
 export type RestaurantConfig = {
   id?: string;
+  /** Branch that owns this hostname, if resolved from a branch-specific website domain. */
+  storefrontBranchId?: string;
   name: string;
   tagline: string;
   logoUrl?: string;
