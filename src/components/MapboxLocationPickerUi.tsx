@@ -2,16 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { getMapboxPublicToken, mapboxFeatureToAddress, reverseMapboxLocation, searchMapboxAddresses, type MapboxLocationFeature } from '../modules/location/locationService';
-
-export type MapboxDeliveryAddress = {
-  formattedAddress: string;
-  city: string;
-  barangay: string;
-  address: string;
-  placeId: string;
-  latitude: number | null;
-  longitude: number | null;
-};
+import type { MapboxDeliveryAddress } from '../modules/location/mapServiceProtocol';
+export type { MapboxDeliveryAddress } from '../modules/location/mapServiceProtocol';
 
 type LatLng = { lat: number; lng: number };
 
