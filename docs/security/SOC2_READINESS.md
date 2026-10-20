@@ -24,6 +24,11 @@ This is an internal engineering tracker, not a SOC 2 report, certification, or a
 - The isolated test project has no direct authenticated table UPDATE grant; the assignment/handoff RPC tests passed under that privilege posture. Primary project direct REST mutation denial was verified via effective privileges, but not yet via a complete browser/PostgREST regression suite.
 - Existing RLS policies are retained. The 10 RLS-enabled tables-with-no-policies finding is not being “fixed” with broad policies: live ACL inspection showed the affected tables had no direct anon/authenticated table grants.
 
+### Trigger-helper privilege cleanup
+- Committed `supabase/migrations/20261020195800_revoke_trigger_helper_rpc_execute.sql` (commit `c3044ee1f8501114a28e0c86133d943a6bf16113`) and applied it to both the primary and isolated Security Test projects.
+- Revoked EXECUTE from `PUBLIC`, `anon` and `authenticated` on `public.enforce_cash_on_pickup_setting()`, a trigger-returning helper that had no attached trigger in the current primary catalogue. No client source caller was found; PostgreSQL triggers, if added in future, do not rely on client RPC grants to invoke their trigger functions.
+- Security Advisor refreshed after the changes continues to show 10 no-policy RLS findings. The intentionally public checkout/storefront functions remain exposed for per-signature review rather than being indiscriminately revoked.
+
 ### Outstanding after this update
 - Latest Security Advisor still reports 18 anonymous-callable SECURITY DEFINER signatures, 112 authenticated-callable SECURITY DEFINER signatures, 10 RLS-enabled tables without policies, and leaked-password protection disabled. Each remaining signature requires a per-function access/control review; some anonymous checkout/storefront RPCs are intentionally public and must not be blanket-revoked.
 - Supabase Auth leaked-password protection requires an Auth dashboard/configuration change and validation against passwordless/OAuth flows; it has not been changed.
