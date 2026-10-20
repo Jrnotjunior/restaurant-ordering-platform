@@ -1555,3 +1555,11 @@ textarea {
 .menu-skeleton-line-short { width: 68%; }
 @keyframes menu-skeleton-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
 @media (prefers-reduced-motion: reduce) { .menu-skeleton-image, .menu-skeleton-line { animation: none; } }
+
+/* Hold each product image's space with a shimmer filler until the image is ready. */
+.product-card-image-loading { position: relative; overflow: hidden; background: #f1f5f9; }
+.product-card-image-loading .product-card-image { position: relative; z-index: 1; opacity: 0; transition: opacity 180ms ease-in; }
+.product-card-image-loading.is-loaded .product-card-image { opacity: 1; }
+.product-card-image-shimmer { position: absolute; inset: 0; display: block; border-radius: inherit; background: linear-gradient(100deg, #edf0f4 20%, #f8fafc 45%, #edf0f4 70%); background-size: 220% 100%; animation: menu-skeleton-shimmer 1.35s ease-in-out infinite; }
+.product-card-image-loading:disabled { cursor: default; }
+@media (prefers-reduced-motion: reduce) { .product-card-image-shimmer { animation: none; } .product-card-image-loading .product-card-image { transition: none; } }
