@@ -12,7 +12,6 @@ type InitMessage = {
   initialLatitude: number | null;
   initialLongitude: number | null;
 };
-type MapMessage = { source: 'web2table-map-service'; type: string; [key: string]: unknown };
 
 function mapServiceUrl() {
   const configured = String(import.meta.env.VITE_MAP_SERVICE_URL ?? '').trim();
@@ -91,7 +90,7 @@ export function MapboxDeliveryLocationPicker({
   useEffect(() => {
     function handleMessage(event: MessageEvent<unknown>) {
       if (event.origin !== service.origin || event.source !== iframeRef.current?.contentWindow) return;
-      const message = asRecord(event.data) as MapMessage | null;
+      const message = asRecord(event.data);
       if (!message || message.source !== 'web2table-map-service' || typeof message.type !== 'string') return;
 
       if (message.type === 'ready') {
