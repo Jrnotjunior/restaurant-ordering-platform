@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
-import { createProduct, deleteProduct, getMenu, getOrCreateCategory, saveProductImage, setProductAvailability, updateProduct, uploadProductImage } from '../modules/products/productService';
+import { createProduct, deleteProduct, getMenu, getOrCreateCategory, getBranchProductSettings, saveBranchProductSettings, saveProductImage, setProductAvailability, updateProduct, uploadProductImage } from '../modules/products/productService';
+import { listRestaurantBranches } from '../modules/branches/branchRepository';
+import type { RestaurantBranch } from '../modules/branches/branchTypes';
+import type { BranchProductSetting } from '../modules/products/branchProductRepository';
 import type { RestaurantCategory, RestaurantProduct } from '../types/menu';
 import { useOwnerUnsavedChanges } from '../contexts/OwnerUnsavedChangesContext';
 import { useOwnerUnsavedChangesTracking } from '../hooks/useOwnerUnsavedChangesTracking';
