@@ -5,11 +5,11 @@ begin;
 
 DO $$
 BEGIN
-  IF (
-    SELECT count(*)
-    FROM public.system_packages
-    WHERE package_key IN ('full_system', 'pos', 'self_ordering_pos_kitchen')
-  ) <> 3 THEN
+  IF
+    (SELECT count(*) FROM public.system_packages WHERE package_key = 'full_system') <> 1
+    OR (SELECT count(*) FROM public.system_packages WHERE package_key = 'pos') <> 1
+    OR (SELECT count(*) FROM public.system_packages WHERE package_key = 'self_ordering_pos_kitchen') <> 1
+  THEN
     RAISE EXCEPTION
       'Cannot finalize tenant packages: expected exactly one Full System, POS, and Self Ordering + POS + Kitchen package keyed by full_system, pos, and self_ordering_pos_kitchen.';
   END IF;
