@@ -186,6 +186,7 @@ export type TrackedOrder = {
   paymentMethod: 'cash' | 'gcash';
   status: OrderStatus;
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  cancellationRefundStatus: string | null;
   total: number;
   subtotal: number;
   shippingFee: number;
@@ -317,6 +318,16 @@ export async function getOrderStatus(orderId: string): Promise<TrackedOrder> {
   const row = rows[0];
   if (!row) throw new Error('Order not found. Please check the order number.');
 
+  // Refund state is separate from the original PayMongo payment state.
+  // Fetch it only for cancelled online orders so test simulations aren't
+  // confused with a provider-confirmed refund.
+  const cancellationRefundRows = row.status === 'cancelled' && row.payment_method === 'gcash'
+    ? await supabaseRpc<{ cancellation_refund_status: string | null }>('get_order_cancellation_refund_status', {
+        p_order_id: orderId,
+      }).catch(() => [])
+    : [];
+  const cancellationRefundStatus = cancellationRefundRows[0]?.cancellation_refund_status ?? null;
+
   const createdAtRows = await supabaseRpc<{ created_at: string | null }>('get_customer_order_created_at', {
     p_order_id: orderId,
   }).catch(() => []);
@@ -354,6 +365,7 @@ export async function getOrderStatus(orderId: string): Promise<TrackedOrder> {
     paymentMethod: row.payment_method,
     status: row.status,
     paymentStatus: row.payment_status,
+    cancellationRefundStatus,
     total: Number(row.total),
     subtotal: Number(row.subtotal),
     shippingFee: Number(row.shipping_fee),
