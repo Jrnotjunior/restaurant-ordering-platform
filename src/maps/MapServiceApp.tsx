@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { MapboxLocationPickerUi, type MapboxDeliveryAddress } from '../components/MapboxLocationPickerUi';
+import { MapboxLocationPickerUi } from '../components/MapboxLocationPickerUi';
 import { configureMapboxPublicToken } from '../modules/location/locationService';
+import { isPublicMapboxToken, normalizeSecureOrigin, type MapboxDeliveryAddress } from '../modules/location/mapServiceProtocol';
 import { supabaseGet, supabaseRpc } from '../services/supabaseClient';
 
 type PickerVariant = 'delivery' | 'restaurant';
@@ -11,7 +12,6 @@ type InitOptions = {
   initialLongitude: number | null;
 };
 type MapSession = InitOptions & { parentOrigin: string };
-type StorefrontMessage = { source: 'web2table-storefront'; type: string; [key: string]: unknown };
 type PendingConfirmation = { resolve: () => void; reject: (error: Error) => void };
 
 const MESSAGE_SOURCE = 'web2table-map-service';
@@ -64,7 +64,7 @@ async function loadPublicToken(): Promise<string> {
     cache: 'no-store',
   });
   const body = await response.json().catch(() => ({})) as { token?: unknown; error?: unknown };
-  if (!response.ok || typeof body.token !== 'string' || !body.token.startsWith('pk.')) {
+  if (!response.ok || !isPublicMapboxToken(body.token)) {
     throw new Error(typeof body.error === 'string' ? body.error : 'The central map service is not configured yet.');
   }
   return body.token;
@@ -106,18 +106,11 @@ export function MapServiceApp() {
 
     async function handleInit(event: MessageEvent<unknown>, options: InitOptions) {
       if (event.origin === 'null') return;
-      let parsedOrigin: URL;
-      try {
-        parsedOrigin = new URL(event.origin);
-      } catch {
-        return;
-      }
-      const secure = parsedOrigin.protocol === 'https:'
-        || (import.meta.env.DEV && ['localhost', '127.0.0.1', '::1'].includes(parsedOrigin.hostname) && parsedOrigin.protocol === 'http:');
-      if (!secure) return;
+      const trustedOrigin = normalizeSecureOrigin(event.origin, import.meta.env.DEV);
+      if (!trustedOrigin) return;
 
       const existing = validatedSessionRef.current;
-      if (existing?.parentOrigin === event.origin) {
+      if (existing?.parentOrigin === trustedOrigin) {
         const updated = { ...existing, ...options };
         validatedSessionRef.current = updated;
         setSession(updated);
@@ -133,7 +126,7 @@ export function MapServiceApp() {
       setStatus('Verifying restaurant website…');
 
       try {
-        const isRegisteredTenant = await verifyTenantOrigin(event.origin);
+        const isRegisteredTenant = await verifyTenantOrigin(trustedOrigin);
         if (disposed || generation !== setupGenerationRef.current) return;
         if (!isRegisteredTenant) throw new Error('This map is available only inside an active Web2Table restaurant website.');
 
@@ -142,7 +135,7 @@ export function MapServiceApp() {
         if (disposed || generation !== setupGenerationRef.current) return;
         configureMapboxPublicToken(token);
 
-        const next: MapSession = { ...options, parentOrigin: event.origin };
+        const next: MapSession = { ...options, parentOrigin: trustedOrigin };
         validatedSessionRef.current = next;
         setSession(next);
         setStatus('');
@@ -151,7 +144,7 @@ export function MapServiceApp() {
         const message = error instanceof Error ? error.message : 'The central map service could not be initialized.';
         setServiceError(message);
         setStatus('');
-        postToParent(event.origin, { type: 'service-error', message });
+        postToParent(trustedOrigin, { type: 'service-error', message });
       }
     }
 
@@ -225,8 +218,7 @@ export function MapServiceApp() {
   return (
     <main className="map-service-page">
       <MapboxLocationPickerUi
-        key={`${session.variant}:${session.initialLatitude ?? ''}:${session.initialLongitude ?? ''}`}
-        variant={session.variant}
+          variant={session.variant}
         disabled={session.disabled}
         initialLatitude={session.initialLatitude}
         initialLongitude={session.initialLongitude}
