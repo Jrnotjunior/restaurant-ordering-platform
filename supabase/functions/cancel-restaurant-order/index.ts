@@ -167,6 +167,23 @@ Deno.serve(async (req) => {
       ...(accountId ? { "Account-ID": accountId } : {}),
     };
 
+    const { data: reservedOrder, error: reservationError } = await db.from("orders").update({
+      cancellation_refund_status: "processing",
+      cancellation_refund_error: null,
+      updated_at: new Date().toISOString(),
+    })
+      .eq("id", id)
+      .eq("restaurant_id", order.restaurant_id)
+      .eq("status", "pending")
+      .eq("payment_status", "paid")
+      .or("cancellation_refund_status.is.null,cancellation_refund_status.neq.processing")
+      .select("id")
+      .maybeSingle();
+    if (reservationError) throw reservationError;
+    if (!reservedOrder) {
+      return out({ error: "A refund request is already processing or this order has changed. Check its current status." }, 409);
+    }
+
     try {
       const paymentResponse = await fetch(
         "https://api.paymongo.com/v1/payments/" + encodeURIComponent(order.paymongo_payment_id),
