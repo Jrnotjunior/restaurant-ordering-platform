@@ -27,8 +27,7 @@ CREATE TABLE IF NOT EXISTS public.restaurant_support_requests (
     CONSTRAINT restaurant_support_requests_status_check
     CHECK (status IN ('open', 'in_progress', 'resolved', 'closed', 'cancelled')),
   created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT restaurant_support_requests_id_key PRIMARY KEY (id)
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS restaurant_support_requests_restaurant_created_idx
