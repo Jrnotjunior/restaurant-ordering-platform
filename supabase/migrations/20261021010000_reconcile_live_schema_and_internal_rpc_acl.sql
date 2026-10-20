@@ -1073,9 +1073,6 @@ GRANT EXECUTE ON FUNCTION public.system_admin_get_restaurant_monitoring() TO aut
 REVOKE ALL ON FUNCTION public.system_admin_get_restaurant_settings(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.system_admin_get_restaurant_settings(uuid) TO authenticated;
 
-REVOKE ALL ON FUNCTION public.system_admin_update_restaurant_settings(uuid,boolean,boolean,boolean,boolean,boolean,boolean,boolean,numeric) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.system_admin_update_restaurant_settings(uuid,boolean,boolean,boolean,boolean,boolean,boolean,boolean,numeric) TO authenticated;
-
 REVOKE ALL ON FUNCTION public.system_admin_update_restaurant_settings(uuid,boolean,boolean,boolean,boolean,boolean,boolean,numeric) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.system_admin_update_restaurant_settings(uuid,boolean,boolean,boolean,boolean,boolean,boolean,numeric) TO authenticated;
 
