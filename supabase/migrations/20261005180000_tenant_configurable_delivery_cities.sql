@@ -9,6 +9,7 @@ alter table public.orders add column if not exists delivery_city text;
 alter table public.pending_online_payments add column if not exists delivery_city text;
 
 drop function if exists public.create_order(uuid,text,text,text,text,text,text,text,text,jsonb,boolean);
+drop function if exists public.create_order(uuid,text,text,text,text,text,text,text,text,boolean,jsonb);
 drop function if exists public.create_order(uuid,text,text,text,text,text,text,boolean,jsonb);
 CREATE OR REPLACE FUNCTION public.create_order(p_restaurant_id uuid, p_customer_name text, p_mobile_number text, p_order_type text, p_delivery_city text, p_delivery_barangay text, p_delivery_address text, p_notes text, p_payment_method text, p_is_third_party_courier boolean, p_items jsonb)
  RETURNS TABLE(order_id uuid, order_number text, subtotal numeric, delivery_fee numeric, total numeric)
