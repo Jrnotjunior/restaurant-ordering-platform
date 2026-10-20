@@ -88,7 +88,7 @@ export function resolveTrackingOrderId(
   if (!allowStoredFallback || route || location.hash) return null;
 
   const normalizePath = (path: string) => {
-    const normalized = path.replace(/\\/+$/, '');
+    const normalized = path.replace(/\/+$/, '');
     return normalized || '/';
   };
   const currentPath = normalizePath(location.pathname);
