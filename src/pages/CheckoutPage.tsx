@@ -814,10 +814,8 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
               </button>;
             })}
           </div>
-          <section className="payment-review-refund-policy" aria-labelledby="payment-method-policy-title">
-            <h3 id="payment-method-policy-title">Cancellation &amp; Refund Policy</h3>
-            <p>You may request cancellation while your order is Pending. Once the restaurant confirms the order or sends it to the kitchen, cancellation is no longer available.</p>
-            <p>For cash orders, payment is collected by the restaurant. For online-paid orders eligible for cancellation while Pending, a refund will be requested through the payment provider. Refund eligibility and processing times depend on the restaurant's policy and, for online payments, the payment provider.</p>
+          <section className="payment-review-refund-policy payment-policy-compact" aria-label="Cancellation and refund policy">
+            <p>By clicking <strong>Place Order</strong>, you agree to our <a href="#refunds">Cancellation &amp; Refund Policy</a>. Orders may be cancelled while Pending only; eligible online refunds are handled by the payment provider, while cash payments are handled by the restaurant.</p>
           </section>
           {submitError && <p className="checkout-error" role="alert">{submitError}</p>}
           <div className="payment-modal-actions">
