@@ -202,34 +202,9 @@ Deno.serve(async (req) => {
       const amount = Number(paymentAttributes.amount);
       if (!Number.isSafeInteger(amount) || amount < 100) throw new Error("The original PayMongo payment amount is invalid.");
 
-      // The parent sandbox cannot issue real refunds for test-mode payments. Simulate
-      // the refund state locally, explicitly marked as simulated, without claiming
-      // PayMongo returned funds. This lets each enabled payment option be tested.
-      if (isParentTestSandbox && environment === "test" && paymentAttributes.livemode === false) {
-        const { data: simulated, error: simulationError } = await db.from("orders").update({
-          status: "cancelled",
-          payment_status: "paid",
-          cancellation_refund_status: "simulated",
-          cancellation_refund_error: "TEST MODE ONLY: refund flow simulated locally. No funds were moved by PayMongo.",
-          paymongo_refund_id: null,
-          paymongo_refund_transfer_link: null,
-          updated_at: new Date().toISOString(),
-        })
-          .eq("id", id)
-          .eq("restaurant_id", order.restaurant_id)
-          .eq("status", "pending")
-          .eq("payment_status", "paid")
-          .eq("cancellation_refund_status", "processing")
-          .select("id")
-          .maybeSingle();
-        if (simulationError) throw simulationError;
-        if (!simulated) return out({ error: "Order changed while the sandbox refund was being prepared. Refresh and check its status." }, 409);
-        return out({
-          cancelled: true,
-          refundStatus: "simulated",
-          message: "Test mode only: order cancelled and refund flow simulated successfully. No real funds were moved by PayMongo.",
-        });
-      }
+      // Test and live payments both go through PayMongo's refund API.
+      // The parent test sandbox uses the test secret key without an Account-ID;
+      // never report a refund unless PayMongo returns a refund resource/status.
 
       const isQrph = sourceType === "qrph";
       const refundEndpoint = isQrph
