@@ -4,6 +4,7 @@ export {
   hasGuestOrderCancellationToken,
   getOrderStatus,
   getRestaurantOrders,
+  getRestaurantFailedRefunds,
   updateOrderStatus,
   cancelRestaurantOrder,
   sendOrderToKitchen,
@@ -19,4 +20,5 @@ export type {
   RestaurantOrder,
   RestaurantOrderStatus,
   RestaurantPaymentStatus,
+  FailedRefundOrder,
 } from './orderRepository';
