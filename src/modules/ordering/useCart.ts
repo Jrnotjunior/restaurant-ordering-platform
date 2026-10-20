@@ -44,6 +44,7 @@ export function useCart(userId: string | undefined, authLoading: boolean): UseCa
 
     if (!userId) {
       hydratedUserIdRef.current = null;
+      itemsRef.current = [];
       setItems([]);
       window.localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
       return;
@@ -65,10 +66,12 @@ export function useCart(userId: string | undefined, authLoading: boolean): UseCa
     const storedItems = loadCustomerCart(userId);
 
     if (storedItems.length > 0) {
+      itemsRef.current = storedItems;
       setItems(storedItems);
     } else if (itemsRef.current.length > 0) {
       persistCustomerCart(userId, itemsRef.current);
     } else {
+      itemsRef.current = [];
       setItems([]);
     }
 
@@ -111,20 +114,34 @@ export function useCart(userId: string | undefined, authLoading: boolean): UseCa
 
   function addItem(product: RestaurantProduct) {
     clearedUserIdRef.current = null;
-    setItems((current) => addCartItem(current, product));
-    setNotification(`${product.name} added to cart`);
+    const nextItems = addCartItem(itemsRef.current, product);
+    itemsRef.current = nextItems;
+    setItems(nextItems);
+
+    const subtotal = nextItems.reduce(
+      (total, item) => total + item.product.price * item.quantity,
+      0,
+    );
+    // Show only the current running subtotal, not the individual product name.
+    setNotification(`₱${subtotal.toFixed(2)}`);
   }
 
   function increase(productId: string) {
-    setItems((current) => changeCartItemQuantity(current, productId, 1));
+    const nextItems = changeCartItemQuantity(itemsRef.current, productId, 1);
+    itemsRef.current = nextItems;
+    setItems(nextItems);
   }
 
   function decrease(productId: string) {
-    setItems((current) => changeCartItemQuantity(current, productId, -1));
+    const nextItems = changeCartItemQuantity(itemsRef.current, productId, -1);
+    itemsRef.current = nextItems;
+    setItems(nextItems);
   }
 
   function remove(productId: string) {
-    setItems((current) => removeCartItem(current, productId));
+    const nextItems = removeCartItem(itemsRef.current, productId);
+    itemsRef.current = nextItems;
+    setItems(nextItems);
   }
 
   function clear(targetUserId?: string) {
