@@ -229,10 +229,51 @@ Deno.serve(async (request) => {
       if (typeof paymentAttributes.livemode === "boolean" && paymentAttributes.livemode !== (environment === "live")) {
         throw new Error("The original payment environment does not match the tenant's configured PayMongo connection.");
       }
+      const sourceType = String(paymentAttributes.source?.type ?? "").toLowerCase();
       const amount = Number(paymentAttributes.amount);
       if (!Number.isSafeInteger(amount) || amount < 100) throw new Error("The original PayMongo payment amount is invalid.");
 
-      const refundResponse = await fetch("https://api.paymongo.com/v1/refunds", {
+      // Test-only parent sandbox refunds are simulated locally because PayMongo
+      // does not move real funds for test transactions. The explicit status makes
+      // clear this does not represent a provider refund.
+      if (isParentTestSandbox && environment === "test" && paymentAttributes.livemode === false) {
+        let simulationQuery = admin.from("orders").update({
+          status: "cancelled",
+          payment_status: "refunded",
+          cancellation_refund_status: "simulated",
+          cancellation_refund_error: "TEST MODE ONLY: refund flow simulated locally. No funds were moved by PayMongo.",
+          paymongo_refund_id: null,
+          paymongo_refund_transfer_link: null,
+          ...(order.customer_id === null ? { guest_cancel_token_hash: null } : {}),
+          updated_at: new Date().toISOString(),
+        })
+          .eq("id", orderId)
+          .eq("restaurant_id", order.restaurant_id)
+          .eq("status", "pending")
+          .eq("payment_status", "paid")
+          .eq("cancellation_refund_status", "processing");
+        if (order.customer_id === null) {
+          simulationQuery = simulationQuery.is("customer_id", null).eq("guest_cancel_token_hash", guestTokenHash);
+        } else {
+          simulationQuery = simulationQuery.eq("customer_id", order.customer_id);
+        }
+        const { data: simulatedOrder, error: simulationError } = await simulationQuery.select("id").maybeSingle();
+        if (simulationError) throw simulationError;
+        if (!simulatedOrder) {
+          return jsonResponse({ error: "Order changed while the test refund was being prepared. Refresh and check its status." }, 409);
+        }
+        return jsonResponse({
+          cancelled: true,
+          refundStatus: "simulated",
+          message: "Test mode only: your order was cancelled and the refund flow was simulated successfully. No real funds were moved by PayMongo.",
+        }, 200);
+      }
+
+      const isQrph = sourceType === "qrph";
+      const refundEndpoint = isQrph
+        ? "https://refunds-api.paymongo.com/v1/refunds"
+        : "https://api.paymongo.com/v1/refunds";
+      const refundResponse = await fetch(refundEndpoint, {
         method: "POST",
         headers: { ...headers, "Idempotency-Key": `order-cancel-refund-${orderId}` },
         body: JSON.stringify({
@@ -252,14 +293,33 @@ Deno.serve(async (request) => {
 
       const refundId = String(refundPayload?.data?.id ?? "");
       const refundState = String(refundPayload?.data?.attributes?.status ?? "");
-      if (!refundId || !["pending", "processing", "succeeded"].includes(refundState)) {
+      const refundTransferLink = String(refundPayload?.data?.attributes?.transfer_link ?? "");
+      if (!refundId || !["pending", "processing", "refunding", "succeeded"].includes(refundState)) {
         throw new Error("PayMongo returned an unrecognized refund status.");
       }
-      const paymentStatus = refundState === "succeeded" ? "refunded" : "paid";
+      const normalizedRefundState = refundState === "refunding" ? "processing" : refundState;
+      if (isQrph && !refundTransferLink && normalizedRefundState !== "succeeded") {
+        await admin.from("orders").update({
+          status: "cancelled",
+          paymongo_refund_id: refundId,
+          paymongo_refund_transfer_link: null,
+          cancellation_refund_status: "manual_review",
+          cancellation_refund_error: "PayMongo created a QR Ph refund but did not return its transfer link. Check the PayMongo dashboard; do not submit another refund.",
+          payment_status: "paid",
+          updated_at: new Date().toISOString(),
+        }).eq("id", orderId).eq("restaurant_id", order.restaurant_id).eq("status", "pending").eq("payment_status", "paid");
+        return jsonResponse({
+          cancelled: true,
+          refundStatus: "manual_review",
+          message: "PayMongo created the QR Ph refund, but no customer claim link was returned. Contact the restaurant before trying anything else.",
+        }, 200);
+      }
+      const paymentStatus = normalizedRefundState === "succeeded" ? "refunded" : "paid";
       let orderUpdate = admin.from("orders").update({
         status: "cancelled",
         paymongo_refund_id: refundId,
-        cancellation_refund_status: refundState,
+        paymongo_refund_transfer_link: isQrph ? refundTransferLink || null : null,
+        cancellation_refund_status: normalizedRefundState,
         cancellation_refund_error: null,
         payment_status: paymentStatus,
         ...(order.customer_id === null ? { guest_cancel_token_hash: null } : {}),
@@ -293,10 +353,13 @@ Deno.serve(async (request) => {
 
       return jsonResponse({
         cancelled: true,
-        refundStatus: refundState,
-        message: refundState === "succeeded"
-          ? "Your order has been cancelled and PayMongo accepted the refund."
-          : "Your order has been cancelled. The PayMongo refund is processing.",
+        refundStatus: normalizedRefundState,
+        refundTransferLink: isQrph ? refundTransferLink || null : null,
+        message: isQrph && refundTransferLink
+          ? "Your order has been cancelled. PayMongo created a QR Ph refund claim link; open the link below to claim your refund."
+          : normalizedRefundState === "succeeded"
+            ? "Your order has been cancelled and PayMongo accepted the refund."
+            : "Your order has been cancelled. The PayMongo refund is processing.",
       }, 200);
     } catch (refundError) {
       const message = refundError instanceof Error ? refundError.message : "PayMongo refund failed.";
