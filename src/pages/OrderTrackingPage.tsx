@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { cancelMyPendingOrder, getOrderStatus, hasGuestOrderCancellationToken, subscribeToOrderTrackingChanges, type OrderStatus } from '../modules/ordering/orderService';
 import { supabase } from '../services/supabaseClient';
+import { getCancellationResultMessage, getTrackedPaymentStatusLabel } from '../modules/payments/refundStatusPresentation';
 import '../styles/order-tracking.css';
 
 type OrderTrackingPageProps = {
@@ -234,12 +235,13 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
       const result = await cancelMyPendingOrder(order.orderId);
       const refreshedOrder = await getOrderStatus(order.orderId);
       setOrder(refreshedOrder);
-      // Refund completion can occur just after the cancellation API response.
-      // Prefer the refreshed order's authoritative payment status so the message
-      // cannot keep saying "being processed" after the refund is already complete.
-      setCancellationMessage(refreshedOrder.paymentStatus === 'refunded'
-        ? 'Your order has been cancelled and the refund completed successfully.'
-        : result.message);
+      // Keep the provider's original payment state separate from a local test
+      // simulation. A simulated refund must never be presented as a PayMongo refund.
+      setCancellationMessage(getCancellationResultMessage(
+        refreshedOrder.paymentStatus,
+        result.refundStatus,
+        result.message,
+      ));
       if (window.localStorage.getItem('restaurant-ordering-active-order-id') === refreshedOrder.orderId) {
         window.localStorage.removeItem('restaurant-ordering-active-order-id');
         window.localStorage.removeItem(ACTIVE_ORDER_KEY);
@@ -349,7 +351,7 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
             </>}
             <div className="order-tracking-billing-row"><span>{isCollectionOrder ? 'Collection fee' : isDineIn ? 'Service fee' : 'Delivery fee'}</span><span>₱{order.shippingFee.toFixed(2)}</span></div>
             <div className="order-tracking-billing-row is-total"><strong>Total paid / due</strong><strong>₱{order.total.toFixed(2)}</strong></div>
-            <p className="order-tracking-payment-note">{order.paymentStatus === 'paid' ? 'Payment confirmed' : order.paymentStatus === 'refunded' ? 'Payment refunded' : order.paymentStatus === 'failed' ? 'Payment failed' : 'Payment pending'} · {order.paymentMethod === 'gcash' ? 'Online payment' : 'Cash'}</p>
+            <p className="order-tracking-payment-note">{getTrackedPaymentStatusLabel(order.paymentStatus, order.cancellationRefundStatus)} · {order.paymentMethod === 'gcash' ? 'Online payment' : 'Cash'}</p>
           </div>
           {canCancelOrder ? (
             <div className="order-tracking-cancel order-tracking-cancel--details">
