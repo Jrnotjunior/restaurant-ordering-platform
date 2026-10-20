@@ -102,8 +102,6 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: "This order can no longer be cancelled because the restaurant has confirmed it." }, 409);
     }
 
-    // Atomically cancel before any external refund call. This prevents a concurrent
-    // cashier/kitchen action from accepting the order while the refund is in flight.
     const paidOnline = order.payment_status === "paid" && Boolean(String(order.paymongo_payment_id ?? "").trim());
     if (order.payment_status === "paid" && !paidOnline) {
       return jsonResponse({ error: "The online payment reference is missing. Please contact the restaurant for refund assistance." }, 409);
@@ -115,39 +113,38 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: "The online payment reference is missing. Please contact the restaurant." }, 409);
     }
 
-    if (order.customer_id === null) {
-      // Compare-and-set on pending status and the exact token hash: the guest
-      // token can cancel only this one pending guest order, at most once.
-      const { data: changedOrder, error: guestCancelError } = await admin.from("orders")
-        .update({
-          status: "cancelled",
-          cancellation_refund_status: paidOnline ? "pending" : "not_required",
-          cancellation_refund_error: null,
-          guest_cancel_token_hash: null,
-          updated_at: new Date().toISOString(),
-        })
+    const cancelUnpaidOrder = async () => {
+      let updateQuery = admin.from("orders").update({
+        status: "cancelled",
+        cancellation_refund_status: "not_required",
+        cancellation_refund_error: null,
+        ...(order.customer_id === null ? { guest_cancel_token_hash: null } : {}),
+        updated_at: new Date().toISOString(),
+      })
         .eq("id", orderId)
+        .eq("restaurant_id", order.restaurant_id)
         .eq("status", "pending")
-        .eq("payment_status", order.payment_status)
-        .is("customer_id", null)
-        .eq("guest_cancel_token_hash", guestTokenHash)
-        .select("id")
-        .maybeSingle();
-      if (guestCancelError) throw guestCancelError;
-      if (!changedOrder) {
-        return jsonResponse({ error: "This order has changed. Refresh the page and check its current status." }, 409);
+        .eq("payment_status", order.payment_status);
+      if (order.customer_id === null) {
+        updateQuery = updateQuery.is("customer_id", null).eq("guest_cancel_token_hash", guestTokenHash);
+      } else {
+        updateQuery = updateQuery.eq("customer_id", order.customer_id);
       }
-    } else {
-      const { error: cancelError } = await userClient!.rpc("cancel_my_pending_order", { p_order_id: orderId });
-      if (cancelError) {
-        const message = cancelError.message || "Unable to cancel this order.";
-        return jsonResponse({ error: message }, 409);
-      }
-    }
+      const { data: changedOrder, error: cancelError } = await updateQuery.select("id").maybeSingle();
+      if (cancelError) throw cancelError;
+      return Boolean(changedOrder);
+    };
 
     if (!paidOnline) {
+      if (!await cancelUnpaidOrder()) {
+        return jsonResponse({ error: "This order has changed. Refresh the page and check its current status." }, 409);
+      }
       return jsonResponse({ cancelled: true, refundStatus: "not_required", message: "Your order has been cancelled." }, 200);
     }
+
+    // A paid order stays pending unless PayMongo accepts the refund request.
+    // Reserve the refund operation first so a concurrent cashier/kitchen handoff
+    // cannot advance the order while payment reversal is in progress.
 
     const configuredPayMongoEnvironment = String(Deno.env.get("PAYMONGO_ENVIRONMENT") ?? "").trim();
     const legacyPayMongoKey = Deno.env.get("PAYMONGO_SECRET_KEY") ?? "";
@@ -160,8 +157,9 @@ Deno.serve(async (request) => {
       await admin.from("orders").update({
         cancellation_refund_status: "failed",
         cancellation_refund_error: "PayMongo secret key is not configured for this environment.",
-      }).eq("id", orderId);
-      return jsonResponse({ cancelled: true, refundStatus: "failed", message: "Order cancelled, but the refund could not be started. Please contact the restaurant." }, 200);
+        updated_at: new Date().toISOString(),
+      }).eq("id", orderId).eq("status", "pending").eq("payment_status", "paid");
+      return jsonResponse({ cancelled: false, refundStatus: "failed", error: "PayMongo is not configured for this payment environment, so the order remains pending and was not cancelled." }, 422);
     }
 
     const { data: connection, error: connectionError } = await admin.from("restaurant_paymongo_accounts")
@@ -184,11 +182,13 @@ Deno.serve(async (request) => {
     if (!connection || (!isParentTestSandbox && (
       connection.connection_status !== "active" || !accountId
     ))) {
+      const message = "The restaurant's PayMongo connection is missing or inactive for this environment.";
       await admin.from("orders").update({
         cancellation_refund_status: "failed",
-        cancellation_refund_error: "The restaurant's PayMongo connection is missing or inactive; refund was not sent through an unverified account.",
-      }).eq("id", orderId);
-      return jsonResponse({ cancelled: true, refundStatus: "failed", message: "Order cancelled, but the restaurant's PayMongo connection could not be verified for the refund. Please contact the restaurant." }, 200);
+        cancellation_refund_error: message,
+        updated_at: new Date().toISOString(),
+      }).eq("id", orderId).eq("status", "pending").eq("payment_status", "paid");
+      return jsonResponse({ cancelled: false, refundStatus: "failed", error: `${message} The order remains pending and was not cancelled.` }, 422);
     }
 
     const headers: Record<string, string> = {
@@ -200,32 +200,46 @@ Deno.serve(async (request) => {
     };
 
     try {
-      await admin.from("orders").update({
+      const { data: reservedOrder, error: reservationError } = await admin.from("orders").update({
         cancellation_refund_status: "processing",
         cancellation_refund_error: null,
-      }).eq("id", orderId);
+        updated_at: new Date().toISOString(),
+      })
+        .eq("id", orderId)
+        .eq("restaurant_id", order.restaurant_id)
+        .eq("status", "pending")
+        .eq("payment_status", "paid")
+        .or("cancellation_refund_status.is.null,cancellation_refund_status.neq.processing")
+        .select("id")
+        .maybeSingle();
+      if (reservationError) throw reservationError;
+      if (!reservedOrder) {
+        return jsonResponse({ error: "A refund attempt is already in progress or this order has changed. Check its current status before proceeding." }, 409);
+      }
 
       const paymentResponse = await fetch(`https://api.paymongo.com/v1/payments/${encodeURIComponent(order.paymongo_payment_id)}`, {
         method: "GET",
         headers,
       });
       const paymentPayload = await paymentResponse.json().catch(() => null);
-      if (!paymentResponse.ok) throw new Error("Unable to verify the original PayMongo payment.");
       const paymentAttributes = paymentPayload?.data?.attributes ?? {};
-      if (paymentAttributes.status !== "paid" || String(paymentPayload?.data?.id ?? "") !== order.paymongo_payment_id) {
-        throw new Error("The original PayMongo payment is not in a refundable paid state.");
+      if (!paymentResponse.ok || paymentAttributes.status !== "paid" || String(paymentPayload?.data?.id ?? "") !== order.paymongo_payment_id) {
+        throw new Error("The original PayMongo payment could not be verified as paid.");
+      }
+      if (typeof paymentAttributes.livemode === "boolean" && paymentAttributes.livemode !== (environment === "live")) {
+        throw new Error("The original payment environment does not match the tenant's configured PayMongo connection.");
       }
       const amount = Number(paymentAttributes.amount);
       if (!Number.isSafeInteger(amount) || amount < 100) throw new Error("The original PayMongo payment amount is invalid.");
 
       const refundResponse = await fetch("https://api.paymongo.com/v1/refunds", {
         method: "POST",
-        headers: { ...headers, "Idempotency-Key": `customer-cancel-refund-${orderId}` },
+        headers: { ...headers, "Idempotency-Key": `order-cancel-refund-${orderId}` },
         body: JSON.stringify({
           data: { attributes: {
             amount,
             payment_id: order.paymongo_payment_id,
-            reason: "requested_by_customer",
+            reason: "others",
             notes: `Customer cancelled pending Web2Table order ${orderId}`,
           } },
         }),
@@ -242,21 +256,47 @@ Deno.serve(async (request) => {
         throw new Error("PayMongo returned an unrecognized refund status.");
       }
       const paymentStatus = refundState === "succeeded" ? "refunded" : "paid";
-      const { error: updateError } = await admin.from("orders").update({
+      let orderUpdate = admin.from("orders").update({
+        status: "cancelled",
         paymongo_refund_id: refundId,
         cancellation_refund_status: refundState,
         cancellation_refund_error: null,
         payment_status: paymentStatus,
+        ...(order.customer_id === null ? { guest_cancel_token_hash: null } : {}),
         updated_at: new Date().toISOString(),
-      }).eq("id", orderId);
+      })
+        .eq("id", orderId)
+        .eq("restaurant_id", order.restaurant_id)
+        .eq("status", "pending")
+        .eq("payment_status", "paid");
+      if (order.customer_id === null) {
+        orderUpdate = orderUpdate.is("customer_id", null).eq("guest_cancel_token_hash", guestTokenHash);
+      } else {
+        orderUpdate = orderUpdate.eq("customer_id", order.customer_id);
+      }
+      const { data: cancelledOrder, error: updateError } = await orderUpdate.select("id").maybeSingle();
       if (updateError) throw updateError;
+      if (!cancelledOrder) {
+        await admin.from("orders").update({
+          paymongo_refund_id: refundId,
+          cancellation_refund_status: refundState,
+          cancellation_refund_error: "PayMongo accepted the refund, but the order changed before cancellation could be saved. Review the order before any further action.",
+          payment_status: paymentStatus,
+          updated_at: new Date().toISOString(),
+        }).eq("id", orderId).eq("restaurant_id", order.restaurant_id);
+        return jsonResponse({
+          cancelled: false,
+          refundStatus: refundState,
+          error: "PayMongo accepted the refund, but the order changed before cancellation finished. Do not issue another refund; review this order.",
+        }, 409);
+      }
 
       return jsonResponse({
         cancelled: true,
         refundStatus: refundState,
         message: refundState === "succeeded"
-          ? "Your order has been cancelled and the refund has been submitted successfully."
-          : "Your order has been cancelled. Your refund is being processed.",
+          ? "Your order has been cancelled and PayMongo accepted the refund."
+          : "Your order has been cancelled. The PayMongo refund is processing.",
       }, 200);
     } catch (refundError) {
       const message = refundError instanceof Error ? refundError.message : "PayMongo refund failed.";
@@ -264,13 +304,13 @@ Deno.serve(async (request) => {
         cancellation_refund_status: "failed",
         cancellation_refund_error: message.slice(0, 500),
         updated_at: new Date().toISOString(),
-      }).eq("id", orderId);
+      }).eq("id", orderId).eq("status", "pending").eq("payment_status", "paid");
       console.error("Customer cancellation refund failed", { orderId, message });
       return jsonResponse({
-        cancelled: true,
+        cancelled: false,
         refundStatus: "failed",
-        message: "Your order has been cancelled, but the refund could not be completed automatically. Please contact the restaurant for assistance.",
-      }, 200);
+        error: `PayMongo did not accept the refund, so your order remains pending and was not cancelled. ${message.slice(0, 350)}`,
+      }, 422);
     }
   } catch (error) {
     console.error("cancel-customer-order error", error);
