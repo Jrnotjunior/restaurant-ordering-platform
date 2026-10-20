@@ -43,11 +43,12 @@ Deno.serve(async (req) => {
   }
 
   const { data: restaurant, error: restaurantError } = await admin.from("restaurants")
-    .select("id,is_active,delivery_location_latitude,delivery_location_longitude,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters")
+    .select("id,is_active,ordering_enabled,delivery_location_latitude,delivery_location_longitude,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters")
     .eq("id", restaurantId).single();
 
   if (restaurantError || !restaurant) return json({ error: "Restaurant delivery settings could not be loaded." }, 404);
   if (!restaurant.is_active) return json({ error: "Restaurant is not available." }, 409);
+  if (restaurant.ordering_enabled === false) return json({ error: "This restaurant has paused online ordering." }, 409);
 
   const originLat = Number(restaurant.delivery_location_latitude);
   const originLng = Number(restaurant.delivery_location_longitude);
