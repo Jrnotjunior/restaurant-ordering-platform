@@ -35,16 +35,18 @@ jobs:
         run: |
           test -n "$VITE_SUPABASE_URL" || { echo "Missing GitHub Actions secret: VITE_SUPABASE_URL"; exit 1; }
           test -n "$VITE_SUPABASE_ANON_KEY" || { echo "Missing GitHub Actions secret: VITE_SUPABASE_ANON_KEY"; exit 1; }
+          case "$VITE_MAPBOX_PUBLIC_TOKEN" in pk.*) ;; *) echo "VITE_MAPBOX_PUBLIC_TOKEN must be a browser-safe public token beginning pk."; exit 1 ;; esac
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_MAPBOX_PUBLIC_TOKEN: ${{ secrets.VITE_MAPBOX_PUBLIC_TOKEN }}
 
       - name: Build
         run: npm run build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          VITE_MAPBOX_ACCESS_TOKEN: ${{ secrets.VITE_MAPBOX_ACCESS_TOKEN }}
+          VITE_MAPBOX_PUBLIC_TOKEN: ${{ secrets.VITE_MAPBOX_PUBLIC_TOKEN }}
           # GitHub Pages is our temporary test storefront. Production
           # multi-tenant routing will resolve by custom domain/Hostinger.
           VITE_RESTAURANT_SLUG: solutions
