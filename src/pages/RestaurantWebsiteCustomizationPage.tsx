@@ -5,6 +5,8 @@ import { RestaurantFaviconSettings } from '../components/RestaurantFaviconSettin
 import { useOwnerUnsavedChanges } from '../contexts/OwnerUnsavedChangesContext';
 import { useOwnerUnsavedChangesTracking } from '../hooks/useOwnerUnsavedChangesTracking';
 import type { RestaurantStorefront, RestaurantTheme } from '../types/restaurant';
+import { listRestaurantBranches } from '../modules/branches/branchRepository';
+import type { RestaurantBranch } from '../modules/branches/branchTypes';
 
 type Props = { restaurantId: string };
 
@@ -30,6 +32,8 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
   const [websiteTheme, setWebsiteTheme] = useState<RestaurantTheme>(defaultRestaurant.theme);
   const [websiteStyle, setWebsiteStyle] = useState<WebsiteStyle>('classic');
   const [storefront, setStorefront] = useState<RestaurantStorefront>(defaultRestaurant.storefront);
+  const [branches, setBranches] = useState<RestaurantBranch[]>([]);
+  const [selectedBranchId, setSelectedBranchId] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
@@ -45,7 +49,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
     active: false, startX: 0, startY: 0, originX: 0, originY: 0
   });
 
-  async function loadCustomization() {
+  async function loadCustomization(targetBranchId?: string) {
     if (!supabase) {
       setError('Supabase is not configured.');
       setLoading(false);
@@ -65,34 +69,66 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
       setRestaurantTagline(restaurant?.tagline ?? defaultRestaurant.tagline);
       setLogoUrl(restaurant?.logo_url ?? '');
 
-      const { data: customization, error: customizationError } = await supabase
-        .from('restaurant_website_customizations')
-        .select('theme,storefront')
-        .eq('restaurant_id', restaurantId)
-        .maybeSingle();
-      if (customizationError) throw customizationError;
+      const loadedBranches = await listRestaurantBranches(restaurantId, true);
+      setBranches(loadedBranches);
+      const targetBranch = (targetBranchId ? loadedBranches.find((branch) => branch.id === targetBranchId) : undefined)
+        ?? loadedBranches.find((branch) => branch.is_default)
+        ?? loadedBranches[0];
+      const branchId = targetBranch?.id ?? '';
+      setSelectedBranchId(branchId);
 
-      const customTheme = customization?.theme as Partial<RestaurantTheme> | null;
-      setWebsiteTheme({
-        ...defaultRestaurant.theme,
-        ...(customTheme ?? {}),
-        colors: { ...defaultRestaurant.theme.colors, ...(customTheme?.colors ?? {}) }
-      });
+      let customization: { theme: Partial<RestaurantTheme> | null; storefront: Partial<RestaurantStorefront> | null } | null = null;
+      if (branchId) {
+        const { data: branchCustomization, error: branchCustomizationError } = await supabase
+          .from('restaurant_branch_website_customizations')
+          .select('theme,storefront')
+          .eq('restaurant_id', restaurantId)
+          .eq('branch_id', branchId)
+          .maybeSingle();
+        if (branchCustomizationError) throw branchCustomizationError;
+        if (branchCustomization) {
+          customization = {
+            theme: branchCustomization.theme as Partial<RestaurantTheme> | null,
+            storefront: branchCustomization.storefront as Partial<RestaurantStorefront> | null,
+          };
+        }
+      }
+
+      // Existing styling is used as an initial template for branches without
+      // their own saved override; saving then creates a fully independent record.
+      if (!customization) {
+        const { data: businessCustomization, error: customizationError } = await supabase
+          .from('restaurant_website_customizations')
+          .select('theme,storefront')
+          .eq('restaurant_id', restaurantId)
+          .maybeSingle();
+        if (customizationError) throw customizationError;
+        customization = businessCustomization
+          ? {
+              theme: businessCustomization.theme as Partial<RestaurantTheme> | null,
+              storefront: businessCustomization.storefront as Partial<RestaurantStorefront> | null,
+            }
+          : null;
+      }
+
+      const customTheme = customization?.theme ?? null;
       const loadedTheme = {
         ...defaultRestaurant.theme,
         ...(customTheme ?? {}),
         colors: { ...defaultRestaurant.theme.colors, ...(customTheme?.colors ?? {}) }
       };
+      setWebsiteTheme(loadedTheme);
       const matchingStyle = (Object.keys(WEBSITE_STYLE_PRESETS) as WebsiteStyle[]).find((style) => themeMatchesStyle(loadedTheme, style));
       setWebsiteStyle(matchingStyle ?? 'classic');
 
-      const customStorefront = customization?.storefront as Partial<RestaurantStorefront> | null;
+      const customStorefront = customization?.storefront ?? null;
       const loadedStorefront = {
         ...defaultRestaurant.storefront,
         ...(customStorefront ?? {}),
         hero: { ...defaultRestaurant.storefront.hero, ...(customStorefront?.hero ?? {}) },
       };
       setStorefront(loadedStorefront);
+      setUnsavedChanges(false);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load website customization.');
     } finally {
@@ -222,9 +258,16 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
     setError('');
     setMessage('');
     try {
+      if (!selectedBranchId) throw new Error('Choose the branch website you want to customize.');
       const { error: saveError } = await supabase
-        .from('restaurant_website_customizations')
-        .upsert({ restaurant_id: restaurantId, theme: websiteTheme, storefront }, { onConflict: 'restaurant_id' });
+        .from('restaurant_branch_website_customizations')
+        .upsert({
+          restaurant_id: restaurantId,
+          branch_id: selectedBranchId,
+          theme: websiteTheme,
+          storefront,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'branch_id' });
       if (saveError) throw saveError;
 
       // Persist the logo through an owner-checked RPC, since direct restaurant
@@ -235,7 +278,8 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
       });
       if (logoSaveError) throw logoSaveError;
 
-      setMessage('Website customization saved successfully.');
+      const branchName = branches.find((branch) => branch.id === selectedBranchId)?.name ?? 'Branch';
+      setMessage(`Website customization saved for ${branchName}.`);
       setUnsavedChanges(false);
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Unable to save website customization.');
@@ -279,6 +323,8 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         @keyframes websiteNoticeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
         @media(prefers-reduced-motion:reduce){.website-customization-notice{animation:none}}
         .website-customization-header{padding:24px;border:1px solid #e1e5eb;border-radius:14px;background:#fff}
+        .website-customization-branch-selector{display:grid;gap:10px;margin-bottom:14px}
+        .website-customization-branch-selector select{width:100%;box-sizing:border-box;border:1px solid #dbe2ea;border-radius:10px;padding:12px;font:inherit;color:#0f172a;background:#fff}
         .website-customization-card{padding:24px;border:1px solid #e1e5eb;border-radius:14px;background:#fff}
         .website-customization-live-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid}
         .website-customization-live-brand{display:flex;align-items:center;gap:8px;min-width:0}
@@ -395,6 +441,34 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
 
       {error ? <div className="owner-feedback-toast is-error" role="alert"><span className="owner-feedback-toast-icon" aria-hidden="true">!</span><div><strong>Couldn't complete that action</strong><p>{error}</p></div></div> : null}
       {message ? <div className="owner-feedback-toast is-success" role="status"><span className="owner-feedback-toast-icon" aria-hidden="true">✓</span><div><strong>Changes saved</strong><p>{message}</p></div></div> : null}
+
+      <div className="website-customization-header website-customization-branch-selector">
+        <label className="website-customization-field">
+          <span>Storefront website to customize</span>
+          <select
+            value={selectedBranchId}
+            disabled={loading || saving || branches.length < 2}
+            onChange={(event) => {
+              const nextBranchId = event.target.value;
+              if (!nextBranchId || nextBranchId === selectedBranchId) return;
+              const nextBranch = branches.find((branch) => branch.id === nextBranchId);
+              const targetName = nextBranch?.name ?? 'the selected branch';
+              if (!window.confirm(`Switch to ${targetName}? Unsaved changes to the current branch website will be discarded.`)) return;
+              setSelectedBranchId(nextBranchId);
+              void loadCustomization(nextBranchId);
+            }}
+          >
+            {branches.map((branch) => (
+              <option key={branch.id} value={branch.id}>
+                {branch.name}{branch.custom_domain ? ` — ${branch.custom_domain}` : ' — domain not assigned'}
+              </option>
+            ))}
+          </select>
+        </label>
+        <p className="website-customization-help">
+          This saves colors, browser icon, hero and social settings for the selected branch only. The restaurant logo remains shared across the business. Assign each branch's domain in Settings → Business branches.
+        </p>
+      </div>
 
       <form className="website-customization-form" onSubmit={(event: FormEvent) => { event.preventDefault(); setShowSaveConfirmation(true); }}>
         <nav className="website-customization-tabs" aria-label="Website and branding sections" role="tablist">
