@@ -36,7 +36,6 @@ declare
   v_product_name text;
   v_unit_price numeric(12,2);
   v_line_total numeric(12,2);
-  v_delivery_zone public.restaurant_delivery_zones%rowtype;
   v_pickup_method text;
   v_cash_on_delivery_enabled boolean;
 begin
@@ -90,33 +89,7 @@ begin
   end;
 
   if p_order_type = 'delivery' then
-    if length(trim(coalesce(p_delivery_barangay, ''))) = 0 then
-      raise exception 'Delivery barangay is required';
-    end if;
-
-    if length(trim(coalesce(p_delivery_address, ''))) = 0 then
-      raise exception 'Delivery address is required';
-    end if;
-
-    select *
-      into v_delivery_zone
-    from public.restaurant_delivery_zones z
-    where z.restaurant_id = p_restaurant_id
-      and lower(trim(z.barangay)) = lower(trim(p_delivery_barangay));
-
-    if not found then
-      raise exception 'Please select a barangay within the restaurant''s delivery areas';
-    end if;
-
-    if not v_delivery_zone.is_supported then
-      raise exception '%',
-        coalesce(
-          nullif(trim(v_delivery_zone.out_of_scope_message), ''),
-          'This area is outside our delivery coverage.'
-        );
-    end if;
-
-    v_delivery_fee := round(v_delivery_zone.shipping_fee, 2);
+    raise exception 'Standard delivery must use the confirmed delivery quote flow';
   end if;
 
   if p_items is null
