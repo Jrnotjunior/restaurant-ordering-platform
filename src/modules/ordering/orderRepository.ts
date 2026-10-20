@@ -506,7 +506,7 @@ export async function sendOrderToKitchen(orderId: string) {
   }
 }
 
-export async function cancelMyPendingOrder(orderId: string): Promise<{ message: string; refundStatus: string }> {
+export async function cancelMyPendingOrder(orderId: string): Promise<{ message: string; refundStatus: string; refundTransferLink: string | null }> {
   if (!supabase) throw new Error('Order cancellation is unavailable. Please try again later.');
   const guestCancelToken = readGuestOrderCancellationToken(orderId);
   const { data, error } = await supabase.functions.invoke('cancel-customer-order', {
@@ -524,6 +524,7 @@ export async function cancelMyPendingOrder(orderId: string): Promise<{ message: 
   return {
     message: typeof data.message === 'string' ? data.message : 'Your order has been cancelled.',
     refundStatus: typeof data.refundStatus === 'string' ? data.refundStatus : 'not_required',
+    refundTransferLink: typeof data.refundTransferLink === 'string' ? data.refundTransferLink : null,
   };
 }
 
