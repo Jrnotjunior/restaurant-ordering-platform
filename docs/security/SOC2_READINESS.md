@@ -37,6 +37,15 @@ This is an internal engineering tracker, not a SOC 2 report, certification, or a
 - This is security hardening and readiness work only. It is not a SOC 2 report, attestation or certification.
 
 
+### Centralized Mapbox service — 2026-10-21
+
+- Committed the central map-service architecture in `docs/architecture/CENTRAL_MAP_SERVICE.md`. Tenant checkout, saved-address, and restaurant-location pickers now use a central-origin iframe at `https://app.web2table.io/maps.html`; Mapbox GL JS and geocoding run in that shared origin rather than each tenant's custom domain.
+- Added and deployed the `mapbox-public-config` Edge Function (version 1, `verify_jwt=false`). The handler requires the configured central-service Origin and returns only a `pk.` public token from the `MAPBOX_PUBLIC_TOKEN` function secret. It refuses missing/invalid configuration and never logs the token value.
+- Added validation for secure parent origins, active tenant-domain resolution, the expected iframe source/origin, selected-address payload shape, coordinate ranges, and response request IDs. Added five protocol regression tests for public-token prefix, secure origins, localhost development gating, and valid/invalid address payloads.
+- Removed `VITE_MAPBOX_PUBLIC_TOKEN` from build workflows. The map token is fetched at runtime so it is not committed in the compiled Hostinger deployment branch. This does not make the public token secret: it is visible to browser users by design, and must have only required public scopes and an allowed-URL restriction for `https://app.web2table.io`.
+- Build and regression verification passed on commit `328e159`: `npm run build` passed and 3 test files / 34 tests passed. [Build + tests](https://github.com/Jrnotjunior/restaurant-ordering-platform/actions/runs/39494655776).
+- **Outstanding activation blocker:** add a restricted public Mapbox token as the production Supabase Edge Function secret `MAPBOX_PUBLIC_TOKEN`, then verify the Hostinger deployment and live checkout map. The GitHub/Hostinger and GitHub Pages workflows were still running when this tracker note was added; successful CI is not a live browser end-to-end test.
+
 ### Customer profile RPC contract
 - Frontend callers in `src/modules/customer/customerAuthService.ts`, `src/pages/RestaurantOwnerLoginPage.tsx`, and `src/pages/CheckoutPage.tsx` call `upsert_customer_profile` with separate first/last-name arguments.
 - Live read-only verification confirmed deployed `upsert_customer_profile(p_restaurant_id uuid, p_first_name text, p_last_name text, p_phone text)` and `get_my_customer_profile_id(p_restaurant_id uuid)`. The deployed upsert checks authentication, tenant context, active restaurant, required names, phone format, and initializes the loyalty account.
