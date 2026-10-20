@@ -3,6 +3,8 @@
 -- VAT/receipt tax configuration is a platform-controlled financial setting.
 -- Restaurant owners may view it but cannot change it.
 
+drop function if exists public.system_admin_get_restaurant_settings(uuid);
+
 create or replace function public.system_admin_get_restaurant_settings(
   p_restaurant_id uuid
 )
