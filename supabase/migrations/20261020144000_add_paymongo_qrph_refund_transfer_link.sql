@@ -15,3 +15,5 @@ ALTER TABLE public.orders
 
 COMMENT ON COLUMN public.orders.paymongo_refund_transfer_link IS
   'PayMongo QR Ph refund claim link. It remains usable while the refund is processing and should be shared securely with the customer.';
+
+NOTIFY pgrst, 'reload schema';
