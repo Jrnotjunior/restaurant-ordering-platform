@@ -103,7 +103,7 @@ function AppContent() {
   const [restaurantResolved, setRestaurantResolved] = useState(false);
   const [route, setRoute] = useState(() => normalizeHashRoute(window.location.hash || ''));
   const { user, loading: authLoading, error: authError } = useRestaurantOwnerAuth();
-  const { branches, selectedBranch, selectBranch, loading: branchesLoading, error: branchesError } = useRestaurantBranches(restaurant.id);
+  const { branches, selectedBranch, selectBranch, loading: branchesLoading, error: branchesError } = useRestaurantBranches(restaurant.id, restaurant.storefrontBranchId);
   useEffect(() => {
     const favicon = restaurant.storefront.faviconUrl?.trim();
     const iconLinks = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]'));
@@ -529,7 +529,7 @@ function AppContent() {
       ? <section className="order-tracking-page"><div className="order-tracking-card"><h1>Branches unavailable</h1><p role="alert">{branchesError}</p><p>Ordering is paused until the branch configuration can be verified.</p></div></section>
       : branches.length === 0
         ? <section className="order-tracking-page"><div className="order-tracking-card"><h1>No active branches</h1><p>This restaurant has no active branch available for ordering. Please contact the restaurant.</p></div></section>
-        : <><BranchSelector branches={branches} selectedBranch={selectedBranch} onSelect={handleSelectBranch} disabled={Boolean(selectedBranch && route === '#checkout')} />{selectedBranch ? publicContent : null}</>;
+        : <>{!restaurant.storefrontBranchId && branches.length > 1 ? <BranchSelector branches={branches} selectedBranch={selectedBranch} onSelect={handleSelectBranch} disabled={Boolean(selectedBranch && route === '#checkout')} /> : null}{selectedBranch ? publicContent : null}</>;
 
   const publicPage = <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount} compactPublicChrome>{branchAwarePublicContent}{showStoreClosedModal ? (
     <div className="restaurant-closed-modal-backdrop" role="presentation" onClick={() => setShowStoreClosedModal(false)}>
