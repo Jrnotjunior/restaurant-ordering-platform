@@ -46,7 +46,9 @@ Set the secret in the Supabase Dashboard for the production project under **Edge
 - [x] Remove `VITE_MAPBOX_PUBLIC_TOKEN` from the repository's build-time environment configuration.
 - [ ] Add `MAPBOX_PUBLIC_TOKEN` to production Supabase Edge Function secrets.
 - [ ] Configure Mapbox URL restrictions for `https://app.web2table.io` and verify public scopes for map style/tiles/fonts and geocoding search.
-- [ ] Confirm the latest Hostinger build publishes the central map page without any token value in static assets.
+- [x] Hostinger and GitHub Pages workflows completed successfully on commit `7963664`, and the published `hostinger-deploy` tree contains `maps.html` plus separate app/map bundles.
+- [x] Removed `VITE_MAPBOX_PUBLIC_TOKEN` from all build workflow environment mappings; the token is retrieved at runtime from the Supabase function.
+- [ ] Perform a live browser smoke test and verify Mapbox calls use the central origin after setting `MAPBOX_PUBLIC_TOKEN`. The map is not expected to work until that secret is present.
 - [ ] Test the real checkout flow and restaurant-settings map from `https://app.web2table.io` and at least one registered tenant custom domain.
 
 ## Future dedicated subdomain
