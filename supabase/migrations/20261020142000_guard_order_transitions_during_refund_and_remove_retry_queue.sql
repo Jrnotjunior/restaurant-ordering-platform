@@ -60,8 +60,7 @@ BEGIN
   WHERE o.id = p_order_id AND o.restaurant_id = v_restaurant_id
   RETURNING o.id, o.status;
 END;
-$function$
-
+$function$;
 
 CREATE OR REPLACE FUNCTION public.update_order_status(p_order_id uuid, p_status text)
  RETURNS TABLE(order_id uuid, status text)
@@ -145,8 +144,7 @@ BEGIN
     AND o.restaurant_id = v_restaurant_id
   RETURNING o.id, o.status;
 END;
-$function$
-
+$function$;
 
 CREATE OR REPLACE FUNCTION public.cancel_my_pending_order(p_order_id uuid)
  RETURNS TABLE(order_id uuid, order_status text, payment_status text, refund_status text)
@@ -187,7 +185,6 @@ BEGIN
     WHERE id = v_order.id AND status = 'pending';
   RETURN QUERY SELECT v_order.id, 'cancelled'::text, v_order.payment_status, v_refund_status;
 END;
-$function$
-
+$function$;
 
 DROP FUNCTION IF EXISTS public.get_restaurant_failed_refunds(uuid, uuid);
