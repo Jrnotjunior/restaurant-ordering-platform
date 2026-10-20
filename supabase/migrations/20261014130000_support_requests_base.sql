@@ -60,6 +60,24 @@ BEFORE INSERT ON public.restaurant_support_requests
 FOR EACH ROW
 EXECUTE FUNCTION public.set_restaurant_support_request_number();
 
+-- Typed access-level helper used by the support-table RLS policies. The
+-- connected project had this helper, but it was absent from the repository history.
+CREATE OR REPLACE FUNCTION public.system_admin_get_my_access_level()
+RETURNS TABLE(access_level text, is_active boolean, status text)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $function$
+  SELECT saa.access_level::text, saa.is_active, saa.status::text
+  FROM public.system_admin_access saa
+  WHERE saa.admin_user_id = auth.uid()
+  LIMIT 1;
+$function$;
+
+REVOKE ALL ON FUNCTION public.system_admin_get_my_access_level() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.system_admin_get_my_access_level() TO authenticated;
+
 ALTER TABLE public.restaurant_support_requests ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE public.restaurant_support_requests FROM PUBLIC, anon, authenticated;
 GRANT SELECT, INSERT, UPDATE ON TABLE public.restaurant_support_requests TO authenticated;
