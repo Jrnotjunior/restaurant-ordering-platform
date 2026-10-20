@@ -892,7 +892,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
           {submitError && <p className="checkout-error" role="alert">{submitError}</p>}
           <div className="payment-modal-actions">
             <button className="button button-secondary" type="button" onClick={() => { setShowCashReview(false); setShowPaymentModal(true); }} disabled={isSubmitting}>Back to checkout</button>
-            <button className="button button-primary" type="button" onClick={() => { void handlePlaceOrder().then(() => { if (!isSubmitting) setShowCashReview(false); }); }} disabled={isSubmitting || items.length === 0}>{isSubmitting ? 'Placing order…' : 'Place Cash Order'}</button>
+            <button className="button button-primary" type="button" onClick={() => { void handlePlaceOrder(); }} disabled={isSubmitting || items.length === 0}>{isSubmitting ? 'Placing order…' : 'Place Cash Order'}</button>
           </div>
         </section>
       </div>}
