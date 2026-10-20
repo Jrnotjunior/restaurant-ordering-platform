@@ -9,9 +9,20 @@ type RestaurantRow = {
   ordering_enabled: boolean; operating_hours: RestaurantOperatingHours | null;
 };
 
-type RestaurantDomainRow = RestaurantRow;
+type RestaurantDomainRow = RestaurantRow & {
+  custom_domain?: string | null;
+  branch_id?: string | null;
+  branch_code?: string | null;
+  branch_name?: string | null;
+  branch_store_address?: string | null;
+  branch_restaurant_address?: string | null;
+  branch_contact_number?: string | null;
+  branch_ordering_enabled?: boolean;
+  branch_operating_hours?: RestaurantOperatingHours | null;
+};
 type WebsiteCustomizationRow = {
   restaurant_id: string;
+  branch_id?: string;
   theme: Partial<RestaurantTheme> | null;
   storefront: Partial<RestaurantStorefront> | null;
 };
@@ -33,7 +44,24 @@ function mergeTheme(customization: WebsiteCustomizationRow | null): RestaurantTh
   return { ...defaultRestaurant.theme, ...custom, colors: { ...defaultRestaurant.theme.colors, ...(custom.colors ?? {}) } };
 }
 
-async function getWebsiteCustomization(restaurantId: string): Promise<{ theme: RestaurantTheme; storefront: RestaurantStorefront }> {
+async function getWebsiteCustomization(restaurantId: string, branchId?: string | null): Promise<{ theme: RestaurantTheme; storefront: RestaurantStorefront }> {
+  if (branchId) {
+    const branchRows = await supabaseGet<WebsiteCustomizationRow>('restaurant_branch_website_customizations', {
+      select: 'restaurant_id,branch_id,theme,storefront',
+      restaurant_id: 'eq.' + restaurantId,
+      branch_id: 'eq.' + branchId,
+      limit: '1'
+    });
+    if (branchRows[0]) {
+      return {
+        theme: mergeTheme(branchRows[0]),
+        storefront: mergeStorefront(branchRows[0])
+      };
+    }
+  }
+
+  // Existing branches inherit business-wide settings until an owner saves their
+  // independent branch customization.
   const rows = await supabaseGet<WebsiteCustomizationRow>('restaurant_website_customizations', {
     select: 'restaurant_id,theme,storefront', restaurant_id: 'eq.' + restaurantId, limit: '1'
   });
@@ -43,12 +71,30 @@ async function getWebsiteCustomization(restaurantId: string): Promise<{ theme: R
   };
 }
 
-function toRestaurantConfig(restaurant: RestaurantRow, customization: { theme: RestaurantTheme; storefront: RestaurantStorefront }): RestaurantConfig {
-  return { ...defaultRestaurant, id: restaurant.id, name: restaurant.name, tagline: restaurant.tagline,
-    logoUrl: restaurant.logo_url ?? undefined, locationText: restaurant.restaurant_address ?? undefined,
-    contactNumber: restaurant.contact_number ?? undefined, email: restaurant.email ?? undefined,
-    operatingHours: restaurant.operating_hours ?? undefined, orderingEnabled: restaurant.ordering_enabled !== false,
-    theme: customization.theme, storefront: customization.storefront };
+function toRestaurantConfig(
+  restaurant: RestaurantRow,
+  customization: { theme: RestaurantTheme; storefront: RestaurantStorefront },
+  storefrontBranchId?: string | null,
+  branchContext?: RestaurantDomainRow,
+): RestaurantConfig {
+  return {
+    ...defaultRestaurant,
+    id: restaurant.id,
+    storefrontBranchId: storefrontBranchId ?? undefined,
+    name: restaurant.name,
+    tagline: restaurant.tagline,
+    logoUrl: restaurant.logo_url ?? undefined,
+    locationText: branchContext?.branch_restaurant_address
+      ?? branchContext?.branch_store_address
+      ?? restaurant.restaurant_address
+      ?? undefined,
+    contactNumber: branchContext?.branch_contact_number ?? restaurant.contact_number ?? undefined,
+    email: restaurant.email ?? undefined,
+    operatingHours: branchContext?.branch_operating_hours ?? restaurant.operating_hours ?? undefined,
+    orderingEnabled: restaurant.ordering_enabled !== false && branchContext?.branch_ordering_enabled !== false,
+    theme: customization.theme,
+    storefront: customization.storefront
+  };
 }
 
 export class SupabaseRestaurantRepository implements RestaurantRepository {
@@ -66,7 +112,7 @@ export class SupabaseRestaurantRepository implements RestaurantRepository {
   private async getRestaurantByDomain(domain: string): Promise<RestaurantConfig | null> {
     const hostname = domain.trim().toLowerCase();
     if (!hostname) return null;
-    const rows = await supabaseRpc<RestaurantDomainRow>('resolve_restaurant_by_domain', { p_hostname: hostname });
+    const rows = await supabaseRpc<RestaurantDomainRow>('resolve_restaurant_branch_by_domain', { p_hostname: hostname });
     const restaurant = rows[0];
     if (!restaurant) {
       // The slug fallback is only for the temporary GitHub Pages test storefront.
@@ -82,6 +128,6 @@ export class SupabaseRestaurantRepository implements RestaurantRepository {
       if (!fallbackRestaurant) return null;
       return toRestaurantConfig(fallbackRestaurant, await getWebsiteCustomization(fallbackRestaurant.id));
     }
-    return toRestaurantConfig(restaurant, await getWebsiteCustomization(restaurant.id));
+    return toRestaurantConfig(restaurant, await getWebsiteCustomization(restaurant.id, restaurant.branch_id), restaurant.branch_id, restaurant);
   }
 }
