@@ -1,0 +1,106 @@
+
+
+/* Tenant-branded customer authentication */
+.tenant-auth-page {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: clamp(24px, 5vw, 56px) 20px;
+  background:
+    radial-gradient(ellipse at 8% 8%, color-mix(in srgb, var(--color-primary, #111827) 10%, transparent) 0, transparent 38%),
+    radial-gradient(ellipse at 92% 92%, rgba(13, 148, 136, .10) 0, transparent 34%),
+    linear-gradient(145deg, #f8fafc 0%, #eef3fb 52%, #f8fafc 100%);
+}
+.tenant-auth-page::before,
+.tenant-auth-page::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  border: 1px solid rgba(148, 163, 184, .22);
+  border-radius: 999px;
+  pointer-events: none;
+}
+.tenant-auth-page::before { width: 280px; height: 280px; top: -155px; right: -75px; }
+.tenant-auth-page::after { width: 210px; height: 210px; bottom: -120px; left: -65px; }
+.tenant-auth-card {
+  position: relative;
+  border-radius: 24px;
+  border-color: rgba(226, 232, 240, .95);
+  padding: clamp(24px, 5vw, 36px);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, .10), 0 2px 8px rgba(15, 23, 42, .025);
+}
+.tenant-auth-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  min-height: 46px;
+  margin: 0 0 18px;
+}
+.tenant-auth-logo {
+  display: block;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  border-radius: 12px;
+}
+.tenant-auth-logo-fallback {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  background: var(--color-primary, #111827);
+  color: var(--color-primary-text, #fff);
+  font-size: 22px;
+  font-weight: 800;
+}
+.tenant-auth-brand-name {
+  max-width: 240px;
+  overflow: hidden;
+  color: var(--color-text, #111827);
+  font-family: var(--font-heading, Manrope, sans-serif);
+  font-size: 17px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tenant-auth-card .tenant-auth-intro {
+  margin: 0 0 22px !important;
+  color: var(--color-muted, #64748b);
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: center;
+}
+.tenant-auth-card h1 {
+  margin: 0 0 22px;
+  font-size: clamp(28px, 4vw, 34px);
+  letter-spacing: -.035em;
+  text-align: center;
+}
+.tenant-auth-card .restaurant-owner-auth-form input:not([type="checkbox"]) {
+  transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
+}
+.tenant-auth-card .restaurant-owner-auth-form input:not([type="checkbox"]):focus {
+  border-color: var(--color-primary, #111827);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary, #111827) 12%, transparent);
+}
+.tenant-auth-card .restaurant-owner-auth-form > button.button[type="submit"] {
+  min-height: 48px;
+  border-radius: 12px;
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--color-primary, #111827) 18%, transparent);
+  transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+}
+.tenant-auth-card .restaurant-owner-auth-form > button.button[type="submit"]:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--color-primary, #111827) 22%, transparent);
+}
+.tenant-auth-card .restaurant-auth-switch { color: var(--color-muted, #64748b); }
+.tenant-auth-card .restaurant-auth-switch a { color: var(--color-primary, #111827); }
+@media (max-width: 480px) {
+  .tenant-auth-page { padding: 22px 14px; }
+  .tenant-auth-card { border-radius: 20px; padding: 24px 20px; }
+  .tenant-auth-brand { margin-bottom: 14px; }
+}
