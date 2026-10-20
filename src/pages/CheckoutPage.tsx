@@ -896,7 +896,7 @@ export function CheckoutPage({ items, onClearCart, branch }: CheckoutPageProps) 
                 setPendingPaymentReview({ method: 'cash', subtotal, deliveryFee, total: checkoutTotal });
                 setShowPaymentModal(false);
               }
-            }}>{paymentMethod === 'online' ? 'Continue to Online Payment' : ['dine_in', 'take_out'].includes(orderType) ? 'Place Order & Pay at Counter' : 'Place Order'}</button>
+            }}>{paymentMethod === 'online' ? 'Continue to Online Payment' : 'Review Order'}</button>
           </div>
         </div>
       </div>}
