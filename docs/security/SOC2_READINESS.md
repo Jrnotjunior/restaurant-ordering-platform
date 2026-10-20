@@ -21,7 +21,7 @@ This is an internal engineering tracker, not a SOC 2 report, certification, or a
 ### Direct order-write privilege removal
 - Committed `supabase/migrations/20261020195500_revoke_direct_orders_update.sql` (commit `95bff2e895478f08d0a97b9a92404b2f463bf6c7`) and applied it to both the isolated Security Test project and the connected primary project.
 - Live verification in the primary project returned `anon UPDATE=false`, `authenticated UPDATE=false`, `service_role UPDATE=true`, `postgres UPDATE=true`; authenticated SELECT remains available. This prevents direct browser roles from changing financial/payment/order-number fields through a generic table update while preserving the explicit service-role path used by server functions.
-- The isolated test project has no direct authenticated table UPDATE grant; the assignment/handoff RPC tests passed under that privilege posture. Primary project direct REST mutation denial was verified via effective privileges, but not yet via a complete browser/PostgREST regression suite.
+- The isolated test project has no direct authenticated table UPDATE grant; the assignment/handoff RPC tests passed under that privilege posture. The expanded rollback-only SQL matrix passed on the primary project for assignment, handoff, direct-total-update denial, duplicate-assignment denial, cross-tenant denial, MFA (`aal1`) denial, unrelated-user denial and anonymous RPC denial. The same checks passed on the isolated project except its `service_role` does not have direct `orders` UPDATE privilege in that environment; the primary project retains `service_role` UPDATE. No regression fixtures remain in either project. Browser/PostgREST end-to-end testing is still unverified.
 - Existing RLS policies are retained. The 10 RLS-enabled tables-with-no-policies finding is not being “fixed” with broad policies: live ACL inspection showed the affected tables had no direct anon/authenticated table grants.
 
 ### Trigger-helper privilege cleanup
@@ -32,7 +32,7 @@ This is an internal engineering tracker, not a SOC 2 report, certification, or a
 ### Outstanding after this update
 - Latest Security Advisor refresh after this round reports 17 anonymous-callable SECURITY DEFINER signatures, 113 authenticated-callable SECURITY DEFINER signatures, 10 RLS-enabled tables without policies, and leaked-password protection disabled. Each remaining signature requires a per-function access/control review; some anonymous checkout/storefront RPCs are intentionally public and must not be blanket-revoked.
 - Supabase Auth leaked-password protection requires an Auth dashboard/configuration change and validation against passwordless/OAuth flows; it has not been changed.
-- GitHub commit-status queries returned no individual status checks for the recent commits, and the container could not access GitHub to run the build locally. Do not mark the current-main build or deploy as verified until an Actions run is inspected.
+- Committed workflow change `555c138ae7c1a9581f2b34a7945cf2b116263276` so direct pushes to `main` now run the dedicated build + regression-test workflow. On that exact commit, GitHub Actions passed `npm run build` and the regression suite (2 test files, 29 tests passed); the Hostinger build/publish and GitHub Pages deploy workflows also completed successfully. Runs: [build + tests](https://github.com/Jrnotjunior/restaurant-ordering-platform/actions/runs/39489196429), [Hostinger build/publish](https://github.com/Jrnotjunior/restaurant-ordering-platform/actions/runs/39489196342), [GitHub Pages deploy](https://github.com/Jrnotjunior/restaurant-ordering-platform/actions/runs/39489196338). This verifies build/deploy workflow completion, not an interactive browser smoke test. The live custom-domain and Pages URLs could not be opened with the available web inspection tool in this session.
 - Full security regression testing, webhook concurrency/retry tests, checkout abuse/rate limits, guest tracking-token replacement, backup/restore evidence and operational SOC 2 evidence remain incomplete.
 - This is security hardening and readiness work only. It is not a SOC 2 report, attestation or certification.
 
@@ -125,8 +125,9 @@ This is an internal engineering tracker, not a SOC 2 report, certification, or a
 - [ ] Production/test secret configuration and fallback independently verified.
 - [x] Guest checkout NULL/non-array/empty item and NULL order/payment validation hardened in all live RPC overloads; targeted live rejection probes passed.
 - [ ] Anonymous checkout authorization, rate limiting, and broader abuse controls fully reviewed.
-- [ ] All privileged RPCs reviewed and security regression tests pass.
-- [ ] GitHub Actions build passes on current `main`.
+- [ ] All privileged RPCs reviewed and the complete security regression suite passes.
+- [ ] Interactive browser/PostgREST end-to-end smoke test verified on the deployed storefront/dispatch UI.
+- [x] GitHub Actions build and regression tests pass on current `main` (commit `555c138ae7c1a9581f2b34a7945cf2b116263276`; 2 test files / 29 tests passed).
 - [ ] Strict no-full-name API contract confirmed throughout the system.
 - [ ] Operational SOC 2 evidence assembled and reviewed by a qualified auditor.
 
