@@ -15,7 +15,7 @@ This is an internal engineering tracker, not a SOC 2 report, certification, or a
 - Added `supabase/migrations/20261020195000_secure_dispatch_order_mutations.sql` (commit `e6ffbfcfe2fedb529d89c063c5abcc421f8f96d2`) and applied it to both the isolated Security Test project and the connected primary project.
 - The new `assign_delivery_order` and `complete_dispatch_handoff` SECURITY DEFINER RPCs perform server-side authentication, MFA, tenant/staff-role and order-state checks; assignment writes and order changes occur in one transaction. The RPCs are callable by `authenticated`, not `anon`/`PUBLIC`.
 - Replaced the two direct browser `orders` mutations in `src/modules/dispatch/dispatchRepository.ts` with these RPC calls (commit `959b862667ca2fbe0d1a94ac887eef71e9702631`).
-- Isolated database tests passed for atomic delivery assignment, pickup handoff and rejection of a cross-tenant handoff attempt. Test fixtures were transactional and rolled back. These were direct SQL role-context tests, not a complete browser end-to-end test.
+- Isolated database tests passed for atomic delivery assignment, pickup handoff and rejection of a cross-tenant handoff attempt. After the direct order-update revoke was applied to the primary project, rollback-only primary-project SQL tests also passed for delivery assignment, pickup handoff, rejection of direct order-total UPDATE and rejection of a cross-tenant handoff. All fixtures ran inside transactions that were rolled back; no test rows were retained. These are database role-context tests, not a complete browser/PostgREST end-to-end test.
 - The source migration and direct-update revocation were committed before applying the revocation to the primary project.
 
 ### Direct order-write privilege removal
