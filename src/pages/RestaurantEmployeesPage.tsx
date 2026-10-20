@@ -1,7 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   createEmployee,
-  createPayrollOnlyEmployee,
   getEmployees,
   roleLabels,
   setEmployeeActive,
@@ -17,7 +16,6 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
   const { setUnsavedChanges } = useOwnerUnsavedChanges();
   const [staff, setStaff] = useState<StaffAccount[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [showPayrollOnlyForm, setShowPayrollOnlyForm] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffAccount | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -191,35 +189,6 @@ export function RestaurantEmployeesPage({ restaurantId }: { restaurantId: string
 
         {error ? <div className="restaurant-employees-error" role="alert">{error}</div> : null}
         {confirmation ? <div className="restaurant-employees-success" role="status" aria-live="polite">{confirmation}</div> : null}
-
-        {showPayrollOnlyForm ? (
-          <div className="restaurant-employee-modal-backdrop" role="presentation" onMouseDown={(event) => {
-            if (event.target === event.currentTarget && !saving) setShowPayrollOnlyForm(false);
-          }}>
-            <form className="restaurant-employee-modal restaurant-employee-edit-modal" onSubmit={async (event) => {
-              event.preventDefault();
-              const form = new FormData(event.currentTarget);
-              const name = String(form.get('name') || '').trim();
-              const role = String(form.get('role') || 'dining');
-              if (!name) { setError('Enter the employee name.'); return; }
-              setSaving(true); setError(''); setConfirmation('');
-              try {
-                await createPayrollOnlyEmployee(restaurantId, { name, role });
-                setUnsavedChanges(false); setShowPayrollOnlyForm(false); setConfirmation('Employee added without a login account.'); await loadStaff();
-              } catch (saveError) {
-                setError(String((saveError as { message?: string; details?: string; hint?: string; code?: string })?.message || (saveError as { details?: string })?.details || (saveError as { hint?: string })?.hint || 'Unable to add employee. Please verify MFA and try again.'));
-              } finally { setSaving(false); }
-            }}>
-              <div className="restaurant-employee-modal-header"><div><p className="eyebrow">Payroll employee</p><h2>Add employee without login</h2></div><button className="restaurant-employee-modal-close" type="button" onClick={() => setShowPayrollOnlyForm(false)} disabled={saving} aria-label="Close">×</button></div>
-              <div className="restaurant-employee-form-grid">
-                <label>Employee name<input name="name" required maxLength={120} /></label>
-                <label>Role<select name="role" defaultValue="dining"><option value="dining">Dining</option><option value="kitchen_staff">Kitchen staff</option><option value="cook">Cook</option><option value="server">Server</option><option value="cleaner">Cleaner</option><option value="dishwasher">Dishwasher</option><option value="host">Host</option><option value="manager">Manager</option><option value="other">Other</option></select></label>
-              </div>
-              <p className="restaurant-employee-form-help">No email, mobile number, or login account required.</p>
-              <div className="restaurant-employee-modal-actions"><button className="button button-secondary restaurant-compact-action" type="button" onClick={() => setShowPayrollOnlyForm(false)} disabled={saving}>Cancel</button><button className="button button-primary restaurant-compact-action" type="submit" disabled={saving}>{saving ? 'Adding…' : 'Add employee'}</button></div>
-            </form>
-          </div>
-        ) : null}
 
         {showForm ? (
           <div
