@@ -111,6 +111,19 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   useEffect(() => { void loadMenu(); }, [restaurantId, selectedBranch?.id]);
   useEffect(() => { void loadCashierName(); void loadPackageAccess(); }, [restaurantId]);
 
+  useEffect(() => {
+    if (!selectedBranch?.id) return;
+    const unsubscribe = subscribeToCashierMenuChanges(restaurantId, () => {
+      void getMenu(restaurantId, true, selectedBranch.id)
+        .then((menu) => {
+          setProducts(menu.products);
+          setCategories(menu.categories);
+        })
+        .catch((loadError: unknown) => console.error('Unable to refresh the branch POS menu.', loadError));
+    }, selectedBranch.id);
+    return () => { unsubscribe?.(); };
+  }, [restaurantId, selectedBranch?.id]);
+
   async function loadPackageAccess() {
     if (!supabase) {
       setSelfOrderingEnabled(true);
