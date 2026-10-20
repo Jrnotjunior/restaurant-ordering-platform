@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeHashRoute, resolveAppRoute } from '../src/app/routing/routeResolver';
+import { buildOrderTrackingUrl, normalizeHashRoute, resolveAppRoute } from '../src/app/routing/routeResolver';
 import { addCartItem, changeCartItemQuantity, getCartCount, removeCartItem } from '../src/modules/ordering/cartService';
 import { isInvitationType } from '../src/modules/invitations/invitationTypes';
 import { staffRouteForRole } from '../src/modules/auth/staffRoleRouting';
@@ -22,6 +22,19 @@ const product = (id: string, overrides: Partial<RestaurantProduct> = {}): Restau
 });
 
 const location = (pathname = '/', search = '', hash = '') => ({ pathname, search, hash });
+
+describe('guest active-order recovery contract', () => {
+  it('creates a refresh-safe tracking URL while preserving custom and GitHub Pages base paths', () => {
+    expect(buildOrderTrackingUrl('/', 'order-123')).toBe('/?trackOrder=order-123');
+    expect(buildOrderTrackingUrl('/restaurant-ordering-platform/', 'order 123')).toBe('/restaurant-ordering-platform/?trackOrder=order%20123');
+  });
+
+  it('resolves a guest tracking URL without requiring a hash route or customer login', () => {
+    const result = resolveAppRoute(location('/', '?trackOrder=guest-order-123'), '');
+
+    expect(result.trackOrderNumber).toBe('guest-order-123');
+  });
+});
 
 describe('route resolution contract', () => {
   it.each(['owner', 'cashier', 'kitchen', 'dispatcher'] as const)(
