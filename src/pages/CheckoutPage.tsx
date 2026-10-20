@@ -616,10 +616,13 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
       let deliveryQuoteForPayment = deliveryRouteQuote;
       if (isDelivery && !thirdPartyCourierDelivery) {
         const selectedLocation = selectedDeliveryLocation;
+        const latitude = selectedLocation?.latitude;
+        const longitude = selectedLocation?.longitude;
         if (
-          !selectedLocation ||
-          !Number.isFinite(selectedLocation.latitude) ||
-          !Number.isFinite(selectedLocation.longitude)
+          latitude == null ||
+          longitude == null ||
+          !Number.isFinite(latitude) ||
+          !Number.isFinite(longitude)
         ) {
           throw new Error('Please confirm your delivery location on the map before placing the order.');
         }
@@ -628,8 +631,8 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
         try {
           deliveryQuoteForPayment = await calculateDeliveryRoute(
             restaurantId,
-            selectedLocation.latitude,
-            selectedLocation.longitude,
+            latitude,
+            longitude,
           );
           setDeliveryRouteQuote(deliveryQuoteForPayment);
         } finally {
