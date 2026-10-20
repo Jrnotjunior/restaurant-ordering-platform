@@ -13,6 +13,15 @@ The two paths should not be conflated. They may have overlapping system requirem
 
 ## Verified official material reviewed
 
+### Re-verification note — 2026-10-21
+
+- The official BIR homepage currently advertises an ESP application window running **16–30 October 2026** and separately shows a public advisory stating that, as of 14 September 2026, no entity had been accredited/authorized/certified/recognized/endorsed as an official BIR ESP. Official landing page: https://www.bir.gov.ph/ (rechecked 2026-10-21).
+- The official BIR 2026 RMC index search result currently shows RMC No. 98-2026 (22 September) and RMC No. 108-2026 (1 October) among its latest entries, but did not surface the claimed later ESP-specific circular in the indexed official results: https://www.bir.gov.ph/2026-Revenue-Memorandum-Circulars
+- A secondary legal-site result titled “RMC No. 110-2026” reproduces an ESP requirements document whose body/header instead says “REVENUE MEMORANDUM CIRCULAR NO. 140-2026” and is dated 12 October 2026. Because the identifier conflicts and I could not verify a matching official BIR copy, **do not treat this secondary copy or its detailed eligibility requirements as authoritative** until the BIR confirms the correct issuance and provides its official text. Secondary result for verification only: https://batasnatin.com/laws/rmc-no-110-2026-prescribing-the-accreditation-technical-operational-securi
+- This discrepancy does not change the core decision: Web2Table must not choose the ESP path or implement BIR transmission based only on a search result. Before relying on the closing ESP application window, ask BIR directly for the current application advisory, correct issuance number/full text, applicant qualification criteria, and whether Web2Table’s intended service model must pursue ESP accreditation, Sales Machine/Software supplier accreditation plus tenant-user PTUs, both, or another approved route.
+- No BIR application has been submitted, no formal advice has been received, and no accreditation/approval is claimed.
+
+
 ### 1. RMO No. 24-2023: CRM/POS/other Sales Machine/Software path
 
 Official BIR issuance index: https://www.bir.gov.ph/2023-Revenue-Memorandum-Order  
