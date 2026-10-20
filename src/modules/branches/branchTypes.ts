@@ -6,6 +6,7 @@ export type RestaurantBranch = {
   restaurant_id: string;
   branch_code: string;
   name: string;
+  custom_domain: string | null;
   store_address: string | null;
   restaurant_address: string | null;
   contact_number: string | null;
@@ -26,6 +27,7 @@ export type RestaurantBranch = {
 export type RestaurantBranchDraft = {
   branch_code: string;
   name: string;
+  custom_domain: string;
   store_address: string;
   restaurant_address: string;
   contact_number: string;
@@ -58,6 +60,7 @@ export function makeDefaultBranchDraft(): RestaurantBranchDraft {
   return {
     branch_code: '',
     name: '',
+    custom_domain: '',
     store_address: '',
     restaurant_address: '',
     contact_number: '',
@@ -77,6 +80,7 @@ export function branchToDraft(branch: RestaurantBranch): RestaurantBranchDraft {
   return {
     branch_code: branch.branch_code,
     name: branch.name,
+    custom_domain: branch.custom_domain ?? '',
     store_address: branch.store_address ?? branch.restaurant_address ?? '',
     restaurant_address: branch.restaurant_address ?? branch.store_address ?? '',
     contact_number: branch.contact_number ?? '',
