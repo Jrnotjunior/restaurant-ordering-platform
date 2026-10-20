@@ -27,7 +27,6 @@ export type AppRouteContext = {
   isRestaurantWebsiteCustomizationPage: boolean;
   isRestaurantLoyaltyPage: boolean;
   isRestaurantEmployeesPage: boolean;
-  isRestaurantPayrollPage: boolean;
   isCashierPage: boolean;
   isKitchenPage: boolean;
   isKitchenMenuPage: boolean;
@@ -46,7 +45,9 @@ export type AppRouteContext = {
 
 export function normalizeHashRoute(hash: string) {
   const normalized = hash.replace(/^#\//, '#');
-  return normalized === '#menu' ? '' : normalized;
+  if (normalized === '#menu') return '';
+  if (normalized === '#restaurant/payroll') return '#restaurant/owner';
+  return normalized;
 }
 
 export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' | 'hash'>, route: string): AppRouteContext {
@@ -81,7 +82,6 @@ export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' |
   const isRestaurantWebsiteCustomizationPage = route === '#restaurant/website-customization';
   const isRestaurantLoyaltyPage = route === '#restaurant/loyalty';
   const isRestaurantEmployeesPage = route === '#restaurant/employees';
-  const isRestaurantPayrollPage = route === '#restaurant/payroll';
   const isCashierPage = route === '#restaurant/cashier';
   const isKitchenPage = route === '#restaurant/kitchen';
   const isKitchenMenuPage = route === '#restaurant/kitchen-menu';
@@ -144,8 +144,7 @@ export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' |
     isRestaurantSettingsPage ||
     isRestaurantWebsiteCustomizationPage ||
     isRestaurantLoyaltyPage ||
-    isRestaurantEmployeesPage ||
-    isRestaurantPayrollPage;
+    isRestaurantEmployeesPage;
 
   const trackingMatch = route.match(/^#order\/(.+)$/);
 
@@ -178,7 +177,6 @@ export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' |
     isRestaurantWebsiteCustomizationPage,
     isRestaurantLoyaltyPage,
     isRestaurantEmployeesPage,
-    isRestaurantPayrollPage,
     isCashierPage,
     isKitchenPage,
     isKitchenMenuPage,
