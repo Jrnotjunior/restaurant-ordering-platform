@@ -4,6 +4,8 @@ alter table public.customer_profiles
   add column if not exists default_delivery_barangay text,
   add column if not exists default_delivery_address text;
 
+drop function if exists public.get_my_customer_profile(uuid);
+
 create or replace function public.get_my_customer_profile(
   p_restaurant_id uuid
 )
