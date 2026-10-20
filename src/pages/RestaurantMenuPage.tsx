@@ -53,9 +53,109 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
     }
   }
 
-  useOwnerUnsavedChangesTracking('.restaurant-menu-page');
+  async function loadBranches() {
+    try {
+      const loadedBranches = await listRestaurantBranches(restaurantId, false);
+      setBranches(loadedBranches);
+      setSelectedBranchId((current) =>
+        current && loadedBranches.some((branch) => branch.id === current)
+          ? current
+          : (loadedBranches.find((branch) => branch.is_default) ?? loadedBranches[0])?.id ?? '',
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to load branches.');
+    }
+  }
 
-  useEffect(() => { void loadMenu(); }, [restaurantId]);
+  useEffect(() => {
+    void loadMenu();
+    void loadBranches();
+  }, [restaurantId]);
+
+  useEffect(() => {
+    if (!selectedBranchId) {
+      setBranchSettings({});
+      setBranchDrafts({});
+      return;
+    }
+    let cancelled = false;
+    setBranchSettingsLoading(true);
+    setBranchSettingsMessage('');
+    void getBranchProductSettings(restaurantId, selectedBranchId)
+      .then((settings) => {
+        if (cancelled) return;
+        setBranchSettings(settings);
+        setBranchDrafts({});
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Unable to load branch product settings.');
+      })
+      .finally(() => {
+        if (!cancelled) setBranchSettingsLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [restaurantId, selectedBranchId]);
+
+  function getBranchDraft(product: RestaurantProduct): BranchProductDraft {
+    const draft = branchDrafts[product.id];
+    if (draft) return draft;
+    const setting = branchSettings[product.id];
+    return {
+      isAvailable: setting?.isAvailable ?? true,
+      priceOverride: setting?.priceOverride == null ? '' : String(setting.priceOverride),
+    };
+  }
+
+  function updateBranchDraft(productId: string, patch: Partial<BranchProductDraft>) {
+    const product = products.find((item) => item.id === productId);
+    if (!product) return;
+    const current = getBranchDraft(product);
+    setBranchDrafts((state) => ({ ...state, [productId]: { ...current, ...patch } }));
+    setBranchSettingsMessage('');
+  }
+
+  async function saveBranchProduct(product: RestaurantProduct) {
+    if (!selectedBranchId) { setError('Choose a branch first.'); return; }
+    const draft = getBranchDraft(product);
+    const normalizedPrice = draft.priceOverride.trim() === '' ? null : Number(draft.priceOverride);
+    if (normalizedPrice !== null && (!Number.isFinite(normalizedPrice) || normalizedPrice < 0)) {
+      setError('Enter a valid non-negative branch price, or leave it blank to use the catalog price.');
+      return;
+    }
+    setBranchSavingId(product.id);
+    setError('');
+    setBranchSettingsMessage('');
+    try {
+      await saveBranchProductSettings({
+        restaurantId,
+        branchId: selectedBranchId,
+        productId: product.id,
+        isAvailable: draft.isAvailable,
+        priceOverride: normalizedPrice,
+      });
+      setBranchSettings((current) => ({
+        ...current,
+        [product.id]: {
+          productId: product.id,
+          isAvailable: draft.isAvailable,
+          priceOverride: normalizedPrice,
+        },
+      }));
+      setBranchDrafts((current) => {
+        const updated = { ...current };
+        delete updated[product.id];
+        return updated;
+      });
+      const branchName = branches.find((branch) => branch.id === selectedBranchId)?.name ?? 'branch';
+      setBranchSettingsMessage('Saved ' + product.name + ' settings for ' + branchName + '.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to save branch product settings.');
+    } finally {
+      setBranchSavingId(null);
+    }
+  }
+
+  useOwnerUnsavedChangesTracking('.restaurant-menu-page');
 
   const filteredProducts = useMemo(() => {
     const query = searchProduct.trim().toLowerCase();
