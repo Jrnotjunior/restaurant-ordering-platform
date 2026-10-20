@@ -18,7 +18,14 @@ function getSecretKey() {
   return secretKeys.default ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 }
 
-function getRestaurantSiteBaseUrl(customDomain: unknown): string | null {
+const GITHUB_PAGES_ORIGIN = "https://jrnotjunior.github.io";
+const GITHUB_PAGES_RETURN_BASE = "https://jrnotjunior.github.io/restaurant-ordering-platform/";
+
+function getRestaurantSiteBaseUrl(customDomain: unknown, requestOrigin: string | null): string | null {
+  // Permit the exact GitHub Pages origin used for repository-based testing.
+  // Keep the repository path: GitHub Pages does not serve this app at domain root.
+  if (requestOrigin === GITHUB_PAGES_ORIGIN) return GITHUB_PAGES_RETURN_BASE;
+
   const configuredDomain = String(customDomain ?? "").trim();
   if (!configuredDomain) return null;
 
@@ -101,7 +108,7 @@ Deno.serve(async (request) => {
       .eq("id", pendingPayment.restaurant_id)
       .maybeSingle();
     if (restaurantDomainError) throw restaurantDomainError;
-    const siteBaseUrl = getRestaurantSiteBaseUrl(restaurantDomain?.custom_domain);
+    const requestOrigin = request.headers.get("origin");\n    const isGitHubPagesTest = requestOrigin === GITHUB_PAGES_ORIGIN;\n    const siteBaseUrl = getRestaurantSiteBaseUrl(restaurantDomain?.custom_domain, requestOrigin);
     if (!siteBaseUrl) {
       console.error("PayMongo checkout blocked: restaurant custom domain is missing or invalid", {
         paymentId: pendingPayment.id,
@@ -249,7 +256,7 @@ Deno.serve(async (request) => {
       headers: {
         Authorization: `Basic ${btoa(`${paymongoSecretKey}:`)}`,
         "Content-Type": "application/json",
-        "Idempotency-Key": `online-payment-${pendingPayment.id}`,
+        "Idempotency-Key": isGitHubPagesTest\n          ? `online-payment-${pendingPayment.id}-github-pages`\n          : `online-payment-${pendingPayment.id}`,
         ...(linkedPayMongoAccountId ? { "Account-ID": linkedPayMongoAccountId } : {}),
       },
       body: JSON.stringify({
