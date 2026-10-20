@@ -674,6 +674,8 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .restaurant-settings-theme-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
         .restaurant-settings-theme-swatch{height:46px;border-radius:var(--radius-md);border:1px solid var(--color-border)}
         @media(max-width:700px){.restaurant-settings-theme-grid{grid-template-columns:1fr}}
+        @media(max-width:760px){.restaurant-delivery-location-settings{padding:14px}.restaurant-delivery-location-heading{gap:12px}.restaurant-delivery-location-heading h3{font-size:18px}.restaurant-delivery-location-badge{padding:6px 8px}}
+        @media(max-width:480px){.restaurant-delivery-location-heading{flex-direction:column;align-items:flex-start}.restaurant-delivery-location-badge{margin-top:0}}
         .restaurant-settings-switch-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:14px;font-weight:700;color:#0f172a}
         .restaurant-settings-switch{position:relative;display:inline-flex;flex:0 0 auto}
         .restaurant-settings-switch input{position:absolute;opacity:0;pointer-events:none}
@@ -699,6 +701,16 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .restaurant-paymongo-badge.is-error,.restaurant-paymongo-badge.is-revoked{background:#fee2e2;color:#991b1b}
         .restaurant-paymongo-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
         .restaurant-settings-help{margin:0;color:#64748b;line-height:1.5;font-size:14px}
+        .restaurant-delivery-location-settings{margin-top:20px;padding:18px;border:1px solid #dce4ee;border-radius:16px;background:#fbfcfe}
+        .restaurant-delivery-location-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:16px}
+        .restaurant-delivery-location-heading>div{min-width:0}
+        .restaurant-delivery-location-eyebrow{margin:0 0 5px;color:#64748b;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+        .restaurant-delivery-location-heading h3{margin:0;color:#0f172a;font-size:20px;line-height:1.25;letter-spacing:-.025em}
+        .restaurant-delivery-location-heading p:last-child{max-width:660px;margin:7px 0 0;color:#64748b;font-size:13px;line-height:1.55}
+        .restaurant-delivery-location-badge{display:inline-flex;flex:0 0 auto;align-items:center;gap:7px;padding:7px 10px;border:1px solid #cbd5e1;border-radius:999px;background:#fff;color:#334155;font-size:11px;font-weight:750;white-space:nowrap}
+        .restaurant-delivery-location-badge:before{content:"";width:7px;height:7px;border-radius:50%;background:#0f766e;box-shadow:0 0 0 3px #ccfbf1}
+        .restaurant-delivery-location-coordinates{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:14px 0 0;padding-top:13px;border-top:1px solid #e2e8f0;color:#64748b;font-size:12px;font-variant-numeric:tabular-nums}
+        .restaurant-delivery-location-coordinate-dot{width:7px;height:7px;border-radius:50%;background:#0f766e}
         .restaurant-settings-form{display:grid;gap:16px}
         .restaurant-settings-form{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
         .restaurant-settings-tabs{display:flex;align-items:center;gap:26px;flex-wrap:wrap;border-bottom:1px solid #dbe2ea;margin:0}
@@ -879,15 +891,22 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
             <label className="restaurant-settings-field"><span>Maximum driving distance (km)</span><input type="number" min="0.1" step="0.1" value={(Number(deliveryMaxDistanceMeters) / 1000).toString()} onChange={(event) => setDeliveryMaxDistanceMeters(String(Number(event.target.value) * 1000))} disabled={loading || saving} /></label>
           </div>
           <p className="restaurant-settings-help" style={{ marginTop: 12 }}>Example: ₱10 per 500 meters means 1.2 km = 3 distance increments. A base fee, if configured, is added on top.</p>
-          <div style={{ marginTop: 18 }}>
-            <p className="restaurant-settings-help" style={{ marginBottom: 10 }}><strong>Store address</strong><br />Set your restaurant's address by searching or adjusting the map pin. This location is also the origin Mapbox Directions uses to calculate delivery distances and fees.</p>
+          <section className="restaurant-delivery-location-settings" aria-labelledby="restaurant-delivery-location-title">
+            <div className="restaurant-delivery-location-heading">
+              <div>
+                <p className="restaurant-delivery-location-eyebrow">Delivery setup</p>
+                <h3 id="restaurant-delivery-location-title">Store address</h3>
+                <p>Set the exact location orders should route from. Delivery distance and fees are calculated from this point.</p>
+              </div>
+              <span className="restaurant-delivery-location-badge">Route origin</span>
+            </div>
             <MapboxDeliveryLocationPicker
               variant="restaurant"
               disabled={loading || saving}
               initialLatitude={deliveryLocationLatitude}
               initialLongitude={deliveryLocationLongitude}
               onSelect={(selected: MapboxDeliveryAddress) => {
-                if (selected.latitude === null || selected.longitude === null) throw new Error('Google did not return an exact restaurant location.');
+                if (selected.latitude === null || selected.longitude === null) throw new Error('Mapbox did not return an exact restaurant location.');
                 setDeliveryLocationLatitude(selected.latitude);
                 setDeliveryLocationLongitude(selected.longitude);
                 // The map is the single source of truth for the restaurant address.
@@ -899,8 +918,13 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
                 setError('');
               }}
             />
-            {deliveryLocationLatitude !== null && deliveryLocationLongitude !== null && <p className="restaurant-settings-help" style={{ marginTop: 10 }}>Confirmed coordinates: {deliveryLocationLatitude.toFixed(6)}, {deliveryLocationLongitude.toFixed(6)}</p>}
-          </div>
+            {deliveryLocationLatitude !== null && deliveryLocationLongitude !== null && (
+              <p className="restaurant-delivery-location-coordinates">
+                <span className="restaurant-delivery-location-coordinate-dot" aria-hidden="true" />
+                Saved location: {deliveryLocationLatitude.toFixed(6)}, {deliveryLocationLongitude.toFixed(6)}
+              </p>
+            )}
+          </section>
         </div>
 
                 <div className="restaurant-settings-card" id="store-cod" role="tabpanel" aria-labelledby="store-settings-tab-cod" hidden={!hasDispatchDelivery || activeSettingsTab !== 'cod'}>
