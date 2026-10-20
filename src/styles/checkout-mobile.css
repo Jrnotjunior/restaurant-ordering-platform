@@ -598,6 +598,13 @@
 }
 
 
+.checkout-order-type-status {
+  margin: 0 0 0.75rem;
+  color: #64748b;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
 /* Compact order type choices */
 .checkout-section .order-type-card {
   min-height: 3.5rem;
