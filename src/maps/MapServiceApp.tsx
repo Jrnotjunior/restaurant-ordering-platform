@@ -226,7 +226,7 @@ export function MapServiceApp() {
 
   if (!session) {
     return (
-      <main className="map-service-page">
+      <main className={session?.variant === 'restaurant' ? 'map-service-page map-service-page--restaurant' : 'map-service-page'}>
         <div className={serviceError ? 'map-service-status is-error' : 'map-service-status'} role={serviceError ? 'alert' : 'status'}>
           <strong>{serviceError ? 'Map unavailable' : 'Web2Table central map'}</strong>
           <p>{serviceError || status}</p>
@@ -236,7 +236,7 @@ export function MapServiceApp() {
   }
 
   return (
-    <main className="map-service-page">
+    <main className={session.variant === 'restaurant' ? 'map-service-page map-service-page--restaurant' : 'map-service-page'}>
       <MapboxLocationPickerUi
           variant={session.variant}
         disabled={session.disabled}
