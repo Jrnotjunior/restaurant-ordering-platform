@@ -29,11 +29,11 @@ export type MapboxLocationFeature = {
 
 type MapboxFeatureCollection = { features?: MapboxLocationFeature[] };
 
-const accessToken = () => String(import.meta.env.VITE_MAPBOX_ACCESS_TOKEN ?? '').trim();
+const accessToken = () => String(import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN ?? '').trim();
 
 function requireToken() {
   const token = accessToken();
-  if (!token) throw new Error('Mapbox is not configured yet. Add VITE_MAPBOX_ACCESS_TOKEN to the environment.');
+  if (!token.startsWith('pk.')) throw new Error('Mapbox needs a public browser token beginning pk. Configure VITE_MAPBOX_PUBLIC_TOKEN; secret sk. tokens must never be used in browser apps.');
   return token;
 }
 
