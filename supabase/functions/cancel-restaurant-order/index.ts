@@ -324,9 +324,11 @@ Deno.serve(async (req) => {
         refundTransferLink: isQrph ? refundTransferLink || null : null,
         message: isQrph && refundTransferLink
           ? "Order cancelled. PayMongo created a QR Ph refund claim link; share the link with the customer to complete the refund."
-          : refundStatus === "succeeded"
-            ? "Order cancelled and PayMongo accepted the refund."
-            : "Order cancelled. PayMongo refund is processing.",
+          : isQrph && refundStatus !== "succeeded"
+            ? "PayMongo created a QR Ph refund, but no claim link was returned. Check the PayMongo dashboard before taking further action."
+            : refundStatus === "succeeded"
+              ? "Order cancelled and PayMongo accepted the refund."
+              : "Order cancelled. PayMongo refund is processing.",
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "PayMongo refund request failed.";
