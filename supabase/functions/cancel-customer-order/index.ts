@@ -254,7 +254,7 @@ Deno.serve(async (request) => {
         : "https://api.paymongo.com/v1/refunds";
       const refundResponse = await fetch(refundEndpoint, {
         method: "POST",
-        headers: { ...headers, "Idempotency-Key": `customer-cancel-refund-${orderId}` },
+        headers: { ...headers, "Idempotency-Key": `web2table-order-cancel-refund-${orderId}` },
         body: JSON.stringify({
           data: { attributes: {
             amount,
