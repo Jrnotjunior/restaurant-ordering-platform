@@ -161,11 +161,11 @@ export function CustomerSignUpPage() {
             <span>I agree to the <a href="#privacy">Privacy Notice</a>.</span>
           </label>
           {fieldError('consent')}
-          <button className="button" type="submit" disabled={submitting}>{submitting ? 'Registering…' : 'Register'}</button>
+          <button className="button" type="submit" disabled={submitting}>{submitting ? 'Creating account…' : 'Sign Up'}</button>
         </form>
 
         <p className="restaurant-auth-switch">
-          Already have an account? <a href="#account">Log in</a>
+          Already have an account? <a href="#account">Sign In</a>
         </p>
 
 
