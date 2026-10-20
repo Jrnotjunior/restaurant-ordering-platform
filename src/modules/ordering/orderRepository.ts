@@ -562,54 +562,9 @@ export function subscribeToOrderTrackingChanges(
 }
 
 
-export type FailedRefundOrder = {
-  orderId: string;
-  orderNumber: string;
-  total: number;
-  branchId: string;
-  branchName: string;
-  refundError: string;
-  updatedAt: string;
-};
-
-export async function getRestaurantFailedRefunds(
-  restaurantId: string,
-  branchId: string | null,
-): Promise<FailedRefundOrder[]> {
-  if (!supabase) throw new Error('Refund status is unavailable. Please try again later.');
-  const { data, error } = await supabase.rpc('get_restaurant_failed_refunds', {
-    p_restaurant_id: restaurantId,
-    p_branch_id: branchId,
-  });
-  if (error) throw new Error(error.message || 'Unable to load failed refunds.');
-  const rows = Array.isArray(data) ? data as Array<{
-    order_id: string;
-    order_number: string;
-    total: number | string;
-    branch_id: string;
-    branch_name: string;
-    refund_error: string | null;
-    updated_at: string;
-  }> : [];
-  return rows.map((row) => ({
-    orderId: row.order_id,
-    orderNumber: row.order_number,
-    total: Number(row.total),
-    branchId: row.branch_id,
-    branchName: row.branch_name,
-    refundError: row.refund_error || 'The automatic PayMongo refund failed.',
-    updatedAt: row.updated_at,
-  }));
-}
-
-export async function cancelRestaurantOrder(
-  orderId: string,
-  retryRefund = false,
-): Promise<{ message: string; refundStatus: string }> {
+export async function cancelRestaurantOrder(orderId: string): Promise<{ message: string; refundStatus: string }> {
   if (!supabase) throw new Error('Order cancellation is unavailable. Please try again later.');
-  const { data, error } = await supabase.functions.invoke('cancel-restaurant-order', {
-    body: { orderId, ...(retryRefund ? { retryRefund: true } : {}) },
-  });
+  const { data, error } = await supabase.functions.invoke('cancel-restaurant-order', { body: { orderId } });
   if (error) {
     const context = (error as { context?: { json?: () => Promise<{ error?: string }> } }).context;
     const payload = await context?.json?.().catch(() => null);
