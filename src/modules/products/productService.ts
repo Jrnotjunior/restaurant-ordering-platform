@@ -13,6 +13,8 @@ import {
   uploadProductImage as uploadProductImageRepository,
 } from './productImageRepository';
 import type { RestaurantProduct } from '../../types/menu';
+export { getBranchProductSettings, saveBranchProductSettings } from './branchProductRepository';
+export type { BranchProductSetting } from './branchProductRepository';
 
 export const getMenu = getMenuRepository;
 export const getOrCreateCategory = getOrCreateCategoryRepository;
