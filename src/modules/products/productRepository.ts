@@ -187,12 +187,20 @@ export function subscribeToMenuChanges(
   };
 }
 
-export function subscribeToCashierMenuChanges(restaurantId: string, onChange: () => void): (() => void) | null {
+export function subscribeToCashierMenuChanges(
+  restaurantId: string,
+  onChange: () => void,
+  branchId?: string | null,
+): (() => void) | null {
   if (!supabase) return null;
 
   const channel = supabase
     .channel(`restaurant-menu-changes:${restaurantId}`)
-    .on('broadcast', { event: 'restaurant_menu_changed' }, onChange)
+    .on('broadcast', { event: 'restaurant_menu_changed' }, (message) => {
+      const eventBranchId = typeof message.payload?.branchId === 'string' ? message.payload.branchId : null;
+      if (eventBranchId && branchId && eventBranchId !== branchId) return;
+      onChange();
+    })
     .subscribe();
 
   return () => {
