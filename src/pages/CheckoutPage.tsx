@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { RestaurantProduct } from '../types/menu';
 import { createOrder } from '../modules/ordering/orderService';
-import { createPayMongoCheckout, createPendingOnlinePayment, getOnlinePaymentStatus } from '../modules/payments/paymentService';
+import { assertPayMongoCheckoutReady, createPayMongoCheckout, createPendingOnlinePayment, getOnlinePaymentStatus } from '../modules/payments/paymentService';
 import { calculateDeliveryRoute, type DeliveryRouteQuote } from '../modules/location/locationService';
 import { attachCustomerToOrder, getLoyaltyRedemptionSettings, getMyLoyaltyPoints, redeemLoyaltyReward } from '../modules/loyalty/loyaltyService';
 import { getMyCustomerProfile, getMyCustomerProfileId, saveMyDefaultDeliveryAddress } from '../modules/customer/customerAccountService';
@@ -594,7 +594,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
 
     try {
       const isOwnCourierPickup = thirdPartyCourierDelivery && orderType === 'pickup';
-      await saveDefaultAddressIfNeeded();
+      const restaurantId = items[0].product.restaurantId;
       const savedCheckoutUrl = paymentNotCompleted ? window.localStorage.getItem(PENDING_PAYMENT_CHECKOUT_URL_KEY) : null;
       if (savedCheckoutUrl) {
         setPaymentNotCompleted(false);
@@ -602,8 +602,62 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
         window.location.assign(savedCheckoutUrl);
         return;
       }
+
+      // Check tenant PayMongo readiness before the database creates a pending
+      // payment and consumes the single-use delivery quote.
+      if (checkoutTotal <= 0) {
+        throw new Error('The loyalty reward covers the entire order. Please choose cash payment or contact the restaurant for a free-order arrangement.');
+      }
+      await assertPayMongoCheckoutReady(restaurantId);
+
+      // A quote can have been consumed by an earlier interrupted attempt while
+      // its coordinates remain selected in the UI. Revalidate before staging
+      // payment; the route function reuses an active quote when one still exists.
+      let deliveryQuoteForPayment = deliveryRouteQuote;
+      if (isDelivery && !thirdPartyCourierDelivery) {
+        const selectedLocation = selectedDeliveryLocation;
+        if (
+          !selectedLocation ||
+          !Number.isFinite(selectedLocation.latitude) ||
+          !Number.isFinite(selectedLocation.longitude)
+        ) {
+          throw new Error('Please confirm your delivery location on the map before placing the order.');
+        }
+
+        setDeliveryRouteLoading(true);
+        try {
+          deliveryQuoteForPayment = await calculateDeliveryRoute(
+            restaurantId,
+            selectedLocation.latitude,
+            selectedLocation.longitude,
+          );
+          setDeliveryRouteQuote(deliveryQuoteForPayment);
+        } finally {
+          setDeliveryRouteLoading(false);
+        }
+
+        if (!deliveryQuoteForPayment.inRange) {
+          throw new Error(outsideDeliveryAreaMessage);
+        }
+
+        // Never silently charge a different delivery fee from the one shown
+        // when the customer selected online payment.
+        if (Math.abs(deliveryQuoteForPayment.deliveryFee - deliveryFee) >= 0.01) {
+          throw new Error(
+            `The delivery fee has been updated to ₱${deliveryQuoteForPayment.deliveryFee.toFixed(2)}. Please review the updated order total before placing your order.`,
+          );
+        }
+      }
+
+      // Saving a default address is optional and must not block order placement.
+      try {
+        await saveDefaultAddressIfNeeded();
+      } catch (addressSaveError) {
+        console.warn('Unable to save the customer default delivery address; continuing checkout.', addressSaveError);
+      }
+
       const pendingPayment = await createPendingOnlinePayment({
-        restaurantId: items[0].product.restaurantId,
+        restaurantId,
         customerName: customerName.trim(),
         mobileNumber: ['dine_in', 'take_out'].includes(orderType) ? '' : mobileNumber.trim(),
         orderType: isOwnCourierPickup ? 'pickup' : orderType,
@@ -618,12 +672,12 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
         customerDeliveryLatitude: isOwnCourierPickup ? undefined : isDelivery ? (selectedDeliveryLocation?.latitude ?? undefined) : undefined,
         customerDeliveryLongitude: isOwnCourierPickup ? undefined : isDelivery ? (selectedDeliveryLocation?.longitude ?? undefined) : undefined,
         customerDeliveryPlaceId: isOwnCourierPickup ? undefined : isDelivery ? selectedDeliveryLocation?.placeId : undefined,
-        deliveryQuoteId: isDelivery && !thirdPartyCourierDelivery ? deliveryRouteQuote?.quoteId : undefined,
+        deliveryQuoteId: isDelivery && !thirdPartyCourierDelivery ? deliveryQuoteForPayment?.quoteId : undefined,
         items: items.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
         redeemLoyalty: redeemPoints,
       });
-      const payableTotal = pendingPayment.total;
-      if (payableTotal <= 0) {
+
+      if (pendingPayment.total <= 0) {
         throw new Error('The loyalty reward covers the entire order. Please choose cash payment or contact the restaurant for a free-order arrangement.');
       }
       window.localStorage.setItem(PENDING_PAYMENT_REFERENCE_KEY, pendingPayment.referenceNumber);
