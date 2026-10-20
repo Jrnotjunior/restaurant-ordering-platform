@@ -127,7 +127,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = public
-as $
+as $$
 begin
   perform public.retry_waiting_delivery_order_for_rider(
     new.restaurant_id,
@@ -135,7 +135,7 @@ begin
   );
   return new;
 end;
-$;
+$$;
 
 revoke all on function public.retry_waiting_delivery_order_after_assignment_change()
 from public, anon, authenticated;
