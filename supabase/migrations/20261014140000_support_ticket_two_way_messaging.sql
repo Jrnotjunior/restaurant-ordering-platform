@@ -1,16 +1,10 @@
 -- Two-way support-ticket messaging with strict tenant and admin boundaries.
--- The ticket-number trigger depends on this sequence, but the sequence was
--- missing from the checked-in clean-install migration chain. Create it only when
--- absent, and seed a newly created sequence above any existing numeric suffix.
-DO $support_ticket_sequence$
-DECLARE
-  v_last_number bigint;
-BEGIN
-  IF to_regclass('public.restaurant_support_request_number_seq') IS NULL THEN
-    CREATE SEQUENCE public.restaurant_support_request_number_seq
-      AS bigint START WITH 1 INCREMENT BY 1 MINVALUE 1 NO MAXVALUE CACHE 1;
+-- The ticket-number trigger depends on this sequence, but it was absent from
+-- the checked-in clean-install migration chain.
+CREATE SEQUENCE IF NOT EXISTS public.restaurant_support_request_number_seq
+  AS bigint START WITH 1 INCREMENT BY 1 MINVALUE 1 NO MAXVALUE CACHE 1;
+GRANT USAGE ON SEQUENCE public.restaurant_support_request_number_seq TO authenticated;
 
-    SELECT max(substring(request_number FROM '([0-9]+)
 create table if not exists public.support_ticket_messages (
   id uuid primary key default gen_random_uuid(),
   ticket_id uuid not null references public.restaurant_support_requests(id) on delete cascade,
