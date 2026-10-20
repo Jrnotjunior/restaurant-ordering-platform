@@ -15,7 +15,7 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $function$
 BEGIN
-  NEW.custom_domain := NULLIF(lower(regexp_replace(btrim(coalesce(NEW.custom_domain, '')), '\\.$', '')), '');
+  NEW.custom_domain := NULLIF(lower(regexp_replace(btrim(coalesce(NEW.custom_domain, '')), '[.]$', '')), '');
   IF NEW.custom_domain IS NULL THEN
     RETURN NEW;
   END IF;
@@ -67,7 +67,7 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $function$
 BEGIN
-  NEW.custom_domain := NULLIF(lower(regexp_replace(btrim(coalesce(NEW.custom_domain, '')), '\\.$', '')), '');
+  NEW.custom_domain := NULLIF(lower(regexp_replace(btrim(coalesce(NEW.custom_domain, '')), '[.]$', '')), '');
   IF NEW.custom_domain IS NULL THEN
     RETURN NEW;
   END IF;
@@ -190,7 +190,7 @@ AS $function$
 DECLARE
   v_hostname text;
 BEGIN
-  v_hostname := lower(regexp_replace(btrim(coalesce(p_hostname, '')), '\\.$', ''));
+  v_hostname := lower(regexp_replace(btrim(coalesce(p_hostname, '')), '[.]$', ''));
   IF v_hostname = '' THEN
     RETURN;
   END IF;
@@ -262,7 +262,7 @@ AS $function$
 DECLARE
   v_hostname text;
 BEGIN
-  v_hostname := lower(regexp_replace(btrim(coalesce(p_hostname, '')), '\\.$', ''));
+  v_hostname := lower(regexp_replace(btrim(coalesce(p_hostname, '')), '[.]$', ''));
   IF v_hostname = '' THEN
     RETURN;
   END IF;
