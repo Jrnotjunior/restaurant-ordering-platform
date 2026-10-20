@@ -185,6 +185,11 @@ function AppContent() {
       window.history.replaceState(null, '', window.location.pathname + window.location.search);
     }
 
+    // Keep old bookmarks from reopening the retired Payroll & HR screen.
+    if (window.location.hash === '#restaurant/payroll') {
+      window.location.hash = '#restaurant/owner';
+    }
+
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
   useEffect(() => {
