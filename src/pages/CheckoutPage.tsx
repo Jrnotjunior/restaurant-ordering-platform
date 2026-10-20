@@ -3,6 +3,7 @@ import type { RestaurantProduct } from '../types/menu';
 import { createOrder } from '../modules/ordering/orderService';
 import { assertPayMongoCheckoutReady, createPayMongoCheckout, createPendingOnlinePayment, getOnlinePaymentStatus } from '../modules/payments/paymentService';
 import { calculateDeliveryRoute, type DeliveryRouteQuote } from '../modules/location/locationService';
+import { buildOrderTrackingUrl } from '../app/routing/routeResolver';
 import { attachCustomerToOrder, getLoyaltyRedemptionSettings, getMyLoyaltyPoints, redeemLoyaltyReward } from '../modules/loyalty/loyaltyService';
 import { getMyCustomerProfile, getMyCustomerProfileId, saveMyDefaultDeliveryAddress } from '../modules/customer/customerAccountService';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
@@ -183,6 +184,19 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
     void loadCashOnDeliverySetting();
     return () => { mounted = false; };
   }, [restaurantId]);
+
+  useEffect(() => {
+    if (!confirmedOrder?.orderId) return;
+
+    // Persisted active-order keys power the header's "Track my order" link,
+    // while the query URL lets a guest refresh and remain on the same tracking
+    // page without signing in or needing a separate account history.
+    const trackingUrl = buildOrderTrackingUrl(window.location.pathname, confirmedOrder.orderId);
+    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (currentUrl !== trackingUrl) {
+      window.location.replace(trackingUrl);
+    }
+  }, [confirmedOrder?.orderId]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
