@@ -169,7 +169,7 @@ Deno.serve(async (request) => {
     const paymentMethodTypes = [
       ...(methodSettings.card === true ? ["card"] : []),
       ...(methodSettings.gcash !== false ? ["gcash"] : []),
-      ...(methodSettings.qrph !== false && !isParentTestSandbox ? ["qrph"] : []),
+      ...(methodSettings.qrph !== false ? ["qrph"] : []),
       ...(methodSettings.grab_pay !== false ? ["grab_pay"] : []),
       ...(methodSettings.paymaya !== false ? ["paymaya"] : []),
       ...(methodSettings.dob !== false ? ["dob"] : []),
