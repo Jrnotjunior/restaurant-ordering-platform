@@ -828,7 +828,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
               } else {
                 void handlePlaceOrder();
               }
-            }}>{paymentMethod === 'online' ? 'Continue to Online Payment' : 'Place Cash Order'}</button>
+            }}>{paymentMethod === 'online' ? 'Continue to Online Payment' : 'Place Order'}</button>
           </div>
         </div>
       </div>}
