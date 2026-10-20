@@ -243,44 +243,9 @@ Deno.serve(async (request) => {
       const amount = Number(paymentAttributes.amount);
       if (!Number.isSafeInteger(amount) || amount < 100) throw new Error("The original PayMongo payment amount is invalid.");
 
-      // Parent test sandbox cancellations are simulated only after verifying that
-      // PayMongo identifies the payment as test mode. No real refund is requested.
-      if (isParentTestSandbox) {
-        if (environment !== "test" || paymentAttributes.livemode !== false) {
-          throw new Error("The payment is not verified as a PayMongo test-mode payment; no cancellation or refund was performed.");
-        }
-
-        let simulationQuery = admin.from("orders").update({
-          status: "cancelled",
-          payment_status: "paid",
-          cancellation_refund_status: "simulated",
-          cancellation_refund_error: "TEST MODE ONLY: refund flow simulated locally. No funds were moved by PayMongo.",
-          paymongo_refund_id: null,
-          paymongo_refund_transfer_link: null,
-          guest_cancel_token_hash: null,
-          updated_at: new Date().toISOString(),
-        })
-          .eq("id", orderId)
-          .eq("restaurant_id", order.restaurant_id)
-          .eq("status", "pending")
-          .eq("payment_status", "paid")
-          .eq("cancellation_refund_status", "processing");
-        if (order.customer_id === null) {
-          simulationQuery = simulationQuery.is("customer_id", null).eq("guest_cancel_token_hash", guestTokenHash);
-        } else {
-          simulationQuery = simulationQuery.eq("customer_id", order.customer_id);
-        }
-        const { data: simulatedOrder, error: simulationError } = await simulationQuery.select("id").maybeSingle();
-        if (simulationError) throw simulationError;
-        if (!simulatedOrder) {
-          return jsonResponse({ error: "The order changed while its test refund was being prepared. Refresh and check the current order status." }, 409);
-        }
-        return jsonResponse({
-          cancelled: true,
-          refundStatus: "simulated",
-          message: "Test mode only: your order was cancelled and the refund flow was simulated successfully. No real funds were moved by PayMongo.",
-        }, 200);
-      }
+      // Test and live payments both go through PayMongo's refund API.
+      // The parent test sandbox uses the test secret key without an Account-ID;
+      // never report a refund unless PayMongo returns a refund resource/status.
 
       const sourceType = String(paymentAttributes.source?.type ?? "").toLowerCase();
       const isQrph = sourceType === "qrph";
