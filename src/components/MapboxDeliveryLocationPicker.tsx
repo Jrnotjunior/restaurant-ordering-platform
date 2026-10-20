@@ -1,35 +1,53 @@
 import { useEffect, useRef, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
-import { mapboxFeatureToAddress, reverseMapboxLocation, searchMapboxAddresses, type MapboxLocationFeature } from '../modules/location/locationService';
+import type { MapboxDeliveryAddress } from './MapboxLocationPickerUi';
 
-export type MapboxDeliveryAddress = {
-  formattedAddress: string;
-  city: string;
-  barangay: string;
-  address: string;
-  placeId: string;
-  latitude: number | null;
-  longitude: number | null;
+export type { MapboxDeliveryAddress } from './MapboxLocationPickerUi';
+
+type PickerVariant = 'delivery' | 'restaurant';
+type InitMessage = {
+  source: 'web2table-storefront';
+  type: 'init';
+  variant: PickerVariant;
+  disabled: boolean;
+  initialLatitude: number | null;
+  initialLongitude: number | null;
 };
+type MapMessage = { source: 'web2table-map-service'; type: string; [key: string]: unknown };
 
-type LatLng = { lat: number; lng: number };
-
-function coordinatesToAddress(location: LatLng): MapboxDeliveryAddress {
-  return {
-    formattedAddress: '',
-    city: '',
-    barangay: '',
-    address: '',
-    placeId: '',
-    latitude: location.lat,
-    longitude: location.lng,
-  };
+function mapServiceUrl() {
+  const configured = String(import.meta.env.VITE_MAP_SERVICE_URL ?? '').trim();
+  const fallback = import.meta.env.DEV
+    ? `${window.location.origin}/maps.html`
+    : 'https://app.web2table.io/maps.html';
+  const url = new URL(configured || fallback, window.location.origin);
+  if (url.protocol !== 'https:' && !['localhost', '127.0.0.1', '::1'].includes(url.hostname)) {
+    throw new Error('The central map service must use HTTPS.');
+  }
+  return { href: url.href, origin: url.origin };
 }
 
-function toAddress(feature: MapboxLocationFeature): MapboxDeliveryAddress | null {
-  const address = mapboxFeatureToAddress(feature);
-  return address ? { ...address } : null;
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === 'object' ? value as Record<string, unknown> : null;
+}
+
+function parseAddress(value: unknown): MapboxDeliveryAddress | null {
+  const item = asRecord(value);
+  if (!item) return null;
+  const textFields = ['formattedAddress', 'city', 'barangay', 'address', 'placeId'] as const;
+  if (!textFields.every((key) => typeof item[key] === 'string')) return null;
+  const latitude = item.latitude;
+  const longitude = item.longitude;
+  if (typeof latitude !== 'number' || !Number.isFinite(latitude) || latitude < -90 || latitude > 90) return null;
+  if (typeof longitude !== 'number' || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) return null;
+  return {
+    formattedAddress: item.formattedAddress as string,
+    city: item.city as string,
+    barangay: item.barangay as string,
+    address: item.address as string,
+    placeId: item.placeId as string,
+    latitude,
+    longitude,
+  };
 }
 
 export function MapboxDeliveryLocationPicker({
@@ -43,306 +61,117 @@ export function MapboxDeliveryLocationPicker({
   disabled?: boolean;
   onSelect: (address: MapboxDeliveryAddress) => void | Promise<void>;
   onLocationChange?: () => void;
-  variant?: 'delivery' | 'restaurant';
+  variant?: PickerVariant;
   initialLatitude?: number | null;
   initialLongitude?: number | null;
 }) {
-  const mapContainerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
-  const markerRef = useRef<mapboxgl.Marker | null>(null);
-  const selectedAddressRef = useRef<MapboxDeliveryAddress | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<MapboxLocationFeature[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [selectedAddress, setSelectedAddress] = useState<MapboxDeliveryAddress | null>(null);
-  const [locationConfirmed, setLocationConfirmed] = useState(false);
-  const [confirming, setConfirming] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [locating, setLocating] = useState(false);
-  const [error, setError] = useState('');
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const callbacksRef = useRef({ onSelect, onLocationChange, disabled, variant, initialLatitude, initialLongitude });
+  const readyRef = useRef(false);
+  const service = mapServiceUrl();
+  const [serviceError, setServiceError] = useState('');
 
-  useEffect(() => {
-    selectedAddressRef.current = selectedAddress;
-  }, [selectedAddress]);
+  callbacksRef.current = { onSelect, onLocationChange, disabled, variant, initialLatitude, initialLongitude };
 
-  function setSelectedLocation(location: LatLng, address?: MapboxDeliveryAddress | null) {
-    const map = mapRef.current;
-    const marker = markerRef.current;
-    marker?.setLngLat([location.lng, location.lat]);
-    map?.setCenter([location.lng, location.lat]);
-
-    const nextAddress = address ?? (() => {
-      const current = selectedAddressRef.current;
-      return current
-        ? { ...current, latitude: location.lat, longitude: location.lng }
-        : coordinatesToAddress(location);
-    })();
-
-    setSelectedAddress(nextAddress);
-    setLocationConfirmed(false);
-    onLocationChange?.();
+  function sendInit() {
+    const target = iframeRef.current?.contentWindow;
+    if (!target) return;
+    const current = callbacksRef.current;
+    const message: InitMessage = {
+      source: 'web2table-storefront',
+      type: 'init',
+      variant: current.variant,
+      disabled: current.disabled,
+      initialLatitude: current.initialLatitude,
+      initialLongitude: current.initialLongitude,
+    };
+    target.postMessage(message, service.origin);
   }
 
   useEffect(() => {
-    if (!mapRef.current || !Number.isFinite(initialLatitude) || !Number.isFinite(initialLongitude)) return;
-    const map = mapRef.current;
-    const marker = markerRef.current;
-    const coordinates: [number, number] = [Number(initialLongitude), Number(initialLatitude)];
-    marker?.setLngLat(coordinates);
-    map.setCenter(coordinates);
-    map.setZoom(16);
-  }, [initialLatitude, initialLongitude]);
+    function handleMessage(event: MessageEvent<unknown>) {
+      if (event.origin !== service.origin || event.source !== iframeRef.current?.contentWindow) return;
+      const message = asRecord(event.data) as MapMessage | null;
+      if (!message || message.source !== 'web2table-map-service' || typeof message.type !== 'string') return;
 
-  useEffect(() => {
-    let cancelled = false;
+      if (message.type === 'ready') {
+        readyRef.current = true;
+        setServiceError('');
+        sendInit();
+        return;
+      }
+      if (!readyRef.current) return;
 
-    async function setup() {
-      setLoading(true);
-      setError('');
+      if (message.type === 'service-error') {
+        setServiceError(typeof message.message === 'string' ? message.message : 'The central map service is unavailable.');
+        return;
+      }
+      if (message.type === 'location-changed') {
+        callbacksRef.current.onLocationChange?.();
+        return;
+      }
+      if (message.type === 'location-selected') {
+        const requestId = typeof message.requestId === 'string' ? message.requestId : '';
+        const address = parseAddress(message.address);
+        if (!requestId || !address) {
+          iframeRef.current?.contentWindow?.postMessage({
+            source: 'web2table-storefront',
+            type: 'location-selection-result',
+            requestId,
+            ok: false,
+            error: 'The map returned an invalid address. Please select the location again.',
+          }, service.origin);
+          return;
+        }
 
-      try {
-        const token = String(import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN ?? '').trim();
-        if (!token.startsWith('pk.')) throw new Error('Mapbox needs a public browser token beginning pk. Configure VITE_MAPBOX_PUBLIC_TOKEN; secret sk. tokens must never be used in browser apps.');
-        if (!mapContainerRef.current || cancelled) return;
-
-        const defaultCenter: [number, number] = Number.isFinite(initialLatitude) && Number.isFinite(initialLongitude)
-          ? [Number(initialLongitude), Number(initialLatitude)]
-          : [120.9780, 14.6760];
-
-        const map = new mapboxgl.Map({
-          accessToken: token,
-          container: mapContainerRef.current,
-          style: 'mapbox://styles/mapbox/standard',
-          center: defaultCenter,
-          zoom: Number.isFinite(initialLatitude) && Number.isFinite(initialLongitude) ? 16 : 13,
-          attributionControl: true,
-          dragRotate: false,
+        void Promise.resolve(callbacksRef.current.onSelect(address)).then(() => {
+          iframeRef.current?.contentWindow?.postMessage({
+            source: 'web2table-storefront',
+            type: 'location-selection-result',
+            requestId,
+            ok: true,
+          }, service.origin);
+        }).catch((error: unknown) => {
+          iframeRef.current?.contentWindow?.postMessage({
+            source: 'web2table-storefront',
+            type: 'location-selection-result',
+            requestId,
+            ok: false,
+            error: error instanceof Error ? error.message : 'Unable to save the selected location.',
+          }, service.origin);
         });
-
-        const marker = new mapboxgl.Marker({ draggable: true })
-          .setLngLat(defaultCenter)
-          .addTo(map);
-
-        mapRef.current = map;
-        markerRef.current = marker;
-
-        marker.on('dragend', () => {
-          const position = marker.getLngLat();
-          setSelectedLocation({ lat: position.lat, lng: position.lng });
-        });
-
-        map.on('click', (event) => {
-          setSelectedLocation({ lat: event.lngLat.lat, lng: event.lngLat.lng });
-        });
-
-        map.on('error', (event) => {
-          console.error('Mapbox map error', event.error);
-        });
-      } catch (setupError) {
-        console.error('Unable to initialize Mapbox delivery map.', setupError);
-        setError(setupError instanceof Error ? setupError.message : 'Mapbox is unavailable.');
-      } finally {
-        if (!cancelled) setLoading(false);
       }
     }
 
-    void setup();
-
+    window.addEventListener('message', handleMessage);
     return () => {
-      cancelled = true;
-      mapRef.current?.remove();
-      mapRef.current = null;
-      markerRef.current = null;
+      window.removeEventListener('message', handleMessage);
+      readyRef.current = false;
     };
+    // The message listener is stable for the lifetime of the iframe; callbacks are read from callbacksRef.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function searchAddresses() {
-    const query = searchQuery.trim();
-    if (!query || searching || disabled) return;
-
-    setSearching(true);
-    setError('');
-    setSearchResults([]);
-
-    try {
-      const results = await searchMapboxAddresses(query);
-      setSearchResults(results);
-      if (!results.length) setError('No matching address was found. Try a more complete address or move the pin manually.');
-    } catch (searchError) {
-      console.error('Unable to search Mapbox addresses.', searchError);
-      setError(searchError instanceof Error ? searchError.message : 'We could not search that address right now.');
-    } finally {
-      setSearching(false);
-    }
-  }
-
-  function selectSearchResult(feature: MapboxLocationFeature) {
-    const address = toAddress(feature);
-    if (!address || address.latitude === null || address.longitude === null) {
-      setError('Mapbox did not return an exact map location for that address.');
-      return;
-    }
-
-    setSelectedLocation(
-      { lat: address.latitude, lng: address.longitude },
-      address,
-    );
-    mapRef.current?.setZoom(17);
-    setSearchResults([]);
-    setSearchQuery(address.formattedAddress || address.address);
-    setError('');
-  }
-
-  function useCurrentLocation() {
-    if (!navigator.geolocation) {
-      setError('Your browser does not provide location services. Search your address or move the pin manually.');
-      return;
-    }
-
-    setLocating(true);
-    setError('');
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setSelectedLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
-        setLocating(false);
-      },
-      (locationError) => {
-        console.error('Unable to read the customer location.', locationError);
-        setLocating(false);
-        setError('We could not access your current location. Please allow location access or move the pin manually.');
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
-    );
-  }
-
-  async function confirmLocation() {
-    const current = selectedAddressRef.current;
-    if (!current || current.latitude === null || current.longitude === null) return;
-
-    setConfirming(true);
-    setError('');
-
-    try {
-      let nextAddress = current;
-
-      if (!current.formattedAddress || !current.city || !current.barangay) {
-        const feature = await reverseMapboxLocation(current.latitude, current.longitude);
-        const reversed = feature ? toAddress(feature) : null;
-        if (reversed) {
-          nextAddress = {
-            ...reversed,
-            latitude: current.latitude,
-            longitude: current.longitude,
-          };
-          setSelectedAddress(nextAddress);
-          setSearchQuery(nextAddress.formattedAddress || nextAddress.address);
-        }
-      }
-
-      await onSelect(nextAddress);
-      setLocationConfirmed(true);
-    } catch (confirmationError) {
-      console.error('Unable to confirm Mapbox delivery location.', confirmationError);
-      setError(confirmationError instanceof Error ? confirmationError.message : 'We could not confirm this location. Please try again.');
-      setLocationConfirmed(false);
-    } finally {
-      setConfirming(false);
-    }
-  }
+  useEffect(() => {
+    if (readyRef.current) sendInit();
+    // Forward relevant settings without reloading the shared iframe or losing its selected location.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [disabled, variant, initialLatitude, initialLongitude]);
 
   return (
-    <div className="delivery-location-picker">
-      <p className="checkout-hint">
-        {variant === 'restaurant'
-          ? 'Search the restaurant address or move the pin to the exact restaurant location.'
-          : 'Search your address, use your current location, or move the pin to the exact place where you want the order delivered.'}
-      </p>
-
-      <div className="delivery-location-search">
-        <div className="delivery-location-search-row">
-          <input
-            className="delivery-location-search-input"
-            type="search"
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault();
-                void searchAddresses();
-              }
-            }}
-            placeholder={variant === 'restaurant' ? 'Search the restaurant address' : 'Search your delivery address'}
-            disabled={disabled || loading || searching}
-            aria-label={variant === 'restaurant' ? 'Search the restaurant address' : 'Search your delivery address'}
-          />
-          <button
-            className="button button-secondary restaurant-compact-action"
-            type="button"
-            onClick={() => void searchAddresses()}
-            disabled={disabled || loading || searching || !searchQuery.trim()}
-          >
-            {searching ? 'Searching…' : 'Search'}
-          </button>
-        </div>
-
-        {searchResults.length > 0 && (
-          <div className="delivery-location-search-results" role="listbox" aria-label="Mapbox address results">
-            {searchResults.map((result, index) => {
-              const properties = result.properties ?? {};
-              return (
-                <button
-                  key={properties.mapbox_id || result.id || `result-${index}`}
-                  className="delivery-location-search-result"
-                  type="button"
-                  onClick={() => selectSearchResult(result)}
-                >
-                  {properties.full_address || [properties.name, properties.place_formatted].filter(Boolean).join(', ') || 'Mapbox location'}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      <div className="delivery-location-map" ref={mapContainerRef} aria-label="Delivery location map" />
-
-      <div className="delivery-location-map-actions">
-        <button className="button button-secondary restaurant-compact-action" type="button" onClick={useCurrentLocation} disabled={disabled || loading || locating}>
-          {locating ? 'Finding your location…' : 'Use my current location'}
-        </button>
-        <span>{variant === 'restaurant' ? 'Move the pin or tap the map to set the restaurant location.' : 'Drag the pin or tap the map to adjust it.'}</span>
-      </div>
-
-      {selectedAddress && (
-        <div className="delivery-location-confirmation">
-          <strong>
-            {locationConfirmed
-              ? (variant === 'restaurant' ? 'Restaurant location confirmed' : 'Delivery location confirmed')
-              : (variant === 'restaurant' ? 'Confirm restaurant location' : 'Confirm your delivery location')}
-          </strong>
-          <span>{selectedAddress.formattedAddress || selectedAddress.address || 'Exact map location selected. Confirm the location to read the address.'}</span>
-          {(selectedAddress.city || selectedAddress.barangay) && (
-            <small>{selectedAddress.city}{selectedAddress.barangay ? `, ${selectedAddress.barangay}` : ''}</small>
-          )}
-          <button
-            className="button button-primary"
-            type="button"
-            onClick={() => void confirmLocation()}
-            disabled={disabled || locationConfirmed || confirming}
-          >
-            {locationConfirmed
-              ? (variant === 'restaurant' ? 'Restaurant Location Confirmed' : 'Location Confirmed')
-              : confirming
-                ? 'Confirming Location…'
-                : (variant === 'restaurant' ? 'Confirm Restaurant Location' : 'Confirm Location')}
-          </button>
-        </div>
-      )}
-
-      {error && <p className="checkout-error" role="alert">{error}</p>}
+    <div className="mapbox-central-service">
+      <iframe
+        ref={iframeRef}
+        className="mapbox-central-frame"
+        src={service.href}
+        title={variant === 'restaurant' ? 'Restaurant map location' : 'Delivery address map'}
+        loading="eager"
+        allow="geolocation"
+        referrerPolicy="strict-origin-when-cross-origin"
+        onLoad={sendInit}
+        onError={() => setServiceError('The central map service could not be loaded. Please try again later.')}
+      />
+      {serviceError && <p className="checkout-error" role="alert">{serviceError}</p>}
     </div>
   );
 }
