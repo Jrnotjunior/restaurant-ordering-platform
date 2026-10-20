@@ -52,8 +52,10 @@ CREATE POLICY "System admins can view audit logs"
 ON public.system_admin_audit_logs FOR SELECT TO authenticated
 USING (public.system_admin_has_access());
 
--- Remove the older profile RPC overload that returns/accepts a single name.
+-- Remove the old profile RPC overloads before changing the result contract.
+-- PostgreSQL cannot replace a function with a different RETURNS TABLE signature.
 DROP FUNCTION IF EXISTS public.upsert_customer_profile(uuid, text, text);
+DROP FUNCTION IF EXISTS public.upsert_customer_profile(uuid, text, text, text);
 
 CREATE OR REPLACE FUNCTION public.system_admin_write_audit_log(p_event_type text, p_action text, p_restaurant_id uuid DEFAULT NULL::uuid, p_entity_type text DEFAULT NULL::text, p_entity_id uuid DEFAULT NULL::uuid, p_details jsonb DEFAULT '{}'::jsonb)
  RETURNS uuid
