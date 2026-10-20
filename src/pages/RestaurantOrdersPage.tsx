@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { getRestaurantOrders, updateOrderStatus, sendOrderToKitchen, cancelRestaurantOrder, type RestaurantOrder, type RestaurantOrderStatus } from '../modules/ordering/orderService';
+import { getRestaurantOrders, getRestaurantFailedRefunds, updateOrderStatus, sendOrderToKitchen, cancelRestaurantOrder, type FailedRefundOrder, type RestaurantOrder, type RestaurantOrderStatus } from '../modules/ordering/orderService';
 import { getKitchenOrders, updateKitchenOrderStatus } from '../modules/kitchen/kitchenService';
 import { confirmPosCashPayment } from '../modules/pos/posService';
 import { supabase } from '../services/supabaseClient';
@@ -79,6 +79,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
   const isCashier = role === 'cashier';
   const isKitchen = role === 'kitchen';
   const [orders, setOrders] = useState<RestaurantOrder[]>([]);
+  const [failedRefunds, setFailedRefunds] = useState<FailedRefundOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [updating, setUpdating] = useState<string | null>(null);
@@ -103,8 +104,17 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
       const data = isKitchen
         ? await getKitchenOrders(restaurantId, targetBranchId)
         : await getRestaurantOrders(restaurantId, targetBranchId);
+      let failedRefundRows: FailedRefundOrder[] = [];
+      if (!isKitchen) {
+        try {
+          failedRefundRows = await getRestaurantFailedRefunds(restaurantId, targetBranchId);
+        } catch (refundError) {
+          console.error('Unable to load failed PayMongo refunds.', refundError);
+        }
+      }
       if (requestId !== orderLoadSequence.current || targetBranchId !== branchIdRef.current) return;
       setOrders(data);
+      setFailedRefunds(failedRefundRows);
     } catch (err) {
       if (requestId === orderLoadSequence.current && targetBranchId === branchIdRef.current) {
         setError(err instanceof Error ? err.message : 'Unable to load orders.');
@@ -123,6 +133,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
     if (branchesError || !branchId) {
       orderLoadSequence.current += 1;
       setOrders([]);
+      setFailedRefunds([]);
       setLoading(false);
       if (branchesError) setError(branchesError);
       return () => { cancelled = true; };
@@ -260,11 +271,40 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
       setOrders((current) =>
         current.map((item) => (item.orderId === order.orderId ? { ...item, status: 'cancelled' } : item)),
       );
+      if (result.refundStatus === 'failed') {
+        const failed = await getRestaurantFailedRefunds(restaurantId, branchIdRef.current).catch(() => []);
+        setFailedRefunds(failed);
+      }
       setCancelConfirmationOrder(null);
       setSelectedOrder(null);
       setError(result.message);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to update order.');
+    } finally {
+      setUpdating(null);
+    }
+  }
+
+  async function retryFailedRefund(refund: FailedRefundOrder) {
+    if (role !== 'owner' && role !== 'cashier') return;
+    const approved = window.confirm(
+      `Retry the PayMongo refund for ${refund.orderNumber} (₱${refund.total.toFixed(2)})? This will verify the original paid transaction and submit the same idempotent refund request. Do not retry if you already issued a separate manual refund in PayMongo.`,
+    );
+    if (!approved) return;
+
+    try {
+      setError('');
+      setUpdating(refund.orderId);
+      const result = await cancelRestaurantOrder(refund.orderId, true);
+      if (result.refundStatus !== 'failed') {
+        setFailedRefunds((current) => current.filter((item) => item.orderId !== refund.orderId));
+      } else {
+        const failed = await getRestaurantFailedRefunds(restaurantId, branchIdRef.current).catch(() => failedRefunds);
+        setFailedRefunds(failed);
+      }
+      setError(result.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to retry the PayMongo refund.');
     } finally {
       setUpdating(null);
     }
@@ -389,6 +429,39 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
         : <BranchSelector branches={branches} selectedBranch={selectedBranch} onSelect={(id) => { selectBranch(id); closeOrderList(); }} />}
 
       {error && <div className="restaurant-orders-error" role="alert">{error}</div>}
+
+      {!isKitchen && failedRefunds.length > 0 && (
+        <section
+          aria-label="Failed PayMongo refunds"
+          style={{ border: '1px solid #fca5a5', background: '#fff7f7', borderRadius: 12, padding: 14, marginBottom: 16 }}
+        >
+          <strong style={{ color: '#991b1b' }}>Cancelled orders with failed refunds</strong>
+          <p style={{ margin: '6px 0 12px', color: '#7f1d1d', fontSize: 13 }}>
+            These payments were received but their automatic refunds failed. Retrying verifies the original transaction and uses the same idempotency key. Do not retry here if you already issued a separate manual refund in PayMongo.
+          </p>
+          <div style={{ display: 'grid', gap: 10 }}>
+            {failedRefunds.map((refund) => (
+              <div
+                key={refund.orderId}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', borderTop: '1px solid #fecaca', paddingTop: 10 }}
+              >
+                <div style={{ minWidth: 0, flex: '1 1 280px' }}>
+                  <strong>{refund.orderNumber} · ₱{refund.total.toFixed(2)}</strong>
+                  <div style={{ fontSize: 12, color: '#7f1d1d', marginTop: 3 }}>{refund.refundError}</div>
+                </div>
+                <button
+                  className="button button-secondary"
+                  type="button"
+                  disabled={updating === refund.orderId}
+                  onClick={() => void retryFailedRefund(refund)}
+                >
+                  {updating === refund.orderId ? 'Retrying refund…' : 'Retry refund'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {loading ? (
         <div className="restaurant-orders-empty">Loading orders…</div>
