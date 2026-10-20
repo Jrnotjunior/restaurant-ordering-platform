@@ -102,7 +102,7 @@ function AppContent() {
     const hashRoute = normalizeHashRoute(window.location.hash || '');
     if (hashRoute) return hashRoute;
     // Support direct visits and refreshes on legacy public routes such as /signup.
-    const pathname = window.location.pathname.replace(/\\/+$/, '') || '/';
+    const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
     const legacyRoutes: Record<string, string> = {
       '/signup': '#signup',
       '/account': '#account',
@@ -196,7 +196,7 @@ function AppContent() {
 
     // Convert legacy path URLs to the app's hash routes before the host serves
     // a 404. Preserve deployment base paths and query parameters.
-    const pathname = window.location.pathname.replace(/\\/+$/, '') || '/';
+    const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
     const legacyRoutes: Record<string, string> = {
       '/signup': '#signup',
       '/account': '#account',
@@ -208,7 +208,7 @@ function AppContent() {
     };
     const legacyHash = legacyRoutes[pathname];
     if (!window.location.hash && legacyHash) {
-      const basePath = import.meta.env.BASE_URL.replace(/\\/$/, '') || '';
+      const basePath = import.meta.env.BASE_URL.replace(/\/$/, '') || '';
       const destination = `${basePath}/${window.location.search}${legacyHash}`;
       window.history.replaceState(null, '', destination);
       setRoute(legacyHash);
