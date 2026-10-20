@@ -308,6 +308,21 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
         .restaurant-menu-section-header p{margin:0;color:#64748b}
         .restaurant-menu-add-button{min-height:42px;white-space:nowrap;flex-shrink:0}
         .restaurant-menu-management-card{border:1px solid #e1e5eb;border-radius:14px;padding:20px;margin-top:0;background:#fff}
+        .restaurant-branch-catalog-toolbar{display:grid;grid-template-columns:minmax(220px,300px) minmax(0,1fr);align-items:end;gap:12px;padding:14px;margin-top:14px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc}
+        .restaurant-branch-catalog-toolbar label{display:grid;gap:6px;color:#334155;font-size:12px;font-weight:750}
+        .restaurant-branch-catalog-toolbar select{min-height:40px;width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;color:#0f172a;font:inherit}
+        .restaurant-branch-catalog-toolbar p{margin:0;color:#64748b;font-size:12px;line-height:1.5}
+        .restaurant-branch-catalog-loading{grid-column:1/-1;color:#64748b;font-size:12px}
+        .restaurant-branch-product-settings{display:grid;gap:9px;padding:12px;margin-top:12px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc}
+        .restaurant-branch-product-settings-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#334155;font-size:12px}
+        .restaurant-branch-product-settings-heading span{color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:.06em;font-weight:750}
+        .restaurant-branch-product-availability{display:flex;align-items:flex-start;gap:8px;color:#334155;font-size:12px;line-height:1.4}
+        .restaurant-branch-product-availability input{margin:2px 0 0;accent-color:#0f766e}
+        .restaurant-branch-product-price{display:grid;gap:5px;color:#475569;font-size:11px;font-weight:700}
+        .restaurant-branch-product-price input{width:100%;min-width:0;box-sizing:border-box;min-height:36px;padding:7px 9px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#0f172a;font:inherit;font-size:13px}
+        .restaurant-branch-product-effective-price{color:#475569;font-size:12px}
+        .restaurant-branch-product-save{justify-self:start;min-height:34px;padding:6px 10px;font-size:11px}
+        @media(max-width:700px){.restaurant-branch-catalog-toolbar{grid-template-columns:1fr;align-items:stretch}}
         .restaurant-menu-management-card .restaurant-menu-search{margin-top:18px}
         .restaurant-menu-card-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px}
         .restaurant-menu-card-actions .button{min-height:38px}
@@ -345,6 +360,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
       `}</style>
 
       {error && <div className="restaurant-dashboard-error" role="alert">{error}</div>}
+      {branchSettingsMessage && <div className="restaurant-dashboard-success" role="status">{branchSettingsMessage}</div>}
 
       <div className="restaurant-menu-management-card">
         <div className="restaurant-menu-section-header">
@@ -353,6 +369,28 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
             <p>Manage the products customers can order from your restaurant.</p>
           </div>
           <button className="button restaurant-menu-add-button restaurant-compact-action" type="button" onClick={openAdd} disabled={loading}>+ Add Product</button>
+        </div>
+
+        <div className="restaurant-branch-catalog-toolbar">
+          <label>
+            <span>Branch storefront</span>
+            <select
+              value={selectedBranchId}
+              onChange={(event) => {
+                setBranchDrafts({});
+                setSelectedBranchId(event.target.value);
+              }}
+              disabled={loading || branchSettingsLoading || branches.length === 0}
+            >
+              {branches.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name}{branch.is_default ? ' · Default' : ''}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p>Control which catalog products this branch can sell and set an optional branch-specific price. Leave the price blank to use the shared catalog price.</p>
+          {branchSettingsLoading ? <span className="restaurant-branch-catalog-loading">Loading branch settings…</span> : null}
         </div>
 
         <div className="restaurant-menu-search">
@@ -407,8 +445,48 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
                   </div>
                 </div>
                 <div className="restaurant-management-product-status">
-                  {product.isAvailable ? 'Available' : 'Unavailable'}
+                  {product.isAvailable ? 'Available in catalog' : 'Unavailable in catalog'}
                 </div>
+                {selectedBranchId ? (
+                  <div className="restaurant-branch-product-settings">
+                    <div className="restaurant-branch-product-settings-heading">
+                      <strong>{branches.find((branch) => branch.id === selectedBranchId)?.name ?? 'Selected branch'}</strong>
+                      <span>Branch settings</span>
+                    </div>
+                    <label className="restaurant-branch-product-availability">
+                      <input
+                        type="checkbox"
+                        checked={product.isAvailable && getBranchDraft(product).isAvailable}
+                        disabled={!product.isAvailable || branchSettingsLoading || branchSavingId === product.id}
+                        onChange={(event) => updateBranchDraft(product.id, { isAvailable: event.target.checked })}
+                      />
+                      <span>{!product.isAvailable ? 'Enable the product in the shared catalog first' : getBranchDraft(product).isAvailable ? 'Available on this branch website' : 'Hidden from this branch website'}</span>
+                    </label>
+                    <label className="restaurant-branch-product-price">
+                      <span>Branch price (₱)</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={getBranchDraft(product).priceOverride}
+                        placeholder={'Catalog price ₱' + product.price.toFixed(2)}
+                        disabled={branchSettingsLoading || branchSavingId === product.id}
+                        onChange={(event) => updateBranchDraft(product.id, { priceOverride: event.target.value })}
+                      />
+                    </label>
+                    <div className="restaurant-branch-product-effective-price">
+                      Website price: <strong>₱{(getBranchDraft(product).priceOverride.trim() === '' ? product.price : Number(getBranchDraft(product).priceOverride) || 0).toFixed(2)}</strong>
+                    </div>
+                    <button
+                      className="button button-secondary restaurant-branch-product-save"
+                      type="button"
+                      disabled={branchSettingsLoading || branchSavingId === product.id}
+                      onClick={() => void saveBranchProduct(product)}
+                    >
+                      {branchSavingId === product.id ? 'Saving…' : 'Save branch settings'}
+                    </button>
+                  </div>
+                ) : null}
                 <div className="restaurant-management-product-actions">
                   <button className="button restaurant-management-product-icon" type="button" disabled={savingId === product.id} onClick={() => void toggleAvailability(product)} aria-label={product.isAvailable ? `Mark ${product.name} unavailable` : `Make ${product.name} available`}>
                     {savingId === product.id ? '…' : product.isAvailable ? '−' : '+'}
