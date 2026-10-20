@@ -32,7 +32,7 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
     setLoading(true);
     setError('');
 
-    getMenu(restaurant.id, true)
+    getMenu(restaurant.id, true, restaurant.storefrontBranchId)
       .then((menu) => {
         if (cancelled) return;
         setCategories(menu.categories);
@@ -62,12 +62,12 @@ export function MenuPage({ onAddToCart, cartCount }: MenuPageProps) {
           setProducts(menu.products);
         })
         .catch((loadError: unknown) => console.error('Unable to refresh menu availability.', loadError));
-    });
+    }, restaurant.storefrontBranchId);
 
     return () => {
       unsubscribe?.();
     };
-  }, [restaurant.id]);
+  }, [restaurant.id, restaurant.storefrontBranchId]);
 
   useEffect(() => {
     function handleOutsideClick(event: MouseEvent) {
