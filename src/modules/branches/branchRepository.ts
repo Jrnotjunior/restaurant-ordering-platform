@@ -53,7 +53,7 @@ function normalizeDraft(draft: RestaurantBranchDraft) {
   return {
     branch_code: draft.branch_code.trim().toUpperCase(),
     name: draft.name.trim(),
-    custom_domain: draft.custom_domain.trim().toLowerCase().replace(/\\.$/, '') || null,
+    custom_domain: draft.custom_domain.trim().toLowerCase() || null,
     store_address: draft.store_address.trim() || null,
     restaurant_address: draft.restaurant_address.trim() || null,
     contact_number: draft.contact_number.trim() || null,
