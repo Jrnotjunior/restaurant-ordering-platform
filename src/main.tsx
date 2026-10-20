@@ -7,6 +7,7 @@ import './styles/restaurant-orders.css';
 import './styles/restaurant-menu.css';
 import './styles/restaurant-sales.css';
 import './styles/restaurant-auth.css';
+import './styles/tenant-auth.css';
 import './styles/restaurant-navigation.css';
 import './styles/restaurant-employees.css';
 import './styles/restaurant-employee-invite.css';
