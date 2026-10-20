@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import { getRestaurantSales } from '../modules/sales/salesService';
+import { getRecordedReportDiscountTotal } from '../modules/sales/reportCalculations';
 import type { RestaurantOrder } from '../modules/ordering/orderService';
 import { supabase } from '../services/supabaseClient';
 
@@ -124,7 +125,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
   const completedOrders = useMemo(() => rangeOrders.filter((order) => order.status === 'completed'), [rangeOrders]);
   const rangeExpenses = useMemo(() => expenses.filter((expense) => expense.expense_date >= fromDate && expense.expense_date <= toDate), [expenses, fromDate, toDate]);
   const totalSales = completedOrders.reduce((sum, order) => sum + order.total, 0);
-  const discounts = completedOrders.reduce((sum, order) => sum + (order.discountAmount ?? 0) + (order.loyaltyDiscountAmount ?? 0), 0);
+  const discounts = completedOrders.reduce((sum, order) => sum + getRecordedReportDiscountTotal(order), 0);
   const taxSales = completedOrders.reduce((sum, order) => sum + (order.taxNetSales ?? 0), 0);
   const outputVat = completedOrders.reduce((sum, order) => sum + (order.taxVatAmount ?? 0), 0);
   const totalExpenses = rangeExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
@@ -184,7 +185,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
   function exportSales() {
     downloadSpreadsheet(`sales-report-${fromDate}-to-${toDate}.xlsx`, [
       ['Order number','Order date','Status','Order type','Payment method','Payment status','Order total PHP','Discounts PHP','Net sales per order record PHP','Taxable sales PHP','VAT amount PHP','VAT-exempt sales PHP','VAT registered on order'],
-      ...rangeOrders.map((order) => [order.orderNumber, order.createdAt, order.status, order.orderType, order.paymentMethod, order.paymentStatus, order.total, (order.discountAmount ?? 0) + (order.loyaltyDiscountAmount ?? 0), order.taxNetSales ?? '', order.taxVatableSales ?? '', order.taxVatAmount ?? '', order.taxVatExemptSales ?? '', order.taxVatRegistered ? 'Yes' : 'No']),
+      ...rangeOrders.map((order) => [order.orderNumber, order.createdAt, order.status, order.orderType, order.paymentMethod, order.paymentStatus, order.total, getRecordedReportDiscountTotal(order), order.taxNetSales ?? '', order.taxVatableSales ?? '', order.taxVatAmount ?? '', order.taxVatExemptSales ?? '', order.taxVatRegistered ? 'Yes' : 'No']),
     ]);
   }
 
@@ -196,7 +197,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
       ['Note','Values are exported from recorded order tax fields; consult an accountant and verify current BIR requirements. Missing tax fields are left blank rather than estimated.'],
       [],
       ['Order number','Transaction date','Order status','Payment status','Gross order amount PHP','Discount amount PHP','Recorded net sales PHP','Recorded vatable sales PHP','Recorded VAT amount PHP','Recorded VAT-exempt sales PHP','VAT registered on order'],
-      ...rangeOrders.map((order) => [order.orderNumber, order.createdAt, order.status, order.paymentStatus, order.total, (order.discountAmount ?? 0) + (order.loyaltyDiscountAmount ?? 0), order.taxNetSales ?? '', order.taxVatableSales ?? '', order.taxVatAmount ?? '', order.taxVatExemptSales ?? '', order.taxVatRegistered ? 'Yes' : 'No']),
+      ...rangeOrders.map((order) => [order.orderNumber, order.createdAt, order.status, order.paymentStatus, order.total, getRecordedReportDiscountTotal(order), order.taxNetSales ?? '', order.taxVatableSales ?? '', order.taxVatAmount ?? '', order.taxVatExemptSales ?? '', order.taxVatRegistered ? 'Yes' : 'No']),
       [],
       ['Completed orders in period', completedOrders.length], ['Completed order totals PHP', totalSales],
       ['Recorded net sales total PHP', completedOrders.reduce((sum, order) => sum + (order.taxNetSales ?? 0), 0)],
