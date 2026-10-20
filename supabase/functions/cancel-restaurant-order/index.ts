@@ -10,22 +10,25 @@ Deno.serve(async req=>{
   if(!token||!url||!anon||!key)return out({error:"Please sign in again."},401);
   const user=createClient(url,anon,{global:{headers:{Authorization:"Bearer "+token}},auth:{autoRefreshToken:false,persistSession:false}});
   const {data:u,error:ue}=await user.auth.getUser(token);if(ue||!u.user)return out({error:"Your session has expired."},401);
-  const body=await req.json().catch(()=>({})),id=String(body.orderId??"").trim();
+  const body=await req.json().catch(()=>({})),id=String(body.orderId??"").trim(),retryRefund=body.retryRefund===true;
   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id))return out({error:"A valid order is required."},400);
   const db=createClient(url,key,{auth:{autoRefreshToken:false,persistSession:false}});
-  const {data:o,error:oe}=await db.from("orders").select("id,restaurant_id,status,payment_status,paymongo_payment_id,order_number").eq("id",id).maybeSingle();if(oe)throw oe;if(!o)return out({error:"Order not found."},404);
+  const {data:o,error:oe}=await db.from("orders").select("id,restaurant_id,status,payment_status,paymongo_payment_id,paymongo_refund_id,cancellation_refund_status,order_number").eq("id",id).maybeSingle();if(oe)throw oe;if(!o)return out({error:"Order not found."},404);
   const {data:rest,error:re}=await db.from("restaurants").select("owner_id").eq("id",o.restaurant_id).maybeSingle();if(re)throw re;
   let ok=rest?.owner_id===u.user.id;
   if(!ok){const {data:staff,error:se}=await db.from("restaurant_staff").select("role").eq("restaurant_id",o.restaurant_id).eq("auth_user_id",u.user.id).eq("is_active",true).eq("role","cashier").maybeSingle();if(se)throw se;ok=!!staff}
   if(!ok)return out({error:"Only the restaurant owner or an active cashier can cancel orders."},403);
-  if(o.status!=="pending")return out({error:"This order can only be cancelled before it is confirmed or sent to the kitchen."},409);
+  const canRetryFailedRefund=retryRefund&&o.status==="cancelled"&&o.payment_status==="paid"&&!!String(o.paymongo_payment_id??"").trim()&&o.cancellation_refund_status==="failed"&&!String(o.paymongo_refund_id??"").trim();
+  if(o.status!=="pending"&&!canRetryFailedRefund)return out({error:"This order can only be cancelled before it is confirmed or sent to the kitchen. Only a cancelled order with a failed, unissued refund can be retried."},409);
   const paid=o.payment_status==="paid"&&!!String(o.paymongo_payment_id??"").trim();
   if(o.payment_status==="paid"&&!paid)return out({error:"Missing PayMongo payment reference. Contact support for refund assistance."},409);
   if(!["pending","paid"].includes(o.payment_status))return out({error:"This payment is not eligible for cancellation."},409);
-  const initial=paid?"pending":"not_required";
-  const {data:changed,error:ce}=await db.from("orders").update({status:"cancelled",cancellation_refund_status:initial,cancellation_refund_error:null,updated_at:new Date().toISOString()}).eq("id",id).eq("restaurant_id",o.restaurant_id).eq("status","pending").select("id").maybeSingle();
-  if(ce)throw ce;if(!changed)return out({error:"Order status changed. Refresh and check its current status."},409);
-  if(!paid)return out({cancelled:true,refundStatus:"not_required",message:"Order cancelled. No online refund was needed."});
+  if(!canRetryFailedRefund){
+    const initial=paid?"pending":"not_required";
+    const {data:changed,error:ce}=await db.from("orders").update({status:"cancelled",cancellation_refund_status:initial,cancellation_refund_error:null,updated_at:new Date().toISOString()}).eq("id",id).eq("restaurant_id",o.restaurant_id).eq("status","pending").select("id").maybeSingle();
+    if(ce)throw ce;if(!changed)return out({error:"Order status changed. Refresh and check its current status."},409);
+    if(!paid)return out({cancelled:true,refundStatus:"not_required",message:"Order cancelled. No online refund was needed."});
+  }
   // Resolve the PayMongo environment for this restaurant before issuing a refund.
   // Refunds use the stored PayMongo payment ID, regardless of whether the customer used
   // GrabPay, Maya, GCash, cards, or another supported PayMongo payment method.
@@ -34,7 +37,7 @@ Deno.serve(async req=>{
   let env:"test"|"live" = configuredEnv==="live" || configuredEnv==="test"
     ? configuredEnv
     : legacyKey.startsWith("sk_live_") ? "live" : "test";
-  let {data:conn,error:co}=await db.from("restaurant_paymongo_accounts").select("paymongo_account_id,connection_status,environment,onboarding_step").eq("restaurant_id",o.restaurant_id).eq("environment",env).maybeSingle();
+  let {data:conn,error:co}=await db.from("restaurant_paymongo_accounts").select("paymongo_account_id,connection_status,environment,onboarding_step,activation_status,webhook_secret_id").eq("restaurant_id",o.restaurant_id).eq("environment",env).maybeSingle();
   if(co)throw co;
   // If environment was not explicitly configured, fall back to the restaurant's active
   // connection instead of accidentally calling the wrong PayMongo environment.
@@ -47,10 +50,11 @@ Deno.serve(async req=>{
   const secret=payKey(env);
   const failed=async(msg:string)=>{await db.from("orders").update({cancellation_refund_status:"failed",cancellation_refund_error:msg.slice(0,500),updated_at:new Date().toISOString()}).eq("id",id);return out({cancelled:true,refundStatus:"failed",message:"Order cancelled, but the automatic refund failed. Please arrange/check the refund in PayMongo."})};
   if(!secret)return await failed("PayMongo secret key is not configured for this environment.");
-  const isTestSimulation=env==="test"&&conn?.onboarding_step==="test_simulation";
-  // Sandbox mock only: exercises Account-ID request handling, not real child routing.
-  const acct=isTestSimulation?"org_test_merchant":String(conn?.paymongo_account_id??"").trim();
-  if(conn&&((!isTestSimulation&&conn.connection_status!=="active")||(isTestSimulation&&conn.connection_status!=="pending")||!acct))return await failed("Restaurant PayMongo account is not active.");
+  const isParentTestSandbox=env==="test"&&conn?.onboarding_step==="test_parent_account"&&conn.connection_status==="pending"&&conn.activation_status==="mock"&&!conn.paymongo_account_id&&!conn.webhook_secret_id;
+  // Parent sandbox checkout has no linked child ID. Never send the fake
+  // org_test_merchant ID for refunds; only a real active connection uses Account-ID.
+  const acct=isParentTestSandbox?"":String(conn?.paymongo_account_id??"").trim();
+  if(!conn||(!isParentTestSandbox&&(conn.connection_status!=="active"||!acct)))return await failed("Restaurant PayMongo account is not active or its test sandbox is not configured.");
   const headers:Record<string,string>={Authorization:"Basic "+btoa(secret+":"),"Content-Type":"application/json",...(acct?{"Account-ID":acct}:{})};
   try{
    await db.from("orders").update({cancellation_refund_status:"processing"}).eq("id",id);
