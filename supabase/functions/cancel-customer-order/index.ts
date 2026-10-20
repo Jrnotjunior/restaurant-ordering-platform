@@ -165,20 +165,25 @@ Deno.serve(async (request) => {
     }
 
     const { data: connection, error: connectionError } = await admin.from("restaurant_paymongo_accounts")
-      .select("paymongo_account_id,connection_status,environment,onboarding_step")
+      .select("paymongo_account_id,connection_status,environment,onboarding_step,activation_status,webhook_secret_id")
       .eq("restaurant_id", order.restaurant_id).eq("environment", environment).maybeSingle();
     if (connectionError) throw connectionError;
-    const isTestSimulation =
+    const isParentTestSandbox =
       environment === "test" &&
-      connection?.onboarding_step === "test_simulation";
-    // Sandbox mock only: exercises Account-ID handling, not real child routing.
-    const accountId = isTestSimulation
-      ? "org_test_merchant"
+      connection?.onboarding_step === "test_parent_account" &&
+      connection.connection_status === "pending" &&
+      connection.activation_status === "mock" &&
+      !connection.paymongo_account_id &&
+      !connection.webhook_secret_id;
+    // Parent-account test sandbox has no linked child ID. Never send the fake
+    // org_test_merchant value as Account-ID; live still requires an active tenant child.
+    const accountId = isParentTestSandbox
+      ? ""
       : String(connection?.paymongo_account_id ?? "").trim();
 
-    if (!connection || (!isTestSimulation && (
+    if (!connection || (!isParentTestSandbox && (
       connection.connection_status !== "active" || !accountId
-    )) || (isTestSimulation && connection.connection_status !== "pending")) {
+    ))) {
       await admin.from("orders").update({
         cancellation_refund_status: "failed",
         cancellation_refund_error: "The restaurant's PayMongo connection is missing or inactive; refund was not sent through an unverified account.",
