@@ -122,6 +122,34 @@ REVOKE ALL ON FUNCTION public.create_restaurant_product(uuid, text, text, numeri
 GRANT EXECUTE ON FUNCTION public.create_restaurant_product(uuid, text, text, numeric, uuid)
   TO authenticated;
 
+-- Preserve the rider-name snapshot trigger and its tenant-bound source lookup.
+CREATE OR REPLACE FUNCTION public.capture_delivery_assignment_rider_name()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $function$
+BEGIN
+  IF NEW.rider_id IS NOT NULL
+     AND (TG_OP = 'INSERT' OR NEW.rider_id IS DISTINCT FROM OLD.rider_id)
+  THEN
+    SELECT s.name
+      INTO NEW.rider_name
+    FROM public.restaurant_staff s
+    WHERE s.id = NEW.rider_id
+      AND s.restaurant_id = NEW.restaurant_id;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
+DROP TRIGGER IF EXISTS capture_delivery_assignment_rider_name_trigger
+  ON public.delivery_assignments;
+CREATE TRIGGER capture_delivery_assignment_rider_name_trigger
+BEFORE INSERT OR UPDATE OF rider_id ON public.delivery_assignments
+FOR EACH ROW
+EXECUTE FUNCTION public.capture_delivery_assignment_rider_name();
+
 -- Trigger functions are invoked by their triggers, not directly through the API.
 -- Pin their search paths and remove direct API execution privileges.
 ALTER FUNCTION public.capture_delivery_assignment_rider_name()
@@ -134,10 +162,17 @@ ALTER FUNCTION public.set_updated_at()
 REVOKE ALL ON FUNCTION public.set_updated_at()
   FROM PUBLIC, anon, authenticated;
 
-ALTER FUNCTION public.update_restaurant_rider_updated_at()
-  SET search_path = public, pg_temp;
-REVOKE ALL ON FUNCTION public.update_restaurant_rider_updated_at()
-  FROM PUBLIC, anon, authenticated;
+-- Older deployments may retain this legacy trigger helper even though the
+-- corresponding restaurant_riders table was retired. Harden it when present;
+-- do not make a clean install depend on an obsolete function.
+DO $migration$
+BEGIN
+  IF to_regprocedure('public.update_restaurant_rider_updated_at()') IS NOT NULL THEN
+    EXECUTE 'ALTER FUNCTION public.update_restaurant_rider_updated_at() SET search_path = public, pg_temp';
+    EXECUTE 'REVOKE ALL ON FUNCTION public.update_restaurant_rider_updated_at() FROM PUBLIC, anon, authenticated';
+  END IF;
+END;
+$migration$;
 
 ALTER FUNCTION public.set_restaurant_website_customization_updated_at()
   SET search_path = public, pg_temp;
