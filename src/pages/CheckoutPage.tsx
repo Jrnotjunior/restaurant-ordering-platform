@@ -62,7 +62,6 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('');
   const [showPayment, setShowPayment] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [showCashReview, setShowCashReview] = useState(false);
   const [showDeliveryTerms, setShowDeliveryTerms] = useState(false);
   const [thirdPartyCourierDelivery, setThirdPartyCourierDelivery] = useState(false);
   const [thirdPartyCourierTermsAccepted, setThirdPartyCourierTermsAccepted] = useState(false);
@@ -829,7 +828,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
               } else {
                 void handlePlaceOrder();
               }
-            }}>{paymentMethod === 'online' ? 'Continue to Online Payment' : ['dine_in', 'take_out'].includes(orderType) ? 'Review Cash Order' : 'Review Cash Order'}</button>
+            }}>{paymentMethod === 'online' ? 'Continue to Online Payment' : 'Place Cash Order'}</button>
           </div>
         </div>
       </div>}
