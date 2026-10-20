@@ -213,8 +213,8 @@ Deno.serve(async (request) => {
           ? "succeeded"
           : refundStatus === "failed"
             ? "failed"
-            : ["pending", "processing"].includes(refundStatus)
-              ? refundStatus
+            : ["pending", "processing", "refunding"].includes(refundStatus)
+              ? "processing"
               : null;
         if (normalizedStatus) {
           const updates: Record<string, unknown> = {
@@ -230,11 +230,11 @@ Deno.serve(async (request) => {
             if (transferLink && normalizedStatus !== "succeeded") {
               updates.paymongo_refund_transfer_link = transferLink;
             }
-            if (normalizedStatus === "succeeded") {
-              updates.paymongo_refund_transfer_link = null;
-            }
           }
-          if (normalizedStatus === "succeeded") updates.payment_status = "refunded";
+          if (normalizedStatus === "succeeded") {
+            updates.payment_status = "refunded";
+            updates.paymongo_refund_transfer_link = null;
+          }
           const { error: refundUpdateError } = await adminClient.from("orders")
             .update(updates)
             .eq("id", matchingOrder.id)
