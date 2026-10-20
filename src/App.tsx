@@ -98,7 +98,22 @@ function PublicCustomerRouteGuard({ children }: { children: ReactNode }) {
 function AppContent() {
   const [restaurant, setRestaurant] = useState<RestaurantConfig>(defaultRestaurant);
   const [restaurantResolved, setRestaurantResolved] = useState(false);
-  const [route, setRoute] = useState(() => normalizeHashRoute(window.location.hash || ''));
+  const [route, setRoute] = useState(() => {
+    const hashRoute = normalizeHashRoute(window.location.hash || '');
+    if (hashRoute) return hashRoute;
+    // Support direct visits and refreshes on legacy public routes such as /signup.
+    const pathname = window.location.pathname.replace(/\\/+$/, '') || '/';
+    const legacyRoutes: Record<string, string> = {
+      '/signup': '#signup',
+      '/account': '#account',
+      '/cart': '#cart',
+      '/checkout': '#checkout',
+      '/order-history': '#order-history',
+      '/saved-address': '#saved-address',
+      '/privacy': '#privacy',
+    };
+    return legacyRoutes[pathname] || '';
+  });
   const { user, loading: authLoading, error: authError } = useRestaurantOwnerAuth();
   useEffect(() => {
     const favicon = restaurant.storefront.faviconUrl?.trim();
@@ -178,6 +193,26 @@ function AppContent() {
     const handleHashChange = () => {
       setRoute(normalizeHashRoute(window.location.hash || ''));
     };
+
+    // Convert legacy path URLs to the app's hash routes before the host serves
+    // a 404. Preserve deployment base paths and query parameters.
+    const pathname = window.location.pathname.replace(/\\/+$/, '') || '/';
+    const legacyRoutes: Record<string, string> = {
+      '/signup': '#signup',
+      '/account': '#account',
+      '/cart': '#cart',
+      '/checkout': '#checkout',
+      '/order-history': '#order-history',
+      '/saved-address': '#saved-address',
+      '/privacy': '#privacy',
+    };
+    const legacyHash = legacyRoutes[pathname];
+    if (!window.location.hash && legacyHash) {
+      const basePath = import.meta.env.BASE_URL.replace(/\\/$/, '') || '';
+      const destination = `${basePath}/${window.location.search}${legacyHash}`;
+      window.history.replaceState(null, '', destination);
+      setRoute(legacyHash);
+    }
 
     window.addEventListener('hashchange', handleHashChange);
 
