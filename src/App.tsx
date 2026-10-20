@@ -532,7 +532,7 @@ function AppContent() {
     )}</OwnerRestaurantGuard>;
   }
 
-  const isPublicMenuView = isMenuPage || (!isCartPage && !isCheckoutPage && !trackingMatch && !trackOrderNumber);
+  const isPublicMenuView = isMenuPage || (!isCartPage && !isCheckoutPage && !trackingMatch && !trackingOrderId);
   const publicPage = <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount} compactPublicChrome>{publicContent}{showStoreClosedModal ? (
     <div className="restaurant-closed-modal-backdrop" role="presentation" onClick={() => setShowStoreClosedModal(false)}>
       <div className="restaurant-closed-modal" role="dialog" aria-modal="true" aria-labelledby="restaurant-closed-modal-title" onClick={(event) => event.stopPropagation()}>
@@ -546,7 +546,7 @@ function AppContent() {
   ) : null}{cartNotification ? <div className="cart-notification" role="status" aria-live="polite"><div className="cart-notification-icon" aria-hidden="true">✓</div><div className="cart-notification-content"><strong>Added to cart</strong><span>{cartNotification}</span></div><a className="cart-notification-link" href={withBasePath('/cart')}>View cart</a><button className="cart-notification-close" type="button" aria-label="Dismiss notification" onClick={dismissCartNotification}>×</button></div> : null}</RestaurantLayout></ThemeProvider></RestaurantProvider>;
   // Order tracking is a public customer page. It must not wait for employee
   // access checks, so navigating from the header never shows an account guard.
-  if (trackOrderNumber || trackingMatch) return publicPage;
+  if (trackingOrderId || trackingMatch) return publicPage;
   return <PublicCustomerRouteGuard>{publicPage}</PublicCustomerRouteGuard>;
 }
 
