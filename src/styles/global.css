@@ -1541,3 +1541,17 @@ textarea {
     min-height: 620px;
   }
 }
+
+/* Storefront loading skeleton: keep product cards hidden until the menu is ready. */
+.menu-loading-skeleton { display: grid; gap: 0.625rem; margin-top: 1rem; }
+.menu-loading-message { color: var(--color-muted, #64748b); font-size: 0.875rem; padding: 0.25rem 0; }
+.menu-skeleton-card { display: grid; grid-template-columns: minmax(88px, 34%) minmax(0, 1fr); gap: 0.625rem; min-height: 118px; padding: 0.25rem; border: 1px solid var(--color-border, #e2e8f0); border-radius: 14px; overflow: hidden; background: var(--color-surface, #fff); }
+.menu-skeleton-image, .menu-skeleton-line { background: linear-gradient(90deg, #edf0f4 25%, #f7f8fa 50%, #edf0f4 75%); background-size: 200% 100%; animation: menu-skeleton-shimmer 1.35s ease-in-out infinite; }
+.menu-skeleton-image { min-height: 108px; border-radius: 10px; }
+.menu-skeleton-details { display: flex; flex-direction: column; justify-content: center; gap: 0.5rem; min-width: 0; padding: 0.375rem; }
+.menu-skeleton-line { display: block; height: 0.625rem; width: 100%; border-radius: 6px; }
+.menu-skeleton-title { width: 88%; height: 0.8rem; }
+.menu-skeleton-price { width: 42%; }
+.menu-skeleton-line-short { width: 68%; }
+@keyframes menu-skeleton-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+@media (prefers-reduced-motion: reduce) { .menu-skeleton-image, .menu-skeleton-line { animation: none; } }
