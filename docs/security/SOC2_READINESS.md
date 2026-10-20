@@ -4,6 +4,34 @@ This is an internal engineering tracker, not a SOC 2 report, certification, or a
 
 ## Current findings
 
+## Security hardening update — 2026-10-21
+
+### Targeted RPC privilege hardening
+- Committed `supabase/migrations/20261020194650_restrict_admin_and_kitchen_rpc_execute.sql` (commit `202f0ef1afd15b19590d752de1a8aa17e76bd0cb`) and applied it to the connected primary Supabase project.
+- Revoked `PUBLIC` and `anon` EXECUTE on `system_admin_get_restaurant_settings(uuid)`, all three observed `system_admin_update_restaurant_settings` overloads, and `send_order_to_kitchen(uuid)`; retained `authenticated` EXECUTE.
+- Live catalogue check after application returned `anon_exec=false` and `public_exec=false` for those signatures, with authenticated execution preserved.
+
+### Dispatch mutation hardening
+- Added `supabase/migrations/20261020195000_secure_dispatch_order_mutations.sql` (commit `e6ffbfcfe2fedb529d89c063c5abcc421f8f96d2`) and applied it to both the isolated Security Test project and the connected primary project.
+- The new `assign_delivery_order` and `complete_dispatch_handoff` SECURITY DEFINER RPCs perform server-side authentication, MFA, tenant/staff-role and order-state checks; assignment writes and order changes occur in one transaction. The RPCs are callable by `authenticated`, not `anon`/`PUBLIC`.
+- Replaced the two direct browser `orders` mutations in `src/modules/dispatch/dispatchRepository.ts` with these RPC calls (commit `959b862667ca2fbe0d1a94ac887eef71e9702631`).
+- Isolated database tests passed for atomic delivery assignment, pickup handoff and rejection of a cross-tenant handoff attempt. Test fixtures were transactional and rolled back. These were direct SQL role-context tests, not a complete browser end-to-end test.
+- The source migration and direct-update revocation were committed before applying the revocation to the primary project.
+
+### Direct order-write privilege removal
+- Committed `supabase/migrations/20261020195500_revoke_direct_orders_update.sql` (commit `95bff2e895478f08d0a97b9a92404b2f463bf6c7`) and applied it to both the isolated Security Test project and the connected primary project.
+- Live verification in the primary project returned `anon UPDATE=false`, `authenticated UPDATE=false`, `service_role UPDATE=true`, `postgres UPDATE=true`; authenticated SELECT remains available. This prevents direct browser roles from changing financial/payment/order-number fields through a generic table update while preserving the explicit service-role path used by server functions.
+- The isolated test project has no direct authenticated table UPDATE grant; the assignment/handoff RPC tests passed under that privilege posture. Primary project direct REST mutation denial was verified via effective privileges, but not yet via a complete browser/PostgREST regression suite.
+- Existing RLS policies are retained. The 10 RLS-enabled tables-with-no-policies finding is not being “fixed” with broad policies: live ACL inspection showed the affected tables had no direct anon/authenticated table grants.
+
+### Outstanding after this update
+- Latest Security Advisor still reports 18 anonymous-callable SECURITY DEFINER signatures, 112 authenticated-callable SECURITY DEFINER signatures, 10 RLS-enabled tables without policies, and leaked-password protection disabled. Each remaining signature requires a per-function access/control review; some anonymous checkout/storefront RPCs are intentionally public and must not be blanket-revoked.
+- Supabase Auth leaked-password protection requires an Auth dashboard/configuration change and validation against passwordless/OAuth flows; it has not been changed.
+- GitHub commit-status queries returned no individual status checks for the recent commits, and the container could not access GitHub to run the build locally. Do not mark the current-main build or deploy as verified until an Actions run is inspected.
+- Full security regression testing, webhook concurrency/retry tests, checkout abuse/rate limits, guest tracking-token replacement, backup/restore evidence and operational SOC 2 evidence remain incomplete.
+- This is security hardening and readiness work only. It is not a SOC 2 report, attestation or certification.
+
+
 ### Customer profile RPC contract
 - Frontend callers in `src/modules/customer/customerAuthService.ts`, `src/pages/RestaurantOwnerLoginPage.tsx`, and `src/pages/CheckoutPage.tsx` call `upsert_customer_profile` with separate first/last-name arguments.
 - Live read-only verification confirmed deployed `upsert_customer_profile(p_restaurant_id uuid, p_first_name text, p_last_name text, p_phone text)` and `get_my_customer_profile_id(p_restaurant_id uuid)`. The deployed upsert checks authentication, tenant context, active restaurant, required names, phone format, and initializes the loyalty account.
