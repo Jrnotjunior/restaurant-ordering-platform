@@ -68,7 +68,7 @@ export function BranchManagementPanel({ restaurantId, refreshToken = 0, onBranch
       return;
     }
     if (!draft.name.trim()) { setError('Enter a branch name.'); return; }
-    const domain = draft.custom_domain.trim().toLowerCase().replace(/\\.$/, '');
+    const domain = draft.custom_domain.trim().toLowerCase();
     if (domain && (!/^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/.test(domain) || domain.includes('..'))) {
       setError('Enter a hostname only, such as north.example.com. Do not include https:// or a path.');
       return;
