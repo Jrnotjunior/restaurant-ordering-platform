@@ -292,6 +292,13 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         @media(prefers-reduced-motion:reduce){.website-customization-notice{animation:none}}
         .website-customization-header{padding:24px;border:1px solid #e1e5eb;border-radius:14px;background:#fff}
         .website-customization-card{padding:24px;border:1px solid #e1e5eb;border-radius:14px;background:#fff}
+        .website-customization-upload-row{display:flex;align-items:center;gap:16px;min-height:100px;box-sizing:border-box;padding:16px 18px;border:1px solid #d9e2ef;border-radius:12px;background:#fff}
+        .website-customization-upload-row .website-customization-logo-preview{width:96px;height:96px;flex:0 0 96px}
+        .website-customization-upload-row .website-customization-logo-button{flex:0 0 auto}
+        .website-customization-upload-heading{margin:0 0 12px;font-size:16px;font-weight:700;line-height:1.35}
+        .website-customization-upload-description{margin:0 0 14px;font-size:14px;line-height:1.5;color:#334155}
+        .website-customization-branding-grid{display:block}
+        @media(max-width:700px){.website-customization-upload-row{gap:12px;padding:12px;min-height:88px}.website-customization-upload-row .website-customization-logo-preview{width:80px;height:80px;flex-basis:80px}}
         .website-customization-live-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid}
         .website-customization-live-brand{display:flex;align-items:center;gap:8px;min-width:0}
         .website-customization-live-brand strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
@@ -545,12 +552,8 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
 
         {activeWebsiteSection === 'branding' ? <div role="tabpanel" id="website-customization-panel-branding" aria-labelledby="website-customization-tab-branding">
         <div className="website-customization-card">
-          <div className="website-customization-section-heading">
-            <div>
-              <h3>Browser tab icon</h3>
-              <p>Choose the small icon customers see in their browser tab.</p>
-            </div>
-          </div>
+          <h3 className="website-customization-upload-heading">Browser tab icon</h3>
+          <p className="website-customization-upload-description">Choose the small icon customers see in their browser tab.</p>
           <RestaurantFaviconSettings
             restaurantId={restaurantId}
             faviconUrl={storefront.faviconUrl}
@@ -559,9 +562,11 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
           />
         </div>
         <div className="website-customization-card">
+          <h3 className="website-customization-upload-heading">Restaurant logo</h3>
+          <p className="website-customization-upload-description">Choose the logo customers see on your restaurant website.</p>
           <div className="website-customization-branding-grid">
             <div>
-              <div className="website-customization-logo-row">
+              <div className="website-customization-logo-row website-customization-upload-row">
                 <div className="website-customization-logo-preview">{logoUrl ? <img src={logoUrl} alt="Restaurant logo" /> : <span>No logo</span>}</div>
                 <label className="button button-secondary website-customization-logo-button restaurant-compact-action">
                   {logoUploading ? 'Uploading…' : 'Choose logo'}
