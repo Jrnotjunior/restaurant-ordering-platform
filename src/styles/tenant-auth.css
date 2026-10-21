@@ -326,3 +326,16 @@
     animation-duration: .01ms !important;
   }
 }
+
+
+/* Center the privacy consent row within the sign-up form. */
+.customer-signup-card .customer-personal-info-consent {
+  width: fit-content;
+  max-width: 100%;
+  align-self: center;
+  justify-content: center;
+  margin-inline: auto;
+}
+.customer-signup-card .customer-personal-info-consent > span {
+  text-align: center;
+}
