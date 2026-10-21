@@ -937,3 +937,10 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
     gap: 12px;
   }
 }
+
+
+/* Customer authentication pages stay in sync with the configured storefront background. */
+.restaurant-owner-auth-page:has(.restaurant-owner-auth-card),
+.restaurant-owner-auth-page:has(.customer-signup-card) {
+  background: var(--color-background, #f8fafc) !important;
+}
