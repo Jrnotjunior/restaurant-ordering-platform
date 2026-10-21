@@ -367,8 +367,8 @@ function AppContent() {
   const isCustomerConfirmationCallback = isCustomerEmailConfirmationPage
     || new URLSearchParams(window.location.search).get('customer-confirmation') === '1';
 
-  if (isCustomerPasswordResetPage) return <CustomerPasswordRecoveryPage mode="reset" />;
-  if (isCustomerForgotPasswordPage) return <CustomerPasswordRecoveryPage mode="request" />;
+  if (isCustomerPasswordResetPage) return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><CustomerPasswordRecoveryPage mode="reset" /></ThemeProvider></RestaurantProvider>;
+  if (isCustomerForgotPasswordPage) return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><CustomerPasswordRecoveryPage mode="request" /></ThemeProvider></RestaurantProvider>;
   if (isSignUpPage) return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><CustomerSignUpPage /></ThemeProvider></RestaurantProvider>;
   if (isCustomerConfirmationCallback) return <CustomerEmailConfirmationPage />;
 
