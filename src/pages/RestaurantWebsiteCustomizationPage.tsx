@@ -505,7 +505,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
 
               <div className="website-customization-live-footer" style={{ backgroundColor: websiteTheme.colors.footer ?? websiteTheme.colors.background, borderTopColor: websiteTheme.colors.border, color: websiteTheme.colors.footerText ?? websiteTheme.colors.muted }}>
                 <section className="website-customization-live-footer-social" aria-label="Follow the restaurant">
-                  <h4 className="website-customization-live-footer-social-heading" style={{ color: websiteTheme.colors.text }}>Follow Us</h4>
+                  <h4 className="website-customization-live-footer-social-heading">Follow Us</h4>
                   <nav className="website-customization-live-footer-socials" aria-label="Social media links">
                     {([
                       ['Facebook', storefront.socialLinks?.facebook, `${import.meta.env.BASE_URL}social-facebook.svg`],
