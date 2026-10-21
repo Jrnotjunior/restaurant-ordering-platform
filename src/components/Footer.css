@@ -140,3 +140,26 @@
     text-align: center;
   }
 }
+
+
+/* Stack the mobile footer attribution beneath the copyright. */
+@media (max-width: 640px) {
+  .site-footer-bottom {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    white-space: normal;
+    text-align: center;
+  }
+  .site-footer-copyright {
+    align-items: center;
+    text-align: center;
+  }
+  .site-footer-powered-by {
+    align-self: center;
+    justify-content: center;
+    text-align: center;
+  }
+}
