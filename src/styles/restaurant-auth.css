@@ -709,7 +709,7 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
 }
 
 .restaurant-owner-auth-card .restaurant-owner-auth-form input::placeholder {
-  color: var(--color-muted, #64748b);
+  color: var(--color-text, #111827);
   opacity: 1;
 }
 
@@ -743,7 +743,7 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   border: 0;
   border-radius: 7px;
   background: transparent;
-  color: var(--color-muted, #64748b);
+  color: var(--color-text, #111827);
   cursor: pointer;
 }
 
@@ -815,7 +815,7 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
 
 .restaurant-owner-auth-card .restaurant-auth-switch {
   margin: 18px 0 0 !important;
-  color: var(--color-muted, #64748b);
+  color: var(--color-text, #111827);
   font-size: 13px;
   line-height: 1.5;
   text-align: center;
@@ -859,7 +859,7 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
 }
 .restaurant-owner-auth-card.customer-signup-card > .eyebrow {
   margin: 0 0 10px;
-  color: var(--color-muted, #64748b);
+  color: var(--color-text, #111827);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: .08em;
@@ -960,7 +960,7 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
 }
 .customer-password-recovery-card > p:not(.eyebrow),
 .customer-password-recovery-card .restaurant-auth-switch {
-  color: var(--color-muted, #64748b);
+  color: var(--color-text, #111827);
 }
 .customer-password-recovery-card .eyebrow,
 .customer-password-recovery-card .restaurant-auth-switch a {
@@ -972,7 +972,7 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   border-color: var(--color-border, #dbe2ea);
 }
 .customer-password-recovery-card .restaurant-owner-auth-form input::placeholder {
-  color: var(--color-muted, #64748b);
+  color: var(--color-text, #111827);
 }
 .customer-password-recovery-card .restaurant-owner-auth-form input:focus {
   border-color: var(--color-primary, #111827);
@@ -993,7 +993,7 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   color: var(--color-text, #111827);
 }
 .customer-password-recovery-page .customer-password-recovery-card > p:not(.eyebrow) {
-  color: var(--color-muted, #64748b);
+  color: var(--color-text, #111827);
 }
 .customer-password-recovery-page .customer-password-recovery-card .restaurant-auth-switch a {
   color: var(--color-text, #111827);
