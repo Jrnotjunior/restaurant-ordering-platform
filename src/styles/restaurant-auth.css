@@ -956,3 +956,45 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   background: var(--color-background, #fff) !important;
   color: var(--color-text, #111827);
 }
+
+
+/* Customer Sign In / Sign Up typography must follow the restaurant's active storefront theme. */
+.restaurant-owner-auth-page:has(.restaurant-owner-auth-card) .restaurant-owner-auth-card,
+.restaurant-owner-auth-page:has(.customer-signup-card) .customer-signup-card {
+  color: var(--color-text, inherit) !important;
+}
+.restaurant-owner-auth-page:has(.restaurant-owner-auth-card) .restaurant-owner-auth-card h1,
+.restaurant-owner-auth-page:has(.restaurant-owner-auth-card) .restaurant-owner-auth-card h2,
+.restaurant-owner-auth-page:has(.restaurant-owner-auth-card) .restaurant-owner-auth-card label,
+.restaurant-owner-auth-page:has(.customer-signup-card) .customer-signup-card h1,
+.restaurant-owner-auth-page:has(.customer-signup-card) .customer-signup-card h2,
+.restaurant-owner-auth-page:has(.customer-signup-card) .customer-signup-card label {
+  color: var(--color-text, inherit) !important;
+}
+.restaurant-owner-auth-page:has(.restaurant-owner-auth-card) .restaurant-owner-auth-card p,
+.restaurant-owner-auth-page:has(.restaurant-owner-auth-card) .restaurant-owner-auth-card .restaurant-auth-switch,
+.restaurant-owner-auth-page:has(.restaurant-owner-auth-card) .restaurant-owner-auth-card .restaurant-auth-remember,
+.restaurant-owner-auth-page:has(.customer-signup-card) .customer-signup-card p,
+.restaurant-owner-auth-page:has(.customer-signup-card) .customer-signup-card .restaurant-auth-switch,
+.restaurant-owner-auth-page:has(.customer-signup-card) .customer-signup-card .customer-personal-info-consent {
+  color: var(--color-text-muted, var(--color-text, inherit)) !important;
+}
+.restaurant-owner-auth-page:has(.restaurant-owner-auth-card) .restaurant-owner-auth-card a,
+.restaurant-owner-auth-page:has(.customer-signup-card) .customer-signup-card a {
+  color: var(--color-primary, var(--color-text, inherit)) !important;
+}
+.restaurant-owner-auth-page:has(.restaurant-owner-auth-card) .restaurant-owner-auth-card input:not([type="checkbox"]),
+.restaurant-owner-auth-page:has(.customer-signup-card) .customer-signup-card input:not([type="checkbox"]) {
+  color: var(--color-text, inherit) !important;
+}
+.restaurant-owner-auth-page:has(.restaurant-owner-auth-card) .restaurant-owner-auth-card input::placeholder,
+.restaurant-owner-auth-page:has(.customer-signup-card) .customer-signup-card input::placeholder {
+  color: var(--color-text-muted, var(--color-text, inherit)) !important;
+}
+.restaurant-owner-auth-page:has(.restaurant-owner-auth-card) .restaurant-owner-auth-card .button[type="submit"],
+.restaurant-owner-auth-page:has(.customer-signup-card) .customer-signup-card .button[type="submit"] {
+  color: var(--color-button-text, var(--color-primary-text, #fff)) !important;
+}
+.restaurant-owner-auth-page:has(.restaurant-owner-auth-card) .restaurant-owner-auth-card .customer-password-visibility {
+  color: var(--color-text-muted, var(--color-text, inherit)) !important;
+}
