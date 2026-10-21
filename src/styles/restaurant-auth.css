@@ -998,3 +998,36 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
 .customer-password-recovery-page .customer-password-recovery-card .restaurant-auth-switch a {
   color: var(--color-text, #111827);
 }
+
+
+/* Customer sign-in/sign-up cards inherit the restaurant's saved storefront theme.
+   The outer authentication page remains white. */
+.tenant-auth-page {
+  background: #fff;
+}
+.tenant-auth-page .tenant-auth-card {
+  background: var(--color-background, #fff);
+  border-color: var(--color-border, #e2e8f0);
+  color: var(--color-text, #111827);
+}
+.tenant-auth-page .tenant-auth-card h1,
+.tenant-auth-page .tenant-auth-card h2,
+.tenant-auth-page .tenant-auth-card .eyebrow,
+.tenant-auth-page .tenant-auth-card label,
+.tenant-auth-page .tenant-auth-card .tenant-auth-brand-name,
+.tenant-auth-page .tenant-auth-card .restaurant-auth-switch,
+.tenant-auth-page .tenant-auth-card .restaurant-auth-switch a {
+  color: var(--color-text, #111827);
+}
+.tenant-auth-page .tenant-auth-card .tenant-auth-intro,
+.tenant-auth-page .tenant-auth-card > p:not(.eyebrow) {
+  color: var(--color-text, #111827);
+}
+.tenant-auth-page .tenant-auth-card input:not([type="checkbox"]) {
+  background: var(--color-background, #fff);
+  color: var(--color-text, #111827);
+  border-color: var(--color-border, #dbe2ea);
+}
+.tenant-auth-page .tenant-auth-card input::placeholder {
+  color: var(--color-text, #111827);
+}
