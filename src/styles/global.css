@@ -244,6 +244,23 @@ main { flex: 1; }
 .checkout-section input, .checkout-section select, .checkout-section textarea { width: 100%; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-background); color: var(--color-text); padding: 0.85rem 1rem; font: inherit; outline: none; }
 .checkout-section input, .checkout-section select { min-height: 48px; }
 .checkout-section textarea { resize: vertical; line-height: 1.5; }
+
+.checkout-loyalty-card {
+  background: var(--color-surface, var(--color-background));
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+.checkout-loyalty-card :is(strong, span, p, small, label) {
+  color: var(--color-text);
+}
+.checkout-loyalty-card input[type="checkbox"] {
+  accent-color: var(--color-primary);
+}
+.checkout-section textarea::placeholder,
+.checkout-section input::placeholder {
+  color: var(--color-text);
+  opacity: 0.75;
+}
 .checkout-section input:focus, .checkout-section select:focus, .checkout-section textarea:focus { border-color: var(--color-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 18%, transparent); }
 .checkout-hint { margin: var(--space-4) 0 0; color: var(--color-text); font-size: 0.88rem; line-height: 1.5; }
 .optional-label { color: var(--color-text); font-family: var(--font-body); font-size: 0.8rem; font-weight: 500; }
