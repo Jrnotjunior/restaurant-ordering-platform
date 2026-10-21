@@ -128,7 +128,7 @@
   padding: clamp(28px, 5vw, 38px);
   border: 1px solid rgba(226, 232, 240, .95);
   border-radius: 22px;
-  background: rgba(255, 255, 255, .97);
+  background: var(--color-background, #fff);
   box-shadow: 0 28px 70px rgba(15, 23, 42, .09), 0 4px 14px rgba(15, 23, 42, .035);
 }
 .tenant-auth-card::before {
