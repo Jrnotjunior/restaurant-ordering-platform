@@ -939,8 +939,20 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
 }
 
 
-/* Customer authentication pages stay in sync with the configured storefront background. */
+/* Customer auth canvas stays white; only the auth card follows restaurant theme settings. */
 .restaurant-owner-auth-page:has(.restaurant-owner-auth-card),
 .restaurant-owner-auth-page:has(.customer-signup-card) {
-  background: var(--color-background, #f8fafc) !important;
+  background: #fff !important;
+  background-image: none !important;
+}
+.restaurant-owner-auth-page:has(.restaurant-owner-auth-card)::before,
+.restaurant-owner-auth-page:has(.restaurant-owner-auth-card)::after,
+.restaurant-owner-auth-page:has(.customer-signup-card)::before,
+.restaurant-owner-auth-page:has(.customer-signup-card)::after {
+  display: none !important;
+}
+.restaurant-owner-auth-page .tenant-auth-card,
+.restaurant-owner-auth-page .customer-signup-card {
+  background: var(--color-background, #fff) !important;
+  color: var(--color-text, #111827);
 }
