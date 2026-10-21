@@ -179,6 +179,20 @@ main { flex: 1; }
   object-fit: contain;
 }
 .menu-page, .cart-page, .checkout-page { width: min(900px, calc(100% - 2rem)); margin: 0 auto; padding: var(--space-12) 0 var(--space-16); }
+
+/* Cart typography follows the restaurant's configured storefront font colors. */
+.cart-page { color: var(--color-text); }
+.cart-page .menu-intro h1,
+.cart-page .cart-item-main h2,
+.cart-page .cart-item-main strong,
+.cart-page .cart-summary-row,
+.cart-page .quantity-control span { color: var(--color-text); }
+.cart-page .menu-intro > p:last-child,
+.cart-page .cart-item-main p,
+.cart-page .cart-remove,
+.cart-page .cart-summary > p { color: var(--color-muted); }
+.cart-page .quantity-control button { color: var(--color-text); }
+
 .menu-intro { max-width: 720px; }
 .menu-intro h1 { margin: 0; font-family: var(--font-heading); font-size: clamp(2.25rem, 6vw, 4rem); line-height: 1; letter-spacing: -0.04em; }
 .menu-intro > p:last-child { margin: var(--space-5) 0 0; color: var(--color-muted); font-size: 1.05rem; line-height: 1.65; }
