@@ -46,7 +46,7 @@ function shouldShowOwnerNavigationItem(item: NavigationItem, ownerModules: Recor
     item.href === '#restaurant/delivery-dispatch' || item.href === '#restaurant/shipping-fee' ? ['dispatch_delivery'] :
     item.href === '#restaurant/sales' || item.href === '#restaurant/business-reports' || item.href === '#restaurant/inventory' ? ['sales'] :
     item.href === '#restaurant/loyalty' ? ['loyalty'] :
-    item.href === '#restaurant/website-customization' ? ['website'] : [];
+    item.href === '#restaurant/website-customization' ? ['self_ordering'] : [];
   return item.href === '#restaurant/owner' || item.href === '#restaurant/employees' ||
     item.href === '#restaurant/settings' || requiredModules.length === 0 ||
     requiredModules.some((moduleKey) => ownerModules[moduleKey] === true);
