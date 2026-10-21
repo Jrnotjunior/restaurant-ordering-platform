@@ -150,8 +150,8 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
           {restaurant.logoUrl?.trim() ? <img className="tenant-auth-logo" src={restaurant.logoUrl} alt={`${restaurant.name || 'Restaurant'} logo`} /> : <span className="tenant-auth-logo-fallback" aria-hidden="true">{(restaurant.name || 'R').trim().slice(0, 1).toUpperCase()}</span>}
           <span className="tenant-auth-brand-name">{restaurant.name?.trim() || 'Welcome'}</span>
         </div>
-        <p className="tenant-auth-intro">{staffOnly ? 'Sign in to your restaurant team account.' : 'Welcome back. Sign in to continue your ordering experience.'}</p>
         <h1 className="restaurant-login-title" id="account-login-title">{staffOnly ? 'Team Sign In' : 'Sign In'}</h1>
+        <p className="tenant-auth-intro">{staffOnly ? 'Sign in to your restaurant team account.' : 'Welcome back. Sign in to continue your ordering experience.'}</p>
         {(error || authError) && <div className="restaurant-dashboard-error" role="alert">{error || authError}</div>}
 
         {staffOnly ? (
