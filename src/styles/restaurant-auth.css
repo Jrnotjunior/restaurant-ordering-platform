@@ -48,6 +48,17 @@
   height: auto;
   overflow: visible;
   margin: 0 auto;
+  background: #fff;
+  color: #1f2937;
+}
+.privacy-notice-card > .eyebrow {
+  color: #475569;
+}
+.privacy-notice-card > h1 {
+  color: #111827;
+}
+.privacy-notice-card > p:not(.eyebrow) {
+  color: #475569;
 }
 .privacy-notice-back{display:inline-block;margin-bottom:24px;color:#475569;font-size:13px;font-weight:700;text-decoration:none}
 .privacy-notice-back:hover{text-decoration:underline;text-underline-offset:3px}
