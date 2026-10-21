@@ -647,7 +647,7 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
 
 .restaurant-owner-auth-card .restaurant-login-title {
   margin: 0 0 24px;
-  color: #111827;
+  color: var(--color-text, #111827);
   font-size: clamp(28px, 4vw, 34px);
   font-weight: 700;
   line-height: 1.15;
@@ -671,7 +671,7 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   display: block;
   min-width: 0;
   margin: 0;
-  color: #111827;
+  color: var(--color-text, #111827);
   text-align: left;
 }
 
@@ -697,19 +697,19 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   padding: 11px 13px;
   border: 1px solid #dbe2ea;
   border-radius: 10px;
-  background: #eaf2ff;
-  color: #111827;
+  background: var(--color-surface, #fff);
+  color: var(--color-text, #111827);
   font: inherit;
   text-align: left;
 }
 
 .restaurant-owner-auth-card .restaurant-owner-auth-form input::placeholder {
-  color: #64748b;
+  color: var(--color-muted, #64748b);
   opacity: 1;
 }
 
 .restaurant-owner-auth-card .restaurant-owner-auth-form input:focus {
-  border-color: #111827;
+  border-color: var(--color-text, #111827);
   outline: none;
   box-shadow: 0 0 0 3px rgba(17, 24, 39, .08);
 }
@@ -738,13 +738,13 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   border: 0;
   border-radius: 7px;
   background: transparent;
-  color: #64748b;
+  color: var(--color-muted, #64748b);
   cursor: pointer;
 }
 
 .restaurant-owner-auth-card .restaurant-owner-auth-form .customer-password-input-row .customer-password-visibility:hover {
   background: #f1f5f9;
-  color: #111827;
+  color: var(--color-text, #111827);
 }
 
 .restaurant-owner-auth-card .restaurant-owner-auth-form .customer-password-input-row .customer-password-visibility:focus-visible {
@@ -766,7 +766,7 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   gap: 6px;
   min-width: 0;
   margin: 0;
-  color: #334155;
+  color: var(--color-text, #334155);
   font-size: 12px;
   font-weight: 400;
   line-height: 1.4;
@@ -791,7 +791,7 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
 }
 
 .restaurant-owner-auth-card .restaurant-auth-forgot-password-row a {
-  color: #334155;
+  color: var(--color-text, #334155);
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -810,7 +810,7 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
 
 .restaurant-owner-auth-card .restaurant-auth-switch {
   margin: 18px 0 0 !important;
-  color: #64748b;
+  color: var(--color-muted, #64748b);
   font-size: 13px;
   line-height: 1.5;
   text-align: center;
@@ -854,7 +854,7 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
 }
 .restaurant-owner-auth-card.customer-signup-card > .eyebrow {
   margin: 0 0 10px;
-  color: #64748b;
+  color: var(--color-muted, #64748b);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: .08em;
@@ -863,7 +863,7 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
 }
 .restaurant-owner-auth-card.customer-signup-card > h1 {
   margin: 0 0 24px;
-  color: #111827;
+  color: var(--color-text, #111827);
   font-size: clamp(28px, 4vw, 34px);
   font-weight: 700;
   line-height: 1.15;
@@ -882,7 +882,7 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   min-width: 0;
   gap: 6px;
   margin: 0;
-  color: #111827;
+  color: var(--color-text, #111827);
   font-size: 12px;
   font-weight: 700;
   line-height: 1.4;
@@ -895,13 +895,13 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   padding: 11px 13px;
   border: 1px solid #dbe2ea;
   border-radius: 10px;
-  background: #eaf2ff;
-  color: #111827;
+  background: var(--color-surface, #fff);
+  color: var(--color-text, #111827);
   font: inherit;
   font-weight: 400;
 }
 .restaurant-owner-auth-card.customer-signup-card .restaurant-owner-auth-form input:not([type="checkbox"]):focus {
-  border-color: #111827;
+  border-color: var(--color-text, #111827);
   outline: none;
   box-shadow: 0 0 0 3px rgba(17, 24, 39, .08);
 }
@@ -955,53 +955,4 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
 .restaurant-owner-auth-page .customer-signup-card {
   background: var(--color-background, #fff) !important;
   color: var(--color-text, #111827);
-}
-
-
-/* Customer Sign In / Sign Up typography must follow the restaurant's active storefront theme. */
-.restaurant-owner-auth-page:has(.restaurant-owner-auth-card) .restaurant-owner-auth-card,
-.restaurant-owner-auth-page:has(.customer-signup-card) .customer-signup-card {
-  color: var(--color-text, inherit) !important;
-}
-.restaurant-owner-auth-page:has(.restaurant-owner-auth-card) .restaurant-owner-auth-card h1,
-.restaurant-owner-auth-page:has(.restaurant-owner-auth-card) .restaurant-owner-auth-card h2,
-.restaurant-owner-auth-page:has(.restaurant-owner-auth-card) .restaurant-owner-auth-card label,
-.restaurant-owner-auth-page:has(.customer-signup-card) .customer-signup-card h1,
-.restaurant-owner-auth-page:has(.customer-signup-card) .customer-signup-card h2,
-.restaurant-owner-auth-page:has(.customer-signup-card) .customer-signup-card label {
-  color: var(--color-text, inherit) !important;
-}
-.restaurant-owner-auth-page:has(.restaurant-owner-auth-card) .restaurant-owner-auth-card p,
-.restaurant-owner-auth-page:has(.restaurant-owner-auth-card) .restaurant-owner-auth-card .restaurant-auth-switch,
-.restaurant-owner-auth-page:has(.restaurant-owner-auth-card) .restaurant-owner-auth-card .restaurant-auth-remember,
-.restaurant-owner-auth-page:has(.customer-signup-card) .customer-signup-card p,
-.restaurant-owner-auth-page:has(.customer-signup-card) .customer-signup-card .restaurant-auth-switch,
-.restaurant-owner-auth-page:has(.customer-signup-card) .customer-signup-card .customer-personal-info-consent {
-  color: var(--color-text-muted, var(--color-text, inherit)) !important;
-}
-.restaurant-owner-auth-page:has(.restaurant-owner-auth-card) .restaurant-owner-auth-card a,
-.restaurant-owner-auth-page:has(.customer-signup-card) .customer-signup-card a {
-  color: var(--color-primary, var(--color-text, inherit)) !important;
-}
-.restaurant-owner-auth-page:has(.restaurant-owner-auth-card) .restaurant-owner-auth-card input:not([type="checkbox"]),
-.restaurant-owner-auth-page:has(.customer-signup-card) .customer-signup-card input:not([type="checkbox"]) {
-  color: var(--color-text, inherit) !important;
-}
-.restaurant-owner-auth-page:has(.restaurant-owner-auth-card) .restaurant-owner-auth-card input::placeholder,
-.restaurant-owner-auth-page:has(.customer-signup-card) .customer-signup-card input::placeholder {
-  color: var(--color-text-muted, var(--color-text, inherit)) !important;
-}
-.restaurant-owner-auth-page:has(.restaurant-owner-auth-card) .restaurant-owner-auth-card .button[type="submit"],
-.restaurant-owner-auth-page:has(.customer-signup-card) .customer-signup-card .button[type="submit"] {
-  color: var(--color-button-text, var(--color-primary-text, #fff)) !important;
-}
-.restaurant-owner-auth-page:has(.restaurant-owner-auth-card) .restaurant-owner-auth-card .customer-password-visibility {
-  color: var(--color-text-muted, var(--color-text, inherit)) !important;
-}
-
-
-/* Checked customer-auth checkboxes follow the restaurant's configured primary theme color. */
-.restaurant-owner-auth-page .restaurant-auth-remember input[type="checkbox"],
-.restaurant-owner-auth-page .customer-personal-info-consent input[type="checkbox"] {
-  accent-color: var(--color-primary, currentColor) !important;
 }
