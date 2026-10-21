@@ -35,7 +35,7 @@
 }
 .customer-legal-intro h1 {
   margin: 0 0 8px;
-  color: var(--color-text, #111827);
+  color: var(--color-muted, #64748b);
   font-size: clamp(26px, 4vw, 32px);
   line-height: 1.2;
   letter-spacing: -.025em;
@@ -81,7 +81,7 @@
   place-items: center;
   border-radius: 10px;
   background: var(--color-surface-muted, #f1f5f9);
-  color: var(--color-text, #334155);
+  color: var(--color-muted, #64748b);
 }
 .customer-legal-icon svg {
   width: 22px;
@@ -98,7 +98,7 @@
   min-width: 0;
   gap: 4px;
 }
-.customer-legal-copy strong { font-size: 14px; line-height: 1.35; }
+.customer-legal-copy strong { color: var(--color-muted, #64748b); font-size: 14px; line-height: 1.35; }
 .customer-legal-copy > span { color: var(--color-muted, #64748b); font-size: 12px; line-height: 1.5; }
 .customer-legal-arrow { color: var(--color-muted, #64748b); font-size: 24px; line-height: 1; }
 .customer-legal-back {
