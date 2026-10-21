@@ -403,3 +403,31 @@
 /* Customer sign-in and sign-up pages inherit the storefront page background. */
 .tenant-auth-page { background: var(--color-background, #f8fafc) !important; }
 .tenant-auth-page::before, .tenant-auth-page::after { display: none; }
+
+
+/* Theme-driven typography overrides for customer Sign In and Sign Up.
+   Keep text colors sourced from the active restaurant theme, not page-specific literals. */
+.tenant-auth-page { color: var(--color-text); }
+.tenant-auth-card { color: var(--color-text); }
+.tenant-auth-card h1,
+.tenant-auth-card h2,
+.tenant-auth-card legend,
+.tenant-auth-card .restaurant-owner-auth-form > label,
+.tenant-auth-card .customer-signup-name-row > label { color: var(--color-text); }
+.tenant-auth-card p,
+.tenant-auth-card small,
+.tenant-auth-card .restaurant-auth-remember,
+.tenant-auth-card .customer-personal-info-consent,
+.tenant-auth-card .tenant-auth-description { color: var(--color-muted); }
+.tenant-auth-card .restaurant-owner-auth-form input:not([type="checkbox"]),
+.tenant-auth-card .restaurant-owner-auth-form textarea,
+.tenant-auth-card .restaurant-owner-auth-form select,
+.tenant-auth-card .customer-password-input-row input:not([type="checkbox"]) {
+  color: var(--color-text);
+}
+.tenant-auth-card .restaurant-owner-auth-form input::placeholder,
+.tenant-auth-card .restaurant-owner-auth-form textarea::placeholder,
+.tenant-auth-card .customer-password-input-row input::placeholder { color: var(--color-muted); }
+.tenant-auth-card .restaurant-auth-forgot-password-row a,
+.tenant-auth-card .restaurant-auth-switch a,
+.tenant-auth-card .customer-personal-info-consent a { color: var(--color-primary); }
