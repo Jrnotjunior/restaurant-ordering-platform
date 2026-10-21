@@ -360,3 +360,18 @@
 .tenant-auth-card .restaurant-owner-auth-form > label.customer-personal-info-consent > span {
   text-align: center;
 }
+
+
+/* Fine-tune checkbox optical alignment with the consent text baseline. */
+.tenant-auth-card .restaurant-owner-auth-form > label.customer-personal-info-consent {
+  line-height: 18px;
+}
+.tenant-auth-card .restaurant-owner-auth-form > label.customer-personal-info-consent > input[type="checkbox"] {
+  align-self: center;
+  position: relative;
+  top: 1px;
+}
+.tenant-auth-card .restaurant-owner-auth-form > label.customer-personal-info-consent > span {
+  display: inline-block;
+  line-height: 18px;
+}
