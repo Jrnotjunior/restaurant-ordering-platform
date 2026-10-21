@@ -391,3 +391,13 @@
 /* Keep the outer authentication page neutral; the card carries the storefront theme. */
 
 .tenant-auth-page::before, .tenant-auth-page::after { display: none; }
+
+
+/* Final theme binding for auth supporting copy: use the restaurant's configured
+   font color, including elements that have inherited or component-level colors. */
+.tenant-auth-page .tenant-auth-card .tenant-auth-intro,
+.tenant-auth-page .tenant-auth-card .restaurant-auth-switch,
+.tenant-auth-page .tenant-auth-card .restaurant-auth-switch a,
+.tenant-auth-page .tenant-auth-card .restaurant-auth-forgot-password-row a {
+  color: var(--color-text, #111827) !important;
+}
