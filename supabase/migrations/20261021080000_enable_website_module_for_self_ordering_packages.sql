@@ -1,18 +1,15 @@
--- Website customization is part of the Self Ordering storefront.
--- Keep the Website module active and include it in every package that enables
--- Self Ordering, without relying on hard-coded package IDs.
-update public.system_modules
-set is_active = true,
-    updated_at = now()
-where module_key = 'website';
+-- Website customization is bundled with Self Ordering and is not a
+-- separately packageable module. Keep the legacy module key inactive and
+-- remove any standalone package assignments. Frontend and RPC checks must use
+-- the Self Ordering entitlement for website customization access.
+BEGIN;
 
-insert into public.system_package_modules (package_id, module_key)
-select spm.package_id, 'website'
-from public.system_package_modules spm
-where spm.module_key = 'self_ordering'
-  and not exists (
-    select 1
-    from public.system_package_modules existing
-    where existing.package_id = spm.package_id
-      and existing.module_key = 'website'
-  );
+DELETE FROM public.system_package_modules
+WHERE module_key = 'website';
+
+UPDATE public.system_modules
+SET is_active = false,
+    updated_at = now()
+WHERE module_key = 'website';
+
+COMMIT;
