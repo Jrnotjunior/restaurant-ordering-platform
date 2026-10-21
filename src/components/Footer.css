@@ -121,3 +121,22 @@
 @media (prefers-reduced-motion: reduce) {
   .site-footer-social-link, .site-footer-legal-title { transition: none; }
 }
+
+
+/* Center the copyright and Powered by row as a single group on small screens. */
+@media (max-width: 640px) {
+  .site-footer-bottom {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.75rem;
+    text-align: center;
+  }
+  .site-footer-copyright {
+    align-items: center;
+    text-align: center;
+  }
+  .site-footer-powered-by {
+    justify-content: center;
+    text-align: center;
+  }
+}
