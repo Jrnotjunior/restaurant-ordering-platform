@@ -30,7 +30,8 @@ export function CustomerSignUpPage() {
     password: !password ? 'Please create a password.' : getPasswordPolicyError(password) || '',
     consent: !personalInfoConsent ? 'Please agree to the Privacy Notice to create an account.' : '',
   };
-  const shouldShow = (field: string) => submitted || Boolean(touched[field]);
+  // Keep validation guidance hidden on first render; reveal it after the customer submits the form.
+  const shouldShow = (_field: string) => submitted;
   const markTouched = (field: string) => setTouched((current) => ({ ...current, [field]: true }));
   const fieldError = (field: keyof typeof fieldErrors) => shouldShow(field) && fieldErrors[field] ? <small className="customer-field-error" role="alert">{fieldErrors[field]}</small> : null;
 
