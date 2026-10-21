@@ -369,7 +369,7 @@ function AppContent() {
 
   if (isCustomerPasswordResetPage) return <CustomerPasswordRecoveryPage mode="reset" />;
   if (isCustomerForgotPasswordPage) return <CustomerPasswordRecoveryPage mode="request" />;
-  if (isSignUpPage) return <CustomerSignUpPage />;
+  if (isSignUpPage) return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><CustomerSignUpPage /></ThemeProvider></RestaurantProvider>;
   if (isCustomerConfirmationCallback) return <CustomerEmailConfirmationPage />;
 
   if (isLegalPoliciesPage) return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}><LegalPoliciesPage /></RestaurantLayout></ThemeProvider></RestaurantProvider>;
@@ -378,7 +378,7 @@ function AppContent() {
   if (isRefundsPage) return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><CustomerPolicyPage kind="refunds" /></ThemeProvider></RestaurantProvider>;
   if (route === '#saved-address') return <PublicCustomerRouteGuard><RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}><SavedAddressPage /></RestaurantLayout></ThemeProvider></RestaurantProvider></PublicCustomerRouteGuard>;
   if (route === '#order-history') return <PublicCustomerRouteGuard><RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}><CustomerOrderHistoryPage /></RestaurantLayout></ThemeProvider></RestaurantProvider></PublicCustomerRouteGuard>;
-  if (isAccountPage) return <RestaurantOwnerLoginPage />;
+  if (isAccountPage) return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantOwnerLoginPage /></ThemeProvider></RestaurantProvider>;
   if (isStaffLoginPage) return <RestaurantOwnerLoginPage staffOnly />;
   if (isRiderDashboardPage) return <RiderRouteGuard><RiderDashboardPage /></RiderRouteGuard>;
   if (riderDeliveryMatch) return <RiderRouteGuard><RiderDeliveryPage orderId={decodeURIComponent(riderDeliveryMatch[1])} /></RiderRouteGuard>;
