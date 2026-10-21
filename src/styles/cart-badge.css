@@ -13,8 +13,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-primary);
-  color: var(--color-primary-text);
+  background: var(--color-text);
+  color: var(--color-background);
   font-family: var(--font-ui);
   font-size: 0.68rem;
   font-weight: 800;
