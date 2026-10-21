@@ -339,3 +339,24 @@
 .customer-signup-card .customer-personal-info-consent > span {
   text-align: center;
 }
+
+
+/* Override the general stacked-field label rule for the consent checkbox row. */
+.tenant-auth-card .restaurant-owner-auth-form > label.customer-personal-info-consent {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  width: max-content;
+  max-width: 100%;
+  margin-inline: auto;
+  gap: 8px;
+}
+.tenant-auth-card .restaurant-owner-auth-form > label.customer-personal-info-consent > input[type="checkbox"] {
+  flex: 0 0 auto;
+  margin: 0;
+}
+.tenant-auth-card .restaurant-owner-auth-form > label.customer-personal-info-consent > span {
+  text-align: center;
+}
