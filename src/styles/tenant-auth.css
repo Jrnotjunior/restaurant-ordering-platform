@@ -400,8 +400,8 @@
 }
 
 
-/* Customer sign-in and sign-up pages inherit the storefront page background. */
-.tenant-auth-page { background: var(--color-background, #f8fafc) !important; }
+/* Keep the outer authentication page neutral; the card carries the storefront theme. */
+.tenant-auth-page { background: #fff !important; }
 .tenant-auth-page::before, .tenant-auth-page::after { display: none; }
 
 
@@ -431,3 +431,18 @@
 .tenant-auth-card .restaurant-auth-forgot-password-row a,
 .tenant-auth-card .restaurant-auth-switch a,
 .tenant-auth-card .customer-personal-info-consent a { color: var(--color-primary); }
+
+
+/* Sign In / Sign Up: white canvas with a card matching the storefront surface. */
+.tenant-auth-page {
+  background: #fff !important;
+  background-image: none !important;
+}
+.tenant-auth-page::before,
+.tenant-auth-page::after {
+  display: none !important;
+}
+.tenant-auth-card {
+  background: var(--color-background, #fff) !important;
+  color: var(--color-text, #111827);
+}
