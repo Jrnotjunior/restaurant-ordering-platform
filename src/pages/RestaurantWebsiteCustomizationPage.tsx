@@ -309,7 +309,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-live-brand{display:flex;align-items:center;gap:8px;min-width:0}
         .website-customization-live-brand img,.website-customization-live-logo-fallback{width:30px;height:30px;object-fit:contain;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
         .website-customization-live-hero{margin:12px 12px 10px;padding:18px 12px;min-height:108px;box-sizing:border-box;border:1px solid;background-size:cover;background-position:center;display:flex;flex-direction:column;justify-content:center}
-        .website-customization-live-eyebrow{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#fff!important}
+        .website-customization-live-eyebrow{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
         .website-customization-live-hero h3{font-size:22px;line-height:1.08;margin:6px 0 5px}
         .website-customization-live-hero p{margin:0;font-size:12px;line-height:1.4}
         .website-customization-live-category{display:flex;align-items:center;gap:7px;margin:0 12px 10px;font-size:10px;font-weight:700}
@@ -484,7 +484,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
                     borderRadius: websiteTheme.borderRadius === 'large' ? 16 : websiteTheme.borderRadius === 'small' ? 8 : 12
                   }}
                 >
-                  <span className="website-customization-live-eyebrow" style={{ color: '#fff' }}>Welcome to our menu</span>
+                  <span className="website-customization-live-eyebrow" style={{ color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.primaryText }}>Welcome to our menu</span>
                   <h3 style={{ fontFamily: websiteTheme.fontHeading }}>{restaurantName}</h3>
                   {restaurantTagline ? <p>{restaurantTagline}</p> : null}
                 </div>
