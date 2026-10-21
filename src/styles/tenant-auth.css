@@ -410,3 +410,14 @@
 .tenant-auth-page .tenant-auth-card .restaurant-auth-forgot-password-row a {
   color: var(--color-text) !important;
 }
+
+
+/* Auth route uses .restaurant-owner-auth-page, not .tenant-auth-page. */
+.restaurant-owner-auth-card.tenant-auth-card .tenant-auth-intro,
+.restaurant-owner-auth-card.tenant-auth-card .restaurant-auth-switch,
+.restaurant-owner-auth-card.tenant-auth-card .restaurant-auth-switch a,
+.restaurant-owner-auth-card.tenant-auth-card .restaurant-auth-options-row a,
+.restaurant-owner-auth-card.tenant-auth-card .customer-personal-info-consent,
+.restaurant-owner-auth-card.tenant-auth-card .customer-personal-info-consent > span {
+  color: var(--color-text, #111827) !important;
+}
