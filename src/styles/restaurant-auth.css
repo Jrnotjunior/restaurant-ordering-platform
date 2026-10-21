@@ -49,30 +49,26 @@
   overflow: visible;
   margin: 0 auto;
   background: #fff;
-  color: #1f2937;
+  color: #000;
 }
-.privacy-notice-card > .eyebrow {
-  color: #475569;
-}
-.privacy-notice-card > h1 {
-  color: #111827;
-}
+.privacy-notice-card > .eyebrow,
+.privacy-notice-card > h1,
 .privacy-notice-card > p:not(.eyebrow) {
-  color: #475569;
+  color: #000;
 }
-.privacy-notice-back{display:inline-block;margin-bottom:24px;color:#475569;font-size:13px;font-weight:700;text-decoration:none}
+.privacy-notice-back{display:inline-block;margin-bottom:24px;color:#000;font-size:13px;font-weight:700;text-decoration:none}
 .privacy-notice-back:hover{text-decoration:underline;text-underline-offset:3px}
 .privacy-notice-card h1{font-size:clamp(32px,5vw,46px)}
 .privacy-notice-section{padding-top:22px;margin-top:22px;border-top:1px solid #e2e8f0}
-.privacy-notice-section h2{margin:0 0 9px;font-size:18px;line-height:1.3;color:#111827}
-.privacy-notice-section p{margin:0;color:#475569;font-size:14px;line-height:1.7}
-.privacy-notice-section ul{margin:0;padding-left:20px;color:#475569;font-size:14px;line-height:1.7}
+.privacy-notice-section h2{margin:0 0 9px;font-size:18px;line-height:1.3;color:#000}
+.privacy-notice-section p{margin:0;color:#000;font-size:14px;line-height:1.7}
+.privacy-notice-section ul{margin:0;padding-left:20px;color:#000;font-size:14px;line-height:1.7}
 .privacy-notice-section li+li{margin-top:7px}
-.privacy-notice-section strong{color:#334155}
+.privacy-notice-section strong{color:#000}
 .privacy-notice-legal-note{background:#f8fafc;padding:18px;border:1px solid #e2e8f0;border-radius:12px}
 .privacy-notice-legal-note p+p{margin-top:10px}
-.privacy-notice-footer{margin:22px 0 0!important;color:#64748b!important;font-size:12px!important}
-.customer-personal-info-consent a{color:#334155;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.privacy-notice-footer{margin:22px 0 0!important;color:#000!important;font-size:12px!important}
+.customer-personal-info-consent a{color:#000;font-weight:700;text-decoration:underline;text-underline-offset:3px}
 @media(max-width:640px){.restaurant-owner-auth-page:has(.privacy-notice-card){padding:20px 16px;align-items:flex-start}.privacy-notice-card{max-height:none;height:auto;overflow:visible;padding:24px}.privacy-notice-section h2{font-size:17px}.privacy-notice-section p,.privacy-notice-section ul{font-size:13px}}
 
 .customer-signin-modal-backdrop{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px;background:rgba(15,23,42,.55);box-sizing:border-box}
