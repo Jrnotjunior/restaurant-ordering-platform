@@ -59,7 +59,6 @@ export function RestaurantFaviconSettings({ restaurantId, faviconUrl, disabled =
 
   return (
     <div className="website-customization-upload-row">
-      <div className="website-customization-logo-row">
         <div className="website-customization-logo-preview" aria-label="Favicon preview">
           {faviconUrl ? <img src={faviconUrl} alt="Restaurant favicon preview" /> : <span>Default icon</span>}
         </div>
@@ -72,7 +71,6 @@ export function RestaurantFaviconSettings({ restaurantId, faviconUrl, disabled =
             disabled={disabled || uploading}
           />
         </label>
-      </div>
       {error ? <p className="tenant-onboarding-error" role="alert">{error}</p> : null}
     </div>
   );
