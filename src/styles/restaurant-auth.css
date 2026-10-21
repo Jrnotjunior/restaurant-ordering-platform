@@ -944,3 +944,37 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
 }
 
 
+
+/* Customer password recovery: keep the page white, theme the form card. */
+.customer-password-recovery-page {
+  background: #fff;
+}
+.customer-password-recovery-card {
+  background: var(--color-surface, #fff);
+  border-color: var(--color-border, #e2e8f0);
+  color: var(--color-text, #111827);
+}
+.customer-password-recovery-card h1,
+.customer-password-recovery-card .restaurant-owner-auth-form label {
+  color: var(--color-text, #111827);
+}
+.customer-password-recovery-card > p:not(.eyebrow),
+.customer-password-recovery-card .restaurant-auth-switch {
+  color: var(--color-muted, #64748b);
+}
+.customer-password-recovery-card .eyebrow,
+.customer-password-recovery-card .restaurant-auth-switch a {
+  color: var(--color-text, #111827);
+}
+.customer-password-recovery-card .restaurant-owner-auth-form input {
+  background: var(--color-background, #fff);
+  color: var(--color-text, #111827);
+  border-color: var(--color-border, #dbe2ea);
+}
+.customer-password-recovery-card .restaurant-owner-auth-form input::placeholder {
+  color: var(--color-muted, #64748b);
+}
+.customer-password-recovery-card .restaurant-owner-auth-form input:focus {
+  border-color: var(--color-primary, #111827);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary, #111827) 12%, transparent);
+}
