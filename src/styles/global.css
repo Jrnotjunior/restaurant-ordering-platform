@@ -247,7 +247,7 @@ main { flex: 1; }
 .checkout-section textarea { resize: vertical; line-height: 1.5; }
 
 .checkout-loyalty-card {
-  background: var(--color-surface, var(--color-background));
+  background: var(--color-background);
   color: var(--color-text);
   border: 1px solid var(--color-border);
 }
