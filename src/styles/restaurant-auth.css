@@ -702,7 +702,7 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   padding: 11px 13px;
   border: 1px solid #dbe2ea;
   border-radius: 10px;
-  background: var(--color-surface, #fff);
+  background: var(--color-background, #fff);
   color: var(--color-text, #111827);
   font: inherit;
   text-align: left;
@@ -900,7 +900,7 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   padding: 11px 13px;
   border: 1px solid #dbe2ea;
   border-radius: 10px;
-  background: var(--color-surface, #fff);
+  background: var(--color-background, #fff);
   color: var(--color-text, #111827);
   font: inherit;
   font-weight: 400;
@@ -950,7 +950,7 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   background: #fff;
 }
 .customer-password-recovery-card {
-  background: var(--color-surface, #fff);
+  background: var(--color-background, #fff);
   border-color: var(--color-border, #e2e8f0);
   color: var(--color-text, #111827);
 }
@@ -983,7 +983,7 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
 /* Customer password recovery uses the tenant's saved surface and font colors.
    Keep the outer page white as requested; do not inherit the storefront page background. */
 .customer-password-recovery-page .customer-password-recovery-card {
-  background: var(--color-surface, #fff);
+  background: var(--color-background, #fff);
   border-color: var(--color-border, #e2e8f0);
   color: var(--color-text, #111827);
 }
