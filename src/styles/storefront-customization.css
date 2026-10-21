@@ -9,7 +9,7 @@
   background:var(--color-hero, transparent);
   background-size:cover;
   background-position:center;
-  color:var(--color-primary-text);
+  color:var(--color-text);
 }
 .storefront-hero.has-image{isolation:isolate}
 .storefront-hero-overlay{
