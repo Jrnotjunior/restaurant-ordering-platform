@@ -250,7 +250,7 @@ export function MapboxLocationPickerUi({
       <p className="checkout-hint">
         {variant === 'restaurant'
           ? 'Search the restaurant address or move the pin to the exact restaurant location.'
-          : 'Search your address, use your current location, or move the pin to the exact place where you want the order delivered.'}
+          : ''}
       </p>
 
       <div className="delivery-location-search">
