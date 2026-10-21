@@ -55,6 +55,18 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
     setLoading(true);
     setError('');
     try {
+      // Website customization is bundled with Self Ordering; never gate it on
+      // a separate Website module or package assignment.
+      const { data: selfOrderingEnabled, error: accessError } = await supabase.rpc('restaurant_has_module', {
+        p_restaurant_id: restaurantId,
+        p_module_key: 'self_ordering',
+      });
+      if (accessError) throw accessError;
+      if (selfOrderingEnabled !== true) {
+        setError('Website customization is available when Self Ordering is enabled for your restaurant.');
+        return;
+      }
+
       const { data: restaurant, error: restaurantError } = await supabase
         .from('restaurants')
         .select('name,tagline,logo_url')
