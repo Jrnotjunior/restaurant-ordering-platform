@@ -151,10 +151,10 @@
   border-radius: 14px;
 }
 .tenant-auth-logo {
-  padding: 3px;
+  padding: 0;
   box-sizing: border-box;
-  background: #fff;
-  border: 1px solid #edf0f5;
+  background: transparent;
+  border: 0;
 }
 .tenant-auth-brand-name {
   font-size: 18px;
