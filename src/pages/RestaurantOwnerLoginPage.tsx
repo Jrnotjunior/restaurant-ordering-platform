@@ -156,13 +156,13 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
         ) : (
           <form className="restaurant-owner-auth-form" onSubmit={(event) => void handleEmailPasswordSignIn(event)}>
             <label className="restaurant-auth-input-label">
-              <span className="visually-hidden">Email address</span>
-              <input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email address" aria-label="Email address" required disabled={submitting} />
+              <span>Email address</span>
+              <input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} aria-label="Email address" required disabled={submitting} />
             </label>
             <label className="restaurant-auth-input-label">
-              <span className="visually-hidden">Password</span>
+              <span>Password</span>
               <span className="customer-password-input-row">
-                <input type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password" aria-label="Password" required disabled={submitting} />
+                <input type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} aria-label="Password" required disabled={submitting} />
                 <button className="customer-password-visibility" type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} disabled={submitting}>
                   {showPassword ? (
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.9 5.2A10.8 10.8 0 0112 5c5 0 8.5 4.2 9.5 7-.4 1.1-1.2 2.3-2.4 3.4M6.2 6.2C4.2 7.4 2.9 9.5 2.5 12c.7 2 2.5 4.3 5.1 5.8A10.7 10.7 0 0012 19c1.2 0 2.3-.2 3.3-.6" /></svg>
