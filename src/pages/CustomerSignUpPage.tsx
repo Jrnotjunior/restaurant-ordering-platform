@@ -99,8 +99,8 @@ export function CustomerSignUpPage() {
           {restaurant.logoUrl?.trim() ? <img className="tenant-auth-logo" src={restaurant.logoUrl} alt={`${restaurant.name || 'Restaurant'} logo`} /> : <span className="tenant-auth-logo-fallback" aria-hidden="true">{(restaurant.name || 'R').trim().slice(0, 1).toUpperCase()}</span>}
           <span className="tenant-auth-brand-name">{restaurant.name?.trim() || 'Welcome'}</span>
         </div>
-        <p className="tenant-auth-intro">Create an account to make ordering with us quicker and easier.</p>
         <h1 id="customer-signup-title">Create your account</h1>
+        <p className="tenant-auth-intro">Create an account to make ordering with us quicker and easier.</p>
 
         {error && <div className="restaurant-dashboard-error" role="alert">{error}</div>}
         {message && (
