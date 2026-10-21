@@ -484,7 +484,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
                     borderRadius: websiteTheme.borderRadius === 'large' ? 16 : websiteTheme.borderRadius === 'small' ? 8 : 12
                   }}
                 >
-                  <span className="website-customization-live-eyebrow" style={{ color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.primary }}>{storefront.hero.eyebrow?.trim() || 'Welcome to our menu'}</span>
+                  <span className="website-customization-live-eyebrow" style={{ color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.primary }}>Welcome to our menu</span>
                   <h3 style={{ fontFamily: websiteTheme.fontHeading }}>{restaurantName}</h3>
                   {restaurantTagline ? <p>{restaurantTagline}</p> : null}
                 </div>
