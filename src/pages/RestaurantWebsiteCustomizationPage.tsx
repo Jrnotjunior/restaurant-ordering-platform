@@ -479,12 +479,12 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
                   style={{
                     backgroundColor: websiteTheme.colors.hero ?? websiteTheme.colors.surface,
                     backgroundImage: storefront.hero.imageUrl ? `linear-gradient(rgba(0,0,0,.38),rgba(0,0,0,.38)), url("${storefront.hero.imageUrl}")` : undefined,
-                    color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.text,
+                    color: websiteTheme.colors.primaryText,
                     borderColor: websiteTheme.colors.border,
                     borderRadius: websiteTheme.borderRadius === 'large' ? 16 : websiteTheme.borderRadius === 'small' ? 8 : 12
                   }}
                 >
-                  <span className="website-customization-live-eyebrow" style={{ color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.primaryText }}>Welcome to our menu</span>
+                  <span className="website-customization-live-eyebrow" style={{ color: 'inherit' }}>Welcome to our menu</span>
                   <h3 style={{ fontFamily: websiteTheme.fontHeading }}>{restaurantName}</h3>
                   {restaurantTagline ? <p>{restaurantTagline}</p> : null}
                 </div>
