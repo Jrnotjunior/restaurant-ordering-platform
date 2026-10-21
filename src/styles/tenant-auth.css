@@ -398,3 +398,8 @@
 .customer-signup-card .customer-personal-info-consent > span {
   text-align: left;
 }
+
+
+/* Customer sign-in and sign-up pages inherit the storefront page background. */
+.tenant-auth-page { background: var(--color-background, #f8fafc) !important; }
+.tenant-auth-page::before, .tenant-auth-page::after { display: none; }
