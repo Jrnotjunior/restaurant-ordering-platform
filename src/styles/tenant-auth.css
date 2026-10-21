@@ -401,3 +401,12 @@
 .tenant-auth-page .tenant-auth-card .restaurant-auth-forgot-password-row a {
   color: var(--color-text, #111827) !important;
 }
+
+
+/* Auth copy and links must use the configured font color, never muted/primary. */
+.tenant-auth-page .tenant-auth-card .tenant-auth-intro,
+.tenant-auth-page .tenant-auth-card .restaurant-auth-switch,
+.tenant-auth-page .tenant-auth-card .restaurant-auth-switch a,
+.tenant-auth-page .tenant-auth-card .restaurant-auth-forgot-password-row a {
+  color: var(--color-text) !important;
+}
