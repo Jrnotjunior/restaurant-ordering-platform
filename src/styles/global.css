@@ -220,7 +220,9 @@ main { flex: 1; }
 .cart-item-main p { margin: var(--space-2) 0 0; color: var(--color-text); }
 .cart-item-actions { margin-top: var(--space-5); }
 .quantity-control { display: inline-flex; align-items: center; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
-.quantity-control button { width: 44px; height: 44px; border: 0; background: var(--color-secondary); color: var(--color-secondary-text); font-size: 1.1rem; cursor: pointer; }
+.quantity-control button { width: 44px; height: 44px; border: 0; background: transparent; color: var(--color-text); font: inherit; font-size: 1.1rem; font-weight: 700; cursor: pointer; }
+.quantity-control button:hover:not(:disabled) { background: color-mix(in srgb, var(--color-text) 8%, transparent); }
+.quantity-control button:disabled { opacity: 0.45; cursor: not-allowed; }
 .quantity-control span { min-width: 44px; text-align: center; color: var(--color-text); font-weight: 700; }
 .cart-remove { border: 0; background: transparent; color: var(--color-text); font-weight: 700; cursor: pointer; }
 .cart-summary { position: sticky; top: var(--space-6); padding: var(--space-6); border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
