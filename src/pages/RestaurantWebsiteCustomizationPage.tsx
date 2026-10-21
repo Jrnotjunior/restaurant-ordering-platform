@@ -503,7 +503,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
               </div>
               <div className="website-customization-live-buttons"><button type="button" style={{ backgroundColor: websiteTheme.colors.primary, color: websiteTheme.colors.primaryText, borderColor: websiteTheme.colors.primary }}>Primary button</button><button type="button" style={{ backgroundColor: websiteTheme.colors.secondary, color: websiteTheme.colors.secondaryText, borderColor: websiteTheme.colors.border }}>Secondary button</button></div>
 
-              <div className="website-customization-live-footer" style={{ backgroundColor: websiteTheme.colors.footer ?? websiteTheme.colors.background, borderTopColor: websiteTheme.colors.border, color: websiteTheme.colors.muted }}>
+              <div className="website-customization-live-footer" style={{ backgroundColor: websiteTheme.colors.footer ?? websiteTheme.colors.background, borderTopColor: websiteTheme.colors.border, color: websiteTheme.colors.footerText ?? websiteTheme.colors.muted }}>
                 <section className="website-customization-live-footer-social" aria-label="Follow the restaurant">
                   <h4 className="website-customization-live-footer-social-heading" style={{ color: websiteTheme.colors.text }}>Follow Us</h4>
                   <nav className="website-customization-live-footer-socials" aria-label="Social media links">
@@ -627,7 +627,8 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
             {([
               ['background', 'Page background', websiteTheme.colors.background],
               ['header', 'Header color', websiteTheme.colors.header ?? websiteTheme.colors.background],
-              ['footer', 'Footer color', websiteTheme.colors.footer ?? websiteTheme.colors.background],
+              ['footer', 'Footer background color', websiteTheme.colors.footer ?? websiteTheme.colors.background],
+              ['footerText', 'Footer font color', websiteTheme.colors.footerText ?? websiteTheme.colors.muted],
               ['hero', 'Hero section color', websiteTheme.colors.hero ?? websiteTheme.colors.surface],
               ['productCard', 'Product card color', websiteTheme.colors.productCard ?? websiteTheme.colors.surface],
               ['text', 'Font color', websiteTheme.colors.text],
@@ -679,6 +680,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
                   ...defaultRestaurant.theme.colors,
                   header: defaultRestaurant.theme.colors.header ?? defaultRestaurant.theme.colors.background,
                   footer: defaultRestaurant.theme.colors.footer ?? defaultRestaurant.theme.colors.background,
+                  footerText: defaultRestaurant.theme.colors.footerText ?? defaultRestaurant.theme.colors.muted,
                   hero: defaultRestaurant.theme.colors.hero ?? defaultRestaurant.theme.colors.surface,
                   productCard: defaultRestaurant.theme.colors.productCard ?? defaultRestaurant.theme.colors.surface,
                 },
