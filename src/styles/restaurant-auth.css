@@ -967,8 +967,9 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   color: var(--color-text, #111827);
 }
 .customer-password-recovery-card .restaurant-owner-auth-form input {
-  background: var(--color-background, #fff);
-  color: var(--color-text, #111827);
+  background: #fff !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827;
   border-color: var(--color-border, #dbe2ea);
 }
 .customer-password-recovery-card .restaurant-owner-auth-form input::placeholder {
