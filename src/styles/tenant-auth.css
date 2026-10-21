@@ -375,3 +375,26 @@
   display: inline-block;
   line-height: 18px;
 }
+
+
+/* Restore the consent checkbox to the left edge; vertically center it with its text. */
+.tenant-auth-card .restaurant-owner-auth-form > label.customer-personal-info-consent,
+.customer-signup-card .customer-personal-info-consent {
+  width: 100%;
+  max-width: 100%;
+  align-self: stretch;
+  justify-content: flex-start;
+  margin-inline: 0;
+  text-align: left;
+  align-items: center;
+}
+.tenant-auth-card .restaurant-owner-auth-form > label.customer-personal-info-consent > input[type="checkbox"] {
+  position: static;
+  top: auto;
+  margin: 0;
+  align-self: center;
+}
+.tenant-auth-card .restaurant-owner-auth-form > label.customer-personal-info-consent > span,
+.customer-signup-card .customer-personal-info-consent > span {
+  text-align: left;
+}
