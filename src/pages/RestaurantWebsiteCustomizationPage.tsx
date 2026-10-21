@@ -37,7 +37,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
   const [error, setError] = useState('');
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
   const [showLivePreview, setShowLivePreview] = useState(false);
-  const [activeWebsiteSection, setActiveWebsiteSection] = useState<'favicon' | 'branding' | 'social' | 'colors'>('favicon');
+  const [activeWebsiteSection, setActiveWebsiteSection] = useState<'branding' | 'social' | 'colors'>('branding');
   const [previewPosition, setPreviewPosition] = useState({ x: 0, y: 0 });
   const [previewDragging, setPreviewDragging] = useState(false);
   const previewStageRef = useRef<HTMLDivElement>(null);
@@ -411,8 +411,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
       <form className="website-customization-form" onSubmit={(event: FormEvent) => { event.preventDefault(); setShowSaveConfirmation(true); }}>
         <nav className="website-customization-tabs" aria-label="Website and branding sections" role="tablist">
           {([
-            ['favicon', 'Browser tab icon'],
-            ['branding', 'Branding'],
+            ['branding', 'Branding & Identity'],
             ['social', 'Social media links'],
             ['colors', 'Website colors'],
           ] as const).map(([id, label]) => (
@@ -544,14 +543,21 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
           </div>
         ) : null}
 
-        {activeWebsiteSection === 'favicon' ? <div role="tabpanel" id="website-customization-panel-favicon" aria-labelledby="website-customization-tab-favicon"><RestaurantFaviconSettings
-          restaurantId={restaurantId}
-          faviconUrl={storefront.faviconUrl}
-          disabled={loading || saving}
-          onChange={(url) => { setStorefront((current) => ({ ...current, faviconUrl: url || undefined })); setMessage(''); setError(''); }}
-        /></div> : null}
-
         {activeWebsiteSection === 'branding' ? <div role="tabpanel" id="website-customization-panel-branding" aria-labelledby="website-customization-tab-branding">
+        <div className="website-customization-card">
+          <div className="website-customization-section-heading">
+            <div>
+              <h3>Browser tab icon</h3>
+              <p>Choose the small icon customers see in their browser tab.</p>
+            </div>
+          </div>
+          <RestaurantFaviconSettings
+            restaurantId={restaurantId}
+            faviconUrl={storefront.faviconUrl}
+            disabled={loading || saving}
+            onChange={(url) => { setStorefront((current) => ({ ...current, faviconUrl: url || undefined })); setMessage(''); setError(''); }}
+          />
+        </div>
         <div className="website-customization-card">
           <div className="website-customization-branding-grid">
             <div>
