@@ -978,3 +978,23 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   border-color: var(--color-primary, #111827);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary, #111827) 12%, transparent);
 }
+
+
+/* Customer password recovery uses the tenant's saved surface and font colors.
+   Keep the outer page white as requested; do not inherit the storefront page background. */
+.customer-password-recovery-page .customer-password-recovery-card {
+  background: var(--color-surface, #fff);
+  border-color: var(--color-border, #e2e8f0);
+  color: var(--color-text, #111827);
+}
+.customer-password-recovery-page .customer-password-recovery-card h1,
+.customer-password-recovery-page .customer-password-recovery-card .eyebrow,
+.customer-password-recovery-page .customer-password-recovery-card .restaurant-owner-auth-form label {
+  color: var(--color-text, #111827);
+}
+.customer-password-recovery-page .customer-password-recovery-card > p:not(.eyebrow) {
+  color: var(--color-muted, #64748b);
+}
+.customer-password-recovery-page .customer-password-recovery-card .restaurant-auth-switch a {
+  color: var(--color-text, #111827);
+}
