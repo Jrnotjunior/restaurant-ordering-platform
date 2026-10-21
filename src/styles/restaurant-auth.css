@@ -627,7 +627,7 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   min-height: 100vh;
   min-height: 100svh;
   padding: 24px 20px;
-  background: #f8fafc;
+  background: #fff;
 }
 
 .restaurant-owner-auth-card {
@@ -639,7 +639,7 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   min-height: 350px;
   margin: 0;
   padding: 28px;
-  background: #fff;
+  background: var(--color-background, #fff);
   border: 1px solid #e2e8f0;
   border-radius: 20px;
   box-shadow: 0 18px 50px rgba(15, 23, 42, .08);
