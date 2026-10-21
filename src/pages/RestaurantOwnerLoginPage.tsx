@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useRestaurant } from '../components/RestaurantProvider';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
-import { supabase } from '../services/supabaseClient';
+import { setRememberMePreference, supabase } from '../services/supabaseClient';
 import { getCurrentCustomerRestaurant } from '../modules/customer/customerAuthService';
 
 export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: boolean }) {
@@ -12,6 +12,7 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [verifiedCustomerId, setVerifiedCustomerId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -80,6 +81,8 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
     }
     setSubmitting(true);
     try {
+      // Apply the selected persistence mode before Supabase stores the session.
+      setRememberMePreference(rememberMe);
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
         password,
@@ -173,7 +176,7 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
               </span>
             </label>
             <div className="restaurant-auth-options-row">
-              <label className="restaurant-auth-remember"><input type="checkbox" name="remember-me" /> <span>Remember me</span></label>
+              <label className="restaurant-auth-remember"><input type="checkbox" name="remember-me" checked={rememberMe} onChange={(event) => setRememberMe(event.target.checked)} disabled={submitting} /> <span>Remember me</span></label>
               <div className="restaurant-auth-forgot-password-row">
                 <a href="#forgot-password">Forgot password?</a>
               </div>
