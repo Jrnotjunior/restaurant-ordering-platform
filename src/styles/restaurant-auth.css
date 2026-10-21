@@ -1,4 +1,4 @@
-.restaurant-owner-auth-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 20px;background:#f8fafc;box-sizing:border-box}
+.restaurant-owner-auth-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 20px;background:#fff;box-sizing:border-box}
 .restaurant-owner-auth-card{width:min(440px,100%);box-sizing:border-box;background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:32px;box-shadow:0 18px 50px rgba(15,23,42,.08)}
 .restaurant-owner-auth-card h1{margin:6px 0 8px;font-size:clamp(32px,5vw,46px);line-height:1.05;color:#111827}
 .restaurant-owner-auth-card>p:not(.eyebrow){margin:0 0 24px;color:#64748b;line-height:1.6}
@@ -939,20 +939,3 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
 }
 
 
-/* Customer auth canvas stays white; only the auth card follows restaurant theme settings. */
-.restaurant-owner-auth-page:has(.restaurant-owner-auth-card),
-.restaurant-owner-auth-page:has(.customer-signup-card) {
-  background: #fff !important;
-  background-image: none !important;
-}
-.restaurant-owner-auth-page:has(.restaurant-owner-auth-card)::before,
-.restaurant-owner-auth-page:has(.restaurant-owner-auth-card)::after,
-.restaurant-owner-auth-page:has(.customer-signup-card)::before,
-.restaurant-owner-auth-page:has(.customer-signup-card)::after {
-  display: none !important;
-}
-.restaurant-owner-auth-page .tenant-auth-card,
-.restaurant-owner-auth-page .customer-signup-card {
-  background: var(--color-background, #fff) !important;
-  color: var(--color-text, #111827);
-}
