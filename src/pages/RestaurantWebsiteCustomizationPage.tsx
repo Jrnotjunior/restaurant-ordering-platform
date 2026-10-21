@@ -307,7 +307,6 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         @media(max-width:700px){.website-customization-upload-row{gap:12px;padding:12px;min-height:108px}.website-customization-upload-row .website-customization-logo-preview{width:80px;height:80px;flex-basis:80px}}
         .website-customization-live-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid}
         .website-customization-live-brand{display:flex;align-items:center;gap:8px;min-width:0}
-        .website-customization-live-brand strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
         .website-customization-live-brand img,.website-customization-live-logo-fallback{width:30px;height:30px;object-fit:contain;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
         .website-customization-live-hero{margin:12px 12px 10px;padding:18px 12px;min-height:108px;box-sizing:border-box;border:1px solid;background-size:cover;background-position:center;display:flex;flex-direction:column;justify-content:center}
         .website-customization-live-eyebrow{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
@@ -472,7 +471,6 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
               <div className="website-customization-live-nav" style={{ backgroundColor: websiteTheme.colors.header ?? websiteTheme.colors.background, color: websiteTheme.colors.text, borderBottomColor: websiteTheme.colors.border }}>
                 <div className="website-customization-live-brand">
                   {logoUrl ? <img src={logoUrl} alt="" /> : <span className="website-customization-live-logo-fallback" style={{ background: websiteTheme.colors.primary, color: websiteTheme.colors.primaryText }}>🍴</span>}
-                  <strong style={{ fontFamily: websiteTheme.fontHeading }}>{restaurantName}</strong>
                 </div>
                 <span style={{ color: websiteTheme.colors.muted }}>Menu</span>
               </div>
