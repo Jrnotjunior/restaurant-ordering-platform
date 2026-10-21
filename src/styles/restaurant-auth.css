@@ -743,13 +743,13 @@ main.privileged-mfa-page section.privileged-mfa-card form.restaurant-owner-auth-
   border: 0;
   border-radius: 7px;
   background: transparent;
-  color: var(--color-text, #111827);
+  color: #64748b;
   cursor: pointer;
 }
 
 .restaurant-owner-auth-card .restaurant-owner-auth-form .customer-password-input-row .customer-password-visibility:hover {
   background: #f1f5f9;
-  color: var(--color-text, #111827);
+  color: #64748b;
 }
 
 .restaurant-owner-auth-card .restaurant-owner-auth-form .customer-password-input-row .customer-password-visibility:focus-visible {
