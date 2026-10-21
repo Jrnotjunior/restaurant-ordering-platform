@@ -1,6 +1,6 @@
 # Central Map Service
 
-**Status:** Source implementation committed. Production activation still requires the Mapbox public token to be added to Supabase Edge Function secrets and the latest Hostinger deployment to complete.
+**Status:** Shared map is active and has passed user-reported live checks for map rendering, accurate address search, delivery-fee calculation, and selection from the restaurant's custom-domain checkout. The legacy build-time token configuration has been retired.
 
 ## Architecture
 
@@ -36,7 +36,7 @@ Do **not** set an `sk.` secret token as `MAPBOX_PUBLIC_TOKEN`. The token is retu
 
 Set the secret in the Supabase Dashboard for the production project under **Edge Functions → Secrets** (or the project's function secrets settings), then redeploy/restart the function if the dashboard prompts you. This repository's GitHub Actions no longer needs `VITE_MAPBOX_PUBLIC_TOKEN`; it builds the app without embedding that token in files committed to `hostinger-deploy`.
 
-## Deployment and activation checklist
+## Deployment and verification checklist
 
 - [x] Build a separate `maps.html` entry with the central Mapbox UI.
 - [x] Route tenant delivery and restaurant-location pickers through the central iframe.
@@ -44,12 +44,13 @@ Set the secret in the Supabase Dashboard for the production project under **Edge
 - [x] Validate parent host against active tenant-domain resolution, with the known GitHub Pages test exception.
 - [x] Deploy the runtime config Edge Function with JWT verification disabled because it serves public configuration; the handler enforces an exact Origin check.
 - [x] Remove `VITE_MAPBOX_PUBLIC_TOKEN` from the repository's build-time environment configuration.
-- [ ] Add `MAPBOX_PUBLIC_TOKEN` to production Supabase Edge Function secrets.
+- [x] Production `MAPBOX_PUBLIC_TOKEN` is configured as a public `pk.` token (confirmed by the project owner).
 - [ ] Configure Mapbox URL restrictions for `https://app.web2table.io` and verify public scopes for map style/tiles/fonts and geocoding search.
 - [x] Hostinger and GitHub Pages workflows completed successfully on commit `7963664`, and the published `hostinger-deploy` tree contains `maps.html` plus separate app/map bundles.
 - [x] Removed `VITE_MAPBOX_PUBLIC_TOKEN` from all build workflow environment mappings; the token is retrieved at runtime from the Supabase function.
-- [ ] Perform a live browser smoke test and verify Mapbox calls use the central origin after setting `MAPBOX_PUBLIC_TOKEN`. The map is not expected to work until that secret is present.
-- [ ] Test the real checkout flow and restaurant-settings map from `https://app.web2table.io` and at least one registered tenant custom domain.
+- [x] Live browser smoke tests reported by the project owner: central map loads, address search is accurate, delivery fee calculates correctly, and custom-domain checkout location selection works.
+- [x] Real checkout flow tested from a registered restaurant custom domain (reported by the project owner). 
+- [ ] Verify Mapbox public token scopes and allowed-URL restriction for `https://app.web2table.io`.
 
 ## Future dedicated subdomain
 
