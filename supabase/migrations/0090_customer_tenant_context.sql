@@ -42,6 +42,15 @@ begin
     if v_restaurant_id is not null then
       return v_restaurant_id;
     end if;
+
+    -- Never let a tenant storefront fall back to a caller-supplied slug.
+    -- Otherwise an unknown or mismatched *.web2table.io hostname could
+    -- select a different restaurant simply by changing x-restaurant-slug.
+    -- The canonical management host may still use the configured slug.
+    if v_domain like '%.web2table.io'
+       and v_domain <> 'app.web2table.io' then
+      return null;
+    end if;
   end if;
 
   if v_slug <> '' then
