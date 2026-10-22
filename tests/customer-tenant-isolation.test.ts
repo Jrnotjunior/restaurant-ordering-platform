@@ -13,6 +13,10 @@ const profileIdGuardMigration = readFileSync(
   new URL('../supabase/migrations/20261023060000_guard_customer_profile_id_rpc.sql', import.meta.url),
   'utf8',
 );
+const loyaltyRedemptionGuardMigration = readFileSync(
+  new URL('../supabase/migrations/20261023070000_guard_loyalty_redemption_tenant_context.sql', import.meta.url),
+  'utf8',
+);
 
 describe('customer tenant-isolation migration contract', () => {
   it('blocks linking one authenticated customer identity to multiple restaurants', () => {
@@ -51,6 +55,23 @@ describe('customer tenant-isolation migration contract', () => {
 
     expect(functionDefinition).toContain('public.customer_identity_is_single_tenant');
     expect(functionDefinition).toContain('public.get_request_restaurant_id()');
+  });
+
+  it('guards self-order loyalty redemption while preserving authorized staff redemption', () => {
+    const pendingPaymentRpc = loyaltyRedemptionGuardMigration.slice(
+      loyaltyRedemptionGuardMigration.indexOf('function public.redeem_loyalty_reward_for_pending_payment('),
+      loyaltyRedemptionGuardMigration.indexOf('create or replace function public.redeem_loyalty_reward('),
+    );
+    expect(pendingPaymentRpc).toContain('public.customer_identity_is_single_tenant(auth.uid(), v_payment.restaurant_id)');
+    expect(pendingPaymentRpc).toContain('v_payment.restaurant_id <> public.get_request_restaurant_id()');
+
+    const redemptionRpc = loyaltyRedemptionGuardMigration.slice(
+      loyaltyRedemptionGuardMigration.indexOf('function public.redeem_loyalty_reward('),
+    );
+    expect(redemptionRpc).toContain('if not v_staff_authorized then');
+    expect(redemptionRpc).toContain('public.customer_identity_is_single_tenant(auth.uid(), v_order.restaurant_id)');
+    expect(redemptionRpc).toContain('r.owner_id = auth.uid()');
+    expect(redemptionRpc).toContain("s.role = 'cashier'");
   });
 
   it('guards the customer profile ID lookup against forged tenant context', () => {
