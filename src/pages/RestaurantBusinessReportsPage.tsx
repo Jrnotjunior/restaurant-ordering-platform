@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import * as XLSX from 'xlsx-js-style';
 import { getRestaurantSales } from '../modules/sales/salesService';
-import { getRecordedReportDiscountTotal } from '../modules/sales/reportCalculations';
+import {
+  getRecordedReportDiscountTotal,
+  getRecordedTaxSnapshotValue,
+  getTaxSnapshotStatus,
+  hasMissingTaxSnapshot,
+} from '../modules/sales/reportCalculations';
 import type { RestaurantOrder } from '../modules/ordering/orderService';
 import { supabase } from '../services/supabaseClient';
 
@@ -126,8 +131,12 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
   const rangeExpenses = useMemo(() => expenses.filter((expense) => expense.expense_date >= fromDate && expense.expense_date <= toDate), [expenses, fromDate, toDate]);
   const totalSales = completedOrders.reduce((sum, order) => sum + order.total, 0);
   const discounts = completedOrders.reduce((sum, order) => sum + getRecordedReportDiscountTotal(order), 0);
-  const taxSales = completedOrders.reduce((sum, order) => sum + (order.taxNetSales ?? 0), 0);
-  const outputVat = completedOrders.reduce((sum, order) => sum + (order.taxVatAmount ?? 0), 0);
+  const ordersMissingTaxSnapshots = rangeOrders.filter(hasMissingTaxSnapshot);
+  const completedOrdersMissingTaxSnapshots = completedOrders.filter(hasMissingTaxSnapshot);
+  const taxSnapshotComplete = completedOrdersMissingTaxSnapshots.length === 0;
+  const completedOrdersWithTaxSnapshots = completedOrders.filter((order) => !hasMissingTaxSnapshot(order));
+  const taxSales = completedOrdersWithTaxSnapshots.reduce((sum, order) => sum + (order.taxNetSales ?? 0), 0);
+  const outputVat = completedOrdersWithTaxSnapshots.reduce((sum, order) => sum + (order.taxVatAmount ?? 0), 0);
   const totalExpenses = rangeExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
   const estimatedOperatingResult = totalSales - totalExpenses;
   const vatConfiguredOrders = completedOrders.filter((order) => order.taxVatRegistered).length;
@@ -184,8 +193,8 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
 
   function exportSales() {
     downloadSpreadsheet(`sales-report-${fromDate}-to-${toDate}.xlsx`, [
-      ['Order number','Order date','Status','Order type','Payment method','Payment status','Order total PHP','Discounts PHP','Net sales per order record PHP','Taxable sales PHP','VAT amount PHP','VAT-exempt sales PHP','VAT registered on order'],
-      ...rangeOrders.map((order) => [order.orderNumber, order.createdAt, order.status, order.orderType, order.paymentMethod, order.paymentStatus, order.total, getRecordedReportDiscountTotal(order), order.taxNetSales ?? '', order.taxVatableSales ?? '', order.taxVatAmount ?? '', order.taxVatExemptSales ?? '', order.taxVatRegistered ? 'Yes' : 'No']),
+      ['Order number','Order date','Status','Order type','Payment method','Payment status','Order total PHP','Discounts PHP','Net sales per order record PHP','Taxable sales PHP','VAT amount PHP','VAT-exempt sales PHP','VAT registration snapshot','Tax snapshot status'],
+      ...rangeOrders.map((order) => [order.orderNumber, order.createdAt, order.status, order.orderType, order.paymentMethod, order.paymentStatus, order.total, getRecordedReportDiscountTotal(order), getRecordedTaxSnapshotValue(order, order.taxNetSales), getRecordedTaxSnapshotValue(order, order.taxVatableSales), getRecordedTaxSnapshotValue(order, order.taxVatAmount), getRecordedTaxSnapshotValue(order, order.taxVatExemptSales), hasMissingTaxSnapshot(order) ? 'Unverified' : order.taxVatRegistered ? 'Yes' : 'No', getTaxSnapshotStatus(order)]),
     ]);
   }
 
@@ -194,14 +203,16 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
       ['Tax-support sales detail (not an official tax return or invoice)',''],
       ['Period start', fromDate], ['Period end', toDate],
       ['Report generated', new Date().toISOString()],
-      ['Note','Values are exported from recorded order tax fields; consult an accountant and verify current BIR requirements. Missing tax fields are left blank rather than estimated.'],
+      ['Note','For positive-total orders, tax values are exported only where the order has a positive gross-sales snapshot. For those without a positive gross-sales snapshot, tax fields are left blank. Period net-sales and VAT totals are marked incomplete if any completed order in the period lacks a snapshot. A present snapshot is not independently validated for tax compliance.'],
       [],
-      ['Order number','Transaction date','Order status','Payment status','Gross order amount PHP','Discount amount PHP','Recorded net sales PHP','Recorded vatable sales PHP','Recorded VAT amount PHP','Recorded VAT-exempt sales PHP','VAT registered on order'],
-      ...rangeOrders.map((order) => [order.orderNumber, order.createdAt, order.status, order.paymentStatus, order.total, getRecordedReportDiscountTotal(order), order.taxNetSales ?? '', order.taxVatableSales ?? '', order.taxVatAmount ?? '', order.taxVatExemptSales ?? '', order.taxVatRegistered ? 'Yes' : 'No']),
+      ['Order number','Transaction date','Order status','Payment status','Order total PHP','Discount amount PHP','Recorded net sales PHP','Recorded vatable sales PHP','Recorded VAT amount PHP','Recorded VAT-exempt sales PHP','VAT registration snapshot','Tax snapshot status'],
+      ...rangeOrders.map((order) => [order.orderNumber, order.createdAt, order.status, order.paymentStatus, order.total, getRecordedReportDiscountTotal(order), getRecordedTaxSnapshotValue(order, order.taxNetSales), getRecordedTaxSnapshotValue(order, order.taxVatableSales), getRecordedTaxSnapshotValue(order, order.taxVatAmount), getRecordedTaxSnapshotValue(order, order.taxVatExemptSales), hasMissingTaxSnapshot(order) ? 'Unverified' : order.taxVatRegistered ? 'Yes' : 'No', getTaxSnapshotStatus(order)]),
       [],
+      ['Orders in period with missing tax snapshots', ordersMissingTaxSnapshots.length],
       ['Completed orders in period', completedOrders.length], ['Completed order totals PHP', totalSales],
-      ['Recorded net sales total PHP', completedOrders.reduce((sum, order) => sum + (order.taxNetSales ?? 0), 0)],
-      ['Recorded VAT total PHP', outputVat],
+      ['Completed orders missing tax snapshots', completedOrdersMissingTaxSnapshots.length],
+      ['Recorded net sales total PHP', taxSnapshotComplete ? taxSales : 'INCOMPLETE — one or more completed orders lack tax snapshots'],
+      ['Recorded VAT total PHP', taxSnapshotComplete ? outputVat : 'INCOMPLETE — one or more completed orders lack tax snapshots'],
     ]);
   }
 
@@ -294,7 +305,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
               })}
               {!completedOrders.length && <tr><td colSpan={3}>No completed orders in this period.</td></tr>}
             </tbody></table></div>
-            <div className="business-reports-actions" style={{ justifyContent: 'flex-end' }}><button className="business-reports-button business-reports-export restaurant-export-button restaurant-compact-action" type="button" onClick={exportSales}>Export sales CSV</button></div>
+            <div className="business-reports-actions" style={{ justifyContent: 'flex-end' }}><button className="business-reports-button business-reports-export restaurant-export-button restaurant-compact-action" type="button" onClick={exportSales}>Export sales (.xlsx)</button></div>
           </section>
         </>}
         {tab === 'expenses' && <>
@@ -312,7 +323,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
               <label>Amount (₱)<input type="number" min="0.01" step="0.01" value={expenseAmount} required placeholder="0.00" onChange={(event)=>setExpenseAmount(event.target.value)} /></label>
               <label>Description<input value={expenseDescription} required maxLength={240} placeholder="e.g. Fresh produce delivery" onChange={(event)=>setExpenseDescription(event.target.value)} /></label>
             </div>
-            <div className="business-reports-actions" style={{ justifyContent: 'flex-end' }}><button className="business-reports-button primary restaurant-compact-action" type="submit" disabled={saving}>{saving?'Saving…':'Save'}</button><button className="business-reports-button business-reports-export restaurant-export-button restaurant-compact-action" type="button" onClick={exportExpenses}>Export expenses CSV</button></div>
+            <div className="business-reports-actions" style={{ justifyContent: 'flex-end' }}><button className="business-reports-button primary restaurant-compact-action" type="submit" disabled={saving}>{saving?'Saving…':'Save'}</button><button className="business-reports-button business-reports-export restaurant-export-button restaurant-compact-action" type="button" onClick={exportExpenses}>Export expenses (.xlsx)</button></div>
           </form></section>
           <section className="business-reports-panel"><h2>Expenses in selected period</h2><div className="business-reports-table-wrap"><table className="business-reports-table"><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th></th></tr></thead><tbody>
             {rangeExpenses.map((expense)=><tr key={expense.id}><td>{expense.expense_date}</td><td>{CATEGORIES.find((item)=>item.value===expense.category)?.label ?? expense.category}</td><td className="wrap">{expense.description}</td><td>{peso(Number(expense.amount))}</td><td><button className="business-reports-button" type="button" onClick={()=>void deleteExpense(expense.id)}>Delete</button></td></tr>)}
@@ -338,7 +349,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
               {paymentMethods.map((item) => <tr key={item.method}><td>{item.method === 'gcash' ? 'GCash / online' : 'Cash'}</td><td>{item.count}</td><td>{peso(item.paidAmount)}</td><td>{peso(item.outstandingAmount)}</td><td>{item.method === 'gcash' ? peso(item.providerFees) : '—'}</td><td>{item.method === 'gcash' ? peso(item.recordedNet) : '—'}</td></tr>)}
             </tbody></table></div>
             <p className="business-reports-muted">Provider fees and net amounts are displayed only when recorded on the order. Zero may mean no value was recorded, not necessarily a zero-fee transaction. Refunded amounts are listed separately in the status summary.</p>
-            <div className="business-reports-actions" style={{ justifyContent: 'flex-end' }}><button className="business-reports-button business-reports-export restaurant-export-button restaurant-compact-action" type="button" onClick={exportPayments}>Export payment reconciliation CSV</button></div>
+            <div className="business-reports-actions" style={{ justifyContent: 'flex-end' }}><button className="business-reports-button business-reports-export restaurant-export-button restaurant-compact-action" type="button" onClick={exportPayments}>Export payment reconciliation (.xlsx)</button></div>
           </section>
           <section className="business-reports-panel"><h2>Orders to review</h2>
             <div className="business-reports-table-wrap"><table className="business-reports-table"><thead><tr><th>Order</th><th>Date</th><th>Order status</th><th>Method</th><th>Payment status</th><th>Amount</th></tr></thead><tbody>
@@ -351,13 +362,14 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
           <div className="business-reports-cards">
             <div className="business-reports-card"><small>Completed sales</small><strong>{peso(totalSales)}</strong></div>
             <div className="business-reports-card"><small>Discounts recorded</small><strong>{peso(discounts)}</strong></div>
-            <div className="business-reports-card"><small>Recorded net sales</small><strong>{peso(taxSales)}</strong></div>
-            <div className="business-reports-card"><small>Recorded output VAT</small><strong>{peso(outputVat)}</strong></div>
+            <div className="business-reports-card"><small>Recorded net sales</small><strong>{taxSnapshotComplete ? peso(taxSales) : 'Incomplete'}</strong></div>
+            <div className="business-reports-card"><small>Recorded output VAT</small><strong>{taxSnapshotComplete ? peso(outputVat) : 'Incomplete'}</strong></div>
           </div>
+          {ordersMissingTaxSnapshots.length > 0 && <p className="business-reports-error" role="alert">{ordersMissingTaxSnapshots.length} order(s) in this period have a positive total but no positive gross-sales tax snapshot. Tax fields are intentionally left blank instead of treating default zero values as calculated tax results. The actual calculation and underlying transaction records still need review.</p>}
           <section className="business-reports-panel"><h2>Tax-support exports</h2>
             <p>These files summarize order and tax fields already recorded by the platform. They are supporting records for review by your accountant, not official BIR invoices, books, returns, or confirmation that your business is tax-compliant. No tax rate is inferred when order tax data is missing.</p>
-            <p className="business-reports-muted">Orders with VAT registration recorded: {vatConfiguredOrders} of {completedOrders.length} completed orders in this period. Check your business registration and tax treatment with your accountant before relying on these totals.</p>
-            <div className="business-reports-actions" style={{ justifyContent: 'flex-end' }}><button className="business-reports-button business-reports-export restaurant-export-button restaurant-compact-action" type="button" onClick={exportTaxSupport}>Export tax-support CSV</button><button className="business-reports-button business-reports-export restaurant-export-button restaurant-compact-action" type="button" onClick={exportSales}>Export detailed sales CSV</button></div>
+            <p className="business-reports-muted">Orders with VAT registration recorded: {vatConfiguredOrders} of {completedOrders.length} completed orders in this period. Completed orders missing tax snapshots: {completedOrdersMissingTaxSnapshots.length}. Check your business registration and tax treatment with your accountant before relying on these totals.</p>
+            <div className="business-reports-actions" style={{ justifyContent: 'flex-end' }}><button className="business-reports-button business-reports-export restaurant-export-button restaurant-compact-action" type="button" onClick={exportTaxSupport}>Export tax-support (.xlsx)</button><button className="business-reports-button business-reports-export restaurant-export-button restaurant-compact-action" type="button" onClick={exportSales}>Export detailed sales (.xlsx)</button></div>
           </section>
           <section className="business-reports-panel"><h2>Included in the export</h2><ul><li>Order number, date, status, and payment status</li><li>Recorded order amount and discounts</li><li>Recorded net sales, vatable sales, VAT amount, and VAT-exempt sales when available</li></ul><p>Tax status and amounts are taken from existing order records. Review data quality and applicable requirements before filing.</p></section>
         </>}
