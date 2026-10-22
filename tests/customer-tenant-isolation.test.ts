@@ -9,6 +9,10 @@ const rpcGuardMigration = readFileSync(
   new URL('../supabase/migrations/20261023050000_guard_customer_tenant_rpcs.sql', import.meta.url),
   'utf8',
 );
+const profileIdGuardMigration = readFileSync(
+  new URL('../supabase/migrations/20261023060000_guard_customer_profile_id_rpc.sql', import.meta.url),
+  'utf8',
+);
 
 describe('customer tenant-isolation migration contract', () => {
   it('blocks linking one authenticated customer identity to multiple restaurants', () => {
@@ -47,6 +51,11 @@ describe('customer tenant-isolation migration contract', () => {
 
     expect(functionDefinition).toContain('public.customer_identity_is_single_tenant');
     expect(functionDefinition).toContain('public.get_request_restaurant_id()');
+  });
+
+  it('guards the customer profile ID lookup against forged tenant context', () => {
+    expect(profileIdGuardMigration).toContain('public.customer_identity_is_single_tenant(auth.uid(), p_restaurant_id)');
+    expect(profileIdGuardMigration).toContain('p_restaurant_id <> public.get_request_restaurant_id()');
   });
 
   it('fails closed for existing duplicate identities in profile access policies', () => {
