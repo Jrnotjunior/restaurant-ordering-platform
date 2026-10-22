@@ -22,6 +22,12 @@ const customerAttachmentGuardMigration = readFileSync(
   'utf8',
 );
 
+
+const customerAddressGuardMigration = readFileSync(
+  new URL('../supabase/migrations/20261023090000_guard_customer_address_update_and_rls.sql', import.meta.url),
+  'utf8',
+);
+
 describe('customer tenant-isolation migration contract', () => {
   it('blocks linking one authenticated customer identity to multiple restaurants', () => {
     expect(singleTenantMigration).toContain('create trigger customer_profiles_single_tenant_guard');
@@ -89,6 +95,36 @@ describe('customer tenant-isolation migration contract', () => {
   it('guards the customer profile ID lookup against forged tenant context', () => {
     expect(profileIdGuardMigration).toContain('public.customer_identity_is_single_tenant(auth.uid(), p_restaurant_id)');
     expect(profileIdGuardMigration).toContain('p_restaurant_id <> public.get_request_restaurant_id()');
+  });
+
+  it('guards legacy address updates and direct address-table access by tenant', () => {
+    const updateRpc = customerAddressGuardMigration.slice(
+      customerAddressGuardMigration.indexOf('function public.update_my_customer_address('),
+      customerAddressGuardMigration.indexOf('revoke all on function public.update_my_customer_address('),
+    );
+    expect(updateRpc).toContain('public.customer_identity_is_single_tenant(auth.uid(), p_restaurant_id)');
+    expect(updateRpc).toContain('p_restaurant_id <> public.get_request_restaurant_id()');
+
+    for (const policy of [
+      'customer_addresses_select_own',
+      'customer_addresses_insert_own',
+      'customer_addresses_update_own',
+      'customer_addresses_delete_own',
+    ]) {
+      const policyStart = customerAddressGuardMigration.indexOf(`create policy ${policy}`);
+      expect(policyStart, `missing address policy: ${policy}`).toBeGreaterThanOrEqual(0);
+      const nextPolicyStart = customerAddressGuardMigration.indexOf(
+        'create policy ',
+        policyStart + 1,
+      );
+      const policyDefinition = customerAddressGuardMigration.slice(
+        policyStart,
+        nextPolicyStart === -1 ? undefined : nextPolicyStart,
+      );
+      expect(policyDefinition).toContain('public.get_request_restaurant_id()');
+      expect(policyDefinition).toContain('public.customer_identity_is_single_tenant');
+      expect(policyDefinition).toContain('cp.restaurant_id = customer_addresses.restaurant_id');
+    }
   });
 
   it('fails closed for existing duplicate identities in profile access policies', () => {
