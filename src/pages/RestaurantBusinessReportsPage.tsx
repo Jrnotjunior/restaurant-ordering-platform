@@ -203,7 +203,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
       ['Tax-support sales detail (not an official tax return or invoice)',''],
       ['Period start', fromDate], ['Period end', toDate],
       ['Report generated', new Date().toISOString()],
-      ['Note','Tax values are exported only where the order has a positive gross-sales snapshot. For positive-total orders without that snapshot, tax fields and complete-period tax totals are left blank/incomplete, not assumed to be zero. A present snapshot is not independently validated for tax compliance.'],
+      ['Note','For positive-total orders, tax values are exported only where the order has a positive gross-sales snapshot. For those without a positive gross-sales snapshot, tax fields are left blank. Period net-sales and VAT totals are marked incomplete if any completed order in the period lacks a snapshot. A present snapshot is not independently validated for tax compliance.'],
       [],
       ['Order number','Transaction date','Order status','Payment status','Order total PHP','Discount amount PHP','Recorded net sales PHP','Recorded vatable sales PHP','Recorded VAT amount PHP','Recorded VAT-exempt sales PHP','VAT registration snapshot','Tax snapshot status'],
       ...rangeOrders.map((order) => [order.orderNumber, order.createdAt, order.status, order.paymentStatus, order.total, getRecordedReportDiscountTotal(order), getRecordedTaxSnapshotValue(order, order.taxNetSales), getRecordedTaxSnapshotValue(order, order.taxVatableSales), getRecordedTaxSnapshotValue(order, order.taxVatAmount), getRecordedTaxSnapshotValue(order, order.taxVatExemptSales), hasMissingTaxSnapshot(order) ? 'Unverified' : order.taxVatRegistered ? 'Yes' : 'No', getTaxSnapshotStatus(order)]),
