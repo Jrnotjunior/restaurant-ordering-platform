@@ -24,6 +24,8 @@ describe('customer tenant isolation regression guard', () => {
     expect(identityMigration).toContain('p_auth_user_id = auth.uid()');
     expect(identityMigration).toContain('and not exists (');
     expect(identityMigration).toContain('cp.restaurant_id <> p_restaurant_id');
+    expect(identityMigration).toContain('set search_path = public\nas $\n  select p_auth_user_id = auth.uid()');
+    expect(identityMigration).not.toContain('\nas $\n');
   });
 
   it('guards customer profile, loyalty, order-history, and address RPCs with the identity check', () => {
