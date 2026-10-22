@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { getRecordedReportDiscountTotal } from './reportCalculations';
+import {
+  getRecordedReportDiscountTotal,
+  getRecordedTaxSnapshotValue,
+  getTaxSnapshotStatus,
+  hasMissingTaxSnapshot,
+} from './reportCalculations';
 
 describe('getRecordedReportDiscountTotal', () => {
   it('does not add the derived loyalty component to a discount total that already includes it', () => {
@@ -30,11 +35,6 @@ describe('getRecordedReportDiscountTotal', () => {
 });
 
 
-import {
-  getRecordedTaxSnapshotValue,
-  getTaxSnapshotStatus,
-  hasMissingTaxSnapshot,
-} from './reportCalculations';
 
 describe('tax snapshot reporting safeguards', () => {
   it('flags a positive-total order with zero-default tax snapshot fields as missing', () => {
