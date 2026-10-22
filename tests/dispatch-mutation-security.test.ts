@@ -9,58 +9,94 @@ const repository = readFileSync(repositoryPath, 'utf8');
 const dispatchPage = readFileSync(dispatchPagePath, 'utf8');
 const migration = readFileSync(migrationPath, 'utf8').toLowerCase();
 
+function functionBody(name: string, nextName?: string) {
+  const start = migration.indexOf(`create or replace function public.${name}`);
+  const end = nextName
+    ? migration.indexOf(`create or replace function public.${nextName}`, start + 1)
+    : migration.indexOf('$function$;', start) + '$function$;'.length;
+  expect(start, `missing function definition: ${name}`).toBeGreaterThanOrEqual(0);
+  expect(end, `missing end boundary for function: ${name}`).toBeGreaterThan(start);
+  return migration.slice(start, end);
+}
+
 describe('dispatch order mutation security boundary', () => {
+  const assignment = functionBody('assign_delivery_order', 'complete_dispatch_handoff');
+  const handoff = functionBody('complete_dispatch_handoff');
+
   it('uses narrow RPCs instead of browser-side direct writes', () => {
     expect(repository).toContain("supabase.rpc('assign_delivery_order'");
     expect(repository).toContain("supabase.rpc('complete_dispatch_handoff'");
-    expect(repository).not.toMatch(/supabase\.from\(['"]orders['"]\)\.update\s*\(/);
-    expect(repository).not.toMatch(/supabase\.from\(['"]delivery_assignments['"]\)\.(insert|update|delete)\s*\(/);
+    expect(repository).not.toMatch(/supabase\\.from\\(['"]orders['"]\\)\\.update\\s*\\(/);
+    expect(repository).not.toMatch(/supabase\\.from\\(['"]delivery_assignments['"]\\)\\.(insert|update|delete)\\s*\\(/);
   });
 
-  it('validates assignment identity, MFA, dispatcher role, order state and active rider in the database', () => {
-    const assignmentStart = migration.indexOf('create or replace function public.assign_delivery_order');
-    const handoffStart = migration.indexOf('create or replace function public.complete_dispatch_handoff');
-    expect(assignmentStart).toBeGreaterThanOrEqual(0);
-    expect(handoffStart).toBeGreaterThan(assignmentStart);
+  it('checks authentication, MFA, active dispatcher membership and active restaurant for assignment', () => {
+    for (const fragment of [
+      'auth.uid() is null',
+      'public.privileged_restaurant_mfa_verified()',
+      's.auth_user_id = auth.uid()',
+      "s.role = 'dispatcher'",
+      's.is_active = true',
+      'r.is_active = true',
+      's.restaurant_id = p_restaurant_id',
+    ]) expect(assignment).toContain(fragment);
+  });
 
-    const assignment = migration.slice(assignmentStart, handoffStart);
-    expect(assignment).toContain('security definer');
-    expect(assignment).toContain('auth.uid()');
-    expect(assignment).toContain('public.privileged_restaurant_mfa_verified()');
-    expect(assignment).toContain("s.role = 'dispatcher'");
+  it('scopes order and rider lookups to the requested restaurant', () => {
+    expect(assignment).toContain('o.restaurant_id = p_restaurant_id');
+    expect(assignment).toContain('s.restaurant_id = p_restaurant_id');
+    expect(assignment).toContain("s.role = 'rider'");
+    expect(assignment).toContain('s.is_active = true');
+    expect(assignment).toContain('for update of o');
+    expect(assignment).toMatch(/for update;/i);
+  });
+
+  it('rejects invalid assignment state and protects against a second active assignment', () => {
     expect(assignment).toContain("v_order.order_type <> 'delivery'");
     expect(assignment).toContain("v_order.status <> 'ready'");
-    expect(assignment).toContain("s.role = 'rider'");
-    expect(assignment).toMatch(/for update of o/i);
-    expect(assignment).toMatch(/for update;/i);
-    expect(migration).toContain('revoke all on function public.assign_delivery_order');
-    expect(migration).toContain('grant execute on function public.assign_delivery_order');
+    expect(assignment).toContain('v_order.rider_id is not null');
+    expect(assignment).toContain("coalesce(v_order.delivery_status, 'unassigned') <> 'unassigned'");
+    expect(assignment).toContain("da.status in ('assigned', 'delivering', 'arrived')");
+    expect(assignment).toContain('order state changed during rider assignment; refresh and retry');
+    expect(assignment).toContain('using errcode = \'40001\'');
   });
 
-  it('validates dispatcher identity, MFA, allowed handoff type and ready state before completing handoff', () => {
-    const handoffStart = migration.indexOf('create or replace function public.complete_dispatch_handoff');
-    expect(handoffStart).toBeGreaterThanOrEqual(0);
-    const handoff = migration.slice(handoffStart);
-
-    expect(handoff).toContain('security definer');
-    expect(handoff).toContain('auth.uid()');
-    expect(handoff).toContain('public.privileged_restaurant_mfa_verified()');
-    expect(handoff).toContain("s.role = 'dispatcher'");
+  it('checks authentication, MFA, dispatcher membership and tenant scope for handoff', () => {
+    for (const fragment of [
+      'auth.uid() is null',
+      'public.privileged_restaurant_mfa_verified()',
+      's.auth_user_id = auth.uid()',
+      "s.role = 'dispatcher'",
+      's.is_active = true',
+      'r.is_active = true',
+      's.restaurant_id = p_restaurant_id',
+      'o.restaurant_id = p_restaurant_id',
+    ]) expect(handoff).toContain(fragment);
     expect(handoff).toContain("p_order_type not in ('pickup', 'take_out', 'dine_in')");
+    expect(handoff).toContain('v_order.order_type <> p_order_type');
     expect(handoff).toContain("v_order.status <> 'ready'");
-    expect(handoff).toContain('revoke all on function public.complete_dispatch_handoff');
-    expect(handoff).toContain('grant execute on function public.complete_dispatch_handoff');
+    expect(handoff).toContain('for update of o');
+    expect(handoff).toContain('order state changed during handoff; refresh and retry');
+  });
+
+  it('restricts RPC execution to authenticated callers rather than PUBLIC or anon', () => {
+    expect(migration).toMatch(/revoke all on function public\\.assign_delivery_order\\(uuid, uuid, uuid\\) from public, anon/);
+    expect(migration).toMatch(/grant execute on function public\\.assign_delivery_order\\(uuid, uuid, uuid\\) to authenticated/);
+    expect(migration).toMatch(/revoke all on function public\\.complete_dispatch_handoff\\(uuid, uuid, text\\) from public, anon/);
+    expect(migration).toMatch(/grant execute on function public\\.complete_dispatch_handoff\\(uuid, uuid, text\\) to authenticated/);
+    expect(assignment).toContain('security definer');
+    expect(handoff).toContain('security definer');
+    expect(assignment).toContain("set search_path to 'public', 'pg_temp'");
+    expect(handoff).toContain("set search_path to 'public', 'pg_temp'");
   });
 
   it('preserves the workflow that allows another delivery to be assigned to a busy rider', () => {
-    expect(migration).not.toContain('the selected rider already has an active delivery assignment');
+    expect(assignment).not.toContain('the selected rider already has an active delivery assignment');
     expect(dispatchPage).toContain("busy: 'Has active delivery'");
     expect(dispatchPage).toContain("rider.status === 'busy' ? 'Assign Another Order' : 'Assign'");
   });
 
   it('does not revoke broad orders-table UPDATE privileges in the additive RPC migration', () => {
-    expect(migration).not.toMatch(/revoke\s+update\s+on\s+table\s+public\.orders/i);
-    expect(migration).toMatch(/revoke\s+all\s+on\s+function\s+public\.assign_delivery_order/i);
-    expect(migration).toMatch(/revoke\s+all\s+on\s+function\s+public\.complete_dispatch_handoff/i);
+    expect(migration).not.toMatch(/revoke\\s+update\\s+on\\s+table\\s+public\\.orders/i);
   });
 });
