@@ -105,7 +105,7 @@ describe('customer tenant-isolation migration contract', () => {
     expect(updateRpc).toContain('public.customer_identity_is_single_tenant(auth.uid(), p_restaurant_id)');
     expect(updateRpc).toContain('p_latitude double precision');
     expect(updateRpc).toContain('latitude = p_latitude');
-    expect(updateRpc).toContain('public.update_my_customer_address(uuid, uuid, text, text, text, text, double precision, double precision, text)');
+    expect(customerAddressGuardMigration).toContain('public.update_my_customer_address(uuid, uuid, text, text, text, text, double precision, double precision, text)');
     expect(updateRpc).toContain('p_restaurant_id <> public.get_request_restaurant_id()');
 
     for (const policy of [
