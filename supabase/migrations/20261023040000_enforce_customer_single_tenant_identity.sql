@@ -44,7 +44,7 @@ language sql
 stable
 security definer
 set search_path = public
-as $
+as $$
   select p_auth_user_id = auth.uid()
     and exists (
       select 1 from public.customer_profiles cp
@@ -56,7 +56,7 @@ as $
       where cp.auth_user_id = p_auth_user_id
         and cp.restaurant_id <> p_restaurant_id
     );
-$;
+$$;
 
 revoke all on function public.customer_identity_is_single_tenant(uuid, uuid) from public, anon;
 grant execute on function public.customer_identity_is_single_tenant(uuid, uuid) to authenticated;
