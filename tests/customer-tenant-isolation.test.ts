@@ -20,7 +20,7 @@ describe('customer tenant-isolation migration contract', () => {
 
   it('keeps guest profiles outside the authenticated identity guard', () => {
     expect(singleTenantMigration).toContain('new.auth_user_id is not null');
-    expect(singleTenantMigration).toContain('auth_user_id IS NULL are not restricted');
+    expect(singleTenantMigration).toContain('Guest checkout is unaffected');
   });
 
   it.each([
