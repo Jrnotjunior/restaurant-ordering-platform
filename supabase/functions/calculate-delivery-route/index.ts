@@ -17,7 +17,10 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed." }, 405);
 
-  const directionsApiToken = Deno.env.get("MAPBOX_DIRECTIONS_API_TOKEN");
+  // Prefer the centrally managed token used by the shared map. Keep the old
+  // directions secret as a temporary rollback path until live fresh-route
+  // calculations are verified with MAPBOX_PUBLIC_TOKEN.
+  const directionsApiToken = Deno.env.get("MAPBOX_PUBLIC_TOKEN") || Deno.env.get("MAPBOX_DIRECTIONS_API_TOKEN");
   if (!directionsApiToken) return json({ error: "Delivery distance service is not configured yet." }, 503);
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
