@@ -7,7 +7,10 @@ create or replace function public.update_my_customer_address(
   p_label text,
   p_city text,
   p_barangay text,
-  p_address text
+  p_address text,
+  p_latitude double precision,
+  p_longitude double precision,
+  p_place_id text
 )
 returns boolean
 language plpgsql
@@ -25,6 +28,11 @@ begin
      or p_restaurant_id <> public.get_request_restaurant_id()
      or not public.customer_identity_is_single_tenant(auth.uid(), p_restaurant_id) then
     raise exception 'Customer identity is not authorized for this restaurant';
+  end if;
+  if p_latitude is null or p_longitude is null
+     or p_latitude not between -90 and 90
+     or p_longitude not between -180 and 180 then
+    raise exception 'An exact map location is required';
   end if;
 
   select cp.id into v_customer_id
@@ -59,6 +67,9 @@ begin
     city = trim(p_city),
     barangay = trim(p_barangay),
     address = trim(p_address),
+    latitude = p_latitude,
+    longitude = p_longitude,
+    place_id = nullif(trim(coalesce(p_place_id, '')), ''),
     updated_at = now()
   where id = p_address_id
     and customer_id = v_customer_id
@@ -80,10 +91,10 @@ begin
 end;
 $$;
 
-revoke all on function public.update_my_customer_address(uuid, uuid, text, text, text, text)
+revoke all on function public.update_my_customer_address(uuid, uuid, text, text, text, text, double precision, double precision, text)
 from public, anon;
 
-grant execute on function public.update_my_customer_address(uuid, uuid, text, text, text, text)
+grant execute on function public.update_my_customer_address(uuid, uuid, text, text, text, text, double precision, double precision, text)
 to authenticated;
 
 drop policy if exists customer_addresses_select_own on public.customer_addresses;
