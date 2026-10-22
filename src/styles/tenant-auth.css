@@ -1,0 +1,424 @@
+
+
+/* Tenant-branded customer authentication */
+.tenant-auth-page {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: clamp(24px, 5vw, 56px) 20px;
+  background: #fff;
+}
+.tenant-auth-page::before,
+.tenant-auth-page::after { display: none; }
+.tenant-auth-card {
+  position: relative;
+  background: var(--color-background, #fff);
+  color: var(--color-text, #111827);
+  border-radius: 24px;
+  border-color: var(--color-border, #e2e8f0);
+  padding: clamp(24px, 5vw, 36px);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, .10), 0 2px 8px rgba(15, 23, 42, .025);
+}
+.tenant-auth-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  min-height: 46px;
+  margin: 0 0 18px;
+}
+.tenant-auth-logo {
+  display: block;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  border-radius: 12px;
+}
+.tenant-auth-logo-fallback {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  background: var(--color-primary, #111827);
+  color: var(--color-primary-text, #fff);
+  font-size: 22px;
+  font-weight: 800;
+}
+.tenant-auth-brand-name {
+  max-width: 240px;
+  overflow: hidden;
+  color: var(--color-text, #111827);
+  font-family: var(--font-heading, Manrope, sans-serif);
+  font-size: 17px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tenant-auth-card .tenant-auth-intro {
+  margin: 0 0 22px !important;
+  color: var(--color-text, #111827);
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: center;
+}
+.tenant-auth-card h1 {
+  margin: 0 0 22px;
+  color: var(--color-text, #111827);
+  font-size: clamp(28px, 4vw, 34px);
+  letter-spacing: -.035em;
+  text-align: center;
+}
+.tenant-auth-card .restaurant-owner-auth-form input:not([type="checkbox"]) {
+  transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
+}
+.tenant-auth-card .restaurant-owner-auth-form input:not([type="checkbox"]):focus {
+  border-color: var(--color-primary, #111827);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary, #111827) 12%, transparent);
+}
+.tenant-auth-card .restaurant-owner-auth-form > button.button[type="submit"] {
+  min-height: 48px;
+  border-radius: 12px;
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--color-primary, #111827) 18%, transparent);
+  transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+}
+.tenant-auth-card .restaurant-owner-auth-form > button.button[type="submit"]:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--color-primary, #111827) 22%, transparent);
+}
+.tenant-auth-card .restaurant-auth-switch { color: var(--color-text, #111827); }
+.tenant-auth-card .restaurant-auth-switch a { color: var(--color-primary, #111827); }
+@media (max-width: 480px) {
+  .tenant-auth-page { padding: 22px 14px; }
+  .tenant-auth-card { border-radius: 20px; padding: 24px 20px; }
+  .tenant-auth-brand { margin-bottom: 14px; }
+}
+
+
+/* Refined, premium customer auth visual system */
+.tenant-auth-page {
+  min-height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(28px, 6vh, 64px) 18px;
+  background: #fff;
+}
+.tenant-auth-page::before {
+  width: 360px;
+  height: 360px;
+  top: -245px;
+  right: -110px;
+  border-color: color-mix(in srgb, var(--color-primary, #111827) 10%, transparent);
+}
+.tenant-auth-page::after {
+  width: 300px;
+  height: 300px;
+  bottom: -220px;
+  left: -115px;
+  border-color: rgba(13, 148, 136, .12);
+}
+.tenant-auth-card {
+  width: min(100%, 420px);
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: clamp(28px, 5vw, 38px);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 22px;
+  background: var(--color-background, #fff);
+  box-shadow: 0 28px 70px rgba(15, 23, 42, .09), 0 4px 14px rgba(15, 23, 42, .035);
+}
+.tenant-auth-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-primary, #111827), color-mix(in srgb, var(--color-primary, #111827) 35%, #14b8a6));
+}
+.tenant-auth-brand {
+  justify-content: center;
+  gap: 12px;
+  min-height: 48px;
+  margin: 0 0 18px;
+}
+.tenant-auth-logo,
+.tenant-auth-logo-fallback {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+}
+.tenant-auth-logo {
+  padding: 0;
+  box-sizing: border-box;
+  background: transparent;
+  border: 0;
+}
+.tenant-auth-brand-name {
+  font-size: 18px;
+  letter-spacing: -.025em;
+}
+.tenant-auth-card .tenant-auth-intro {
+  max-width: 300px;
+  margin: 0 auto 24px !important;
+  font-size: 13.5px;
+  line-height: 1.65;
+}
+.tenant-auth-card h1 {
+  margin: 0 0 24px;
+  font-size: clamp(25px, 4vw, 29px);
+  font-weight: 800;
+  letter-spacing: -.045em;
+  line-height: 1.2;
+}
+.tenant-auth-card .restaurant-owner-auth-form {
+  gap: 16px;
+}
+.tenant-auth-card .restaurant-owner-auth-form > label,
+.tenant-auth-card .customer-signup-name-row > label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: var(--color-text, #334155);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .005em;
+}
+.tenant-auth-card .restaurant-owner-auth-form input:not([type="checkbox"]) {
+  min-height: 46px;
+  box-sizing: border-box;
+  padding: 0 14px;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 11px;
+  background: #fff !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, .025);
+}
+.tenant-auth-card .restaurant-owner-auth-form input:not([type="checkbox"]):hover:not(:focus):not(:disabled) {
+  border-color: var(--color-border, #cbd5e1);
+  background: #fff;
+}
+.tenant-auth-card .restaurant-owner-auth-form input:not([type="checkbox"]):focus {
+  outline: none;
+  border-color: var(--color-primary, #111827);
+  background: var(--color-background, #fff);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary, #111827) 11%, transparent);
+}
+.tenant-auth-card .customer-password-input-row {
+  min-height: 46px;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 11px;
+  background: #fff !important;
+}
+.tenant-auth-card .customer-password-input-row:focus-within {
+  border-color: var(--color-primary, #111827);
+  background: #fff !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary, #111827) 11%, transparent);
+}
+.tenant-auth-card .customer-password-input-row input:not([type="checkbox"]) {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.tenant-auth-card .customer-password-input-row input:not([type="checkbox"]):focus {
+  border: 0;
+  box-shadow: none;
+}
+.tenant-auth-card .restaurant-auth-options-row {
+  margin-top: -2px;
+  font-size: 12px;
+}
+.tenant-auth-card .restaurant-auth-remember {
+  gap: 7px;
+  color: var(--color-text, #111827);
+}
+.tenant-auth-card .restaurant-auth-remember input,
+.tenant-auth-card .customer-personal-info-consent input {
+  accent-color: var(--color-primary, #111827);
+}
+.tenant-auth-card .restaurant-auth-forgot-password-row a,
+.tenant-auth-card .restaurant-auth-switch a,
+.tenant-auth-card .customer-personal-info-consent a {
+  color: var(--color-primary, #111827);
+  font-weight: 700;
+  text-underline-offset: 3px;
+}
+.tenant-auth-card .restaurant-owner-auth-form > button.button[type="submit"] {
+  width: 100%;
+  min-height: 49px;
+  margin-top: 2px;
+  border: 0;
+  border-radius: 11px;
+  font-size: 14px;
+  font-weight: 750;
+  letter-spacing: .005em;
+  box-shadow: 0 7px 16px color-mix(in srgb, var(--color-primary, #111827) 17%, transparent);
+}
+.tenant-auth-card .restaurant-owner-auth-form > button.button[type="submit"]:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-primary, #111827) 30%, transparent);
+  outline-offset: 3px;
+}
+.tenant-auth-card .restaurant-auth-switch {
+  margin: 21px 0 0;
+  padding-top: 17px;
+  border-top: 1px solid var(--color-border, #e2e8f0);
+  font-size: 12.5px;
+  line-height: 1.5;
+  text-align: center;
+}
+.tenant-auth-card .customer-signup-name-row {
+  gap: 12px;
+}
+.tenant-auth-card .customer-personal-info-consent {
+  align-items: flex-start;
+  gap: 9px;
+  color: var(--color-text, #111827);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+.tenant-auth-card .customer-field-error {
+  font-size: 11px;
+  line-height: 1.4;
+}
+.tenant-auth-card .restaurant-dashboard-error,
+.tenant-auth-card .restaurant-auth-success {
+  margin-bottom: 16px;
+  border-radius: 11px;
+}
+@media (max-width: 480px) {
+  .tenant-auth-page {
+    min-height: 100svh;
+    padding: 24px 15px;
+  }
+  .tenant-auth-card {
+    width: 100%;
+    max-width: 390px;
+    padding: 29px 22px 24px;
+    border-radius: 20px;
+  }
+  .tenant-auth-brand { margin-bottom: 16px; }
+  .tenant-auth-card .tenant-auth-intro { margin-bottom: 21px !important; }
+  .tenant-auth-card h1 { margin-bottom: 21px; }
+  .tenant-auth-card .restaurant-owner-auth-form { gap: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tenant-auth-card *,
+  .tenant-auth-card *::before,
+  .tenant-auth-card *::after {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
+}
+
+
+/* Center the privacy consent row within the sign-up form. */
+.customer-signup-card .customer-personal-info-consent {
+  width: fit-content;
+  max-width: 100%;
+  align-self: center;
+  justify-content: center;
+  margin-inline: auto;
+}
+.customer-signup-card .customer-personal-info-consent > span {
+  text-align: center;
+}
+
+
+/* Override the general stacked-field label rule for the consent checkbox row. */
+.tenant-auth-card .restaurant-owner-auth-form > label.customer-personal-info-consent {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  width: max-content;
+  max-width: 100%;
+  margin-inline: auto;
+  gap: 8px;
+}
+.tenant-auth-card .restaurant-owner-auth-form > label.customer-personal-info-consent > input[type="checkbox"] {
+  flex: 0 0 auto;
+  margin: 0;
+}
+.tenant-auth-card .restaurant-owner-auth-form > label.customer-personal-info-consent > span {
+  text-align: center;
+}
+
+
+/* Fine-tune checkbox optical alignment with the consent text baseline. */
+.tenant-auth-card .restaurant-owner-auth-form > label.customer-personal-info-consent {
+  line-height: 18px;
+}
+.tenant-auth-card .restaurant-owner-auth-form > label.customer-personal-info-consent > input[type="checkbox"] {
+  align-self: center;
+  position: relative;
+  top: 1px;
+}
+.tenant-auth-card .restaurant-owner-auth-form > label.customer-personal-info-consent > span {
+  display: inline-block;
+  line-height: 18px;
+}
+
+
+/* Restore the consent checkbox to the left edge; vertically center it with its text. */
+.tenant-auth-card .restaurant-owner-auth-form > label.customer-personal-info-consent,
+.customer-signup-card .customer-personal-info-consent {
+  width: 100%;
+  max-width: 100%;
+  align-self: stretch;
+  justify-content: flex-start;
+  margin-inline: 0;
+  text-align: left;
+  align-items: center;
+}
+.tenant-auth-card .restaurant-owner-auth-form > label.customer-personal-info-consent > input[type="checkbox"] {
+  position: static;
+  top: auto;
+  margin: 0;
+  align-self: center;
+}
+.tenant-auth-card .restaurant-owner-auth-form > label.customer-personal-info-consent > span,
+.customer-signup-card .customer-personal-info-consent > span {
+  text-align: left;
+}
+
+
+/* Keep the outer authentication page neutral; the card carries the storefront theme. */
+
+.tenant-auth-page::before, .tenant-auth-page::after { display: none; }
+
+
+/* Final theme binding for auth supporting copy: use the restaurant's configured
+   font color, including elements that have inherited or component-level colors. */
+.tenant-auth-page .tenant-auth-card .tenant-auth-intro,
+.tenant-auth-page .tenant-auth-card .restaurant-auth-switch,
+.tenant-auth-page .tenant-auth-card .restaurant-auth-switch a,
+.tenant-auth-page .tenant-auth-card .restaurant-auth-forgot-password-row a {
+  color: var(--color-text, #111827) !important;
+}
+
+
+/* Auth copy and links must use the configured font color, never muted/primary. */
+.tenant-auth-page .tenant-auth-card .tenant-auth-intro,
+.tenant-auth-page .tenant-auth-card .restaurant-auth-switch,
+.tenant-auth-page .tenant-auth-card .restaurant-auth-switch a,
+.tenant-auth-page .tenant-auth-card .restaurant-auth-forgot-password-row a {
+  color: var(--color-text) !important;
+}
+
+
+/* Auth route uses .restaurant-owner-auth-page, not .tenant-auth-page. */
+.restaurant-owner-auth-card.tenant-auth-card .tenant-auth-intro,
+.restaurant-owner-auth-card.tenant-auth-card .restaurant-auth-switch,
+.restaurant-owner-auth-card.tenant-auth-card .restaurant-auth-switch a,
+.restaurant-owner-auth-card.tenant-auth-card .restaurant-auth-options-row a,
+.restaurant-owner-auth-card.tenant-auth-card .customer-personal-info-consent,
+.restaurant-owner-auth-card.tenant-auth-card .customer-personal-info-consent > span {
+  color: var(--color-text, #111827) !important;
+}

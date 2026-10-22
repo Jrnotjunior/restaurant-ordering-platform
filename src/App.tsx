@@ -46,7 +46,7 @@ import { isRestaurantCurrentlyOpen } from './utils/restaurantHours';
 import './styles/cart-empty.css';
 import './styles/cart-notification.css';
 import { resolveAuthEntry } from './app/auth/authEntry';
-import { normalizeHashRoute, resolveAppRoute } from './app/routing/routeResolver';
+import { normalizeHashRoute, resolveAppRoute, resolveTrackingOrderId } from './app/routing/routeResolver';
 import { useCart } from './modules/ordering/useCart';
 import { OwnerRestaurantGuard, RestaurantModuleGuard, RiderRouteGuard, StaffRoleGuard } from './modules/auth/authGuards';
 import type { CartItem } from './modules/ordering/cartTypes';
@@ -84,7 +84,7 @@ function withBasePath(path: string) {
 
 function CartPage({ items, onIncrease, onDecrease, onRemove }: { items: CartItem[]; onIncrease: (productId: string) => void; onDecrease: (productId: string) => void; onRemove: (productId: string) => void; }) {
   const subtotal = items.reduce((total, item) => total + item.product.price * item.quantity, 0);
-  return <section className="cart-page"><div className="menu-intro"><h1>Your cart.</h1><p>Review your items before checkout.</p></div>{items.length === 0 ? <div className="cart-empty"><p>Your cart is empty.</p><a className="button button-primary" href={withBasePath('/menu')}>Browse Menu</a></div> : <div className="cart-layout"><div className="cart-items" aria-label="Cart items">{items.map((item) => <article className="cart-item" key={item.product.id}><div className="cart-item-main"><div><h2>{item.product.name}</h2><p>₱{item.product.price.toFixed(2)}</p></div><strong>₱{(item.product.price * item.quantity).toFixed(2)}</strong></div><div className="cart-item-actions"><div className="quantity-control" aria-label={`Quantity for ${item.product.name}`}><button type="button" onClick={() => onDecrease(item.product.id)}>−</button><span>{item.quantity}</span><button type="button" onClick={() => onIncrease(item.product.id)}>+</button></div><button className="cart-remove" type="button" onClick={() => onRemove(item.product.id)}>Remove</button></div></article>)}</div><aside className="cart-summary"><div className="cart-summary-row"><span>Subtotal</span><strong>₱{subtotal.toFixed(2)}</strong></div><p>Delivery fees and payment details will be calculated during checkout.</p><a className="button button-primary" href={withBasePath('/checkout')}>Checkout</a></aside></div>}</section>;
+  return <section className="cart-page"><div className="menu-intro"><h1>Your cart.</h1><p>Review your items before checkout.</p></div>{items.length === 0 ? <div className="cart-empty"><p>Your cart is empty.</p><a className="button button-primary" href={withBasePath('/menu')}>Browse Menu</a></div> : <div className="cart-layout"><div className="cart-items" aria-label="Cart items">{items.map((item) => <article className="cart-item" key={item.product.id}><div className="cart-item-main"><div><h2>{item.product.name}</h2><p>₱{item.product.price.toFixed(2)}</p></div><strong>₱{(item.product.price * item.quantity).toFixed(2)}</strong></div><div className="cart-item-actions"><div className="quantity-control" aria-label={`Quantity for ${item.product.name}`}><button type="button" onClick={() => onDecrease(item.product.id)}>−</button><span>{item.quantity}</span><button type="button" onClick={() => onIncrease(item.product.id)}>+</button></div><button className="cart-remove" type="button" onClick={() => onRemove(item.product.id)}>Remove</button></div></article>)}<a className="button button-secondary cart-add-more" href={`${window.location.pathname}${window.location.search}#menu`}>Add more items</a></div><aside className="cart-summary"><div className="cart-summary-row"><span>Subtotal</span><strong>₱{subtotal.toFixed(2)}</strong></div><p>Delivery fees and payment details will be calculated during checkout.</p><a className="button button-primary" href={withBasePath('/checkout')}>Checkout</a></aside></div>}</section>;
 }
 
 function PublicCustomerRouteGuard({ children }: { children: ReactNode }) {
@@ -98,7 +98,22 @@ function PublicCustomerRouteGuard({ children }: { children: ReactNode }) {
 function AppContent() {
   const [restaurant, setRestaurant] = useState<RestaurantConfig>(defaultRestaurant);
   const [restaurantResolved, setRestaurantResolved] = useState(false);
-  const [route, setRoute] = useState(() => normalizeHashRoute(window.location.hash || ''));
+  const [route, setRoute] = useState(() => {
+    const hashRoute = normalizeHashRoute(window.location.hash || '');
+    if (hashRoute) return hashRoute;
+    // Support direct visits and refreshes on legacy public routes such as /signup.
+    const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
+    const legacyRoutes: Record<string, string> = {
+      '/signup': '#signup',
+      '/account': '#account',
+      '/cart': '#cart',
+      '/checkout': '#checkout',
+      '/order-history': '#order-history',
+      '/saved-address': '#saved-address',
+      '/privacy': '#privacy',
+    };
+    return legacyRoutes[pathname] || '';
+  });
   const { user, loading: authLoading, error: authError } = useRestaurantOwnerAuth();
   useEffect(() => {
     const favicon = restaurant.storefront.faviconUrl?.trim();
@@ -178,6 +193,26 @@ function AppContent() {
     const handleHashChange = () => {
       setRoute(normalizeHashRoute(window.location.hash || ''));
     };
+
+    // Convert legacy path URLs to the app's hash routes before the host serves
+    // a 404. Preserve deployment base paths and query parameters.
+    const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
+    const legacyRoutes: Record<string, string> = {
+      '/signup': '#signup',
+      '/account': '#account',
+      '/cart': '#cart',
+      '/checkout': '#checkout',
+      '/order-history': '#order-history',
+      '/saved-address': '#saved-address',
+      '/privacy': '#privacy',
+    };
+    const legacyHash = legacyRoutes[pathname];
+    if (!window.location.hash && legacyHash) {
+      const basePath = import.meta.env.BASE_URL.replace(/\/$/, '') || '';
+      const destination = `${basePath}/${window.location.search}${legacyHash}`;
+      window.history.replaceState(null, '', destination);
+      setRoute(legacyHash);
+    }
 
     window.addEventListener('hashchange', handleHashChange);
 
@@ -268,7 +303,6 @@ function AppContent() {
     isTermsPage,
     isRefundsPage,
     isCheckoutPage,
-    trackOrderNumber,
     isRestaurantOrdersPage,
     isRestaurantMenuPage,
     isRestaurantSalesPage,
@@ -333,9 +367,9 @@ function AppContent() {
   const isCustomerConfirmationCallback = isCustomerEmailConfirmationPage
     || new URLSearchParams(window.location.search).get('customer-confirmation') === '1';
 
-  if (isCustomerPasswordResetPage) return <CustomerPasswordRecoveryPage mode="reset" />;
-  if (isCustomerForgotPasswordPage) return <CustomerPasswordRecoveryPage mode="request" />;
-  if (isSignUpPage) return <CustomerSignUpPage />;
+  if (isCustomerPasswordResetPage) return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><CustomerPasswordRecoveryPage mode="reset" /></ThemeProvider></RestaurantProvider>;
+  if (isCustomerForgotPasswordPage) return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><CustomerPasswordRecoveryPage mode="request" /></ThemeProvider></RestaurantProvider>;
+  if (isSignUpPage) return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><CustomerSignUpPage /></ThemeProvider></RestaurantProvider>;
   if (isCustomerConfirmationCallback) return <CustomerEmailConfirmationPage />;
 
   if (isLegalPoliciesPage) return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}><LegalPoliciesPage /></RestaurantLayout></ThemeProvider></RestaurantProvider>;
@@ -344,12 +378,28 @@ function AppContent() {
   if (isRefundsPage) return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><CustomerPolicyPage kind="refunds" /></ThemeProvider></RestaurantProvider>;
   if (route === '#saved-address') return <PublicCustomerRouteGuard><RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}><SavedAddressPage /></RestaurantLayout></ThemeProvider></RestaurantProvider></PublicCustomerRouteGuard>;
   if (route === '#order-history') return <PublicCustomerRouteGuard><RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount}><CustomerOrderHistoryPage /></RestaurantLayout></ThemeProvider></RestaurantProvider></PublicCustomerRouteGuard>;
-  if (isAccountPage) return <RestaurantOwnerLoginPage />;
+  if (isAccountPage) return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantOwnerLoginPage /></ThemeProvider></RestaurantProvider>;
   if (isStaffLoginPage) return <RestaurantOwnerLoginPage staffOnly />;
   if (isRiderDashboardPage) return <RiderRouteGuard><RiderDashboardPage /></RiderRouteGuard>;
   if (riderDeliveryMatch) return <RiderRouteGuard><RiderDeliveryPage orderId={decodeURIComponent(riderDeliveryMatch[1])} /></RiderRouteGuard>;
 
-  const trackingOrderId = trackOrderNumber || (trackingMatch ? decodeURIComponent(trackingMatch[1]) : null);
+  let savedActiveOrderId: string | null = null;
+  try {
+    savedActiveOrderId = window.localStorage.getItem('restaurant-ordering-active-order-id');
+  } catch {
+    // Keep URL-based order tracking available if browser storage is blocked.
+  }
+  const navigationEntry = typeof performance !== 'undefined'
+    && typeof performance.getEntriesByType === 'function'
+    ? performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined
+    : undefined;
+  const trackingOrderId = resolveTrackingOrderId(
+    window.location,
+    route,
+    savedActiveOrderId,
+    import.meta.env.BASE_URL,
+    navigationEntry?.type === 'reload',
+  );
   const publicContent = trackingOrderId
     ? restaurantResolved
       ? <OrderTrackingPage orderId={trackingOrderId} expectedRestaurantId={restaurant.id ?? null} />
@@ -517,7 +567,7 @@ function AppContent() {
     )}</OwnerRestaurantGuard>;
   }
 
-  const isPublicMenuView = isMenuPage || (!isCartPage && !isCheckoutPage && !trackingMatch && !trackOrderNumber);
+  const isPublicMenuView = isMenuPage || (!isCartPage && !isCheckoutPage && !trackingMatch && !trackingOrderId);
   const publicPage = <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantLayout cartCount={cartCount} compactPublicChrome>{publicContent}{showStoreClosedModal ? (
     <div className="restaurant-closed-modal-backdrop" role="presentation" onClick={() => setShowStoreClosedModal(false)}>
       <div className="restaurant-closed-modal" role="dialog" aria-modal="true" aria-labelledby="restaurant-closed-modal-title" onClick={(event) => event.stopPropagation()}>
@@ -531,7 +581,7 @@ function AppContent() {
   ) : null}{cartNotification ? <div className="cart-notification" role="status" aria-live="polite"><div className="cart-notification-icon" aria-hidden="true">✓</div><div className="cart-notification-content"><strong>Added to cart</strong><span>{cartNotification}</span></div><a className="cart-notification-link" href={withBasePath('/cart')}>View cart</a><button className="cart-notification-close" type="button" aria-label="Dismiss notification" onClick={dismissCartNotification}>×</button></div> : null}</RestaurantLayout></ThemeProvider></RestaurantProvider>;
   // Order tracking is a public customer page. It must not wait for employee
   // access checks, so navigating from the header never shows an account guard.
-  if (trackOrderNumber || trackingMatch) return publicPage;
+  if (trackingOrderId || trackingMatch) return publicPage;
   return <PublicCustomerRouteGuard>{publicPage}</PublicCustomerRouteGuard>;
 }
 

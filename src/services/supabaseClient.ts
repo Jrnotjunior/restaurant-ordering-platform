@@ -47,16 +47,49 @@ function getRestaurantAuthStorageKey(): string {
   return `restaurant-ordering-platform-auth:${tabId}`;
 }
 
+const restaurantAuthStorageKey = getRestaurantAuthStorageKey();
+const rememberMeStorageKey = 'restaurant-ordering-platform-remember-me';
+
+function getAuthStorage() {
+  // Choose persistence at sign-in time: localStorage survives browser restarts,
+  // while sessionStorage is cleared when the browser tab/session ends.
+  const getStorage = () => {
+    const remember = typeof window !== 'undefined'
+      && window.localStorage.getItem(rememberMeStorageKey) === 'true';
+    return remember ? window.localStorage : window.sessionStorage;
+  };
+
+  return {
+    getItem: (key: string) => getStorage().getItem(key),
+    setItem: (key: string, value: string) => getStorage().setItem(key, value),
+    removeItem: (key: string) => {
+      window.localStorage.removeItem(key);
+      window.sessionStorage.removeItem(key);
+    },
+  };
+}
+
+export function setRememberMePreference(remember: boolean) {
+  if (typeof window === 'undefined') return;
+  if (remember) {
+    window.localStorage.setItem(rememberMeStorageKey, 'true');
+  } else {
+    window.localStorage.setItem(rememberMeStorageKey, 'false');
+    // Remove any old persistent session for this tab so an unchecked sign-in
+    // cannot silently reuse a previously remembered session.
+    window.localStorage.removeItem(restaurantAuthStorageKey);
+  }
+}
+
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl!, supabaseAnonKey!, {
       auth: {
         // Each restaurant browser tab gets an independent Auth session.
         // This prevents Store Owner, Cashier, Kitchen, and Dispatcher tabs
         // from broadcasting their sign-in state to one another.
-        storageKey: getRestaurantAuthStorageKey(),
-        // Persist the PKCE verifier and session in localStorage so Supabase
-        // email-confirmation, invitation, and password-recovery callbacks work.
-        storage: window.sessionStorage,
+        storageKey: restaurantAuthStorageKey,
+        // The Remember me choice selects localStorage; otherwise use sessionStorage.
+        storage: getAuthStorage(),
       },
       global: {
         headers: getRestaurantContextHeaders(),

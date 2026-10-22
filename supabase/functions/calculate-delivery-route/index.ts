@@ -17,7 +17,14 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed." }, 405);
 
-  const directionsApiToken = Deno.env.get("MAPBOX_DIRECTIONS_API_TOKEN");
+  // Prefer the centrally managed token used by the shared map. Keep the old
+  // directions secret as a temporary rollback path until live fresh-route
+  // calculations are verified with MAPBOX_PUBLIC_TOKEN.
+  const directionsApiToken = Deno.env.get("MAPBOX_PUBLIC_TOKEN");
+  // Safe diagnostic only: never log the token itself.
+  console.info("Delivery routing Mapbox configuration selected", {
+    tokenSource: directionsApiToken ? "MAPBOX_PUBLIC_TOKEN" : "missing",
+  });
   if (!directionsApiToken) return json({ error: "Delivery distance service is not configured yet." }, 503);
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -43,11 +50,12 @@ Deno.serve(async (req) => {
   }
 
   const { data: restaurant, error: restaurantError } = await admin.from("restaurants")
-    .select("id,is_active,delivery_location_latitude,delivery_location_longitude,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters")
+    .select("id,is_active,ordering_enabled,delivery_location_latitude,delivery_location_longitude,delivery_base_fee,delivery_distance_increment_meters,delivery_fee_per_increment,delivery_max_distance_meters")
     .eq("id", restaurantId).single();
 
   if (restaurantError || !restaurant) return json({ error: "Restaurant delivery settings could not be loaded." }, 404);
   if (!restaurant.is_active) return json({ error: "Restaurant is not available." }, 409);
+  if (restaurant.ordering_enabled === false) return json({ error: "This restaurant has paused online ordering." }, 409);
 
   const originLat = Number(restaurant.delivery_location_latitude);
   const originLng = Number(restaurant.delivery_location_longitude);

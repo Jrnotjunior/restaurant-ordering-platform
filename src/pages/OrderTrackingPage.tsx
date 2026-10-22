@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { cancelMyPendingOrder, getOrderStatus, hasGuestOrderCancellationToken, subscribeToOrderTrackingChanges, type OrderStatus } from '../modules/ordering/orderService';
+import { cancelMyPendingOrder, getOrderStatus, hasGuestOrderCancellationToken, saveGuestOrderCancellationToken, subscribeToOrderTrackingChanges, type OrderStatus } from '../modules/ordering/orderService';
 import { supabase } from '../services/supabaseClient';
+import { getCancellationResultMessage, getTrackedPaymentStatusLabel } from '../modules/payments/refundStatusPresentation';
 import '../styles/order-tracking.css';
 
 type OrderTrackingPageProps = {
@@ -9,6 +10,7 @@ type OrderTrackingPageProps = {
 };
 
 const ACTIVE_ORDER_KEY = 'restaurant-ordering-active-order';
+const ACTIVE_ORDER_ID_KEY = 'restaurant-ordering-active-order-id';
 
 type CustomerStatus = OrderStatus | 'out_for_delivery' | 'arrived';
 
@@ -51,6 +53,23 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
   const [cancellationMessage, setCancellationMessage] = useState('');
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const [showNonDeliveryTimeline, setShowNonDeliveryTimeline] = useState(false);
+  const [guestCancelTokenRecoveredForOrder, setGuestCancelTokenRecoveredForOrder] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Secure one-time recovery links deliver the raw guest cancellation token
+    // only in the URL fragment, which is not sent to the web server. Store it
+    // locally and immediately remove it from the visible/history URL.
+    const match = window.location.hash.match(/^#guest-cancel-token=([0-9a-f]{64})$/i);
+    if (!match) {
+      setGuestCancelTokenRecoveredForOrder(null);
+      return;
+    }
+    const token = match[1].toLowerCase();
+    saveGuestOrderCancellationToken(orderId, token);
+    const recovered = hasGuestOrderCancellationToken(orderId);
+    setGuestCancelTokenRecoveredForOrder(recovered ? orderId : null);
+    window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search);
+  }, [orderId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -111,10 +130,21 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
         if (!cancelled) {
           setOrder(result);
           if (result.status === 'completed' || result.status === 'cancelled' || result.deliveryStatus === 'delivered' || result.deliveryStatus === 'failed') {
-            if (window.localStorage.getItem('restaurant-ordering-active-order-id') === result.orderId) {
-              window.localStorage.removeItem('restaurant-ordering-active-order-id');
+            if (window.localStorage.getItem(ACTIVE_ORDER_ID_KEY) === result.orderId) {
+              window.localStorage.removeItem(ACTIVE_ORDER_ID_KEY);
               window.localStorage.removeItem(ACTIVE_ORDER_KEY);
               window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
+            }
+          } else {
+            // Visiting an active order's tracking page re-establishes the saved
+            // browser reference. This recovers guests who still have the order
+            // URL but lost the header shortcut during an interrupted cancellation.
+            try {
+              window.localStorage.setItem(ACTIVE_ORDER_ID_KEY, result.orderId);
+              window.localStorage.setItem(ACTIVE_ORDER_KEY, result.orderNumber);
+              window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
+            } catch {
+              // URL-based tracking continues even if browser storage is unavailable.
             }
           }
           setError('');
@@ -210,7 +240,8 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
   const storeAddress = order.storeAddress;
   const operatingHours = order.operatingHours;
   const showPickupLocation = isCollectionOrder && !isCancelled && Boolean(storeAddress);
-  const guestCancelTokenAvailable = hasGuestOrderCancellationToken(order.orderId);
+  const guestCancelTokenAvailable = hasGuestOrderCancellationToken(order.orderId)
+    || guestCancelTokenRecoveredForOrder === order.orderId;
   const cancellationEligibleStatus = order.status === 'pending' &&
     (order.paymentStatus === 'pending' || order.paymentStatus === 'paid');
   const canCancelOrder = cancellationEligibleStatus &&
@@ -234,12 +265,13 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
       const result = await cancelMyPendingOrder(order.orderId);
       const refreshedOrder = await getOrderStatus(order.orderId);
       setOrder(refreshedOrder);
-      // Refund completion can occur just after the cancellation API response.
-      // Prefer the refreshed order's authoritative payment status so the message
-      // cannot keep saying "being processed" after the refund is already complete.
-      setCancellationMessage(refreshedOrder.paymentStatus === 'refunded'
-        ? 'Your order has been cancelled and the refund completed successfully.'
-        : result.message);
+      // Keep the provider's original payment state separate from a local test
+      // simulation. A simulated refund must never be presented as a PayMongo refund.
+      setCancellationMessage(getCancellationResultMessage(
+        refreshedOrder.paymentStatus,
+        result.refundStatus,
+        result.message,
+      ));
       if (window.localStorage.getItem('restaurant-ordering-active-order-id') === refreshedOrder.orderId) {
         window.localStorage.removeItem('restaurant-ordering-active-order-id');
         window.localStorage.removeItem(ACTIVE_ORDER_KEY);
@@ -349,7 +381,7 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
             </>}
             <div className="order-tracking-billing-row"><span>{isCollectionOrder ? 'Collection fee' : isDineIn ? 'Service fee' : 'Delivery fee'}</span><span>₱{order.shippingFee.toFixed(2)}</span></div>
             <div className="order-tracking-billing-row is-total"><strong>Total paid / due</strong><strong>₱{order.total.toFixed(2)}</strong></div>
-            <p className="order-tracking-payment-note">{order.paymentStatus === 'paid' ? 'Payment confirmed' : order.paymentStatus === 'refunded' ? 'Payment refunded' : order.paymentStatus === 'failed' ? 'Payment failed' : 'Payment pending'} · {order.paymentMethod === 'gcash' ? 'Online payment' : 'Cash'}</p>
+            <p className="order-tracking-payment-note">{getTrackedPaymentStatusLabel(order.paymentStatus, order.cancellationRefundStatus)} · {order.paymentMethod === 'gcash' ? 'Online payment' : 'Cash'}</p>
           </div>
           {canCancelOrder ? (
             <div className="order-tracking-cancel order-tracking-cancel--details">
@@ -443,10 +475,7 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
               </div>
               <span className="order-rider-status">{deliveryStatusLabel}</span>
             </div>
-            <p className="order-rider-message">Hi! I'm {order.riderName}, and I'll be delivering your order shortly. You can contact me at {order.riderPhone} if you need assistance.</p>
-            <a className="order-rider-phone" href={`tel:${order.riderPhone}`} aria-label={`Call ${order.riderName}`}>
-              <span>📞</span>{order.riderPhone}
-            </a>
+            <p className="order-rider-message">Hi! I'm {order.riderName}, and I'll be delivering your order shortly. You can contact me if you need assistance.</p>
             <div className="order-rider-actions">
               <a className="button button-primary" href={`tel:${order.riderPhone}`}>Call Rider</a>
               <a className="button button-secondary" href={`sms:${order.riderPhone}`}>Text Rider</a>

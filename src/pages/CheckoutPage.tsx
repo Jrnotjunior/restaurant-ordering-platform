@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { RestaurantProduct } from '../types/menu';
 import { createOrder } from '../modules/ordering/orderService';
-import { createPayMongoCheckout, createPendingOnlinePayment, getOnlinePaymentStatus } from '../modules/payments/paymentService';
+import { assertPayMongoCheckoutReady, createPayMongoCheckout, createPendingOnlinePayment, getOnlinePaymentStatus } from '../modules/payments/paymentService';
 import { calculateDeliveryRoute, type DeliveryRouteQuote } from '../modules/location/locationService';
+import { buildOrderTrackingUrl } from '../app/routing/routeResolver';
 import { attachCustomerToOrder, getLoyaltyRedemptionSettings, getMyLoyaltyPoints, redeemLoyaltyReward } from '../modules/loyalty/loyaltyService';
 import { getMyCustomerProfile, getMyCustomerProfileId, saveMyDefaultDeliveryAddress } from '../modules/customer/customerAccountService';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
@@ -84,12 +85,18 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
 
   useEffect(() => {
     let cancelled = false;
+    // Render an explicit loading state while the tenant-specific module check runs.
+    setDeliveryModuleEnabled(null);
     async function checkDeliveryModule() {
       // The public storefront can render before its restaurant ID and cart
       // products have finished resolving. Never send an empty module-check
       // request; wait for a real tenant ID and let this effect rerun.
       if (!restaurantId) return;
-      if (!supabase) { setDeliveryModuleEnabled(false); return; }
+      if (!supabase) {
+        setDeliveryModuleEnabled(false);
+        setOrderType((current) => current === 'delivery' ? 'take_out' : current);
+        return;
+      }
       // Use the public, SECURITY DEFINER module check directly. The Edge Function
       // wrapper has been returning 503 despite this database RPC working correctly.
       const { data, error } = await supabase.rpc('public_restaurant_has_module', {
@@ -100,7 +107,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
       if (error) console.error('Unable to check delivery module availability.', error);
       const enabled = !error && data === true;
       setDeliveryModuleEnabled(enabled);
-      if (!enabled && orderType === 'delivery') setOrderType('take_out');
+      if (!enabled) setOrderType((current) => current === 'delivery' ? 'take_out' : current);
     }
     void checkDeliveryModule();
     return () => { cancelled = true; };
@@ -177,6 +184,19 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
     void loadCashOnDeliverySetting();
     return () => { mounted = false; };
   }, [restaurantId]);
+
+  useEffect(() => {
+    if (!confirmedOrder?.orderId) return;
+
+    // Persisted active-order keys power the header's "Track my order" link,
+    // while the query URL lets a guest refresh and remain on the same tracking
+    // page without signing in or needing a separate account history.
+    const trackingUrl = buildOrderTrackingUrl(window.location.pathname, confirmedOrder.orderId);
+    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (currentUrl !== trackingUrl) {
+      window.location.replace(trackingUrl);
+    }
+  }, [confirmedOrder?.orderId]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -588,7 +608,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
 
     try {
       const isOwnCourierPickup = thirdPartyCourierDelivery && orderType === 'pickup';
-      await saveDefaultAddressIfNeeded();
+      const restaurantId = items[0].product.restaurantId;
       const savedCheckoutUrl = paymentNotCompleted ? window.localStorage.getItem(PENDING_PAYMENT_CHECKOUT_URL_KEY) : null;
       if (savedCheckoutUrl) {
         setPaymentNotCompleted(false);
@@ -596,8 +616,65 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
         window.location.assign(savedCheckoutUrl);
         return;
       }
+
+      // Check tenant PayMongo readiness before the database creates a pending
+      // payment and consumes the single-use delivery quote.
+      if (checkoutTotal <= 0) {
+        throw new Error('The loyalty reward covers the entire order. Please choose cash payment or contact the restaurant for a free-order arrangement.');
+      }
+      await assertPayMongoCheckoutReady(restaurantId);
+
+      // A quote can have been consumed by an earlier interrupted attempt while
+      // its coordinates remain selected in the UI. Revalidate before staging
+      // payment; the route function reuses an active quote when one still exists.
+      let deliveryQuoteForPayment = deliveryRouteQuote;
+      if (isDelivery && !thirdPartyCourierDelivery) {
+        const selectedLocation = selectedDeliveryLocation;
+        const latitude = selectedLocation?.latitude;
+        const longitude = selectedLocation?.longitude;
+        if (
+          latitude == null ||
+          longitude == null ||
+          !Number.isFinite(latitude) ||
+          !Number.isFinite(longitude)
+        ) {
+          throw new Error('Please confirm your delivery location on the map before placing the order.');
+        }
+
+        setDeliveryRouteLoading(true);
+        try {
+          deliveryQuoteForPayment = await calculateDeliveryRoute(
+            restaurantId,
+            latitude,
+            longitude,
+          );
+          setDeliveryRouteQuote(deliveryQuoteForPayment);
+        } finally {
+          setDeliveryRouteLoading(false);
+        }
+
+        if (!deliveryQuoteForPayment.inRange) {
+          throw new Error(outsideDeliveryAreaMessage);
+        }
+
+        // Never silently charge a different delivery fee from the one shown
+        // when the customer selected online payment.
+        if (Math.abs(deliveryQuoteForPayment.deliveryFee - deliveryFee) >= 0.01) {
+          throw new Error(
+            `The delivery fee has been updated to ₱${deliveryQuoteForPayment.deliveryFee.toFixed(2)}. Please review the updated order total before placing your order.`,
+          );
+        }
+      }
+
+      // Saving a default address is optional and must not block order placement.
+      try {
+        await saveDefaultAddressIfNeeded();
+      } catch (addressSaveError) {
+        console.warn('Unable to save the customer default delivery address; continuing checkout.', addressSaveError);
+      }
+
       const pendingPayment = await createPendingOnlinePayment({
-        restaurantId: items[0].product.restaurantId,
+        restaurantId,
         customerName: customerName.trim(),
         mobileNumber: ['dine_in', 'take_out'].includes(orderType) ? '' : mobileNumber.trim(),
         orderType: isOwnCourierPickup ? 'pickup' : orderType,
@@ -612,12 +689,12 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
         customerDeliveryLatitude: isOwnCourierPickup ? undefined : isDelivery ? (selectedDeliveryLocation?.latitude ?? undefined) : undefined,
         customerDeliveryLongitude: isOwnCourierPickup ? undefined : isDelivery ? (selectedDeliveryLocation?.longitude ?? undefined) : undefined,
         customerDeliveryPlaceId: isOwnCourierPickup ? undefined : isDelivery ? selectedDeliveryLocation?.placeId : undefined,
-        deliveryQuoteId: isDelivery && !thirdPartyCourierDelivery ? deliveryRouteQuote?.quoteId : undefined,
+        deliveryQuoteId: isDelivery && !thirdPartyCourierDelivery ? deliveryQuoteForPayment?.quoteId : undefined,
         items: items.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
         redeemLoyalty: redeemPoints,
       });
-      const payableTotal = pendingPayment.total;
-      if (payableTotal <= 0) {
+
+      if (pendingPayment.total <= 0) {
         throw new Error('The loyalty reward covers the entire order. Please choose cash payment or contact the restaurant for a free-order arrangement.');
       }
       window.localStorage.setItem(PENDING_PAYMENT_REFERENCE_KEY, pendingPayment.referenceNumber);
@@ -690,7 +767,13 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
       <div className="menu-intro"><p className="eyebrow">Checkout</p><h1>How would you like your order?</h1><p>Choose how you will receive your food, then provide the details we need.</p></div>
       <div className="checkout-layout">
         <form className="checkout-form" onSubmit={(event) => event.preventDefault()}>
-          <fieldset id="order-type-section" className="checkout-section"><legend>Order type</legend><div className="order-type-grid">
+          <fieldset id="order-type-section" className="checkout-section"><legend>Order type</legend>
+            {deliveryModuleEnabled === null && (
+              <p className="checkout-order-type-status" role="status" aria-live="polite">
+                Checking delivery availability…
+              </p>
+            )}
+            <div className="order-type-grid">
             {orderTypes.filter((type) => type.value !== 'delivery' || deliveryModuleEnabled === true).map((type) => <label className={`order-type-card ${orderType === type.value ? 'is-selected' : ''}`} key={type.value}><input type="radio" name="orderType" checked={orderType === type.value} onChange={() => {
               setOrderType(type.value);
               if (type.value !== 'delivery' && !(thirdPartyCourierDelivery && type.value === 'pickup')) setSelectedDeliveryLocation(null);
@@ -815,7 +898,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
             })}
           </div>
           <section className="payment-review-refund-policy payment-policy-compact" aria-label="Cancellation and refund policy">
-            <p>By clicking <strong>Place Order</strong>, you agree to our <a href="#refunds">Cancellation &amp; Refund Policy</a>. Orders may be cancelled while Pending only; eligible online refunds are handled by the payment provider, while cash payments are handled by the restaurant.</p>
+            <p>By placing your order, you agree to our <a href="#refunds">Cancellation &amp; Refund Policy</a>.</p>
           </section>
           {submitError && <p className="checkout-error" role="alert">{submitError}</p>}
           <div className="payment-modal-actions">
@@ -826,7 +909,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
               } else {
                 void handlePlaceOrder();
               }
-            }}>Place Order</button>
+            }}>{isSubmitting ? 'Placing order…' : 'Place Order'}</button>
           </div>
         </div>
       </div>}

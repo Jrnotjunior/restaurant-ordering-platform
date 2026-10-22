@@ -1,6 +1,31 @@
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { supabase } from '../../services/supabaseClient';
 
+/** Validate tenant payment readiness before creating a pending payment or consuming its delivery quote. */
+export async function assertPayMongoCheckoutReady(restaurantId: string): Promise<void> {
+  if (!supabase) {
+    throw new Error('Supabase environment variables are not configured.');
+  }
+
+  const { data, error } = await supabase.functions.invoke('create-paymongo-checkout', {
+    body: { action: 'preflight', restaurantId },
+  });
+
+  if (error) {
+    if (error instanceof FunctionsHttpError) {
+      const responseBody = await error.context.clone().json().catch(() => null);
+      if (responseBody && typeof responseBody.error === 'string') {
+        throw new Error(responseBody.error);
+      }
+    }
+    throw new Error(error.message || 'Online payment is not ready for this restaurant.');
+  }
+
+  if (data?.ready !== true) {
+    throw new Error(data?.error || 'Online payment is not ready for this restaurant.');
+  }
+}
+
 export async function createPayMongoCheckout(orderId: string): Promise<string> {
   if (!supabase) {
     throw new Error('Supabase environment variables are not configured.');

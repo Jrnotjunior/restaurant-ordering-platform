@@ -8,6 +8,7 @@ type ProductCardProps = {
 
 export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const [imageExpanded, setImageExpanded] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
     if (!imageExpanded) return;
@@ -25,12 +26,14 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           {product.imageUrl ? (
         <>
           <button
-            className="product-card-image-button"
+            className={`product-card-image-button product-card-image-loading${imageLoaded ? ' is-loaded' : ''}`}
             type="button"
             onClick={() => setImageExpanded(true)}
             aria-label={`View larger image of ${product.name}`}
+            disabled={!imageLoaded}
           >
-            <img className="product-card-image" src={product.imageUrl} alt="" loading="lazy" />
+            {!imageLoaded ? <span className="product-card-image-shimmer" aria-hidden="true" /> : null}
+            <img className="product-card-image" src={product.imageUrl} alt="" loading="lazy" onLoad={() => setImageLoaded(true)} onError={() => setImageLoaded(true)} />
           </button>
           {imageExpanded ? (
             <div

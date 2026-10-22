@@ -37,7 +37,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
   const [error, setError] = useState('');
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
   const [showLivePreview, setShowLivePreview] = useState(false);
-  const [activeWebsiteSection, setActiveWebsiteSection] = useState<'favicon' | 'branding' | 'social' | 'colors'>('favicon');
+  const [activeWebsiteSection, setActiveWebsiteSection] = useState<'branding' | 'social' | 'colors'>('branding');
   const [previewPosition, setPreviewPosition] = useState({ x: 0, y: 0 });
   const [previewDragging, setPreviewDragging] = useState(false);
   const previewStageRef = useRef<HTMLDivElement>(null);
@@ -55,6 +55,18 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
     setLoading(true);
     setError('');
     try {
+      // Website customization is bundled with Self Ordering; never gate it on
+      // a separate Website module or package assignment.
+      const { data: selfOrderingEnabled, error: accessError } = await supabase.rpc('restaurant_has_module', {
+        p_restaurant_id: restaurantId,
+        p_module_key: 'self_ordering',
+      });
+      if (accessError) throw accessError;
+      if (selfOrderingEnabled !== true) {
+        setError('Website customization is available when Self Ordering is enabled for your restaurant.');
+        return;
+      }
+
       const { data: restaurant, error: restaurantError } = await supabase
         .from('restaurants')
         .select('name,tagline,logo_url')
@@ -280,24 +292,39 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         @media(prefers-reduced-motion:reduce){.website-customization-notice{animation:none}}
         .website-customization-header{padding:24px;border:1px solid #e1e5eb;border-radius:14px;background:#fff}
         .website-customization-card{padding:24px;border:1px solid #e1e5eb;border-radius:14px;background:#fff}
+        .website-customization-upload-row{display:flex;align-items:center;gap:16px;width:100%;min-height:132px;box-sizing:border-box;padding:16px 18px;border:1px solid #d9e2ef;border-radius:12px;background:#fff}
+        .website-customization-card .website-customization-branding-grid{display:block!important;width:100%;}
+        .website-customization-card .website-customization-branding-grid>div{width:100%;min-width:0;}
+        .website-customization-card .website-customization-branding-grid .website-customization-upload-row{width:100%;max-width:none;}
+        .website-customization-upload-row .website-customization-logo-preview{width:96px;height:96px;flex:0 0 96px;box-sizing:border-box}
+        .website-customization-upload-row .website-customization-logo-preview img{width:100%;height:100%;object-fit:contain}
+        .website-customization-card .website-customization-logo-row{margin-top:0}
+        .website-customization-card .website-customization-upload-row{width:100%;max-width:none}
+        .website-customization-upload-row .website-customization-logo-button{flex:0 0 auto}
+        .website-customization-upload-heading{margin:0 0 12px;font-size:16px;font-weight:700;line-height:1.35}
+        .website-customization-upload-description{margin:0 0 14px;font-size:14px;line-height:1.5;color:#334155}
+        .website-customization-branding-grid{display:block}
+        @media(max-width:700px){.website-customization-upload-row{gap:12px;padding:12px;min-height:108px}.website-customization-upload-row .website-customization-logo-preview{width:80px;height:80px;flex-basis:80px}}
         .website-customization-live-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid}
         .website-customization-live-brand{display:flex;align-items:center;gap:8px;min-width:0}
-        .website-customization-live-brand strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
         .website-customization-live-brand img,.website-customization-live-logo-fallback{width:30px;height:30px;object-fit:contain;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
-        .website-customization-live-hero{margin:12px;padding:20px 16px;min-height:230px;box-sizing:border-box;border:1px solid;background-size:cover;background-position:center;display:flex;flex-direction:column;justify-content:center}
-        .website-customization-live-eyebrow{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
-        .website-customization-live-hero h3{font-size:25px;line-height:1.08;margin:7px 0 8px}
-        .website-customization-live-hero p{margin:0;font-size:13px;line-height:1.5}
+        .website-customization-live-hero{margin:12px 12px 10px;padding:18px 12px;min-height:108px;box-sizing:border-box;border:1px solid;background-size:cover;background-position:center;display:flex;flex-direction:column;justify-content:center}
+        .website-customization-live-eyebrow{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+        .website-customization-live-hero h3{font-size:22px;line-height:1.08;margin:6px 0 5px}
+        .website-customization-live-hero p{margin:0;font-size:12px;line-height:1.4}
+        .website-customization-live-category{display:flex;align-items:center;gap:7px;margin:0 12px 10px;font-size:10px;font-weight:700}
+        .website-customization-live-category-select{min-width:0;max-width:calc(100% - 54px);padding:7px 9px;border:1px solid;border-radius:8px;font:inherit;font-size:10px}
         .website-customization-live-disabled{margin:12px;padding:22px;text-align:center;border:1px dashed;font-size:12px}
-        .website-customization-live-section{margin:12px;padding:12px;border:1px solid;border-color:inherit;border-radius:9px;display:flex;justify-content:space-between;gap:8px;font-size:12px}
-        .website-customization-live-product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px}
-        .website-customization-live-product-card{min-width:0;overflow:hidden;border:1px solid;border-radius:10px;background:var(--product-card-bg,#fff)}
-        .website-customization-live-product-image{height:88px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f1f5f9,#e2e8f0);font-size:32px}
-        .website-customization-live-product-content{padding:9px}
-        .website-customization-live-product-name{font-size:11px;font-weight:800;line-height:1.3;margin:0 0 4px}
-        .website-customization-live-product-description{font-size:9px;line-height:1.4;margin:0 0 7px}
+        .website-customization-live-section{display:none}
+        .website-customization-live-product-grid{display:flex;flex-direction:column;gap:8px;margin:0 12px 12px}
+        .website-customization-live-product-card{position:relative;display:flex;align-items:center;gap:7px;min-height:108px;padding:3px 34px 3px 3px;box-sizing:border-box;min-width:0;overflow:hidden;border:1px solid;border-radius:10px;background:var(--product-card-bg,#fff)}
+        .website-customization-live-product-image{width:104px;height:104px;flex:0 0 104px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:linear-gradient(135deg,#f1f5f9,#e2e8f0);font-size:32px;overflow:hidden}
+        .website-customization-live-product-content{min-width:0;flex:1;padding:5px 0}
+        .website-customization-live-product-name{font-size:10px;font-weight:800;line-height:1.25;margin:0 0 3px}
+        .website-customization-live-product-description{font-size:9px;line-height:1.3;margin:0 0 4px}
         .website-customization-live-product-bottom{display:flex;align-items:center;justify-content:space-between;gap:4px;font-size:10px;font-weight:800}
-        .website-customization-live-product-add{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;font-size:15px;line-height:1}
+        .website-customization-live-product-add{position:absolute;right:5px;bottom:5px;display:inline-flex;align-items:center;justify-content:center;width:23px;height:23px;border-radius:50%;font-size:15px;line-height:1}
+        .website-customization-live-buttons{display:none}
         .website-customization-live-footer{padding:8px 12px;border-top:1px solid;text-align:center;font-size:9px;min-height:0}
         .website-customization-live-footer-powered-by{display:inline-flex;align-items:center;justify-content:center;gap:5px;margin-top:5px;color:inherit;text-decoration:none;font-size:8px;opacity:.8}
         .website-customization-live-footer-powered-logo{display:block;width:54px;max-width:100%;height:14px;object-fit:contain;object-position:left center;flex:0 0 auto}
@@ -399,8 +426,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
       <form className="website-customization-form" onSubmit={(event: FormEvent) => { event.preventDefault(); setShowSaveConfirmation(true); }}>
         <nav className="website-customization-tabs" aria-label="Website and branding sections" role="tablist">
           {([
-            ['favicon', 'Browser tab icon'],
-            ['branding', 'Branding'],
+            ['branding', 'Branding & Identity'],
             ['social', 'Social media links'],
             ['colors', 'Website colors'],
           ] as const).map(([id, label]) => (
@@ -445,7 +471,6 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
               <div className="website-customization-live-nav" style={{ backgroundColor: websiteTheme.colors.header ?? websiteTheme.colors.background, color: websiteTheme.colors.text, borderBottomColor: websiteTheme.colors.border }}>
                 <div className="website-customization-live-brand">
                   {logoUrl ? <img src={logoUrl} alt="" /> : <span className="website-customization-live-logo-fallback" style={{ background: websiteTheme.colors.primary, color: websiteTheme.colors.primaryText }}>🍴</span>}
-                  <strong style={{ fontFamily: websiteTheme.fontHeading }}>{restaurantName}</strong>
                 </div>
                 <span style={{ color: websiteTheme.colors.muted }}>Menu</span>
               </div>
@@ -454,12 +479,12 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
                   style={{
                     backgroundColor: websiteTheme.colors.hero ?? websiteTheme.colors.surface,
                     backgroundImage: storefront.hero.imageUrl ? `linear-gradient(rgba(0,0,0,.38),rgba(0,0,0,.38)), url("${storefront.hero.imageUrl}")` : undefined,
-                    color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.text,
+                    color: websiteTheme.colors.primaryText,
                     borderColor: websiteTheme.colors.border,
                     borderRadius: websiteTheme.borderRadius === 'large' ? 16 : websiteTheme.borderRadius === 'small' ? 8 : 12
                   }}
                 >
-                  {storefront.hero.eyebrow ? <span className="website-customization-live-eyebrow" style={{ color: storefront.hero.imageUrl ? '#fff' : websiteTheme.colors.primary }}>{storefront.hero.eyebrow}</span> : null}
+                  <span className="website-customization-live-eyebrow" style={{ color: 'inherit' }}>Welcome to our menu</span>
                   <h3 style={{ fontFamily: websiteTheme.fontHeading }}>{restaurantName}</h3>
                   {restaurantTagline ? <p>{restaurantTagline}</p> : null}
                 </div>
@@ -485,9 +510,9 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
               </div>
               <div className="website-customization-live-buttons"><button type="button" style={{ backgroundColor: websiteTheme.colors.primary, color: websiteTheme.colors.primaryText, borderColor: websiteTheme.colors.primary }}>Primary button</button><button type="button" style={{ backgroundColor: websiteTheme.colors.secondary, color: websiteTheme.colors.secondaryText, borderColor: websiteTheme.colors.border }}>Secondary button</button></div>
 
-              <div className="website-customization-live-footer" style={{ backgroundColor: websiteTheme.colors.footer ?? websiteTheme.colors.background, borderTopColor: websiteTheme.colors.border, color: websiteTheme.colors.muted }}>
+              <div className="website-customization-live-footer" style={{ backgroundColor: websiteTheme.colors.footer ?? websiteTheme.colors.background, borderTopColor: websiteTheme.colors.border, color: websiteTheme.colors.footerText ?? websiteTheme.colors.muted }}>
                 <section className="website-customization-live-footer-social" aria-label="Follow the restaurant">
-                  <h4 className="website-customization-live-footer-social-heading" style={{ color: websiteTheme.colors.text }}>Follow Us</h4>
+                  <h4 className="website-customization-live-footer-social-heading">Follow Us</h4>
                   <nav className="website-customization-live-footer-socials" aria-label="Social media links">
                     {([
                       ['Facebook', storefront.socialLinks?.facebook, `${import.meta.env.BASE_URL}social-facebook.svg`],
@@ -532,18 +557,23 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
           </div>
         ) : null}
 
-        {activeWebsiteSection === 'favicon' ? <div role="tabpanel" id="website-customization-panel-favicon" aria-labelledby="website-customization-tab-favicon"><RestaurantFaviconSettings
-          restaurantId={restaurantId}
-          faviconUrl={storefront.faviconUrl}
-          disabled={loading || saving}
-          onChange={(url) => { setStorefront((current) => ({ ...current, faviconUrl: url || undefined })); setMessage(''); setError(''); }}
-        /></div> : null}
-
         {activeWebsiteSection === 'branding' ? <div role="tabpanel" id="website-customization-panel-branding" aria-labelledby="website-customization-tab-branding">
         <div className="website-customization-card">
+          <h3 className="website-customization-upload-heading">Browser tab icon</h3>
+          <p className="website-customization-upload-description">Choose the small icon customers see in their browser tab.</p>
+          <RestaurantFaviconSettings
+            restaurantId={restaurantId}
+            faviconUrl={storefront.faviconUrl}
+            disabled={loading || saving}
+            onChange={(url) => { setStorefront((current) => ({ ...current, faviconUrl: url || undefined })); setMessage(''); setError(''); }}
+          />
+        </div>
+        <div className="website-customization-card">
+          <h3 className="website-customization-upload-heading">Restaurant logo</h3>
+          <p className="website-customization-upload-description">Choose the logo customers see on your restaurant website.</p>
           <div className="website-customization-branding-grid">
             <div>
-              <div className="website-customization-logo-row">
+              <div className="website-customization-logo-row website-customization-upload-row">
                 <div className="website-customization-logo-preview">{logoUrl ? <img src={logoUrl} alt="Restaurant logo" /> : <span>No logo</span>}</div>
                 <label className="button button-secondary website-customization-logo-button restaurant-compact-action">
                   {logoUploading ? 'Uploading…' : 'Choose logo'}
@@ -604,7 +634,8 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
             {([
               ['background', 'Page background', websiteTheme.colors.background],
               ['header', 'Header color', websiteTheme.colors.header ?? websiteTheme.colors.background],
-              ['footer', 'Footer color', websiteTheme.colors.footer ?? websiteTheme.colors.background],
+              ['footer', 'Footer background color', websiteTheme.colors.footer ?? websiteTheme.colors.background],
+              ['footerText', 'Footer font color', websiteTheme.colors.footerText ?? websiteTheme.colors.muted],
               ['hero', 'Hero section color', websiteTheme.colors.hero ?? websiteTheme.colors.surface],
               ['productCard', 'Product card color', websiteTheme.colors.productCard ?? websiteTheme.colors.surface],
               ['text', 'Font color', websiteTheme.colors.text],
@@ -656,6 +687,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
                   ...defaultRestaurant.theme.colors,
                   header: defaultRestaurant.theme.colors.header ?? defaultRestaurant.theme.colors.background,
                   footer: defaultRestaurant.theme.colors.footer ?? defaultRestaurant.theme.colors.background,
+                  footerText: defaultRestaurant.theme.colors.footerText ?? defaultRestaurant.theme.colors.muted,
                   hero: defaultRestaurant.theme.colors.hero ?? defaultRestaurant.theme.colors.surface,
                   productCard: defaultRestaurant.theme.colors.productCard ?? defaultRestaurant.theme.colors.surface,
                 },

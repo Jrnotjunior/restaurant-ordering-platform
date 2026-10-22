@@ -169,9 +169,10 @@ export function Header({ cartCount = 0 }: HeaderProps) {
                 <span>{user.email}</span>
                 {isCustomer ? <span className="header-account-points">Loyalty points: {loyaltyLoading ? '…' : loyaltyPoints ?? '—'}</span> : null}
               </div> : <div className="header-account-identity"><strong>Your account</strong><span>Sign in or review our policies.</span></div>}
+              <a className="header-account-menu-item" href="#legal" onClick={() => setAccountOpen(false)}>Legal &amp; Policies</a>
               {user ? <>{isCustomer ? <>
-                <a className="header-account-menu-item" href={withBasePath('/order-history')} onClick={() => setAccountOpen(false)}>Order history</a>
                 <a className="header-account-menu-item" href={withBasePath('/saved-address')} onClick={() => setAccountOpen(false)}>Saved address</a>
+                <a className="header-account-menu-item" href={withBasePath('/order-history')} onClick={() => setAccountOpen(false)}>Order history</a>
               </> : null}
                                 <button className="header-account-menu-item" type="button" onClick={() => { setChangePasswordOpen((open) => !open); setPasswordMessage(''); }}>Change password</button>
                 {changePasswordOpen ? (
@@ -198,7 +199,6 @@ export function Header({ cartCount = 0 }: HeaderProps) {
                 <a className="header-account-menu-item" href={withBasePath('/account')} onClick={() => setAccountOpen(false)}>Log in</a>
                 <a className="header-account-menu-item" href={withBasePath('/signup')} onClick={() => setAccountOpen(false)}>Register</a>
               </>}
-              <a className="header-account-menu-item" href="#legal" onClick={() => setAccountOpen(false)}>Legal &amp; Policies</a>
             </div>
           ) : null}
         </div>

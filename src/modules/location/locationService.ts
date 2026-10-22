@@ -29,11 +29,26 @@ export type MapboxLocationFeature = {
 
 type MapboxFeatureCollection = { features?: MapboxLocationFeature[] };
 
-const accessToken = () => String(import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN ?? '').trim();
+let configuredPublicToken = '';
+
+/** Set only from the central map service's runtime configuration response. */
+export function configureMapboxPublicToken(token: string) {
+  const value = token.trim();
+  if (!value.startsWith('pk.')) {
+    throw new Error('The central map service returned an invalid public Mapbox token.');
+  }
+  configuredPublicToken = value;
+}
+
+export function getMapboxPublicToken() {
+  return configuredPublicToken;
+}
 
 function requireToken() {
-  const token = accessToken();
-  if (!token.startsWith('pk.')) throw new Error('Mapbox needs a public browser token beginning pk. Configure VITE_MAPBOX_PUBLIC_TOKEN; secret sk. tokens must never be used in browser apps.');
+  const token = getMapboxPublicToken();
+  if (!token.startsWith('pk.')) {
+    throw new Error('The central map service is not configured. Please try again later.');
+  }
   return token;
 }
 

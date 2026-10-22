@@ -43,8 +43,8 @@ function paymentLabel(order: RestaurantOrder) {
 }
 
 function isPaymentReady(order: RestaurantOrder) {
-  if (['dine_in', 'take_out'].includes(order.orderType) && order.paymentMethod === 'cash') return order.paymentStatus === 'paid';
-  return order.paymentMethod !== 'gcash' || order.paymentStatus === 'paid';
+  // The database kitchen-handoff RPC requires every order's payment to be completed.
+  return order.paymentStatus === 'paid';
 }
 
 function isOnlinePaid(order: RestaurantOrder) {
@@ -681,16 +681,16 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
                 <strong className="restaurant-order-modal-total">₱{selectedOrder.total.toFixed(2)}</strong>
               </div>
             )}
-            {selectedOrder.status === 'pending' && ['dine_in', 'take_out'].includes(selectedOrder.orderType) && selectedOrder.paymentMethod === 'cash' && selectedOrder.paymentStatus !== 'paid' && (
-              <p style={{ marginTop: 16 }}>Customer must pay at the counter before this cash order can enter the kitchen.</p>
+            {selectedOrder.status === 'pending' && selectedOrder.paymentMethod === 'cash' && selectedOrder.paymentStatus !== 'paid' && (
+              <p style={{ marginTop: 16 }}>Confirm the cash payment before sending this order to the kitchen.</p>
             )}
-            {selectedOrder.status === 'pending' && !isPaymentReady(selectedOrder) && !(['dine_in', 'take_out'].includes(selectedOrder.orderType) && selectedOrder.paymentMethod === 'cash') && (
-              <p style={{ marginTop: 16 }}>Online payment is required before this order can enter the kitchen.</p>
+            {selectedOrder.status === 'pending' && !isPaymentReady(selectedOrder) && selectedOrder.paymentMethod !== 'cash' && (
+              <p style={{ marginTop: 16 }}>Payment must be completed before this order can enter the kitchen.</p>
             )}
             {role !== 'owner' && <div className="restaurant-order-modal-actions">
               {selectedOrder.status === 'pending' ? (
                 <>
-                  {['dine_in', 'take_out'].includes(selectedOrder.orderType) && selectedOrder.paymentMethod === 'cash' && selectedOrder.paymentStatus !== 'paid' ? (
+                  {selectedOrder.paymentMethod === 'cash' && selectedOrder.paymentStatus !== 'paid' ? (
                     <button
                       className="button button-primary"
                       type="button"

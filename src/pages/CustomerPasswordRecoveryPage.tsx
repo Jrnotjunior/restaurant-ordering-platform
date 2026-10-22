@@ -134,12 +134,12 @@ export function CustomerPasswordRecoveryPage({ mode }: CustomerPasswordRecoveryP
   }
 
   if (mode === 'reset' && checkingResetLink) {
-    return <main className="restaurant-owner-auth-page"><section className="restaurant-owner-auth-card"><p>Verifying your password-reset link…</p></section></main>;
+    return <main className="restaurant-owner-auth-page customer-password-recovery-page"><section className="restaurant-owner-auth-card customer-password-recovery-card"><p>Verifying your password-reset link…</p></section></main>;
   }
 
   return (
-    <main className="restaurant-owner-auth-page">
-      <section className="restaurant-owner-auth-card" aria-labelledby="customer-password-recovery-title">
+    <main className="restaurant-owner-auth-page customer-password-recovery-page">
+      <section className="restaurant-owner-auth-card customer-password-recovery-card" aria-labelledby="customer-password-recovery-title">
         <p className="eyebrow">Customer account</p>
         <h1 id="customer-password-recovery-title">{mode === 'request' ? 'Forgot password?' : 'Reset password'}</h1>
         <p>{mode === 'request'

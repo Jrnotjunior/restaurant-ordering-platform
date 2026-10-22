@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react';
+import { useRestaurant } from '../components/RestaurantProvider';
 import { signUpCustomer } from '../modules/customer/customerAuthService';
 import { getPasswordPolicyError, getPasswordGuidance, PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '../utils/passwordPolicy';
 
 export function CustomerSignUpPage() {
+  const restaurant = useRestaurant();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
@@ -28,7 +30,8 @@ export function CustomerSignUpPage() {
     password: !password ? 'Please create a password.' : getPasswordPolicyError(password) || '',
     consent: !personalInfoConsent ? 'Please agree to the Privacy Notice to create an account.' : '',
   };
-  const shouldShow = (field: string) => submitted || Boolean(touched[field]);
+  // Keep validation guidance hidden on first render; reveal it after the customer submits the form.
+  const shouldShow = (_field: string) => submitted;
   const markTouched = (field: string) => setTouched((current) => ({ ...current, [field]: true }));
   const fieldError = (field: keyof typeof fieldErrors) => shouldShow(field) && fieldErrors[field] ? <small className="customer-field-error" role="alert">{fieldErrors[field]}</small> : null;
 
@@ -90,9 +93,14 @@ export function CustomerSignUpPage() {
   }
 
   return (
-    <main className="restaurant-owner-auth-page">
-      <section className="restaurant-owner-auth-card customer-signup-card" aria-labelledby="customer-signup-title">
-        <h1 id="customer-signup-title">Register</h1>
+    <main className="restaurant-owner-auth-page tenant-auth-page">
+      <section className="restaurant-owner-auth-card customer-signup-card tenant-auth-card" aria-labelledby="customer-signup-title">
+        <div className="tenant-auth-brand">
+          {restaurant.logoUrl?.trim() ? <img className="tenant-auth-logo" src={restaurant.logoUrl} alt={`${restaurant.name || 'Restaurant'} logo`} /> : <span className="tenant-auth-logo-fallback" aria-hidden="true">{(restaurant.name || 'R').trim().slice(0, 1).toUpperCase()}</span>}
+          <span className="tenant-auth-brand-name">{restaurant.name?.trim() || 'Welcome'}</span>
+        </div>
+        <h1 id="customer-signup-title">Create your account</h1>
+        <p className="tenant-auth-intro">Create an account to make ordering with us quicker and easier.</p>
 
         {error && <div className="restaurant-dashboard-error" role="alert">{error}</div>}
         {message && (
@@ -154,11 +162,11 @@ export function CustomerSignUpPage() {
             <span>I agree to the <a href="#privacy">Privacy Notice</a>.</span>
           </label>
           {fieldError('consent')}
-          <button className="button" type="submit" disabled={submitting}>{submitting ? 'Registering…' : 'Register'}</button>
+          <button className="button" type="submit" disabled={submitting}>{submitting ? 'Creating account…' : 'Sign Up'}</button>
         </form>
 
         <p className="restaurant-auth-switch">
-          Already have an account? <a href="#account">Log in</a>
+          Already have an account? <a href="#account">Sign In</a>
         </p>
 
 

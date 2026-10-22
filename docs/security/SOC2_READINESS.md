@@ -4,6 +4,49 @@ This is an internal engineering tracker, not a SOC 2 report, certification, or a
 
 ## Current findings
 
+## Security hardening update — 2026-10-21
+
+### Targeted RPC privilege hardening
+- Committed `supabase/migrations/20261020194650_restrict_admin_and_kitchen_rpc_execute.sql` (commit `202f0ef1afd15b19590d752de1a8aa17e76bd0cb`) and applied it to the connected primary Supabase project.
+- Revoked `PUBLIC` and `anon` EXECUTE on `system_admin_get_restaurant_settings(uuid)`, all three observed `system_admin_update_restaurant_settings` overloads, and `send_order_to_kitchen(uuid)`; retained `authenticated` EXECUTE.
+- Live catalogue check after application returned `anon_exec=false` and `public_exec=false` for those signatures, with authenticated execution preserved.
+
+### Dispatch mutation hardening
+- Added `supabase/migrations/20261020195000_secure_dispatch_order_mutations.sql` (commit `e6ffbfcfe2fedb529d89c063c5abcc421f8f96d2`) and applied it to both the isolated Security Test project and the connected primary project.
+- The new `assign_delivery_order` and `complete_dispatch_handoff` SECURITY DEFINER RPCs perform server-side authentication, MFA, tenant/staff-role and order-state checks; assignment writes and order changes occur in one transaction. The RPCs are callable by `authenticated`, not `anon`/`PUBLIC`.
+- Replaced the two direct browser `orders` mutations in `src/modules/dispatch/dispatchRepository.ts` with these RPC calls (commit `959b862667ca2fbe0d1a94ac887eef71e9702631`).
+- Isolated database tests passed for atomic delivery assignment, pickup handoff and rejection of a cross-tenant handoff attempt. After the direct order-update revoke was applied to the primary project, rollback-only primary-project SQL tests also passed for delivery assignment, pickup handoff, rejection of direct order-total UPDATE and rejection of a cross-tenant handoff. All fixtures ran inside transactions that were rolled back; no test rows were retained. These are database role-context tests, not a complete browser/PostgREST end-to-end test.
+- The source migration and direct-update revocation were committed before applying the revocation to the primary project.
+
+### Direct order-write privilege removal
+- Committed `supabase/migrations/20261020195500_revoke_direct_orders_update.sql` (commit `95bff2e895478f08d0a97b9a92404b2f463bf6c7`) and applied it to both the isolated Security Test project and the connected primary project.
+- Live verification in the primary project returned `anon UPDATE=false`, `authenticated UPDATE=false`, `service_role UPDATE=true`, `postgres UPDATE=true`; authenticated SELECT remains available. This prevents direct browser roles from changing financial/payment/order-number fields through a generic table update while preserving the explicit service-role path used by server functions.
+- The isolated test project has no direct authenticated table UPDATE grant; the assignment/handoff RPC tests passed under that privilege posture. The expanded rollback-only SQL matrix passed on the primary project for assignment, handoff, direct-total-update denial, duplicate-assignment denial, cross-tenant denial, MFA (`aal1`) denial, unrelated-user denial and anonymous RPC denial. The same checks passed on the isolated project except its `service_role` does not have direct `orders` UPDATE privilege in that environment; the primary project retains `service_role` UPDATE. No regression fixtures remain in either project. Browser/PostgREST end-to-end testing is still unverified.
+- Existing RLS policies are retained. The 10 RLS-enabled tables-with-no-policies finding is not being “fixed” with broad policies: live ACL inspection showed the affected tables had no direct anon/authenticated table grants.
+
+### Trigger-helper privilege cleanup
+- Committed `supabase/migrations/20261020195800_revoke_trigger_helper_rpc_execute.sql` (commit `c3044ee1f8501114a28e0c86133d943a6bf16113`) and applied it to both the primary and isolated Security Test projects.
+- Revoked EXECUTE from `PUBLIC`, `anon` and `authenticated` on `public.enforce_cash_on_pickup_setting()`, a trigger-returning helper that had no attached trigger in the current primary catalogue. No client source caller was found; PostgreSQL triggers, if added in future, do not rely on client RPC grants to invoke their trigger functions.
+- Security Advisor refreshed after the changes continues to show 10 no-policy RLS findings. The intentionally public checkout/storefront functions remain exposed for per-signature review rather than being indiscriminately revoked.
+
+### Outstanding after this update
+- Latest Security Advisor refresh after this round reports 17 anonymous-callable SECURITY DEFINER signatures, 113 authenticated-callable SECURITY DEFINER signatures, 10 RLS-enabled tables without policies, and leaked-password protection disabled. Each remaining signature requires a per-function access/control review; some anonymous checkout/storefront RPCs are intentionally public and must not be blanket-revoked.
+- Supabase Auth leaked-password protection requires an Auth dashboard/configuration change and validation against passwordless/OAuth flows; it has not been changed.
+- Committed workflow change `555c138ae7c1a9581f2b34a7945cf2b116263276` so direct pushes to `main` now run the dedicated build + regression-test workflow. On that exact commit, GitHub Actions passed `npm run build` and the regression suite (2 test files, 29 tests passed); the Hostinger build/publish and GitHub Pages deploy workflows also completed successfully. Runs: [build + tests](https://github.com/Jrnotjunior/restaurant-ordering-platform/actions/runs/39489196429), [Hostinger build/publish](https://github.com/Jrnotjunior/restaurant-ordering-platform/actions/runs/39489196342), [GitHub Pages deploy](https://github.com/Jrnotjunior/restaurant-ordering-platform/actions/runs/39489196338). This verifies build/deploy workflow completion, not an interactive browser smoke test. The live custom-domain and Pages URLs could not be opened with the available web inspection tool in this session.
+- Full security regression testing, webhook concurrency/retry tests, checkout abuse/rate limits, guest tracking-token replacement, backup/restore evidence and operational SOC 2 evidence remain incomplete.
+- This is security hardening and readiness work only. It is not a SOC 2 report, attestation or certification.
+
+
+### Centralized Mapbox service — 2026-10-21
+
+- Committed the central map-service architecture in `docs/architecture/CENTRAL_MAP_SERVICE.md`. Tenant checkout, saved-address, and restaurant-location pickers now use a central-origin iframe at `https://app.web2table.io/maps.html`; Mapbox GL JS and geocoding run in that shared origin rather than each tenant's custom domain.
+- Added and deployed the `mapbox-public-config` Edge Function (version 1, `verify_jwt=false`). The handler requires the configured central-service Origin and returns only a `pk.` public token from the `MAPBOX_PUBLIC_TOKEN` function secret. It refuses missing/invalid configuration and never logs the token value.
+- Added validation for secure parent origins, active tenant-domain resolution, the expected iframe source/origin, selected-address payload shape, coordinate ranges, and response request IDs. Added five protocol regression tests for public-token prefix, secure origins, localhost development gating, and valid/invalid address payloads.
+- Removed `VITE_MAPBOX_PUBLIC_TOKEN` from build workflows. The map token is fetched at runtime so it is not committed in the compiled Hostinger deployment branch. This does not make the public token secret: it is visible to browser users by design, and must have only required public scopes and an allowed-URL restriction for `https://app.web2table.io`.
+- Build and regression verification passed on commit `328e159`: `npm run build` passed and 3 test files / 34 tests passed. [Build + tests](https://github.com/Jrnotjunior/restaurant-ordering-platform/actions/runs/39494655776).
+- Hostinger and GitHub Pages deployment workflows subsequently completed successfully on the documented map-service build and again after the readiness tracker update. The published Hostinger artifact tree contains `maps.html` and separate app/map bundles.
+- **Outstanding activation blocker:** add a restricted public Mapbox token as the production Supabase Edge Function secret `MAPBOX_PUBLIC_TOKEN`, then verify the live checkout map. Successful CI/deployment is not a live browser end-to-end test.
+
 ### Customer profile RPC contract
 - Frontend callers in `src/modules/customer/customerAuthService.ts`, `src/pages/RestaurantOwnerLoginPage.tsx`, and `src/pages/CheckoutPage.tsx` call `upsert_customer_profile` with separate first/last-name arguments.
 - Live read-only verification confirmed deployed `upsert_customer_profile(p_restaurant_id uuid, p_first_name text, p_last_name text, p_phone text)` and `get_my_customer_profile_id(p_restaurant_id uuid)`. The deployed upsert checks authentication, tenant context, active restaurant, required names, phone format, and initializes the loyalty account.
@@ -92,8 +135,9 @@ This is an internal engineering tracker, not a SOC 2 report, certification, or a
 - [ ] Production/test secret configuration and fallback independently verified.
 - [x] Guest checkout NULL/non-array/empty item and NULL order/payment validation hardened in all live RPC overloads; targeted live rejection probes passed.
 - [ ] Anonymous checkout authorization, rate limiting, and broader abuse controls fully reviewed.
-- [ ] All privileged RPCs reviewed and security regression tests pass.
-- [ ] GitHub Actions build passes on current `main`.
+- [ ] All privileged RPCs reviewed and the complete security regression suite passes.
+- [ ] Interactive browser/PostgREST end-to-end smoke test verified on the deployed storefront/dispatch UI.
+- [x] GitHub Actions build and regression tests pass on current `main` (commit `555c138ae7c1a9581f2b34a7945cf2b116263276`; 2 test files / 29 tests passed).
 - [ ] Strict no-full-name API contract confirmed throughout the system.
 - [ ] Operational SOC 2 evidence assembled and reviewed by a qualified auditor.
 

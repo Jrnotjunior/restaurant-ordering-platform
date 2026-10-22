@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeHashRoute, resolveAppRoute } from '../src/app/routing/routeResolver';
+import { buildOrderTrackingUrl, normalizeHashRoute, resolveAppRoute, resolveTrackingOrderId } from '../src/app/routing/routeResolver';
 import { addCartItem, changeCartItemQuantity, getCartCount, removeCartItem } from '../src/modules/ordering/cartService';
 import { isInvitationType } from '../src/modules/invitations/invitationTypes';
 import { staffRouteForRole } from '../src/modules/auth/staffRoleRouting';
 import { resolveInvitationTypeFromMetadata } from '../src/modules/invitations/invitationResolver';
+import { getCancellationResultMessage, getTrackedPaymentStatusLabel } from '../src/modules/payments/refundStatusPresentation';
 import type { RestaurantProduct } from '../src/types/menu';
 
 const product = (id: string, overrides: Partial<RestaurantProduct> = {}): RestaurantProduct => ({
@@ -22,6 +23,62 @@ const product = (id: string, overrides: Partial<RestaurantProduct> = {}): Restau
 });
 
 const location = (pathname = '/', search = '', hash = '') => ({ pathname, search, hash });
+
+describe('refund status presentation', () => {
+  it('never labels a local test refund simulation as a PayMongo refund', () => {
+    expect(getTrackedPaymentStatusLabel('paid', 'simulated'))
+      .toBe('PayMongo still marks this payment PAID · Test refund simulated');
+
+    expect(getCancellationResultMessage('paid', 'simulated', 'Order cancelled.'))
+      .toContain('PayMongo still shows the payment as PAID');
+    expect(getCancellationResultMessage('paid', 'simulated', 'Order cancelled.'))
+      .toContain('No refund was issued by PayMongo.');
+  });
+
+  it('keeps real provider-refund states distinct from simulations', () => {
+    expect(getTrackedPaymentStatusLabel('paid', 'processing'))
+      .toBe('PayMongo still marks this payment PAID · Refund processing');
+    expect(getTrackedPaymentStatusLabel('refunded', 'succeeded')).toBe('Payment refunded');
+    expect(getCancellationResultMessage('refunded', 'succeeded', 'Fallback'))
+      .toBe('Your order has been cancelled and the refund completed successfully.');
+  });
+});
+
+describe('refresh-safe guest tracking recovery', () => {
+  it('restores a saved active order on a hard refresh at the custom-domain root or GitHub Pages base path', () => {
+    expect(resolveTrackingOrderId(location('/', '', ''), '', 'order-006', '/', true)).toBe('order-006');
+    expect(resolveTrackingOrderId(
+      location('/restaurant-ordering-platform/', '', ''),
+      '',
+      'order-006',
+      '/restaurant-ordering-platform/',
+      true,
+    )).toBe('order-006');
+  });
+
+  it('prioritizes explicit tracking URLs and never overrides deliberate routes', () => {
+    expect(resolveTrackingOrderId(location('/', '?trackOrder=url-order', ''), '', 'saved-order', '/', true))
+      .toBe('url-order');
+    expect(resolveTrackingOrderId(location('/', '', '#order/hash-order'), '#order/hash-order', 'saved-order', '/', true))
+      .toBe('hash-order');
+    expect(resolveTrackingOrderId(location('/menu', '', ''), '', 'saved-order', '/', true)).toBeNull();
+    expect(resolveTrackingOrderId(location('/', '', '#cart'), '#cart', 'saved-order', '/', true)).toBeNull();
+    expect(resolveTrackingOrderId(location('/', '', ''), '', 'saved-order', '/', false)).toBeNull();
+  });
+});
+
+describe('guest active-order recovery contract', () => {
+  it('creates a refresh-safe tracking URL while preserving custom and GitHub Pages base paths', () => {
+    expect(buildOrderTrackingUrl('/', 'order-123')).toBe('/?trackOrder=order-123');
+    expect(buildOrderTrackingUrl('/restaurant-ordering-platform/', 'order 123')).toBe('/restaurant-ordering-platform/?trackOrder=order%20123');
+  });
+
+  it('resolves a guest tracking URL without requiring a hash route or customer login', () => {
+    const result = resolveAppRoute(location('/', '?trackOrder=guest-order-123'), '');
+
+    expect(result.trackOrderNumber).toBe('guest-order-123');
+  });
+});
 
 describe('route resolution contract', () => {
   it.each(['owner', 'cashier', 'kitchen', 'dispatcher'] as const)(

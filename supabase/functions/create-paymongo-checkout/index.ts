@@ -59,6 +59,33 @@ function getPayMongoSecretKey(environment: "test" | "live") {
   return legacy.startsWith(expectedPrefix) ? legacy : "";
 }
 
+function getPaymentMethodTypes(configuredMethods: unknown): string[] {
+  const methodSettings = configuredMethods && typeof configuredMethods === "object" && !Array.isArray(configuredMethods)
+    ? configuredMethods as Record<string, unknown>
+    : {};
+  return [
+    ...(methodSettings.card === true ? ["card"] : []),
+    ...(methodSettings.gcash !== false ? ["gcash"] : []),
+    ...(methodSettings.qrph !== false ? ["qrph"] : []),
+    ...(methodSettings.grab_pay !== false ? ["grab_pay"] : []),
+    ...(methodSettings.paymaya !== false ? ["paymaya"] : []),
+    ...(methodSettings.dob !== false ? ["dob"] : []),
+    ...(methodSettings.billease === true ? ["billease"] : []),
+  ];
+}
+
+function isParentTestSandboxConnection(
+  environment: "test" | "live",
+  connection: Record<string, unknown> | null | undefined,
+): boolean {
+  return environment === "test"
+    && connection?.onboarding_step === "test_simulation"
+    && connection?.connection_status === "pending"
+    && connection?.activation_status === "mock"
+    && !connection?.paymongo_account_id
+    && !connection?.webhook_secret_id;
+}
+
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (request.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
@@ -82,12 +109,61 @@ Deno.serve(async (request) => {
     }
 
     const body = await request.json();
-    const orderId = String(body.orderId ?? "").trim();
-    if (!orderId) return jsonResponse({ error: "Order is required." }, 400);
-
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+
+    if (body?.action === "preflight") {
+      const restaurantId = String(body.restaurantId ?? "").trim();
+      if (!restaurantId) return jsonResponse({ error: "Restaurant is required." }, 400);
+
+      const { data: restaurant, error: restaurantError } = await adminClient
+        .from("restaurants")
+        .select("id,custom_domain,online_payment_methods")
+        .eq("id", restaurantId)
+        .maybeSingle();
+      if (restaurantError) throw restaurantError;
+      if (!restaurant) return jsonResponse({ error: "This restaurant could not be found." }, 404);
+
+      const requestOrigin = request.headers.get("origin");
+      const siteBaseUrl = getRestaurantSiteBaseUrl(restaurant.custom_domain, requestOrigin);
+      if (!siteBaseUrl) {
+        return jsonResponse({ error: "This restaurant storefront domain is not configured correctly. Please contact the restaurant before trying payment again." }, 409);
+      }
+
+      if (getPaymentMethodTypes(restaurant.online_payment_methods).length === 0) {
+        return jsonResponse({ error: "This restaurant has no online payment methods enabled. Please contact the restaurant." }, 409);
+      }
+
+      const { data: connection, error: connectionError } = await adminClient
+        .from("restaurant_paymongo_accounts")
+        .select("paymongo_account_id,connection_status,webhook_secret_id,onboarding_step,activation_status")
+        .eq("restaurant_id", restaurantId)
+        .eq("environment", paymongoEnvironment)
+        .maybeSingle();
+      if (connectionError) throw connectionError;
+      if (!connection) {
+        return jsonResponse({
+          error: `This restaurant has not configured its PayMongo ${paymongoEnvironment} payment connection yet.`,
+        }, 409);
+      }
+
+      const parentTestSandbox = isParentTestSandboxConnection(paymongoEnvironment, connection);
+      if (!parentTestSandbox && (
+        connection.connection_status !== "active"
+        || !connection.paymongo_account_id
+        || !connection.webhook_secret_id
+      )) {
+        return jsonResponse({
+          error: `This restaurant's PayMongo ${paymongoEnvironment} child account is not ready for online payments yet.`,
+        }, 409);
+      }
+
+      return jsonResponse({ ready: true, environment: paymongoEnvironment }, 200);
+    }
+
+    const orderId = String(body.orderId ?? "").trim();
+    if (!orderId) return jsonResponse({ error: "Order is required." }, 400);
 
     const { data: pendingPayment, error: paymentError } = await adminClient
       .from("pending_online_payments")
@@ -132,12 +208,7 @@ Deno.serve(async (request) => {
       }, 409);
     }
 
-    const isParentTestSandbox =
-      paymongoEnvironment === "test" &&
-      paymongoConnection.onboarding_step === "test_parent_account" &&
-      paymongoConnection.connection_status === "pending" &&
-      !paymongoConnection.paymongo_account_id &&
-      !paymongoConnection.webhook_secret_id;
+    const isParentTestSandbox = isParentTestSandboxConnection(paymongoEnvironment, paymongoConnection);
 
     if (isParentTestSandbox) {
       // Parent-account sandbox checkout only. No fake child ID or Account-ID
@@ -166,19 +237,7 @@ Deno.serve(async (request) => {
 
     // Payment methods are configured per restaurant. Optional methods are
     // disabled unless explicitly enabled in that restaurant's settings.
-    const configuredMethods = restaurantDomain?.online_payment_methods;
-    const methodSettings = configuredMethods && typeof configuredMethods === "object" && !Array.isArray(configuredMethods)
-      ? configuredMethods as Record<string, unknown>
-      : {};
-    const paymentMethodTypes = [
-      ...(methodSettings.card === true ? ["card"] : []),
-      ...(methodSettings.gcash !== false ? ["gcash"] : []),
-      ...(methodSettings.qrph !== false ? ["qrph"] : []),
-      ...(methodSettings.grab_pay !== false ? ["grab_pay"] : []),
-      ...(methodSettings.paymaya !== false ? ["paymaya"] : []),
-      ...(methodSettings.dob !== false ? ["dob"] : []),
-      ...(methodSettings.billease === true ? ["billease"] : []),
-    ];
+    const paymentMethodTypes = getPaymentMethodTypes(restaurantDomain?.online_payment_methods);
     if (paymentMethodTypes.length === 0) {
       return jsonResponse({ error: "This restaurant has no online payment methods enabled. Please contact the restaurant." }, 409);
     }

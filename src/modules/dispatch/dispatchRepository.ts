@@ -89,20 +89,30 @@ export async function getRiderDashboardData(userId:string):Promise<{riderName:st
 
 export async function assignDelivery(restaurantId:string,orderId:string,riderId:string){
   if(!supabase) throw new Error('Supabase is not configured.');
-  const {error:assignmentError}=await supabase.from('delivery_assignments').insert({order_id:orderId,rider_id:riderId,restaurant_id:restaurantId,status:'assigned'});
-  if(assignmentError) throw assignmentError;
-  const {data,error:orderError}=await supabase.from('orders').update({rider_id:riderId,delivery_status:'assigned',rider_assigned_at:new Date().toISOString()}).eq('id',orderId).eq('restaurant_id',restaurantId).or('delivery_status.eq.unassigned,delivery_status.is.null').select('id').maybeSingle();
-  if(orderError||!data){
-    await supabase.from('delivery_assignments').delete().eq('order_id',orderId).eq('rider_id',riderId).eq('status','assigned');
-    throw orderError??new Error('The order could not be updated for rider assignment. Please refresh and try again.');
+  const {data,error}=await supabase.rpc('assign_delivery_order',{
+    p_restaurant_id:restaurantId,
+    p_order_id:orderId,
+    p_rider_id:riderId,
+  });
+  if(error) throw error;
+  const rows = Array.isArray(data) ? data : [];
+  if(!rows[0] || rows[0].delivery_status !== 'assigned') {
+    throw new Error('The order was not confirmed as assigned to the rider. Please refresh and try again.');
   }
 }
 
 export async function completeDispatchHandoff(restaurantId:string,orderId:string,orderType:'pickup'|'take_out'|'dine_in'){
   if(!supabase) throw new Error('Supabase is not configured.');
-  const {data,error}=await supabase.from('orders').update({status:'completed'}).eq('id',orderId).eq('restaurant_id',restaurantId).eq('order_type',orderType).eq('status','ready').select('id').maybeSingle();
+  const {data,error}=await supabase.rpc('complete_dispatch_handoff',{
+    p_restaurant_id:restaurantId,
+    p_order_id:orderId,
+    p_order_type:orderType,
+  });
   if(error) throw error;
-  if(!data) throw new Error('This order is no longer ready for handoff. Please refresh the Dispatch page.');
+  const rows = Array.isArray(data) ? data : [];
+  if(!rows[0] || rows[0].status !== 'completed') {
+    throw new Error('This order was not confirmed as handed off. Please refresh the Dispatch page.');
+  }
 }
 
 export function subscribeToDispatchChanges(

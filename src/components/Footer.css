@@ -2,9 +2,9 @@
   width: 100%;
   box-sizing: border-box;
   padding: 0.65rem clamp(1rem, 4vw, 3rem) 0.55rem;
-  color: #202938;
-  background: #fff;
-  border-top: 1px solid #e5e8ee;
+  color: inherit;
+  background: transparent;
+  border-top: 1px solid;
   font-family: inherit;
 }
 .site-footer-social-section {
@@ -12,7 +12,7 @@
   padding: 0 0 0.4rem;
 }
 .site-footer-heading {
-  margin: 0; color: #202938; font-size: 0.98rem; font-weight: 650; letter-spacing: -0.025em;
+  margin: 0; color: inherit; font-size: 0.98rem; font-weight: 650; letter-spacing: -0.025em;
 }
 .site-footer-socials { display: flex; align-items: center; justify-content: center; gap: 0.7rem; }
 .site-footer-social-link {
@@ -44,20 +44,20 @@
   width: 1.6rem;
   height: 1.8rem;
   fill: none;
-  stroke: #202938;
+  stroke: currentColor;
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
- .site-footer-legal-title { color: #202938; font-size: clamp(0.82rem, 1.1vw, 1rem); font-weight: 550; line-height: 1.25; transition: color 160ms ease; }
-.site-footer-legal-description { max-width: 19rem; color: #667085; font-size: 0.85rem; line-height: 1.4; }
+ .site-footer-legal-title { color: inherit; font-size: clamp(0.82rem, 1.1vw, 1rem); font-weight: 550; line-height: 1.25; transition: color 160ms ease; }
+.site-footer-legal-description { max-width: 19rem; color: inherit; opacity: 0.75; font-size: 0.85rem; line-height: 1.4; }
  .site-footer-bottom { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-top: 0.35rem; text-align: left; }
  .site-footer-copyright { display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem; }
- .site-footer-copyright small { color: #303b4d; font-size: clamp(0.8rem, 1vw, 0.95rem); }
-.site-footer-copyright p { max-width: 28rem; margin: 0; color: #7b8494; font-size: 0.72rem; line-height: 1.3; }
+ .site-footer-copyright small { color: inherit; font-size: clamp(0.8rem, 1vw, 0.95rem); }
+.site-footer-copyright p { max-width: 28rem; margin: 0; color: inherit; opacity: 0.75; font-size: 0.72rem; line-height: 1.3; }
 .site-footer-powered-by {
   display: inline-flex; flex-shrink: 0; align-items: center; justify-content: flex-end;
-  gap: 0.6rem; color: #858d9b; font-size: 0.82rem; text-decoration: none;
+  gap: 0.6rem; color: inherit; font-size: 0.82rem; text-decoration: none;
 }
 .site-footer-web2table-logo { display: block; width: auto; max-width: 7rem; max-height: 1.5rem; object-fit: contain; }
 @media (max-width: 640px) {
@@ -120,4 +120,46 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .site-footer-social-link, .site-footer-legal-title { transition: none; }
+}
+
+
+/* Center the copyright and Powered by row as a single group on small screens. */
+@media (max-width: 640px) {
+  .site-footer-bottom {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.75rem;
+    text-align: center;
+  }
+  .site-footer-copyright {
+    align-items: center;
+    text-align: center;
+  }
+  .site-footer-powered-by {
+    justify-content: center;
+    text-align: center;
+  }
+}
+
+
+/* Stack the mobile footer attribution beneath the copyright. */
+@media (max-width: 640px) {
+  .site-footer-bottom {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    white-space: normal;
+    text-align: center;
+  }
+  .site-footer-copyright {
+    align-items: center;
+    text-align: center;
+  }
+  .site-footer-powered-by {
+    align-self: center;
+    justify-content: center;
+    text-align: center;
+  }
 }

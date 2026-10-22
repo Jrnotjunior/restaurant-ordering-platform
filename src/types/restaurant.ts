@@ -30,6 +30,7 @@ export type RestaurantTheme = {
     error: string;
     header?: string;
     footer?: string;
+    footerText?: string;
     hero?: string;
     productCard?: string;
   };

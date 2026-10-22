@@ -139,8 +139,9 @@
   padding: 0.85rem 1rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: var(--color-secondary);
-  color: var(--color-text);
+  background: #fff;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
   line-height: 1.4;
 }
 
@@ -439,11 +440,11 @@
   overflow-y: auto;
   box-sizing: border-box;
   padding: 1.4rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   border-radius: 1.1rem;
-  background: #fff;
+  background: var(--color-background);
   box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
-  color: #0f172a;
+  color: var(--color-text);
 }
 
 .payment-modal-header {
@@ -466,7 +467,7 @@
 
 .payment-modal-header p:last-child {
   margin: 0.4rem 0 0;
-  color: #64748b;
+  color: var(--color-text);
   line-height: 1.45;
 }
 
@@ -474,10 +475,10 @@
   flex: 0 0 auto;
   width: 2.3rem;
   height: 2.3rem;
-  border: 0;
+  border: 1px solid var(--color-border);
   border-radius: 999px;
-  background: #f1f5f9;
-  color: #334155;
+  background: var(--color-background);
+  color: var(--color-text);
   font-size: 1.4rem;
   line-height: 1;
   cursor: pointer;
@@ -495,24 +496,24 @@
   align-items: center;
   gap: 0.8rem;
   padding: 0.9rem;
-  border: 1px solid #d9dee7;
+  border: 1px solid var(--color-border);
   border-radius: 0.85rem;
-  background: #fff;
+  background: var(--color-background);
   text-align: left;
-  color: #0f172a;
+  color: var(--color-text);
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .payment-method-card:hover:not(:disabled) {
-  border-color: #94a3b8;
-  background: #f8fafc;
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-background));
 }
 
 .payment-method-card.is-selected {
-  border-color: #0f766e;
-  background: #f0fdfa;
-  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.1);
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-background));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 18%, transparent);
 }
 
 .payment-method-card:disabled {
@@ -525,8 +526,10 @@
   place-items: center;
   width: 2.75rem;
   height: 2.75rem;
+  border: 1px solid var(--color-border);
   border-radius: 0.75rem;
-  background: #f1f5f9;
+  background: var(--color-background);
+  color: var(--color-text);
   font-weight: 800;
   font-size: 1.15rem;
 }
@@ -541,7 +544,7 @@
 }
 
 .payment-method-content span {
-  color: #64748b;
+  color: var(--color-text);
   font-size: 0.84rem;
   line-height: 1.4;
 }
@@ -559,8 +562,8 @@
 }
 
 .payment-method-card.is-selected .payment-method-radio {
-  border-color: #0f766e;
-  background: #0f766e;
+  border-color: var(--color-primary);
+  background: var(--color-primary);
 }
 
 .payment-modal-actions {
@@ -597,6 +600,13 @@
   }
 }
 
+
+.checkout-order-type-status {
+  margin: 0 0 0.75rem;
+  color: #64748b;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
 
 /* Compact order type choices */
 .checkout-section .order-type-card {
@@ -733,19 +743,22 @@
   align-items: center;
   margin: 0 0 1rem;
   padding: 0.9rem 1rem;
-  border: 1px solid #d9e2ec;
+  border: 1px solid var(--color-border);
   border-radius: 0.8rem;
-  background: #f8fafc;
-  color: #334155;
+  background: var(--color-background);
+  color: var(--color-text);
+}
+
+.checkout-payment-notice strong,
+.checkout-payment-notice span {
+  color: var(--color-text);
 }
 
 .checkout-payment-notice strong {
-  color: #0f172a;
   font-size: 0.92rem;
 }
 
 .checkout-payment-notice span {
-  color: #64748b;
   font-size: 0.84rem;
   line-height: 1.35;
 }
@@ -1321,15 +1334,21 @@
   gap: 0.4rem;
   margin-top: 0.8rem;
   padding: 0.8rem 0.85rem;
-  border: 1px solid #dbe4ee;
+  border: 1px solid var(--color-border);
   border-radius: 0.75rem;
-  background: #f8fafc;
+  background: var(--color-background);
+  color: var(--color-text);
   text-align: left;
+}
+
+.payment-review-refund-policy h3,
+.payment-review-refund-policy p,
+.payment-review-refund-policy a {
+  color: var(--color-text);
 }
 
 .payment-review-refund-policy h3 {
   margin: 0;
-  color: #0f172a;
   font-size: 0.9rem;
   font-weight: 750;
   line-height: 1.35;
@@ -1337,7 +1356,6 @@
 
 .payment-review-refund-policy p {
   margin: 0;
-  color: #475569;
   font-size: 0.8rem;
   line-height: 1.5;
   overflow-wrap: anywhere;

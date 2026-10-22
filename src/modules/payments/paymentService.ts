@@ -9,4 +9,4 @@ export type {
   OnlinePaymentStatus,
 } from './paymentRepository';
 
-export { createPayMongoCheckout } from './paymongoRepository';
+export { assertPayMongoCheckoutReady, createPayMongoCheckout } from './paymongoRepository';

@@ -1,15 +1,18 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { useRestaurant } from '../components/RestaurantProvider';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
-import { supabase } from '../services/supabaseClient';
+import { setRememberMePreference, supabase } from '../services/supabaseClient';
 import { getCurrentCustomerRestaurant } from '../modules/customer/customerAuthService';
 
 export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: boolean }) {
+  const restaurant = useRestaurant();
   const { user, accountType, staffRole, staffRestaurantId, loading: authLoading, signOut, error: authError } = useRestaurantOwnerAuth();
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [verifiedCustomerId, setVerifiedCustomerId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -78,6 +81,8 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
     }
     setSubmitting(true);
     try {
+      // Apply the selected persistence mode before Supabase stores the session.
+      setRememberMePreference(rememberMe);
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
         password,
@@ -121,7 +126,7 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
   }, [authLoading, user?.id, accountType, staffRole, staffRestaurantId]);
 
   if (authLoading) {
-    return <main className="restaurant-owner-auth-page"><section className="restaurant-owner-auth-card"><p>Loading account…</p></section></main>;
+    return <main className="restaurant-owner-auth-page tenant-auth-page"><section className="restaurant-owner-auth-card"><p>Loading account…</p></section></main>;
   }
 
   // Keep the account screen hidden until the current restaurant's customer profile is verified.
@@ -140,8 +145,13 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
 
   return (
     <main className="restaurant-owner-auth-page">
-      <section className="restaurant-owner-auth-card" aria-labelledby="account-login-title">
-        <h1 className="restaurant-login-title" id="account-login-title">{staffOnly ? 'Team Login' : 'Login'}</h1>
+      <section className="restaurant-owner-auth-card tenant-auth-card" aria-labelledby="account-login-title">
+        <div className="tenant-auth-brand">
+          {restaurant.logoUrl?.trim() ? <img className="tenant-auth-logo" src={restaurant.logoUrl} alt={`${restaurant.name || 'Restaurant'} logo`} /> : <span className="tenant-auth-logo-fallback" aria-hidden="true">{(restaurant.name || 'R').trim().slice(0, 1).toUpperCase()}</span>}
+          <span className="tenant-auth-brand-name">{restaurant.name?.trim() || 'Welcome'}</span>
+        </div>
+        <h1 className="restaurant-login-title" id="account-login-title">{staffOnly ? 'Team Sign In' : 'Sign In'}</h1>
+        <p className="tenant-auth-intro">{staffOnly ? 'Sign in to your restaurant team account.' : 'Welcome back. Sign in to continue your ordering experience.'}</p>
         {(error || authError) && <div className="restaurant-dashboard-error" role="alert">{error || authError}</div>}
 
         {staffOnly ? (
@@ -149,13 +159,13 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
         ) : (
           <form className="restaurant-owner-auth-form" onSubmit={(event) => void handleEmailPasswordSignIn(event)}>
             <label className="restaurant-auth-input-label">
-              <span className="visually-hidden">Email address</span>
-              <input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email address" aria-label="Email address" required disabled={submitting} />
+              <span>Email address</span>
+              <input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} aria-label="Email address" required disabled={submitting} />
             </label>
             <label className="restaurant-auth-input-label">
-              <span className="visually-hidden">Password</span>
+              <span>Password</span>
               <span className="customer-password-input-row">
-                <input type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password" aria-label="Password" required disabled={submitting} />
+                <input type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} aria-label="Password" required disabled={submitting} />
                 <button className="customer-password-visibility" type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} disabled={submitting}>
                   {showPassword ? (
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.9 5.2A10.8 10.8 0 0112 5c5 0 8.5 4.2 9.5 7-.4 1.1-1.2 2.3-2.4 3.4M6.2 6.2C4.2 7.4 2.9 9.5 2.5 12c.7 2 2.5 4.3 5.1 5.8A10.7 10.7 0 0012 19c1.2 0 2.3-.2 3.3-.6" /></svg>
@@ -166,16 +176,16 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
               </span>
             </label>
             <div className="restaurant-auth-options-row">
-              <label className="restaurant-auth-remember"><input type="checkbox" name="remember-me" /> <span>Remember me</span></label>
+              <label className="restaurant-auth-remember"><input type="checkbox" name="remember-me" checked={rememberMe} onChange={(event) => setRememberMe(event.target.checked)} disabled={submitting} /> <span>Remember me</span></label>
               <div className="restaurant-auth-forgot-password-row">
                 <a href="#forgot-password">Forgot password?</a>
               </div>
             </div>
-            <button className="button" type="submit" disabled={submitting}>{submitting ? 'Logging in…' : 'Log in'}</button>
+            <button className="button" type="submit" disabled={submitting}>{submitting ? 'Signing in…' : 'Sign In'}</button>
           </form>
         )}
 
-        {!staffOnly && <p className="restaurant-auth-switch">New customer? <a href="#signup">Register</a></p>}
+        {!staffOnly && <p className="restaurant-auth-switch">New customer? <a href="#signup">Sign Up</a></p>}
         {staffOnly && <p className="restaurant-auth-switch"><a href="#account">Back to sign in</a></p>}
       </section>
     </main>

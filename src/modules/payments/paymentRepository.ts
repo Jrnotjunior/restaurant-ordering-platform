@@ -46,7 +46,7 @@ export async function createPendingOnlinePayment(input: PendingOnlinePaymentInpu
 
   const guestCancelToken = await createGuestOrderCancellationToken();
   const rpcName = input.orderType === 'delivery' && !input.isThirdPartyCourier
-    ? 'create_pending_online_payment_from_delivery_quote_with_guest_cancel_token'
+    ? 'create_pending_delivery_payment_with_cancel_token'
     : 'create_pending_online_payment_with_guest_cancel_token';
 
   const rpcParams = input.orderType === 'delivery' && !input.isThirdPartyCourier
