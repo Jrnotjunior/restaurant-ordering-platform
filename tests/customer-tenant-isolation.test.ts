@@ -17,6 +17,10 @@ const loyaltyRedemptionGuardMigration = readFileSync(
   new URL('../supabase/migrations/20261023070000_guard_loyalty_redemption_tenant_context.sql', import.meta.url),
   'utf8',
 );
+const customerAttachmentGuardMigration = readFileSync(
+  new URL('../supabase/migrations/20261023080000_guard_customer_attachment_rpcs.sql', import.meta.url),
+  'utf8',
+);
 
 describe('customer tenant-isolation migration contract', () => {
   it('blocks linking one authenticated customer identity to multiple restaurants', () => {
@@ -72,6 +76,14 @@ describe('customer tenant-isolation migration contract', () => {
     expect(redemptionRpc).toContain('public.customer_identity_is_single_tenant(auth.uid(), v_order.restaurant_id)');
     expect(redemptionRpc).toContain('r.owner_id = auth.uid()');
     expect(redemptionRpc).toContain("s.role = 'cashier'");
+  });
+
+  it('guards legacy customer upsert and attachment RPCs against cross-tenant identities', () => {
+    expect(customerAttachmentGuardMigration).toContain('cp.restaurant_id <> p_restaurant_id');
+    expect(customerAttachmentGuardMigration).toContain('public.customer_identity_is_single_tenant(auth.uid(), v_order.restaurant_id)');
+    expect(customerAttachmentGuardMigration).toContain('public.customer_identity_is_single_tenant(auth.uid(), v_payment.restaurant_id)');
+    expect(customerAttachmentGuardMigration).toContain('v_staff_authorized');
+    expect(customerAttachmentGuardMigration).toContain('s.role = \'cashier\'');
   });
 
   it('guards the customer profile ID lookup against forged tenant context', () => {
