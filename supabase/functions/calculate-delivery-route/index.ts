@@ -20,7 +20,12 @@ Deno.serve(async (req) => {
   // Prefer the centrally managed token used by the shared map. Keep the old
   // directions secret as a temporary rollback path until live fresh-route
   // calculations are verified with MAPBOX_PUBLIC_TOKEN.
-  const directionsApiToken = Deno.env.get("MAPBOX_PUBLIC_TOKEN") || Deno.env.get("MAPBOX_DIRECTIONS_API_TOKEN");
+  const sharedMapboxToken = Deno.env.get("MAPBOX_PUBLIC_TOKEN");
+  const directionsApiToken = sharedMapboxToken || Deno.env.get("MAPBOX_DIRECTIONS_API_TOKEN");
+  // Safe diagnostic only: never log the token itself.
+  console.info("Delivery routing Mapbox configuration selected", {
+    tokenSource: sharedMapboxToken ? "MAPBOX_PUBLIC_TOKEN" : directionsApiToken ? "MAPBOX_DIRECTIONS_API_TOKEN" : "missing",
+  });
   if (!directionsApiToken) return json({ error: "Delivery distance service is not configured yet." }, 503);
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
