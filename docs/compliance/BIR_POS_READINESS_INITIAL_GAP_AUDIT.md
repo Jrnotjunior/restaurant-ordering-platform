@@ -49,7 +49,7 @@ Use the latest applicable versions and confirm interpretation with the BIR/RDO o
    - Confirm behavior under concurrent sales, retries, cancelled drafts, failed printing, refunds and voids. Never silently reuse an issued invoice number or delete a completed sale.
 
 3. **X-Reading, Z-Reading and accumulated totals — HIGH**
-   - No evidence found in the inspected files that the complete required reading formats, reset/report counters, grand-total continuity, or cashier/terminal session close controls are implemented.
+   - No evidence found in the inspected files that the complete required reading formats, reset/report counters, grand-total continuity, or cashier/terminal/session close controls are implemented.
    - Inspect the full repository and deployed schema before marking these as missing. Design reset/close semantics only against the official specifications.
 
 4. **Audit journal / electronic journal — HIGH**
@@ -63,7 +63,7 @@ Use the latest applicable versions and confirm interpretation with the BIR/RDO o
 
 6. **Tax/discount calculation and source evidence — HIGH**
    - Existing server-side tax snapshots are a useful start, but the formulas and eligibility handling need review against the taxpayer's actual tax classification and applicable rules, especially senior citizen/PWD discounts, VAT-exempt sales, and mixed transactions.
-   - Never infer a tax rate or treat missing configuration as zero-tax compliance. Require a verified configuration for invoice issuance.
+   - Never infer a tax rate or treat missing configuration as zero-tax compliance. Fail closed or require a verified configuration for invoice issuance.
 
 7. **Tenant/branch isolation and roles — HIGH**
    - Test owner, cashier, platform administrator and branch scenarios. A tenant must not read, edit, issue against, or export another tenant's taxpayer identity, invoice sequence, sales totals, journal or reports.
@@ -81,7 +81,7 @@ Use the latest applicable versions and confirm interpretation with the BIR/RDO o
 
 ### Phase 0 — Confirm the rules and scope (before schema changes)
 - Obtain and review the complete RMO 24-2023 text and all applicable annexes, the current invoice rules, and later amendments/clarifications.
-- Confirm with the relevant BIR office/professional whether Web2Table should apply as a POS software supplier/developer, the exact application route, and which approvals are required for SaaS electronic invoicing/receipting.
+- Confirm in writing with the relevant BIR office/professional whether Web2Table should apply as a POS software supplier/developer, the exact application route, and which approvals are required for SaaS electronic invoicing/receipting.
 - Decide whether the first target is printed invoices, electronic invoices, or both; do not assume approval for one automatically covers the other.
 
 ### Phase 1 — Complete code/schema audit
