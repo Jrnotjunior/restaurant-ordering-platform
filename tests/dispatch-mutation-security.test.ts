@@ -33,8 +33,8 @@ describe('dispatch order mutation security boundary', () => {
     expect(assignment).toContain("s.role = 'rider'");
     expect(assignment).toMatch(/for update of o/i);
     expect(assignment).toMatch(/for update;/i);
-    expect(assignment).toContain('revoke all on function public.assign_delivery_order');
-    expect(assignment).toContain('grant execute on function public.assign_delivery_order');
+    expect(migration).toContain('revoke all on function public.assign_delivery_order');
+    expect(migration).toContain('grant execute on function public.assign_delivery_order');
   });
 
   it('validates dispatcher identity, MFA, allowed handoff type and ready state before completing handoff', () => {
