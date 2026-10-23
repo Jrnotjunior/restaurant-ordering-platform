@@ -20,6 +20,7 @@ type DayHours = {
 type OperatingHours = Record<DayKey, DayHours>;
 
 type TaxpayerCategory = 'micro' | 'small' | 'medium' | 'large' | 'large_taxpayer' | 'unknown';
+type NonVatTaxBasis = 'unconfirmed' | 'subject_to_percentage_tax' | 'not_subject_to_percentage_tax';
 type TaxpayerProfileForm = {
   registered_legal_name: string;
   trade_name: string;
@@ -29,10 +30,16 @@ type TaxpayerProfileForm = {
   taxpayer_category: TaxpayerCategory;
   profile_status: 'draft' | 'submitted_for_review' | 'needs_correction' | 'reviewed';
   review_note: string;
+  non_vat_tax_basis: NonVatTaxBasis;
+  non_vat_tax_basis_reference: string;
+  non_vat_tax_basis_verified_at: string | null;
+  non_vat_tax_basis_review_note: string;
 };
 const EMPTY_TAXPAYER_PROFILE: TaxpayerProfileForm = {
   registered_legal_name: '', trade_name: '', tin: '', registered_address: '', branch_code: '',
   taxpayer_category: 'unknown', profile_status: 'draft', review_note: '',
+  non_vat_tax_basis: 'unconfirmed', non_vat_tax_basis_reference: '',
+  non_vat_tax_basis_verified_at: null, non_vat_tax_basis_review_note: '',
 };
 
 type OnlinePaymentMethods = {
@@ -263,6 +270,9 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [taxpayerSaving, setTaxpayerSaving] = useState(false);
   const [taxpayerError, setTaxpayerError] = useState('');
   const [taxpayerMessage, setTaxpayerMessage] = useState('');
+  const [canManageNonVatTaxBasis, setCanManageNonVatTaxBasis] = useState(false);
+  const [nonVatBasisReviewNote, setNonVatBasisReviewNote] = useState('');
+  const [nonVatBasisBusy, setNonVatBasisBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -375,6 +385,10 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           taxpayer_category: profile.taxpayer_category ?? 'unknown',
           profile_status: profile.profile_status ?? 'draft',
           review_note: profile.review_note ?? '',
+          non_vat_tax_basis: profile.non_vat_tax_basis ?? 'unconfirmed',
+          non_vat_tax_basis_reference: profile.non_vat_tax_basis_reference ?? '',
+          non_vat_tax_basis_verified_at: profile.non_vat_tax_basis_verified_at ?? null,
+          non_vat_tax_basis_review_note: profile.non_vat_tax_basis_review_note ?? '',
         });
         setTaxpayerError('');
       }
