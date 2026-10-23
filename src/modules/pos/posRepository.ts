@@ -40,6 +40,9 @@ export type PosDiscountBeneficiary = {
   discountType: PosDiscountType;
   idType: PosDiscountIdType;
   idNumber: string;
+  beneficiaryName: string;
+  beneficiaryTin: string;
+  beneficiaryAddress: string;
   eligibleAmount: number;
   discountAmount: number;
 };
@@ -67,6 +70,9 @@ export async function applyPosGroupDiscounts(
       discount_type: beneficiary.discountType,
       discount_id_type: beneficiary.idType,
       discount_id_number: beneficiary.idNumber.trim(),
+      beneficiary_name: beneficiary.beneficiaryName.trim(),
+      beneficiary_tin: beneficiary.beneficiaryTin.trim() || null,
+      beneficiary_address: beneficiary.beneficiaryAddress.trim(),
     })),
   });
 
