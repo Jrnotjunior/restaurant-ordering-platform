@@ -13,7 +13,7 @@ import { supabase } from '../services/supabaseClient';
 type Props = { restaurantId: string };
 type ExpenseCategory = 'ingredients' | 'payroll' | 'rent' | 'utilities' | 'packaging' | 'delivery' | 'marketing' | 'maintenance' | 'supplies' | 'other';
 type Expense = { id: string; expense_date: string; category: ExpenseCategory; description: string; amount: number | string; created_at: string };
-type Tab = 'overview' | 'expenses' | 'payments' | 'tax';
+type Tab = 'overview' | 'expenses' | 'payments' | 'tax' | 'journal';
 type PosJournalEntry = { journal_id: number | string; occurred_at: string; transaction_id: number | string; order_id: string | null; order_number: string | null; event_type: string; operation: string; actor_user_id: string | null; actor_role: string | null; old_values: Record<string, unknown> | null; new_values: Record<string, unknown> | null };
 
 const CATEGORIES: { value: ExpenseCategory; label: string }[] = [
