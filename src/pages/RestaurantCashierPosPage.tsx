@@ -635,6 +635,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
           <div className="restaurant-pos-print-receipt restaurant-pos-customer-receipt">
             <div className="pos-receipt-center">
               <div className="pos-receipt-title">CUSTOMER RECEIPT</div>
+              <div className="pos-receipt-muted">Operational receipt — not a BIR-issued invoice</div>
               <div className="pos-receipt-order-number">{printOrder.orderNumber}</div>
               <div className="pos-receipt-muted">{new Date(printOrder.createdAt).toLocaleString()}</div>
             </div>
