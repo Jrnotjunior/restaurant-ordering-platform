@@ -145,6 +145,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
   const completedOrdersWithTaxSnapshots = completedOrders.filter((order) => !hasMissingTaxSnapshot(order));
   const taxSales = completedOrdersWithTaxSnapshots.reduce((sum, order) => sum + (order.taxNetSales ?? 0), 0);
   const outputVat = completedOrdersWithTaxSnapshots.reduce((sum, order) => sum + (order.taxVatAmount ?? 0), 0);
+  const zeroRatedSales = completedOrdersWithTaxSnapshots.reduce((sum, order) => sum + (order.taxZeroRatedSales ?? 0), 0);
   const totalExpenses = rangeExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
   const estimatedOperatingResult = totalSales - totalExpenses;
   const vatConfiguredOrders = completedOrders.filter((order) => order.taxVatRegistered).length;
@@ -251,8 +252,8 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
 
   function exportSales() {
     downloadSpreadsheet(`sales-report-${fromDate}-to-${toDate}.xlsx`, [
-      ['Order number','Order date','Status','Order type','Payment method','Payment status','Order total PHP','Discounts PHP','Net sales per order record PHP','Taxable sales PHP','VAT amount PHP','VAT-exempt sales PHP','VAT registration snapshot','Tax snapshot status'],
-      ...rangeOrders.map((order) => [order.orderNumber, order.createdAt, order.status, order.orderType, order.paymentMethod, order.paymentStatus, order.total, getRecordedReportDiscountTotal(order), getRecordedTaxSnapshotValue(order, order.taxNetSales), getRecordedTaxSnapshotValue(order, order.taxVatableSales), getRecordedTaxSnapshotValue(order, order.taxVatAmount), getRecordedTaxSnapshotValue(order, order.taxVatExemptSales), hasMissingTaxSnapshot(order) ? 'Unverified' : order.taxVatRegistered ? 'Yes' : 'No', getTaxSnapshotStatus(order)]),
+      ['Order number','Order date','Status','Order type','Payment method','Payment status','Order total PHP','Discounts PHP','Net sales per order record PHP','Taxable sales PHP','VAT amount PHP','VAT-exempt sales PHP','Zero-rated sales PHP','VAT registration snapshot','Tax snapshot status'],
+      ...rangeOrders.map((order) => [order.orderNumber, order.createdAt, order.status, order.orderType, order.paymentMethod, order.paymentStatus, order.total, getRecordedReportDiscountTotal(order), getRecordedTaxSnapshotValue(order, order.taxNetSales), getRecordedTaxSnapshotValue(order, order.taxVatableSales), getRecordedTaxSnapshotValue(order, order.taxVatAmount), getRecordedTaxSnapshotValue(order, order.taxVatExemptSales), getRecordedTaxSnapshotValue(order, order.taxZeroRatedSales), hasMissingTaxSnapshot(order) ? 'Unverified' : order.taxVatRegistered ? 'Yes' : 'No', getTaxSnapshotStatus(order)]),
     ]);
   }
 
@@ -261,9 +262,9 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
       ['Tax-support sales detail (not an official tax return or invoice)',''],
       ['Period start', fromDate], ['Period end', toDate],
       ['Report generated', new Date().toISOString()],
-      ['Note','For positive-total orders, tax values are exported only when the order is explicitly marked as having a calculated snapshot and has a positive gross-sales snapshot. Legacy, uncalculated or review-required snapshots are left blank. Period net-sales and VAT totals are marked incomplete if any completed order in the period lacks a verified calculation state. A calculated snapshot is not independently validated for tax compliance.'],
+      ['Note','For positive-total orders, tax values are exported only when the order is marked calculated, has a positive gross-sales snapshot, has a recorded zero-rated amount, and every line has a snapshotted tax classification. Legacy, uncalculated, unclassified or review-required snapshots are left blank. Period net-sales, VAT and zero-rated totals are marked incomplete if any completed order in the period lacks those controls. A calculated snapshot is not independently validated for tax compliance.'],
       [],
-      ['Order number','Transaction date','Order status','Payment status','Order total PHP','Discount amount PHP','Recorded net sales PHP','Recorded vatable sales PHP','Recorded VAT amount PHP','Recorded VAT-exempt sales PHP','VAT registration snapshot','Tax snapshot status'],
+      ['Order number','Transaction date','Order status','Payment status','Order total PHP','Discount amount PHP','Recorded net sales PHP','Recorded vatable sales PHP','Recorded VAT amount PHP','Recorded VAT-exempt sales PHP','Recorded zero-rated sales PHP','VAT registration snapshot','Tax snapshot status'],
       ...rangeOrders.map((order) => [order.orderNumber, order.createdAt, order.status, order.paymentStatus, order.total, getRecordedReportDiscountTotal(order), getRecordedTaxSnapshotValue(order, order.taxNetSales), getRecordedTaxSnapshotValue(order, order.taxVatableSales), getRecordedTaxSnapshotValue(order, order.taxVatAmount), getRecordedTaxSnapshotValue(order, order.taxVatExemptSales), hasMissingTaxSnapshot(order) ? 'Unverified' : order.taxVatRegistered ? 'Yes' : 'No', getTaxSnapshotStatus(order)]),
       [],
       ['Orders in period with missing tax snapshots', ordersMissingTaxSnapshots.length],
@@ -448,6 +449,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
             <div className="business-reports-card"><small>Discounts recorded</small><strong>{peso(discounts)}</strong></div>
             <div className="business-reports-card"><small>Recorded net sales</small><strong>{taxSnapshotComplete ? peso(taxSales) : 'Incomplete'}</strong></div>
             <div className="business-reports-card"><small>Recorded output VAT</small><strong>{taxSnapshotComplete ? peso(outputVat) : 'Incomplete'}</strong></div>
+            <div className="business-reports-card"><small>Recorded zero-rated sales</small><strong>{taxSnapshotComplete ? peso(zeroRatedSales) : 'Incomplete'}</strong></div>
           </div>
           {ordersMissingTaxSnapshots.length > 0 && <p className="business-reports-error" role="alert">{ordersMissingTaxSnapshots.length} order(s) in this period have tax snapshots that are legacy-unverified, not calculated, missing, or marked for review. Tax fields are intentionally left blank until the server-side calculation status is confirmed. These supporting reports are not a substitute for an accountant's review.</p>}
           <section className="business-reports-panel"><h2>Tax-support exports</h2>
