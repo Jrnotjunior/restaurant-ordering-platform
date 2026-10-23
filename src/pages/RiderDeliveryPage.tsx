@@ -366,12 +366,14 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
             ) : isFailed ? (
               <div className="rider-delivery-complete">Delivery failed{delivery.failureReason ? ` · ${delivery.failureReason}` : ''}</div>
             ) : (
-              <div className="rider-delivery-complete">{delivery.paymentMethod === 'cash' ? delivery.paymentStatus === 'paid' ? 'Cash collected · Delivery completed' : 'Delivery completed · Cash collection pending' : 'Payment received online · Delivery completed'}</div>
-              {delivery.paymentMethod === 'cash' && delivery.paymentStatus !== 'paid' ? (
-                <button className="button button-primary" type="button" onClick={() => void confirmCashCollected()} disabled={collectingCash}>
-                  {collectingCash ? 'Confirming collection…' : 'Confirm cash collected'}
-                </button>
-              ) : null}
+              <>
+                <div className="rider-delivery-complete">{delivery.paymentMethod === 'cash' ? delivery.paymentStatus === 'paid' ? 'Cash collected · Delivery completed' : 'Delivery completed · Cash collection pending' : 'Payment received online · Delivery completed'}</div>
+                {delivery.paymentMethod === 'cash' && delivery.paymentStatus !== 'paid' ? (
+                  <button className="button button-primary" type="button" onClick={() => void confirmCashCollected()} disabled={collectingCash}>
+                    {collectingCash ? 'Confirming collection…' : 'Confirm cash collected'}
+                  </button>
+                ) : null}
+              </>
             )}
 
             {!isDelivered && !isFailed && statusIndex >= 2 ? (
