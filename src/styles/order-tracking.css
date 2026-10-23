@@ -134,7 +134,7 @@
 
 
 /* Make the dine-in order number easy to show to the cashier. */
-.order-dine-in-number-card{display:grid;gap:.45rem;margin:-.75rem 0 1.25rem;padding:1rem 1.1rem;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface)!important;color:var(--color-text);text-align:center}
+.order-dine-in-number-card{display:grid;gap:.45rem;margin:-.75rem 0 1.25rem;padding:1rem 1.1rem;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-background);color:var(--color-text);text-align:center}
 .order-dine-in-number-card .eyebrow{margin:0;font-size:.75rem;font-weight:750;letter-spacing:.08em}
 .order-dine-in-number{display:block;font-family:var(--font-heading);font-size:clamp(1.5rem,6vw,2rem);font-weight:800;line-height:1.2;overflow-wrap:anywhere}
 .order-dine-in-number-card p:last-child{margin:0;color:var(--color-muted);font-size:.9rem;line-height:1.5}
