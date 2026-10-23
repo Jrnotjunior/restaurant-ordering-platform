@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
-import { createProduct, deleteProduct, getMenu, getOrCreateCategory, saveProductImage, setProductAvailability, updateProduct, uploadProductImage } from '../modules/products/productService';
+import { createProduct, deleteProduct, getMenu, getOrCreateCategory, saveProductImage, setProductAvailability, setProductTaxCategory, updateProduct, uploadProductImage } from '../modules/products/productService';
 import type { RestaurantCategory, RestaurantProduct } from '../types/menu';
 import { useOwnerUnsavedChanges } from '../contexts/OwnerUnsavedChangesContext';
 import { useOwnerUnsavedChangesTracking } from '../hooks/useOwnerUnsavedChangesTracking';
 
 type Props = { restaurantId: string };
-type ProductForm = { name: string; description: string; price: string; categoryName: string };
+type ProductForm = { name: string; description: string; price: string; categoryName: string; taxCategory: string };
 
-const emptyForm: ProductForm = { name: '', description: '', price: '', categoryName: '' };
+const emptyForm: ProductForm = { name: '', description: '', price: '', categoryName: '', taxCategory: '' };
 
 export function RestaurantMenuPage({ restaurantId }: Props) {
   const { setUnsavedChanges } = useOwnerUnsavedChanges();
@@ -86,7 +86,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
     setIsAddingProduct(false);
     setEditingProduct(product);
     const category = categories.find((item) => item.id === product.categoryId);
-    setForm({ name: product.name, description: product.description, price: String(product.price), categoryName: category?.name ?? '' });
+    setForm({ name: product.name, description: product.description, price: String(product.price), categoryName: category?.name ?? '', taxCategory: product.taxCategory ?? '' });
     setImageFile(null);
     setImagePreview(product.imageUrl || '');
     setError('');
@@ -135,6 +135,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
 
       if (isAddingProduct) {
         const productId = await createProduct({ restaurantId, name, description, price, categoryId });
+        await setProductTaxCategory(productId, form.taxCategory ? form.taxCategory as 'standard_rate' | 'vat_exempt' | 'zero_rated' : null);
         if (imageFile) {
           const imageUrl = await uploadProductImage(restaurantId, productId, imageFile);
           await saveProductImage(productId, imageUrl);
@@ -145,6 +146,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
           await saveProductImage(editingProduct.id, imageUrl);
         }
         await updateProduct(editingProduct, { name, description, price, categoryId });
+        await setProductTaxCategory(editingProduct.id, form.taxCategory ? form.taxCategory as 'standard_rate' | 'vat_exempt' | 'zero_rated' : null);
       }
 
       await loadMenu();
@@ -356,6 +358,16 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
               <label>Product name<input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} autoFocus /></label>
               <label>Description<textarea value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} /></label>
               <label>Price<input type="number" min="0" step="0.01" value={form.price} onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))} /></label>
+              <label>
+                Product tax classification
+                <select value={form.taxCategory} onChange={(event) => setForm((current) => ({ ...current, taxCategory: event.target.value }))} disabled={savingForm}>
+                  <option value="">Unclassified — review required</option>
+                  <option value="standard_rate">Standard-rated (VAT-registered sellers only)</option>
+                  <option value="vat_exempt">VAT-exempt</option>
+                  <option value="zero_rated">Zero-rated</option>
+                </select>
+                <span className="restaurant-product-category-hint">Choose only from the restaurant’s documented tax treatment after accountant review. Unclassified items will be flagged as incomplete for BIR readiness; changing this setting does not rewrite past orders.</span>
+              </label>
               <label>
                 Category
                 <input
