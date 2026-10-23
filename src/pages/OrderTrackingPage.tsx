@@ -355,53 +355,6 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
             <p>Give this order number to the cashier to help them find your order.</p>
           </section>
         ) : null}
-        <details className="order-customer-receipt-disclosure">
-          <summary className="order-customer-receipt-summary">
-            <span><strong>Customer receipt</strong><small>Order total and payment status</small></span>
-            <span className="order-customer-receipt-summary-action">View / print receipt <span aria-hidden="true">⌄</span></span>
-          </summary>
-          <section className="order-customer-receipt" aria-label="Customer receipt">
-          <div className="order-customer-receipt-header">
-            <p className="eyebrow">Customer receipt</p>
-            <h2>{order.restaurantName}</h2>
-            <p>Operational receipt — not a BIR-issued invoice</p>
-            <strong>{order.orderNumber}</strong>
-            <span>{order.createdAt && !Number.isNaN(new Date(order.createdAt).getTime())
-              ? new Date(order.createdAt).toLocaleString()
-              : 'Order date unavailable'}</span>
-          </div>
-          <div className="order-customer-receipt-meta">
-            <span>{isDineIn ? 'Dine-in' : isTakeOut ? 'Take-out' : isPickup ? 'Pickup' : 'Delivery'}</span>
-            <span>{order.paymentMethod === 'gcash' ? 'Online payment' : 'Cash'} · {getTrackedPaymentStatusLabel(order.paymentStatus, order.cancellationRefundStatus)}</span>
-          </div>
-          <div className="order-customer-receipt-items">
-            {order.items.length > 0 ? order.items.map((item) => (
-              <div className="order-customer-receipt-row" key={item.id}>
-                <span>{item.quantity} × {item.productName}</span>
-                <span>₱{item.lineTotal.toFixed(2)}</span>
-              </div>
-            )) : <p className="order-tracking-muted">Item details are unavailable for this order.</p>}
-          </div>
-          <div className="order-customer-receipt-totals">
-            <div className="order-customer-receipt-row"><span>Subtotal</span><span>₱{order.subtotal.toFixed(2)}</span></div>
-            {order.discountAmount > 0 && <div className="order-customer-receipt-row"><span>Discount</span><span>−₱{order.discountAmount.toFixed(2)}</span></div>}
-            {order.loyaltyDiscountAmount > 0 && Math.abs(order.loyaltyDiscountAmount - order.discountAmount) > 0.009 && (
-              <div className="order-customer-receipt-row"><span>Loyalty reward</span><span>−₱{order.loyaltyDiscountAmount.toFixed(2)}</span></div>
-            )}
-            {order.shippingFee > 0 && <div className="order-customer-receipt-row">
-              <span>{isCollectionOrder ? 'Collection fee' : isDineIn ? 'Service fee' : 'Delivery fee'}</span>
-              <span>₱{order.shippingFee.toFixed(2)}</span>
-            </div>}
-            <div className="order-customer-receipt-row is-total"><strong>TOTAL</strong><strong>₱{order.total.toFixed(2)}</strong></div>
-            <p>{order.paymentStatus === 'paid' ? 'Payment received' : order.paymentStatus === 'refunded' ? 'Payment refunded' : order.paymentStatus === 'failed' ? 'Payment failed' : 'Payment due'}</p>
-          </div>
-          <p className="order-customer-receipt-footer">Thank you for your order!</p>
-          <button className="button button-primary order-customer-receipt-print-button" type="button" onClick={() => window.print()}>
-            Print receipt
-          </button>
-          </section>
-        </details>
-
         <details className="order-tracking-details">
           <summary className="order-tracking-section-heading">
             <span className="order-details-title"><span className="eyebrow">Your order</span><strong>Order details</strong></span>
