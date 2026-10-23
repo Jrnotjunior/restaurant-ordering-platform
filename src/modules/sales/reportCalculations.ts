@@ -87,3 +87,22 @@ export function getTaxSnapshotStatus(order: ReportTaxSnapshot): 'Legacy / unveri
   if (hasMissingTaxSnapshot(order)) return 'Missing / unverified';
   return 'Calculated snapshot';
 }
+
+/**
+ * Returns whether an order belongs in the internal paid-sales rollup.
+ * Payment state is separate from kitchen/workflow completion: an order can
+ * already be paid while still preparing. Cancelled/refunded workflow states
+ * are excluded pending reconciliation. This is not a BIR-approved recognition
+ * rule and must be aligned to the selected fiscal route before official use.
+ */
+export type PaidSalesRollupOrderState = {
+  paymentStatus?: string | null;
+  status?: string | null;
+};
+
+export function isIncludedInPaidSalesRollup(order: PaidSalesRollupOrderState): boolean {
+  return order.paymentStatus === 'paid'
+    && order.status !== 'cancelled'
+    && order.status !== 'refunded';
+}
+
