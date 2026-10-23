@@ -4,6 +4,7 @@ import {
   getMenu as getMenuRepository,
   getOrCreateCategory as getOrCreateCategoryRepository,
   setProductAvailability as setProductAvailabilityRepository,
+  setProductTaxCategory as setProductTaxCategoryRepository,
   subscribeToMenuChanges as subscribeToMenuChangesRepository,
   subscribeToCashierMenuChanges as subscribeToCashierMenuChangesRepository,
   updateProduct as updateProductRepository,
@@ -17,6 +18,7 @@ import type { RestaurantProduct } from '../../types/menu';
 export const getMenu = getMenuRepository;
 export const getOrCreateCategory = getOrCreateCategoryRepository;
 export const setProductAvailability = setProductAvailabilityRepository;
+export const setProductTaxCategory = setProductTaxCategoryRepository;
 export const subscribeToMenuChanges = subscribeToMenuChangesRepository;
 export const subscribeToCashierMenuChanges = subscribeToCashierMenuChangesRepository;
 export const createProduct = createProductRepository;
