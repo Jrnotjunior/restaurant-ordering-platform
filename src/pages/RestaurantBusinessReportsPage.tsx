@@ -265,13 +265,14 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
       ['Note','For positive-total orders, tax values are exported only when the order is marked calculated, has a positive gross-sales snapshot, has a recorded zero-rated amount, and every line has a snapshotted tax classification. Legacy, uncalculated, unclassified or review-required snapshots are left blank. Period net-sales, VAT and zero-rated totals are marked incomplete if any completed order in the period lacks those controls. A calculated snapshot is not independently validated for tax compliance.'],
       [],
       ['Order number','Transaction date','Order status','Payment status','Order total PHP','Discount amount PHP','Recorded net sales PHP','Recorded vatable sales PHP','Recorded VAT amount PHP','Recorded VAT-exempt sales PHP','Recorded zero-rated sales PHP','VAT registration snapshot','Tax snapshot status'],
-      ...rangeOrders.map((order) => [order.orderNumber, order.createdAt, order.status, order.paymentStatus, order.total, getRecordedReportDiscountTotal(order), getRecordedTaxSnapshotValue(order, order.taxNetSales), getRecordedTaxSnapshotValue(order, order.taxVatableSales), getRecordedTaxSnapshotValue(order, order.taxVatAmount), getRecordedTaxSnapshotValue(order, order.taxVatExemptSales), hasMissingTaxSnapshot(order) ? 'Unverified' : order.taxVatRegistered ? 'Yes' : 'No', getTaxSnapshotStatus(order)]),
+      ...rangeOrders.map((order) => [order.orderNumber, order.createdAt, order.status, order.paymentStatus, order.total, getRecordedReportDiscountTotal(order), getRecordedTaxSnapshotValue(order, order.taxNetSales), getRecordedTaxSnapshotValue(order, order.taxVatableSales), getRecordedTaxSnapshotValue(order, order.taxVatAmount), getRecordedTaxSnapshotValue(order, order.taxVatExemptSales), getRecordedTaxSnapshotValue(order, order.taxZeroRatedSales), hasMissingTaxSnapshot(order) ? 'Unverified' : order.taxVatRegistered ? 'Yes' : 'No', getTaxSnapshotStatus(order)]),
       [],
       ['Orders in period with missing tax snapshots', ordersMissingTaxSnapshots.length],
       ['Completed orders in period', completedOrders.length], ['Completed order totals PHP', totalSales],
       ['Completed orders missing tax snapshots', completedOrdersMissingTaxSnapshots.length],
       ['Recorded net sales total PHP', taxSnapshotComplete ? taxSales : 'INCOMPLETE — one or more completed orders lack tax snapshots'],
       ['Recorded VAT total PHP', taxSnapshotComplete ? outputVat : 'INCOMPLETE — one or more completed orders lack tax snapshots'],
+      ['Recorded zero-rated sales total PHP', taxSnapshotComplete ? zeroRatedSales : 'INCOMPLETE — zero-rated amount or item classification is missing for one or more completed orders'],
     ]);
   }
 
