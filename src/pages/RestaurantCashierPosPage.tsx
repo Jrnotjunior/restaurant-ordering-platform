@@ -244,14 +244,21 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const total = Math.max(money(preLoyaltyTotal + deliveryFee - loyaltyDiscountPreview), 0);
   const cashReceivedAmount = Number(cashReceived) || 0;
   const change = Math.max(money(cashReceivedAmount - total), 0);
+  const eligibleLineAmountsValid = beneficiaries.every((beneficiary) =>
+    Object.values(beneficiary.eligibleLineAmounts).every((value) =>
+      value.trim() === '' || (Number.isFinite(Number(value)) && Number(value) >= 0),
+    ),
+  );
   const allocationsDoNotExceedLines = cart.every((item) => {
     const lineTotal = money(item.product.price * item.quantity);
-    const allocated = beneficiaries.reduce((sum, beneficiary) => sum + Math.max(Number(beneficiary.eligibleLineAmounts[item.product.id]) || 0, 0), 0);
+    const allocated = beneficiaries.reduce((sum, beneficiary) => (
+      sum + money(Math.max(Number(beneficiary.eligibleLineAmounts[item.product.id]) || 0, 0))
+    ), 0);
     return allocated <= lineTotal + 0.001;
   });
   const uniqueBeneficiaryIds = new Set(beneficiaries.map((beneficiary) => beneficiary.idNumber.trim()).filter(Boolean)).size === beneficiaries.filter((beneficiary) => beneficiary.idNumber.trim()).length;
   const allBeneficiariesHaveEligibleLines = beneficiaries.every((beneficiary) =>
-    Object.values(beneficiary.eligibleLineAmounts).some((value) => Number(value) > 0 && Number.isFinite(Number(value))),
+    Object.values(beneficiary.eligibleLineAmounts).some((value) => money(Number(value)) >= 0.01 && Number.isFinite(Number(value))),
   );
   const beneficiaryIdentityReady = beneficiaries.every((beneficiary) =>
     beneficiary.idNumber.trim().length > 0
@@ -262,6 +269,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
     beneficiaryIdentityReady
       && uniqueBeneficiaryIds
       && beneficiaries.length <= effectiveGroupSize
+      && eligibleLineAmountsValid
       && allBeneficiariesHaveEligibleLines
       && allocationsDoNotExceedLines
       && !(taxSettings?.vatRegistered && hasUnclassifiedCartItem)
@@ -687,9 +695,11 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
                   ? 'Enter every beneficiary’s full name, address, and ID number.'
                   : !uniqueBeneficiaryIds
                     ? 'Each beneficiary must use a different ID number for this order.'
-                    : !allBeneficiariesHaveEligibleLines
-                      ? 'Enter a positive eligible amount on at least one order line for each beneficiary.'
-                      : !allocationsDoNotExceedLines
+                    : !eligibleLineAmountsValid
+                      ? 'Eligible amounts must be valid, non-negative amounts with no more than two decimal places.'
+                      : !allBeneficiariesHaveEligibleLines
+                        ? 'Enter a positive eligible amount on at least one order line for each beneficiary.'
+                        : !allocationsDoNotExceedLines
                         ? 'Combined eligible amounts cannot exceed the total for each order line.'
                         : 'Complete the required beneficiary and line-allocation details.'}
             </p>}
