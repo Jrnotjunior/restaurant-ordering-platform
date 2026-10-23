@@ -19,6 +19,22 @@ type DayHours = {
 
 type OperatingHours = Record<DayKey, DayHours>;
 
+type TaxpayerCategory = 'micro' | 'small' | 'medium' | 'large' | 'large_taxpayer' | 'unknown';
+type TaxpayerProfileForm = {
+  registered_legal_name: string;
+  trade_name: string;
+  tin: string;
+  registered_address: string;
+  branch_code: string;
+  taxpayer_category: TaxpayerCategory;
+  profile_status: 'draft' | 'submitted_for_review' | 'needs_correction' | 'reviewed';
+  review_note: string;
+};
+const EMPTY_TAXPAYER_PROFILE: TaxpayerProfileForm = {
+  registered_legal_name: '', trade_name: '', tin: '', registered_address: '', branch_code: '',
+  taxpayer_category: 'unknown', profile_status: 'draft', review_note: '',
+};
+
 type OnlinePaymentMethods = {
   card: boolean;
   gcash: boolean;
@@ -243,6 +259,10 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [orderingEnabled, setOrderingEnabled] = useState(true);
   const [onlinePaymentMethods, setOnlinePaymentMethods] = useState<OnlinePaymentMethods>(DEFAULT_ONLINE_PAYMENT_METHODS);
   const [onlinePaymentsEnabled, setOnlinePaymentsEnabled] = useState(true);
+  const [taxpayerProfile, setTaxpayerProfile] = useState<TaxpayerProfileForm>(EMPTY_TAXPAYER_PROFILE);
+  const [taxpayerSaving, setTaxpayerSaving] = useState(false);
+  const [taxpayerError, setTaxpayerError] = useState('');
+  const [taxpayerMessage, setTaxpayerMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -337,6 +357,28 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       setDeliveryLocationLatitude(data?.delivery_location_latitude ?? null);
       setDeliveryLocationLongitude(data?.delivery_location_longitude ?? null);
 
+      // Taxpayer identity is loaded through a restricted RPC rather than direct
+      // table access because TIN and registration details are sensitive.
+      const { data: taxpayerData, error: taxpayerLoadError } = await supabase.rpc('get_restaurant_taxpayer_profile', {
+        p_restaurant_id: restaurantId,
+      });
+      if (taxpayerLoadError) {
+        setTaxpayerError(`Taxpayer profile could not be loaded: ${taxpayerLoadError.message}`);
+      } else {
+        const profile = (taxpayerData && typeof taxpayerData === 'object' ? taxpayerData : {}) as Partial<TaxpayerProfileForm>;
+        setTaxpayerProfile({
+          registered_legal_name: profile.registered_legal_name ?? '',
+          trade_name: profile.trade_name ?? '',
+          tin: profile.tin ?? '',
+          registered_address: profile.registered_address ?? '',
+          branch_code: profile.branch_code ?? '',
+          taxpayer_category: profile.taxpayer_category ?? 'unknown',
+          profile_status: profile.profile_status ?? 'draft',
+          review_note: profile.review_note ?? '',
+        });
+        setTaxpayerError('');
+      }
+
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load store settings.');
     } finally {
@@ -427,6 +469,48 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       setPaymongoError(syncError instanceof Error ? syncError.message : 'Unable to check PayMongo live onboarding.');
     } finally {
       setPaymongoBusy(false);
+    }
+  }
+
+  async function saveTaxpayerProfile(submitForReview: boolean) {
+    if (!supabase) {
+      setTaxpayerError('Supabase is not configured.');
+      return;
+    }
+    setTaxpayerSaving(true);
+    setTaxpayerError('');
+    setTaxpayerMessage('');
+    try {
+      const { data, error: saveError } = await supabase.rpc('save_restaurant_taxpayer_profile', {
+        p_restaurant_id: restaurantId,
+        p_registered_legal_name: taxpayerProfile.registered_legal_name,
+        p_trade_name: taxpayerProfile.trade_name,
+        p_tin: taxpayerProfile.tin,
+        p_registered_address: taxpayerProfile.registered_address,
+        p_branch_code: taxpayerProfile.branch_code,
+        p_taxpayer_category: taxpayerProfile.taxpayer_category,
+        p_submit_for_review: submitForReview,
+      });
+      if (saveError) throw saveError;
+      const profile = (data && typeof data === 'object' ? data : {}) as Partial<TaxpayerProfileForm>;
+      setTaxpayerProfile((current) => ({
+        ...current,
+        registered_legal_name: profile.registered_legal_name ?? current.registered_legal_name,
+        trade_name: profile.trade_name ?? current.trade_name,
+        tin: profile.tin ?? current.tin,
+        registered_address: profile.registered_address ?? current.registered_address,
+        branch_code: profile.branch_code ?? current.branch_code,
+        taxpayer_category: profile.taxpayer_category ?? current.taxpayer_category,
+        profile_status: profile.profile_status ?? (submitForReview ? 'submitted_for_review' : 'draft'),
+        review_note: profile.review_note ?? '',
+      }));
+      setTaxpayerMessage(submitForReview
+        ? 'Taxpayer profile submitted for platform review. This is not BIR accreditation or approval.'
+        : 'Taxpayer profile draft saved. It is not yet reviewed or approved.');
+    } catch (saveError) {
+      setTaxpayerError(saveError instanceof Error ? saveError.message : 'Unable to save taxpayer profile.');
+    } finally {
+      setTaxpayerSaving(false);
     }
   }
 
@@ -749,6 +833,15 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .restaurant-settings-day .restaurant-settings-switch{justify-content:center}
         .restaurant-settings-toggle input{margin:0}
         .restaurant-settings-tax-grid{display:grid;grid-template-columns:1fr;gap:16px}
+        .restaurant-settings-taxpayer-profile{display:grid;gap:10px}
+        .restaurant-settings-taxpayer-profile h2{margin:0;font-size:18px}
+        .restaurant-settings-taxpayer-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px}
+        .restaurant-settings-taxpayer-grid .restaurant-settings-field{display:grid;gap:6px;font-weight:600;font-size:13px}
+        .restaurant-settings-taxpayer-grid input,.restaurant-settings-taxpayer-grid textarea,.restaurant-settings-taxpayer-grid select{box-sizing:border-box;width:100%;border:1px solid #dbe2ea;border-radius:8px;padding:10px;background:#fff;color:#0f172a;font:inherit}
+        .restaurant-settings-taxpayer-grid textarea{resize:vertical;min-height:84px}
+        .restaurant-settings-taxpayer-profile .restaurant-settings-error{margin:0;color:#b91c1c;font-size:13px;font-weight:600}
+        .restaurant-settings-taxpayer-profile .restaurant-settings-success{margin:0;color:#166534;font-size:13px;font-weight:600}
+        @media(max-width:700px){.restaurant-settings-taxpayer-grid{grid-template-columns:1fr}}
         .restaurant-delivery-pricing-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}
         .restaurant-delivery-pricing-grid input[type=number]{width:100%;box-sizing:border-box}
         @media(max-width:700px){.restaurant-delivery-pricing-grid{grid-template-columns:1fr}}
@@ -1034,7 +1127,61 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
 
         <div className="restaurant-settings-card" id="store-tax" role="tabpanel" aria-labelledby="store-settings-tab-tax" hidden={activeSettingsTab !== 'tax'}>
-          <div className="restaurant-settings-tax-grid">
+          <section className="restaurant-settings-taxpayer-profile" aria-labelledby="taxpayer-profile-heading">
+            <h2 id="taxpayer-profile-heading">Taxpayer registration profile</h2>
+            <p className="restaurant-settings-help">Enter details exactly as shown on the restaurant's current BIR Certificate of Registration (BIR Form 2303). These details are kept private to the restaurant owner and System Administrator. Saving or submitting this profile does not issue an official invoice or mean the POS is BIR-accredited.</p>
+            <div className="restaurant-settings-taxpayer-grid">
+              <label className="restaurant-settings-field">
+                <span>Registered legal name</span>
+                <input value={taxpayerProfile.registered_legal_name} maxLength={250} autoComplete="organization" onChange={(event) => setTaxpayerProfile((current) => ({ ...current, registered_legal_name: event.target.value }))} disabled={loading || taxpayerSaving} />
+              </label>
+              <label className="restaurant-settings-field">
+                <span>Trade name (if applicable)</span>
+                <input value={taxpayerProfile.trade_name} maxLength={250} onChange={(event) => setTaxpayerProfile((current) => ({ ...current, trade_name: event.target.value }))} disabled={loading || taxpayerSaving} />
+              </label>
+              <label className="restaurant-settings-field">
+                <span>TIN</span>
+                <input value={taxpayerProfile.tin} maxLength={64} autoComplete="off" inputMode="text" onChange={(event) => setTaxpayerProfile((current) => ({ ...current, tin: event.target.value }))} disabled={loading || taxpayerSaving} />
+              </label>
+              <label className="restaurant-settings-field">
+                <span>Registered address</span>
+                <textarea value={taxpayerProfile.registered_address} maxLength={1000} rows={3} autoComplete="street-address" onChange={(event) => setTaxpayerProfile((current) => ({ ...current, registered_address: event.target.value }))} disabled={loading || taxpayerSaving} />
+              </label>
+              <label className="restaurant-settings-field">
+                <span>Branch code (if applicable)</span>
+                <input value={taxpayerProfile.branch_code} maxLength={64} onChange={(event) => setTaxpayerProfile((current) => ({ ...current, branch_code: event.target.value }))} disabled={loading || taxpayerSaving} />
+              </label>
+              <label className="restaurant-settings-field">
+                <span>Taxpayer category</span>
+                <select value={taxpayerProfile.taxpayer_category} onChange={(event) => setTaxpayerProfile((current) => ({ ...current, taxpayer_category: event.target.value as TaxpayerCategory }))} disabled={loading || taxpayerSaving}>
+                  <option value="unknown">Not confirmed</option>
+                  <option value="micro">Micro</option>
+                  <option value="small">Small</option>
+                  <option value="medium">Medium</option>
+                  <option value="large">Large</option>
+                  <option value="large_taxpayer">Large Taxpayer Service</option>
+                </select>
+              </label>
+            </div>
+            <p className="restaurant-settings-help" style={{ marginTop: 12 }}>Profile status: <strong>{({
+              draft: 'Draft — not submitted',
+              submitted_for_review: 'Submitted for platform review',
+              needs_correction: 'Changes requested',
+              reviewed: 'Reviewed by platform',
+            })[taxpayerProfile.profile_status]}</strong></p>
+            {taxpayerProfile.review_note && <p className="restaurant-settings-help">Review note: {taxpayerProfile.review_note}</p>}
+            {taxpayerError && <p className="restaurant-settings-error" role="alert">{taxpayerError}</p>}
+            {taxpayerMessage && <p className="restaurant-settings-success" role="status">{taxpayerMessage}</p>}
+            <div className="restaurant-settings-actions" style={{ justifyContent: 'flex-start', gap: 10, flexWrap: 'wrap', marginTop: 14 }}>
+              <button className="button button-secondary restaurant-compact-action" type="button" onClick={() => void saveTaxpayerProfile(false)} disabled={loading || taxpayerSaving}>
+                {taxpayerSaving ? 'Saving…' : 'Save draft'}
+              </button>
+              <button className="button button-primary restaurant-compact-action" type="button" onClick={() => void saveTaxpayerProfile(true)} disabled={loading || taxpayerSaving}>
+                {taxpayerSaving ? 'Saving…' : 'Submit for review'}
+              </button>
+            </div>
+          </section>
+          <div className="restaurant-settings-tax-grid" style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #e2e8f0' }}>
             <label className="restaurant-settings-switch-row">
               <span>VAT registered</span>
               <span className="restaurant-settings-switch">
