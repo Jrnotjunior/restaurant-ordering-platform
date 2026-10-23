@@ -10,7 +10,8 @@ import { attachCustomerToOrder, findCustomersByName, getLoyaltyRedemptionSetting
 
 type Props = { restaurantId: string };
 type CartItem = { product: RestaurantProduct; quantity: number };
-type DraftBeneficiary = { discountType: PosDiscountType; idType: PosDiscountIdType; idNumber: string; beneficiaryName: string; beneficiaryTin: string; beneficiaryAddress: string };
+type DraftBeneficiary = { discountType: PosDiscountType; idType: PosDiscountIdType; idNumber: string; beneficiaryName: string; beneficiaryTin: string; beneficiaryAddress: string; eligibleLineAmounts: Record<string, string> };
+type PrintedBeneficiary = DraftBeneficiary & { eligibleAmount: number; discountAmount: number };
 type PosPrintOrder = {
   orderNumber: string;
   customerName: string;
@@ -21,7 +22,7 @@ type PosPrintOrder = {
   orderType: 'dine_in' | 'take_out' | 'pickup' | 'delivery';
   createdAt: string;
   items: CartItem[];
-  beneficiaries: DraftBeneficiary[];
+  beneficiaries: PrintedBeneficiary[];
   financials: {
     discountAmount: number;
     loyaltyDiscountAmount: number;
@@ -181,26 +182,89 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
     return products.filter((product) => (category === 'all' || product.categoryId === category) && (!query || product.name.toLowerCase().includes(query)));
   }, [products, category, search]);
 
+  const money = (amount: number) => Number((Number.isFinite(amount) ? amount : 0).toFixed(2));
   const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0), [cart]);
-  const baseNetSales = taxSettings?.vatRegistered && taxSettings.pricesVatInclusive
-    ? subtotal / (1 + taxSettings.vatRate / 100)
-    : subtotal;
   const effectiveGroupSize = Math.max(Number(groupSize) || 1, 1);
-  const eligibleShare = beneficiaries.length > 0 ? Number((baseNetSales / effectiveGroupSize).toFixed(2)) : 0;
-  const discountAmount = beneficiaries.length ? Number((eligibleShare * beneficiaries.length * 0.20).toFixed(2)) : 0;
-  const vatableSales = Math.max(Number((baseNetSales - eligibleShare * beneficiaries.length).toFixed(2)), 0);
-  const vatAmount = taxSettings?.vatRegistered ? Number((vatableSales * taxSettings.vatRate / 100).toFixed(2)) : 0;
-  const vatExemptSales = beneficiaries.length ? Math.max(Number((eligibleShare * beneficiaries.length - discountAmount).toFixed(2)), 0) : 0;
-  const netSales = Number((vatableSales + vatExemptSales).toFixed(2));
-  const preLoyaltyTotal = Math.max(Number((netSales + vatAmount).toFixed(2)), 0);
+  const priceHasIncludedVat = Boolean(taxSettings?.vatRegistered && taxSettings.pricesVatInclusive);
+  const vatRate = taxSettings?.vatRegistered ? taxSettings.vatRate : 0;
+  const eligibleAllocations = beneficiaries.flatMap((beneficiary) => cart.flatMap((item) => {
+    const eligibleGross = money(Number(beneficiary.eligibleLineAmounts[item.product.id] || 0));
+    if (eligibleGross <= 0) return [];
+    const eligibleNet = priceHasIncludedVat && item.product.taxCategory === 'standard_rate'
+      ? money(eligibleGross / (1 + vatRate / 100))
+      : eligibleGross;
+    return [{
+      productId: item.product.id,
+      taxCategory: item.product.taxCategory ?? null,
+      eligibleGross,
+      eligibleNet,
+      discountAmount: money(eligibleNet * 0.20),
+    }];
+  }));
+  const discountAmount = money(eligibleAllocations.reduce((sum, allocation) => sum + allocation.discountAmount, 0));
+  const allocatedEligibleGross = money(eligibleAllocations.reduce((sum, allocation) => sum + allocation.eligibleGross, 0));
+  const eligibleStandardGross = money(eligibleAllocations.filter((allocation) => allocation.taxCategory === 'standard_rate').reduce((sum, allocation) => sum + allocation.eligibleGross, 0));
+  const eligibleStandardNet = money(eligibleAllocations.filter((allocation) => allocation.taxCategory === 'standard_rate').reduce((sum, allocation) => sum + allocation.eligibleNet, 0));
+  const eligibleStandardDiscount = money(eligibleAllocations.filter((allocation) => allocation.taxCategory === 'standard_rate').reduce((sum, allocation) => sum + allocation.discountAmount, 0));
+  const eligibleExemptDiscount = money(eligibleAllocations.filter((allocation) => allocation.taxCategory === 'vat_exempt').reduce((sum, allocation) => sum + allocation.discountAmount, 0));
+  const eligibleZeroRatedDiscount = money(eligibleAllocations.filter((allocation) => allocation.taxCategory === 'zero_rated').reduce((sum, allocation) => sum + allocation.discountAmount, 0));
+  const hasUnclassifiedCartItem = cart.some((item) => !item.product.taxCategory);
+  const cartTaxBreakdownReady = cart.length > 0 && !hasUnclassifiedCartItem;
+  const baseStandardNet = money(cart.reduce((sum, item) => {
+    if (item.product.taxCategory !== 'standard_rate') return sum;
+    const lineGross = item.product.price * item.quantity;
+    return sum + (priceHasIncludedVat ? money(lineGross / (1 + vatRate / 100)) : lineGross);
+  }, 0));
+  const baseVatExemptSales = money(cart.reduce((sum, item) => sum + (item.product.taxCategory === 'vat_exempt' ? item.product.price * item.quantity : 0), 0));
+  const baseZeroRatedSales = money(cart.reduce((sum, item) => sum + (item.product.taxCategory === 'zero_rated' ? item.product.price * item.quantity : 0), 0));
+  const vatableSales = taxSettings?.vatRegistered
+    ? Math.max(money((cartTaxBreakdownReady ? baseStandardNet : (priceHasIncludedVat ? money(subtotal / (1 + vatRate / 100)) : subtotal)) - eligibleStandardNet), 0)
+    : 0;
+  const vatAmount = taxSettings?.vatRegistered ? money(vatableSales * vatRate / 100) : 0;
+  const vatExemptSales = taxSettings?.vatRegistered
+    ? Math.max(money(baseVatExemptSales - eligibleExemptDiscount + eligibleStandardNet - eligibleStandardDiscount), 0)
+    : 0;
+  const zeroRatedSales = taxSettings?.vatRegistered ? Math.max(money(baseZeroRatedSales - eligibleZeroRatedDiscount), 0) : 0;
+  const netSales = taxSettings?.vatRegistered
+    ? money(vatableSales + vatExemptSales + zeroRatedSales)
+    : Math.max(money(subtotal - discountAmount), 0);
+  const preLoyaltyTotal = taxSettings?.vatRegistered
+    ? (priceHasIncludedVat
+      ? Math.max(money(subtotal - Math.max(eligibleStandardGross - eligibleStandardNet, 0) - discountAmount), 0)
+      : (cartTaxBreakdownReady
+        ? Math.max(money(netSales + vatAmount), 0)
+        : Math.max(money(subtotal + vatAmount - eligibleStandardNet * vatRate / 100 - discountAmount), 0)))
+    : Math.max(money(subtotal - discountAmount), 0);
   const loyaltyDiscountPreview = redeemPoints && selectedCustomerId && loyaltyRedemption?.enabled
-    ? Math.min(Number(loyaltyRedemption.discountAmount.toFixed(2)), preLoyaltyTotal)
+    ? Math.min(money(loyaltyRedemption.discountAmount), preLoyaltyTotal)
     : 0;
   const deliveryFee = orderType === 'delivery' && deliveryRouteQuote?.inRange ? deliveryRouteQuote.deliveryFee : 0;
-  const total = Math.max(Number((preLoyaltyTotal + deliveryFee - loyaltyDiscountPreview).toFixed(2)), 0);
+  const total = Math.max(money(preLoyaltyTotal + deliveryFee - loyaltyDiscountPreview), 0);
   const cashReceivedAmount = Number(cashReceived) || 0;
-  const change = Math.max(Number((cashReceivedAmount - total).toFixed(2)), 0);
-  const cashPaymentReady = cart.length > 0 && cashReceivedAmount >= total;
+  const change = Math.max(money(cashReceivedAmount - total), 0);
+  const allocationsDoNotExceedLines = cart.every((item) => {
+    const lineTotal = money(item.product.price * item.quantity);
+    const allocated = beneficiaries.reduce((sum, beneficiary) => sum + Math.max(Number(beneficiary.eligibleLineAmounts[item.product.id]) || 0, 0), 0);
+    return allocated <= lineTotal + 0.001;
+  });
+  const uniqueBeneficiaryIds = new Set(beneficiaries.map((beneficiary) => beneficiary.idNumber.trim()).filter(Boolean)).size === beneficiaries.filter((beneficiary) => beneficiary.idNumber.trim()).length;
+  const allBeneficiariesHaveEligibleLines = beneficiaries.every((beneficiary) =>
+    Object.values(beneficiary.eligibleLineAmounts).some((value) => Number(value) > 0 && Number.isFinite(Number(value))),
+  );
+  const beneficiaryIdentityReady = beneficiaries.every((beneficiary) =>
+    beneficiary.idNumber.trim().length > 0
+      && beneficiary.beneficiaryName.trim().length > 0
+      && beneficiary.beneficiaryAddress.trim().length > 0,
+  );
+  const discountAllocationReady = beneficiaries.length === 0 || (
+    beneficiaryIdentityReady
+      && uniqueBeneficiaryIds
+      && beneficiaries.length <= effectiveGroupSize
+      && allBeneficiariesHaveEligibleLines
+      && allocationsDoNotExceedLines
+      && !(taxSettings?.vatRegistered && hasUnclassifiedCartItem)
+  );
+  const cashPaymentReady = cart.length > 0 && discountAllocationReady && cashReceivedAmount >= total;
 
   function addProduct(product: RestaurantProduct) {
     setCart((current) => {
@@ -217,7 +281,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
 
   function addBeneficiary(type: PosDiscountType) {
     if (beneficiaries.length >= effectiveGroupSize) return;
-    setBeneficiaries((current) => [...current, { discountType: type, idType: defaultIdType(type), idNumber: '', beneficiaryName: '', beneficiaryTin: '', beneficiaryAddress: '' }]);
+    setBeneficiaries((current) => [...current, { discountType: type, idType: defaultIdType(type), idNumber: '', beneficiaryName: '', beneficiaryTin: '', beneficiaryAddress: '', eligibleLineAmounts: {} }]);
   }
 
   function removeBeneficiary(index: number) {
@@ -226,6 +290,27 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
 
   function updateBeneficiary(index: number, patch: Partial<DraftBeneficiary>) {
     setBeneficiaries((current) => current.map((beneficiary, itemIndex) => itemIndex === index ? { ...beneficiary, ...patch } : beneficiary));
+  }
+
+  function updateEligibleLineAmount(index: number, productId: string, amount: string) {
+    setBeneficiaries((current) => current.map((beneficiary, itemIndex) => itemIndex === index
+      ? { ...beneficiary, eligibleLineAmounts: { ...beneficiary.eligibleLineAmounts, [productId]: amount } }
+      : beneficiary));
+  }
+
+  function getBeneficiaryPreviewAmounts(beneficiary: DraftBeneficiary) {
+    let eligibleAmount = 0;
+    let discount = 0;
+    cart.forEach((item) => {
+      const gross = money(Number(beneficiary.eligibleLineAmounts[item.product.id] || 0));
+      if (gross <= 0) return;
+      const net = priceHasIncludedVat && item.product.taxCategory === 'standard_rate'
+        ? money(gross / (1 + vatRate / 100)
+        ) : gross;
+      eligibleAmount += net;
+      discount += money(net * 0.20);
+    });
+    return { eligibleAmount: money(eligibleAmount), discountAmount: money(discount) };
   }
 
   function changeGroupSize(value: string) {
@@ -244,7 +329,17 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   }
 
   async function placeOrder() {
-    if (!cart.length || saving || !cashPaymentReady) return;
+    if (!cart.length || saving) return;
+    if (!discountAllocationReady) {
+      setError(taxSettings?.vatRegistered && hasUnclassifiedCartItem
+        ? 'Review the tax category for every product before applying an SC/PWD discount.'
+        : 'Complete each beneficiary’s details and assign eligible amounts from order lines. The combined amount assigned to any line cannot exceed that line total.');
+      return;
+    }
+    if (cashReceivedAmount < total) {
+      setError(`Money received must be at least ₱${total.toFixed(2)}.`);
+      return;
+    }
     const enteredCustomerName = customerName.trim();
     if ((orderType === 'delivery' || orderType === 'pickup') && selfOrderingEnabled) {
       setError('Pickup and Delivery are only available for restaurant packages without Self Ordering.');
@@ -293,7 +388,21 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
         await attachCustomerToOrder(created.orderId, loyaltyCustomer.customerId);
       }
 
-      const financials = await applyPosGroupDiscounts(created.orderId, effectiveGroupSize, beneficiaries);
+      const financials = await applyPosGroupDiscounts(
+        created.orderId,
+        effectiveGroupSize,
+        beneficiaries.map((beneficiary) => ({
+          discountType: beneficiary.discountType,
+          idType: beneficiary.idType,
+          idNumber: beneficiary.idNumber,
+          beneficiaryName: beneficiary.beneficiaryName,
+          beneficiaryTin: beneficiary.beneficiaryTin,
+          beneficiaryAddress: beneficiary.beneficiaryAddress,
+          eligibleLines: Object.entries(beneficiary.eligibleLineAmounts)
+            .map(([productId, value]) => ({ productId, eligibleAmount: Number(value) }))
+            .filter((line) => Number.isFinite(line.eligibleAmount) && line.eligibleAmount > 0),
+        })),
+      );
 
       let loyaltyDiscountAmount = 0;
       if (redeemPoints && selectedCustomerId) {
@@ -314,7 +423,15 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
         orderType,
         createdAt: new Date().toISOString(),
         items: cart.map((item) => ({ ...item })),
-        beneficiaries: beneficiaries.map((beneficiary) => ({ ...beneficiary })),
+        beneficiaries: beneficiaries.map((beneficiary) => {
+          const saved = financials.beneficiaryBreakdown?.find((item) => item.idNumber === beneficiary.idNumber.trim());
+          const preview = getBeneficiaryPreviewAmounts(beneficiary);
+          return {
+            ...beneficiary,
+            eligibleAmount: saved?.eligibleAmount ?? preview.eligibleAmount,
+            discountAmount: saved?.discountAmount ?? preview.discountAmount,
+          };
+        }),
         financials: {
           ...financials,
           loyaltyDiscountAmount,
@@ -350,7 +467,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
     }
   }
 
-  const discountReady = beneficiaries.every((beneficiary) => beneficiary.idNumber.trim().length > 0 && beneficiary.beneficiaryName.trim().length > 0 && beneficiary.beneficiaryAddress.trim().length > 0) && beneficiaries.length <= effectiveGroupSize;
+  const discountReady = discountAllocationReady;
 
   return (
     <section className="restaurant-page restaurant-pos-page">
