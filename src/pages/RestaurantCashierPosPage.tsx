@@ -24,6 +24,7 @@ type PosPrintOrder = {
   items: CartItem[];
   beneficiaries: PrintedBeneficiary[];
   showTaxBreakdown: boolean;
+  vatRate: number;
   financials: {
     discountAmount: number;
     loyaltyDiscountAmount: number;
@@ -453,6 +454,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
           };
         }),
         showTaxBreakdown: taxBreakdownVisible,
+        vatRate: taxSettings?.vatRate ?? 0,
         financials: {
           ...financials,
           loyaltyDiscountAmount,
@@ -861,7 +863,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
               <>
                 <div className="pos-receipt-row"><span>Gross sales</span><span>₱{printOrder.financials.grossSales.toFixed(2)}</span></div>
                 <div className="pos-receipt-row"><span>VATable sales</span><span>₱{printOrder.financials.vatableSales.toFixed(2)}</span></div>
-                {printOrder.financials.vatAmount > 0 && <div className="pos-receipt-row"><span>VAT {taxSettings.vatRate.toFixed(2)}%</span><span>₱{printOrder.financials.vatAmount.toFixed(2)}</span></div>}
+                {printOrder.financials.vatAmount > 0 && <div className="pos-receipt-row"><span>VAT {printOrder.vatRate.toFixed(2)}%</span><span>₱{printOrder.financials.vatAmount.toFixed(2)}</span></div>}
                 {printOrder.financials.vatExemptSales > 0 && <div className="pos-receipt-row"><span>VAT-exempt sales</span><span>₱{printOrder.financials.vatExemptSales.toFixed(2)}</span></div>}
               </>
             ) : (
