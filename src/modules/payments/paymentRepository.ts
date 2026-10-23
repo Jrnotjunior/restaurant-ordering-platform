@@ -1,5 +1,10 @@
 import { supabase } from '../../services/supabaseClient';
 import {
+  createGuestOrderTrackingToken,
+  linkGuestOrderTrackingTokenToOrder,
+  saveGuestOrderTrackingToken,
+} from '../ordering/guestOrderTrackingToken';
+import {
   createGuestOrderCancellationToken,
   linkGuestOrderCancellationTokenToOrder,
   saveGuestOrderCancellationToken,
@@ -45,9 +50,10 @@ export async function createPendingOnlinePayment(input: PendingOnlinePaymentInpu
   if (!supabase) throw new Error('Supabase environment variables are not configured.');
 
   const guestCancelToken = await createGuestOrderCancellationToken();
+  const guestTrackingToken = await createGuestOrderTrackingToken();
   const rpcName = input.orderType === 'delivery' && !input.isThirdPartyCourier
-    ? 'create_pending_delivery_payment_with_cancel_token'
-    : 'create_pending_online_payment_with_guest_cancel_token';
+    ? 'create_pending_online_payment_from_delivery_quote_with_guest_tracking_token'
+    : 'create_pending_online_payment_with_guest_tracking_token';
 
   const rpcParams = input.orderType === 'delivery' && !input.isThirdPartyCourier
     ? {
@@ -68,6 +74,7 @@ export async function createPendingOnlinePayment(input: PendingOnlinePaymentInpu
         p_customer_delivery_place_id: input.customerDeliveryPlaceId || null,
         p_delivery_quote_id: input.deliveryQuoteId || null,
         p_guest_cancel_token_hash: guestCancelToken.tokenHash,
+        p_guest_tracking_token_hash: guestTrackingToken.tokenHash,
       }
     : {
         p_restaurant_id: input.restaurantId,
@@ -88,6 +95,7 @@ export async function createPendingOnlinePayment(input: PendingOnlinePaymentInpu
         p_customer_delivery_longitude: input.customerDeliveryLongitude ?? null,
         p_customer_delivery_place_id: input.customerDeliveryPlaceId || null,
         p_guest_cancel_token_hash: guestCancelToken.tokenHash,
+        p_guest_tracking_token_hash: guestTrackingToken.tokenHash,
       };
 
   const { data, error } = await supabase.rpc(rpcName, rpcParams);
@@ -99,6 +107,7 @@ export async function createPendingOnlinePayment(input: PendingOnlinePaymentInpu
   // Keep the raw token in this browser under the payment reference while the
   // customer is redirected to PayMongo. Only its hash is stored server-side.
   saveGuestOrderCancellationToken(`payment:${row.reference_number}`, guestCancelToken.token);
+  saveGuestOrderTrackingToken(`payment:${row.reference_number}`, guestTrackingToken.token);
 
   return {
     paymentId: row.payment_id,
@@ -123,6 +132,7 @@ export async function getOnlinePaymentStatus(referenceNumber: string): Promise<O
   const orderId = row.order_id ?? null;
   if (row.status === 'paid' && orderId) {
     linkGuestOrderCancellationTokenToOrder(referenceNumber, orderId);
+    linkGuestOrderTrackingTokenToOrder(referenceNumber, orderId);
   }
 
   return {
