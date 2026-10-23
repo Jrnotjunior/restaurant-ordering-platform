@@ -55,6 +55,7 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
   const [passwordError, setPasswordError] = useState('');
   const [error, setError] = useState('');
   const [savingStatus, setSavingStatus] = useState(false);
+  const [collectingCash, setCollectingCash] = useState(false);
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [logoutSaving, setLogoutSaving] = useState(false);
   const slideCompletionLock = useRef(false);
@@ -176,6 +177,21 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
       setError(statusError instanceof Error ? statusError.message : (statusError && typeof statusError === 'object' && 'message' in statusError ? String(statusError.message) : 'Unable to update delivery status.'));
     } finally {
       setSavingStatus(false);
+    }
+  }
+
+  async function confirmCashCollected() {
+    if (!supabase || !delivery || delivery.paymentMethod !== 'cash' || delivery.paymentStatus === 'paid' || delivery.status !== 'delivered' || collectingCash) return;
+
+    setCollectingCash(true);
+    setError('');
+    try {
+      await supabaseRpc('rider_confirm_cash_collection', { p_order_id: delivery.id });
+      setDelivery((current) => current ? { ...current, paymentStatus: 'paid' } : current);
+    } catch (collectionError) {
+      setError(collectionError instanceof Error ? collectionError.message : (collectionError && typeof collectionError === 'object' && 'message' in collectionError ? String(collectionError.message) : 'Unable to confirm cash collection.'));
+    } finally {
+      setCollectingCash(false);
     }
   }
 
@@ -350,7 +366,12 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
             ) : isFailed ? (
               <div className="rider-delivery-complete">Delivery failed{delivery.failureReason ? ` · ${delivery.failureReason}` : ''}</div>
             ) : (
-              <div className="rider-delivery-complete">{delivery.paymentMethod === 'cash' ? 'Cash collected · Delivery completed' : 'Payment received online · Delivery completed'}</div>
+              <div className="rider-delivery-complete">{delivery.paymentMethod === 'cash' ? delivery.paymentStatus === 'paid' ? 'Cash collected · Delivery completed' : 'Delivery completed · Cash collection pending' : 'Payment received online · Delivery completed'}</div>
+              {delivery.paymentMethod === 'cash' && delivery.paymentStatus !== 'paid' ? (
+                <button className="button button-primary" type="button" onClick={() => void confirmCashCollected()} disabled={collectingCash}>
+                  {collectingCash ? 'Confirming collection…' : 'Confirm cash collected'}
+                </button>
+              ) : null}
             )}
 
             {!isDelivered && !isFailed && statusIndex >= 2 ? (
