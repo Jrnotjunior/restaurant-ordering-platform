@@ -47,7 +47,7 @@ describe('tax snapshot reporting safeguards', () => {
     const order = { total: 100, taxGrossSales: 100 };
     expect(hasMissingTaxSnapshot(order)).toBe(false);
     expect(getRecordedTaxSnapshotValue(order, 0)).toBe(0);
-    expect(getTaxSnapshotStatus(order)).toBe('Snapshot present');
+    expect(getTaxSnapshotStatus(order)).toBe('Calculated snapshot');
   });
 
   it('leaves all exported tax values blank when the positive order has no gross snapshot', () => {
@@ -67,5 +67,25 @@ describe('tax snapshot reporting safeguards', () => {
   it('treats non-finite snapshot inputs as missing for a positive order', () => {
     expect(hasMissingTaxSnapshot({ total: 50, taxGrossSales: Number.NaN })).toBe(true);
     expect(getRecordedTaxSnapshotValue({ total: 50, taxGrossSales: 50 }, Number.NaN)).toBe('');
+  });
+
+  it('does not trust positive legacy tax fields unless the snapshot is marked calculated', () => {
+    const order = { total: 112, taxGrossSales: 100, taxSnapshotStatus: 'legacy_unknown' as const };
+    expect(hasMissingTaxSnapshot(order)).toBe(true);
+    expect(getRecordedTaxSnapshotValue(order, 112)).toBe('');
+    expect(getTaxSnapshotStatus(order)).toBe('Legacy / unverified');
+  });
+
+  it('flags tax snapshots needing recalculation after a later financial change', () => {
+    const order = { total: 112, taxGrossSales: 100, taxSnapshotStatus: 'requires_review' as const };
+    expect(hasMissingTaxSnapshot(order)).toBe(true);
+    expect(getRecordedTaxSnapshotValue(order, 12)).toBe('');
+    expect(getTaxSnapshotStatus(order)).toBe('Requires review');
+  });
+
+  it('flags new orders that have not had tax calculated server-side', () => {
+    const order = { total: 112, taxGrossSales: 100, taxSnapshotStatus: 'not_calculated' as const };
+    expect(hasMissingTaxSnapshot(order)).toBe(true);
+    expect(getTaxSnapshotStatus(order)).toBe('Not calculated');
   });
 });
