@@ -479,8 +479,8 @@ END;
 $function$;
 
 
-REVOKE ALL ON FUNCTION public.calculate_supported_online_order_tax_snapshot(uuid) FROM public, anon;
-GRANT EXECUTE ON FUNCTION public.calculate_supported_online_order_tax_snapshot(uuid) TO authenticated;
+-- Preserve the existing internal-only execution grants for the SECURITY DEFINER calculator.
+-- The calculator has no user-facing authorization surface; it is invoked only through existing guarded flows.
 
 CREATE OR REPLACE FUNCTION public.get_restaurant_bir_issuance_readiness(p_restaurant_id uuid)
  RETURNS jsonb
