@@ -566,11 +566,6 @@ export function subscribeToOrderTrackingChanges(
   const channel = supabase
     .channel(`customer-order:${orderId}`)
     .on(
-      'broadcast',
-      { event: 'customer_order_changed' },
-      () => onChange(),
-    )
-    .on(
       'postgres_changes',
       {
         event: 'UPDATE',
