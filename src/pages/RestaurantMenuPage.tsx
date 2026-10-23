@@ -232,6 +232,8 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
         .restaurant-delete-confirm-button:hover:not(:disabled){background:#ffe4e6}
         .restaurant-product-form-actions .button{min-width:130px}
         .restaurant-product-category-hint{font-size:12px;font-weight:400;color:#64748b}
+        .restaurant-product-tax-category-label{display:inline-flex;align-items:center;margin-top:6px;font-size:11px;font-weight:650;color:#475569;background:#f1f5f9;border-radius:6px;padding:4px 6px}
+        .restaurant-product-tax-category-label.is-unclassified{color:#92400e;background:#fef3c7}
         @media(max-width:600px){.restaurant-menu-section-header{flex-direction:column}.restaurant-menu-add-button{width:100%}.restaurant-menu-search{align-items:stretch;flex-direction:column}.restaurant-menu-search-label{white-space:normal}.restaurant-menu-search-input-wrap{max-width:none}.restaurant-product-modal-backdrop{padding:10px;align-items:flex-end}.restaurant-product-modal{max-height:92vh;border-radius:18px 18px 12px 12px;padding:20px}.restaurant-product-form-actions .button{flex:1}}
       `}</style>
 
@@ -295,6 +297,9 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
                     <h3>{product.name}</h3>
                     <span className="product-card-price">₱{product.price.toFixed(2)}</span>
                     <p>{product.description || 'No description.'}</p>
+                    <span className={`restaurant-product-tax-category-label${product.taxCategory ? '' : ' is-unclassified'}`}>
+                      Tax: {product.taxCategory === 'standard_rate' ? 'Standard-rated' : product.taxCategory === 'vat_exempt' ? 'VAT-exempt' : product.taxCategory === 'zero_rated' ? 'Zero-rated' : 'Unclassified — review required'}
+                    </span>
                   </div>
                 </div>
                 <div className="restaurant-management-product-status">
