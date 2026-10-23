@@ -608,7 +608,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
               <label className="business-reports-field"><span>Business date</span><input type="date" value={readingDate} max={todayKey()} onChange={(event) => { setReadingDate(event.target.value); setReadingPreview(null); }} /></label>
             </div>
             </div>
-            <p className="business-reports-muted">BIR rules for the applicable Sales Machine/Software route require specific readings or approved equivalents and backend reports. This preview is development groundwork only; its figures must be reconciled against approved tax rules, original payment records, and the prescribed BIR format.</p>
+            <p className="business-reports-muted">BIR rules for the applicable Sales Machine/Software route require specific readings or approved equivalents and backend reports. This is an internal preview, not an official BIR reading. Paid sales totals count orders with payment status paid, excluding cancelled/refunded workflow status; the completed count is a separate kitchen/workflow metric. This engineering basis still requires reconciliation to the approved fiscal definition, original payment records, and prescribed BIR format.</p>
             {readingError && <p className="business-reports-error" role="alert">{readingError}</p>}
             <div className="business-reports-actions" style={{ justifyContent: 'flex-start', flexWrap: 'wrap' }}>
               <button className="business-reports-button" type="button" onClick={() => void generateReadingPreview('x_preview')} disabled={readingGenerating || readingLoading || !readingDate}>{readingGenerating ? 'Generating…' : 'Generate X-style preview'}</button>
