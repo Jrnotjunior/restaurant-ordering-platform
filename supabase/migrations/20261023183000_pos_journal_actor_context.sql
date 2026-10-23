@@ -11,6 +11,7 @@ declare
   v_new jsonb;
   v_row jsonb;
   v_event_type text;
+  v_actor_role text;
   v_restaurant_id uuid;
   v_order_id uuid;
   v_order_number text;
