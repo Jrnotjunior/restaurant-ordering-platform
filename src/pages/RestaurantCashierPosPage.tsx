@@ -246,7 +246,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const change = Math.max(money(cashReceivedAmount - total), 0);
   const eligibleLineAmountsValid = beneficiaries.every((beneficiary) =>
     Object.values(beneficiary.eligibleLineAmounts).every((value) =>
-      value.trim() === '' || (Number.isFinite(Number(value)) && Number(value) >= 0),
+      value.trim() === '' || (Number.isFinite(Number(value)) && Number(value) >= 0 && Math.abs(Number(value) - money(Number(value))) < 0.00001),
     ),
   );
   const allocationsDoNotExceedLines = cart.every((item) => {
