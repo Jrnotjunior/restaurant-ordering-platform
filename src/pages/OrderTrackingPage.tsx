@@ -355,12 +355,17 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
             <p>Give this order number to the cashier to help them find your order.</p>
           </section>
         ) : null}
-        <section className="order-customer-receipt" aria-label="Customer receipt">
+        <details className="order-customer-receipt-disclosure">
+          <summary className="order-customer-receipt-summary">
+            <span><strong>Customer receipt</strong><small>Order total and payment status</small></span>
+            <span className="order-customer-receipt-summary-action">View / print receipt <span aria-hidden="true">⌄</span></span>
+          </summary>
+          <section className="order-customer-receipt" aria-label="Customer receipt">
           <div className="order-customer-receipt-header">
             <p className="eyebrow">Customer receipt</p>
             <h2>{order.restaurantName}</h2>
             <p>Operational receipt — not a BIR-issued invoice</p>
-            <strong>ORD-{order.orderNumber}</strong>
+            <strong>{order.orderNumber}</strong>
             <span>{order.createdAt && !Number.isNaN(new Date(order.createdAt).getTime())
               ? new Date(order.createdAt).toLocaleString()
               : 'Order date unavailable'}</span>
@@ -394,7 +399,8 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
           <button className="button button-primary order-customer-receipt-print-button" type="button" onClick={() => window.print()}>
             Print receipt
           </button>
-        </section>
+          </section>
+        </details>
 
         <details className="order-tracking-details">
           <summary className="order-tracking-section-heading">
