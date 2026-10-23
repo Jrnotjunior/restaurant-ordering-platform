@@ -197,10 +197,10 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
         setSelectedOrder(paidOrder);
       });
       window.print();
-      // Cashier work ends after the customer/kitchen slips are printed and
-      // the order is handed to the kitchen. Do not leave the kitchen's
-      // next-stage "Mark Ready" action open in the cashier workspace.
-      setSelectedOrder(null);
+      // Close both the selected-order detail and its parent New Orders modal.
+      // Cashier work ends after printing and handing the order to the kitchen;
+      // kitchen-only follow-up actions must not remain open in Cashier.
+      closeOrderList();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to confirm cash payment.');
     } finally { setUpdating(null); }
@@ -220,11 +220,15 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
       // window.print() can pause script execution while the dialog is open.
       await sendOrderToKitchen(order.orderId);
       const updated = { ...order, status: 'preparing' as RestaurantOrderStatus };
-      setOrders((current) => current.map((item) => (item.orderId === order.orderId ? updated : item)));
+      // Print from the same post-handoff order snapshot that is now persisted.
+      // Flush before window.print(), which can pause script execution.
+      flushSync(() => {
+        setOrders((current) => current.map((item) => (item.orderId === order.orderId ? updated : item)));
+        setSelectedOrder(updated);
+      });
       window.print();
-      // Close only the order-detail modal and return to the New Orders list.
-      // Keep the parent New Orders modal open for the cashier. 
-      setSelectedOrder(null);
+      // Close both cashier modals after the print dialog is dismissed.
+      closeOrderList();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to send order to the kitchen.');
     } finally {
