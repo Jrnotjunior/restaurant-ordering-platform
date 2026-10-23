@@ -1257,6 +1257,44 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
               </button>
             </div>
           </section>
+          {!vatRegistered && <section className="restaurant-settings-taxpayer-profile" aria-labelledby="non-vat-tax-basis-heading" style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #e2e8f0' }}>
+            <h2 id="non-vat-tax-basis-heading">Non-VAT tax basis evidence</h2>
+            <p className="restaurant-settings-help">Choose a basis only from current registration documents or written Philippine tax advice, and enter a reference. This request must be verified by a privileged System Admin before non-VAT sales classification can be used. It does not create a tax charge and is not BIR approval.</p>
+            <div className="restaurant-settings-taxpayer-grid">
+              <label className="restaurant-settings-field">
+                <span>Documented non-VAT tax basis</span>
+                <select value={taxpayerProfile.non_vat_tax_basis} onChange={(event) => setTaxpayerProfile((current) => ({ ...current, non_vat_tax_basis: event.target.value as NonVatTaxBasis, non_vat_tax_basis_verified_at: null }))} disabled={loading || nonVatBasisBusy}>
+                  <option value="unconfirmed">Not confirmed — keep calculation gated</option>
+                  <option value="subject_to_percentage_tax">Subject to percentage tax (per reviewed documents)</option>
+                  <option value="not_subject_to_percentage_tax">Not subject to percentage tax (per reviewed documents)</option>
+                </select>
+              </label>
+              <label className="restaurant-settings-field">
+                <span>Registration document / written advice reference</span>
+                <input value={taxpayerProfile.non_vat_tax_basis_reference} maxLength={500} onChange={(event) => setTaxpayerProfile((current) => ({ ...current, non_vat_tax_basis_reference: event.target.value, non_vat_tax_basis_verified_at: null }))} disabled={loading || nonVatBasisBusy} placeholder="Document title, date, or reference" />
+              </label>
+            </div>
+            <p className="restaurant-settings-help">Verification: <strong>{taxpayerProfile.non_vat_tax_basis_verified_at ? 'Evidence reference reviewed by System Admin' : 'Not verified — non-VAT calculation remains gated'}</strong></p>
+            {taxpayerProfile.non_vat_tax_basis_review_note && <p className="restaurant-settings-help">Review note: {taxpayerProfile.non_vat_tax_basis_review_note}</p>}
+            <div className="restaurant-settings-actions" style={{ justifyContent: 'flex-start', gap: 10, flexWrap: 'wrap', marginTop: 14 }}>
+              <button className="button button-secondary restaurant-compact-action" type="button" onClick={() => void saveNonVatTaxBasis()} disabled={loading || nonVatBasisBusy || taxpayerSaving}>
+                {nonVatBasisBusy ? 'Saving…' : 'Save tax-basis request'}
+              </button>
+            </div>
+            {canManageNonVatTaxBasis && taxpayerProfile.non_vat_tax_basis !== 'unconfirmed' && taxpayerProfile.non_vat_tax_basis_reference.trim() && <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid #e2e8f0' }}>
+              <h3>Privileged evidence review</h3>
+              <p className="restaurant-settings-help">Only confirm after checking the cited source document. This internal platform review is not a BIR decision.</p>
+              <label className="restaurant-settings-field">
+                <span>Review note (required)</span>
+                <textarea value={nonVatBasisReviewNote} maxLength={1000} rows={3} onChange={(event) => setNonVatBasisReviewNote(event.target.value)} disabled={nonVatBasisBusy} />
+              </label>
+              <div className="restaurant-settings-actions" style={{ justifyContent: 'flex-start', gap: 10, flexWrap: 'wrap', marginTop: 14 }}>
+                <button className="button button-primary restaurant-compact-action" type="button" onClick={() => void confirmNonVatTaxBasis()} disabled={loading || nonVatBasisBusy || !nonVatBasisReviewNote.trim()}>
+                  {nonVatBasisBusy ? 'Reviewing…' : 'Confirm evidence reviewed'}
+                </button>
+              </div>
+            </div>}
+          </section>}
           <div className="restaurant-settings-tax-grid" style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #e2e8f0' }}>
             <label className="restaurant-settings-switch-row">
               <span>VAT registered</span>
