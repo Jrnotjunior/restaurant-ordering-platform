@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { getMenu, subscribeToCashierMenuChanges } from '../modules/products/productService';
 import { createOrder } from '../modules/ordering/orderService';
 import { applyPosGroupDiscounts, confirmPosCashPayment, getCurrentCashierName, getRestaurantTaxSettings, type PosDiscountIdType, type PosDiscountType, type RestaurantTaxSettings } from '../modules/pos/posService';
+import { calculatePosStatutoryDiscountPreview } from '../modules/pos/statutoryDiscountCalculations';
 import type { RestaurantProduct } from '../types/menu';
 import { MapboxDeliveryLocationPicker, type MapboxDeliveryAddress } from '../components/MapboxDeliveryLocationPicker';
 import { calculateDeliveryRoute, type DeliveryRouteQuote } from '../modules/location/locationService';
@@ -189,60 +190,50 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const effectiveGroupSize = Math.max(Number(groupSize) || 1, 1);
   const priceHasIncludedVat = Boolean(taxSettings?.vatRegistered && taxSettings.pricesVatInclusive);
   const vatRate = taxSettings?.vatRegistered ? taxSettings.vatRate : 0;
-  const eligibleAllocations = beneficiaries.flatMap((beneficiary) => cart.flatMap((item) => {
+  const hasUnclassifiedCartItem = cart.some((item) => !item.product.taxCategory);
+  const cartTaxBreakdownReady = cart.length > 0 && !hasUnclassifiedCartItem;
+  const taxBreakdownVisible = Boolean(taxSettings?.vatRegistered && cartTaxBreakdownReady && beneficiaries.length === 0);
+  const deliveryFee = orderType === 'delivery' && deliveryRouteQuote?.inRange ? deliveryRouteQuote.deliveryFee : 0;
+  const allocationInputs = beneficiaries.flatMap((beneficiary) => cart.flatMap((item) => {
     const eligibleGross = money(Number(beneficiary.eligibleLineAmounts[item.product.id] || 0));
     if (eligibleGross <= 0) return [];
-    const eligibleNet = priceHasIncludedVat && item.product.taxCategory === 'standard_rate'
-      ? money(eligibleGross / (1 + vatRate / 100))
-      : eligibleGross;
     return [{
       productId: item.product.id,
       taxCategory: item.product.taxCategory ?? null,
       eligibleGross,
-      eligibleNet,
-      discountAmount: money(eligibleNet * 0.20),
     }];
   }));
-  const discountAmount = money(eligibleAllocations.reduce((sum, allocation) => sum + allocation.discountAmount, 0));
-  const allocatedEligibleGross = money(eligibleAllocations.reduce((sum, allocation) => sum + allocation.eligibleGross, 0));
-  const eligibleStandardGross = money(eligibleAllocations.filter((allocation) => allocation.taxCategory === 'standard_rate').reduce((sum, allocation) => sum + allocation.eligibleGross, 0));
-  const eligibleStandardNet = money(eligibleAllocations.filter((allocation) => allocation.taxCategory === 'standard_rate').reduce((sum, allocation) => sum + allocation.eligibleNet, 0));
-  const eligibleStandardDiscount = money(eligibleAllocations.filter((allocation) => allocation.taxCategory === 'standard_rate').reduce((sum, allocation) => sum + allocation.discountAmount, 0));
-  const eligibleExemptDiscount = money(eligibleAllocations.filter((allocation) => allocation.taxCategory === 'vat_exempt').reduce((sum, allocation) => sum + allocation.discountAmount, 0));
-  const eligibleZeroRatedDiscount = money(eligibleAllocations.filter((allocation) => allocation.taxCategory === 'zero_rated').reduce((sum, allocation) => sum + allocation.discountAmount, 0));
-  const hasUnclassifiedCartItem = cart.some((item) => !item.product.taxCategory);
-  const cartTaxBreakdownReady = cart.length > 0 && !hasUnclassifiedCartItem;
-  const taxBreakdownVisible = Boolean(taxSettings?.vatRegistered && cartTaxBreakdownReady && beneficiaries.length === 0);
-  const baseStandardNet = money(cart.reduce((sum, item) => {
-    if (item.product.taxCategory !== 'standard_rate') return sum;
-    const lineGross = item.product.price * item.quantity;
-    return sum + (priceHasIncludedVat ? money(lineGross / (1 + vatRate / 100)) : lineGross);
-  }, 0));
-  const baseVatExemptSales = money(cart.reduce((sum, item) => sum + (item.product.taxCategory === 'vat_exempt' ? item.product.price * item.quantity : 0), 0));
-  const baseZeroRatedSales = money(cart.reduce((sum, item) => sum + (item.product.taxCategory === 'zero_rated' ? item.product.price * item.quantity : 0), 0));
-  const vatableSales = taxSettings?.vatRegistered
-    ? Math.max(money((cartTaxBreakdownReady ? baseStandardNet : (priceHasIncludedVat ? money(subtotal / (1 + vatRate / 100)) : subtotal)) - eligibleStandardNet), 0)
-    : 0;
-  const vatAmount = taxSettings?.vatRegistered ? money(vatableSales * vatRate / 100) : 0;
-  const vatExemptSales = taxSettings?.vatRegistered
-    ? Math.max(money(baseVatExemptSales - eligibleExemptDiscount + eligibleStandardNet - eligibleStandardDiscount), 0)
-    : 0;
-  const zeroRatedSales = taxSettings?.vatRegistered ? Math.max(money(baseZeroRatedSales - eligibleZeroRatedDiscount), 0) : 0;
-  const netSales = taxSettings?.vatRegistered
-    ? money(vatableSales + vatExemptSales + zeroRatedSales)
-    : Math.max(money(subtotal - discountAmount), 0);
-  const preLoyaltyTotal = taxSettings?.vatRegistered
-    ? (priceHasIncludedVat
-      ? Math.max(money(subtotal - Math.max(eligibleStandardGross - eligibleStandardNet, 0) - discountAmount), 0)
-      : (cartTaxBreakdownReady
-        ? Math.max(money(netSales + vatAmount), 0)
-        : Math.max(money(subtotal + vatAmount - eligibleStandardNet * vatRate / 100 - discountAmount), 0)))
-    : Math.max(money(subtotal - discountAmount), 0);
+  const statutoryPreview = calculatePosStatutoryDiscountPreview({
+    lines: cart.map((item) => ({
+      productId: item.product.id,
+      lineTotal: item.product.price * item.quantity,
+      taxCategory: item.product.taxCategory ?? null,
+    })),
+    allocations: allocationInputs,
+    subtotal,
+    deliveryFee,
+    vatRegistered: Boolean(taxSettings?.vatRegistered),
+    pricesVatInclusive: priceHasIncludedVat,
+    vatRate,
+  });
+  const eligibleAllocations = statutoryPreview.allocations;
+  const discountAmount = statutoryPreview.discountAmount;
+  const allocatedEligibleGross = statutoryPreview.allocatedEligibleGross;
+  const eligibleStandardGross = statutoryPreview.eligibleStandardGross;
+  const eligibleStandardNet = statutoryPreview.eligibleStandardNet;
+  const eligibleStandardDiscount = statutoryPreview.eligibleStandardDiscount;
+  const eligibleExemptDiscount = statutoryPreview.eligibleExemptDiscount;
+  const eligibleZeroRatedDiscount = statutoryPreview.eligibleZeroRatedDiscount;
+  const vatableSales = statutoryPreview.vatableSales;
+  const vatAmount = statutoryPreview.vatAmount;
+  const vatExemptSales = statutoryPreview.vatExemptSales;
+  const zeroRatedSales = statutoryPreview.zeroRatedSales;
+  const netSales = statutoryPreview.netSales;
+  const preLoyaltyTotal = statutoryPreview.preLoyaltyTotal;
   const loyaltyDiscountPreview = beneficiaries.length === 0 && redeemPoints && selectedCustomerId && loyaltyRedemption?.enabled
     ? Math.min(money(loyaltyRedemption.discountAmount), preLoyaltyTotal)
     : 0;
-  const deliveryFee = orderType === 'delivery' && deliveryRouteQuote?.inRange ? deliveryRouteQuote.deliveryFee : 0;
-  const total = Math.max(money(preLoyaltyTotal + deliveryFee - loyaltyDiscountPreview), 0);
+  const total = Math.max(money(statutoryPreview.totalWithDeliveryFee - loyaltyDiscountPreview), 0);
   const cashReceivedAmount = Number(cashReceived) || 0;
   const change = Math.max(money(cashReceivedAmount - total), 0);
   const eligibleLineAmountsValid = beneficiaries.every((beneficiary) =>
