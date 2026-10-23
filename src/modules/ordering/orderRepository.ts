@@ -133,7 +133,7 @@ export type RestaurantOrder = {
   loyaltyDiscountAmount: number;
   discountBeneficiaryCount: number;
   discountGroupSize: number;
-  discountBeneficiaries: { discountType: PosDiscountType; idType: string; idNumber: string; eligibleAmount: number; discountAmount: number }[];
+  discountBeneficiaries: { discountType: PosDiscountType; idType: string; idNumber: string; beneficiaryName?: string | null; beneficiaryTin?: string | null; beneficiaryAddress?: string | null; eligibleAmount: number; discountAmount: number }[];
   createdAt: string;
   items: { id: string; productName: string; quantity: number; unitPrice: number; lineTotal: number; taxCategory?: 'standard_rate' | 'vat_exempt' | 'zero_rated' | null }[];
 };
