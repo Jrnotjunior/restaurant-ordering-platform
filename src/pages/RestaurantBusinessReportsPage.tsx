@@ -651,11 +651,11 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
               <h3>Generated preview history</h3>
               {readingLoading ? <p className="business-reports-muted">Loading preview history…</p> : readingHistory.length === 0 ? <p className="business-reports-muted">No readings have been generated for this business date.</p> : (
                 <div className="business-reports-table-wrap"><table className="business-reports-table">
-                  <thead><tr><th>Generated at (Manila)</th><th>Type</th><th>Orders</th><th>Completed total</th><th>Tax status</th><th>Snapshot</th></tr></thead>
+                  <thead><tr><th>Generated at (Manila)</th><th>Type</th><th>Orders</th><th>Paid sales total</th><th>Tax status</th><th>Snapshot</th></tr></thead>
                   <tbody>{readingHistory.map((entry) => <tr key={entry.reading_id}>
                     <td>{new Intl.DateTimeFormat('en-PH', { timeZone: 'Asia/Manila', dateStyle: 'medium', timeStyle: 'medium' }).format(new Date(entry.generated_at))}</td>
                     <td>{entry.reading_type === 'x_preview' ? 'X-style preview' : 'Z-style day-close preview'}</td>
-                    <td>{entry.order_count}</td><td>{peso(Number(entry.completed_sales_total))}</td>
+                    <td>{entry.order_count}</td><td>{entry.snapshot?.platform_totals_php?.paid_sales_total == null ? 'Not captured in this historical preview' : peso(Number(entry.snapshot.platform_totals_php.paid_sales_total))}</td>
                     <td>{entry.tax_summary_complete ? 'Needs professional review' : 'Incomplete'}</td>
                     <td><details><summary>Details</summary><pre style={{ whiteSpace: 'pre-wrap', maxWidth: 420, overflowWrap: 'anywhere' }}>{JSON.stringify(entry.snapshot, null, 2)}</pre></details></td>
                   </tr>)}</tbody>
