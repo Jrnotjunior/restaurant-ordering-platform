@@ -632,10 +632,41 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
                   {idOptions[beneficiary.discountType].map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                 </select></label>
                 <label className="restaurant-pos-field"><span>ID number</span><input value={beneficiary.idNumber} onChange={(event) => updateBeneficiary(index, { idNumber: event.target.value })} placeholder="Enter ID number" disabled={saving} /></label>
+                <div className="restaurant-pos-beneficiary-lines">
+                  <strong>Eligible order lines for this beneficiary</strong>
+                  {cart.length === 0 ? <p>Add order items first, then allocate the amount attributable to this person.</p> : cart.map((item) => {
+                    const lineTotal = money(item.product.price * item.quantity);
+                    const allocatedToOthers = beneficiaries.reduce((sum, other, otherIndex) => (
+                      otherIndex === index ? sum : sum + Math.max(Number(other.eligibleLineAmounts[item.product.id]) || 0, 0)
+                    ), 0);
+                    const remainingForThisBeneficiary = money(Math.max(lineTotal - allocatedToOthers, 0));
+                    const amount = beneficiary.eligibleLineAmounts[item.product.id] ?? '';
+                    const itemUnclassified = !item.product.taxCategory;
+                    return (
+                      <label className="restaurant-pos-field" key={item.product.id}>
+                        <span>{item.quantity} × {item.product.name} · line ₱{lineTotal.toFixed(2)}</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max={remainingForThisBeneficiary}
+                          step="0.01"
+                          inputMode="decimal"
+                          value={amount}
+                          onChange={(event) => updateEligibleLineAmount(index, item.product.id, event.target.value)}
+                          placeholder="Eligible amount (₱)"
+                          disabled={saving || (Boolean(taxSettings?.vatRegistered) && itemUnclassified)}
+                        />
+                        {taxSettings?.vatRegistered && itemUnclassified && <small>Tax category must be reviewed before allocating this line.</small>}
+                        <small>Remaining available on this line: ₱{remainingForThisBeneficiary.toFixed(2)}</small>
+                      </label>
+                    );
+                  })}
+                  <p>Assigned eligible amount: ₱{getBeneficiaryPreviewAmounts(beneficiary).eligibleAmount.toFixed(2)} · 20% discount preview: ₱{getBeneficiaryPreviewAmounts(beneficiary).discountAmount.toFixed(2)}</p>
+                </div>
               </div>
             ))}
 
-            {beneficiaries.length > 0 && <p className="restaurant-pos-discount-note">Each eligible customer receives 20% of their equal share of the group subtotal. One person may use either Senior Citizen or PWD discount, not both. Verify every ID before applying the discounts.</p>}
+            {beneficiaries.length > 0 && <p className="restaurant-pos-discount-note">Enter only the portion of each order line attributable to this beneficiary under the applicable SC/PWD rules; do not assume equal group shares. Combined allocations cannot exceed the line total. VAT-registered restaurants must classify every item before applying the discount. One person may use either Senior Citizen or PWD benefit for a transaction, not both, and the cashier must verify the required ID.</p>}
           </div>
 
           <label className="restaurant-pos-field restaurant-pos-notes-field">
@@ -669,7 +700,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             {taxSettings?.vatRegistered && <div className="restaurant-pos-total"><span>VATable sales</span><strong>₱{vatableSales.toFixed(2)}</strong></div>}
             {taxSettings?.vatRegistered && <div className="restaurant-pos-total"><span>VAT {taxSettings.vatRate.toFixed(2)}%</span><strong>₱{vatAmount.toFixed(2)}</strong></div>}
             {beneficiaries.length > 0 && <>
-              <div className="restaurant-pos-total"><span>Eligible share × {beneficiaries.length}</span><strong>₱{(eligibleShare * beneficiaries.length).toFixed(2)}</strong></div>
+              <div className="restaurant-pos-total"><span>Allocated eligible line amounts</span><strong>₱{allocatedEligibleGross.toFixed(2)}</strong></div>
               {taxSettings?.vatRegistered && <div className="restaurant-pos-total"><span>VAT-exempt sales</span><strong>₱{vatExemptSales.toFixed(2)}</strong></div>}
               <div className="restaurant-pos-total restaurant-pos-discount-total"><span>Senior / PWD Discount</span><strong>-₱{discountAmount.toFixed(2)}</strong></div>
             </>}
@@ -790,18 +821,18 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
               ))}
             </div>
             <hr className="pos-receipt-divider" />
-            {printOrder.financials.grossSales > 0 ? (
+            {printOrder.financials.grossSales > 0 && taxSettings?.vatRegistered ? (
               <>
                 <div className="pos-receipt-row"><span>Gross sales</span><span>₱{printOrder.financials.grossSales.toFixed(2)}</span></div>
                 <div className="pos-receipt-row"><span>VATable sales</span><span>₱{printOrder.financials.vatableSales.toFixed(2)}</span></div>
-                {printOrder.financials.vatAmount > 0 && <div className="pos-receipt-row"><span>VAT {taxSettings?.vatRate.toFixed(2)}%</span><span>₱{printOrder.financials.vatAmount.toFixed(2)}</span></div>}
+                {printOrder.financials.vatAmount > 0 && <div className="pos-receipt-row"><span>VAT {taxSettings.vatRate.toFixed(2)}%</span><span>₱{printOrder.financials.vatAmount.toFixed(2)}</span></div>}
                 {printOrder.financials.vatExemptSales > 0 && <div className="pos-receipt-row"><span>VAT-exempt sales</span><span>₱{printOrder.financials.vatExemptSales.toFixed(2)}</span></div>}
-                {printOrder.financials.discountAmount > 0 && <div className="pos-receipt-row"><span>SC/PWD discount</span><span>-₱{printOrder.financials.discountAmount.toFixed(2)}</span></div>}
-                {printOrder.financials.loyaltyDiscountAmount > 0 && <div className="pos-receipt-row"><span>Loyalty Discount</span><span>-₱{printOrder.financials.loyaltyDiscountAmount.toFixed(2)}</span></div>}
               </>
             ) : (
               <div className="pos-receipt-row"><span>Subtotal</span><span>₱{printOrder.financials.grossSales.toFixed(2)}</span></div>
             )}
+            {printOrder.financials.discountAmount > 0 && <div className="pos-receipt-row"><span>SC/PWD discount</span><span>-₱{printOrder.financials.discountAmount.toFixed(2)}</span></div>}
+            {printOrder.financials.loyaltyDiscountAmount > 0 && <div className="pos-receipt-row"><span>Loyalty Discount</span><span>-₱{printOrder.financials.loyaltyDiscountAmount.toFixed(2)}</span></div>
             {printOrder.deliveryFee > 0 && <div className="pos-receipt-row"><span>Delivery fee</span><span>₱{printOrder.deliveryFee.toFixed(2)}</span></div>}
             <div className="pos-receipt-row pos-receipt-total">
               <span>TOTAL</span>
@@ -813,19 +844,15 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
               <>
                 <hr className="pos-receipt-divider" />
                 <div className="pos-receipt-label">SC/PWD DETAILS</div>
-                {printOrder.beneficiaries.map((beneficiary, index) => {
-                  const eligibleAmount = printOrder.financials.discountAmount > 0 ? printOrder.financials.discountAmount / 0.20 / printOrder.beneficiaries.length : 0;
-                  const beneficiaryDiscount = printOrder.financials.discountAmount / printOrder.beneficiaries.length;
-                  return (
-                    <div key={index} className="pos-receipt-discount-detail">
-                      <div>{beneficiary.discountType.toUpperCase()} BENEFICIARY: {beneficiary.beneficiaryName}</div>
-                      <div>Address: {beneficiary.beneficiaryAddress}</div>
-                      {beneficiary.beneficiaryTin.trim() && <div>TIN: {beneficiary.beneficiaryTin}</div>}
-                      <div>{beneficiary.idType.replaceAll('_', ' ').toUpperCase()}: {beneficiary.idNumber}</div>
-                      <div>Eligible: ₱{eligibleAmount.toFixed(2)} · Discount: ₱{beneficiaryDiscount.toFixed(2)}</div>
-                    </div>
-                  );
-                })}
+                {printOrder.beneficiaries.map((beneficiary, index) => (
+                  <div key={index} className="pos-receipt-discount-detail">
+                    <div>{beneficiary.discountType.toUpperCase()} BENEFICIARY: {beneficiary.beneficiaryName}</div>
+                    <div>Address: {beneficiary.beneficiaryAddress}</div>
+                    {beneficiary.beneficiaryTin.trim() && <div>TIN: {beneficiary.beneficiaryTin}</div>}
+                    <div>{beneficiary.idType.replaceAll('_', ' ').toUpperCase()}: {beneficiary.idNumber}</div>
+                    <div>Eligible net amount: ₱{beneficiary.eligibleAmount.toFixed(2)} · Discount: ₱{beneficiary.discountAmount.toFixed(2)}</div>
+                  </div>
+                ))}
                 <div className="pos-receipt-signature">Customer signature: ____________________</div>
               </>
             )}
