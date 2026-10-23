@@ -10,7 +10,7 @@ export type RestaurantCategory = {
   updatedAt: string;
 };
 
-export type ProductTaxCategory = 'standard_rate' | 'vat_exempt' | 'zero_rated';
+export type ProductTaxCategory = 'standard_rate' | 'vat_exempt' | 'zero_rated' | 'percentage_taxable' | 'non_vat_exempt';
 
 export type RestaurantProduct = {
   id: string;
