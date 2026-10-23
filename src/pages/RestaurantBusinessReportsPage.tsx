@@ -767,6 +767,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
                 <div className="business-reports-card"><small>Invoice series configured</small><strong>{birReadiness.configured_series_count}</strong></div>
                 <div className="business-reports-card"><small>Invoice series enabled</small><strong>{birReadiness.enabled_series_count}</strong></div>
                 <div className="business-reports-card"><small>Issued document records</small><strong>{birReadiness.issued_document_count}</strong></div>
+                <div className="business-reports-card"><small>Platform accreditation status</small><strong>{birReadiness.is_bir_accredited ? 'Verified in app' : 'Not accredited'}</strong></div>
                 <div className="business-reports-card"><small>Official invoice issuance</small><strong>{birReadiness.official_invoice_issuance_api_enabled ? 'Enabled' : 'Disabled'}</strong></div>
               </div>
               <p className="business-reports-muted">{birReadiness.notice}</p>
