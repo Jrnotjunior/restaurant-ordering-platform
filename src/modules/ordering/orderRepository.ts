@@ -317,18 +317,27 @@ export async function createOrder(input: CreateOrderInput): Promise<CreatedOrder
 }
 
 export async function getOrderStatus(orderId: string): Promise<TrackedOrder> {
-  // Prefer capability-based access for guest orders created by the updated
-  // checkout. Keep the UUID RPC temporarily for older orders and interrupted
-  // token-storage cases until migration and recovery flows are fully validated.
+  // Guest tracking must prove possession of the high-entropy capability.
+  // Never fall back to the UUID-only RPC for signed-out visitors: the order ID
+  // is an identifier, not an authorization credential. Authenticated customers
+  // may use the legacy RPC because the database function checks ownership.
   const guestTrackingToken = readGuestOrderTrackingToken(orderId);
-  const rows = guestTrackingToken
-    ? await supabaseRpc<TrackedOrderRow>('get_guest_order_status_by_tracking_token', {
-        p_order_id: orderId,
-        p_guest_tracking_token_hash: await hashGuestOrderTrackingToken(guestTrackingToken),
-      })
-    : await supabaseRpc<TrackedOrderRow>('get_order_status_by_id', {
-        p_order_id: orderId,
-      });
+  let rows: TrackedOrderRow[];
+  if (guestTrackingToken) {
+    rows = await supabaseRpc<TrackedOrderRow>('get_guest_order_status_by_tracking_token', {
+      p_order_id: orderId,
+      p_guest_tracking_token_hash: await hashGuestOrderTrackingToken(guestTrackingToken),
+    });
+  } else {
+    if (!supabase) throw new Error('This guest tracking link is missing its access token. Please reopen the original order confirmation link.');
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError || !authData.user) {
+      throw new Error('This guest tracking link is missing its access token. Please reopen the original order confirmation link.');
+    }
+    rows = await supabaseRpc<TrackedOrderRow>('get_order_status_by_id', {
+      p_order_id: orderId,
+    });
+  }
 
   const row = rows[0];
   if (!row) throw new Error('Order not found. Please check the order number.');
