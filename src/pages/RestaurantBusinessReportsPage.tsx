@@ -733,6 +733,49 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
           </section>
         </>}
         {tab === 'tax' && <>
+          <section className="business-reports-panel">
+            <h2>Tax setup and BIR issuance readiness</h2>
+            <p className="business-reports-muted">This is a technical readiness checklist, not BIR accreditation, a permit, a tax determination, or authorization to issue official invoices.</p>
+            {taxSettingsError && <p className="business-reports-error" role="alert">Tax configuration could not be loaded: {taxSettingsError}</p>}
+            {taxSettings && <>
+              <div className="business-reports-cards">
+                <div className="business-reports-card">
+                  <small>Stored taxpayer VAT setting</small>
+                  <strong>{taxSettings.tax_vat_registered ? 'VAT-registered' : 'Non-VAT configured'}</strong>
+                </div>
+                <div className="business-reports-card">
+                  <small>Stored pricing mode</small>
+                  <strong>{taxSettings.tax_prices_vat_inclusive ? 'VAT-inclusive' : 'VAT-exclusive / not inclusive'}</strong>
+                </div>
+                <div className="business-reports-card">
+                  <small>Stored VAT rate</small>
+                  <strong>{Number(taxSettings.tax_vat_rate).toFixed(2)}%</strong>
+                </div>
+                <div className="business-reports-card">
+                  <small>Paid sales needing tax review in selected period</small>
+                  <strong>{ordersMissingTaxSnapshots.length}</strong>
+                </div>
+              </div>
+              {!taxSettings.tax_vat_registered && <p className="business-reports-error" role="alert">The restaurant is currently configured as non-VAT, so the stored VAT rate is not used to calculate VAT. The current server calculator deliberately supports only VAT-registered, VAT-inclusive transactions without discounts. Non-VAT sales must remain under review until the applicable taxpayer/tax treatment is confirmed and a reviewed non-VAT calculation path is implemented. Do not change this setting merely to force a calculation.</p>}
+              {taxSettings.tax_vat_registered && !taxSettings.tax_prices_vat_inclusive && <p className="business-reports-error" role="alert">The current server calculator supports VAT-inclusive prices only. VAT-exclusive pricing remains under review until a separate reviewed calculation path is implemented.</p>}
+            </>}
+            {birReadinessError && <p className="business-reports-error" role="alert">BIR readiness checklist could not be loaded: {birReadinessError}</p>}
+            {birReadiness && <>
+              <div className="business-reports-cards">
+                <div className="business-reports-card"><small>Taxpayer profile</small><strong>{birReadiness.taxpayer_profile_exists ? birReadiness.taxpayer_profile_status : 'Not submitted'}</strong></div>
+                <div className="business-reports-card"><small>Regulatory route</small><strong>{birReadiness.regulatory_route}</strong></div>
+                <div className="business-reports-card"><small>Invoice series configured</small><strong>{birReadiness.configured_series_count}</strong></div>
+                <div className="business-reports-card"><small>Invoice series enabled</small><strong>{birReadiness.enabled_series_count}</strong></div>
+                <div className="business-reports-card"><small>Issued document records</small><strong>{birReadiness.issued_document_count}</strong></div>
+                <div className="business-reports-card"><small>Official invoice issuance</small><strong>{birReadiness.official_invoice_issuance_api_enabled ? 'Enabled' : 'Disabled'}</strong></div>
+              </div>
+              <p className="business-reports-muted">{birReadiness.notice}</p>
+              <h3>Open readiness blockers</h3>
+              {birReadiness.blockers.length > 0
+                ? <ul>{birReadiness.blockers.map((blocker, index) => <li key={index}>{blocker}</li>)}</ul>
+                : <p className="business-reports-muted">No blockers were returned by the checklist. This does not imply BIR accreditation or official issuance authorization.</p>}
+            </>}
+          </section>
           <div className="business-reports-cards">
             <div className="business-reports-card"><small>Paid sales</small><strong>{peso(totalSales)}</strong></div>
             <div className="business-reports-card"><small>Discounts recorded</small><strong>{peso(discounts)}</strong></div>
