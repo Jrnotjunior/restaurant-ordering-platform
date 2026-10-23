@@ -69,8 +69,9 @@ describe('calculatePosStatutoryDiscountPreview', () => {
     expect(result.netSales).toBe(168.8);
     expect(result.preLoyaltyTotal).toBe(175.52);
     expect(result.totalWithDeliveryFee).toBe(187.52);
-    expect(result.totalWithDeliveryFee).toBe(
+    expect(result.totalWithDeliveryFee).toBeCloseTo(
       result.vatableSales + result.vatAmount + result.vatExemptSales + result.zeroRatedSales + 12,
+      2,
     );
   });
 
