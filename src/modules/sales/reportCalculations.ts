@@ -31,15 +31,15 @@ export function getRecordedReportDiscountTotal(order: ReportDiscountAmounts): nu
 export type ReportTaxSnapshot = {
   total?: number | null;
   taxGrossSales?: number | null;
+  taxSnapshotStatus?: 'legacy_unknown' | 'not_calculated' | 'calculated' | 'requires_review' | null;
 };
 
 export function hasMissingTaxSnapshot(order: ReportTaxSnapshot): boolean {
-  return typeof order.total === 'number'
-    && Number.isFinite(order.total)
-    && order.total > 0
-    && !(typeof order.taxGrossSales === 'number'
-      && Number.isFinite(order.taxGrossSales)
-      && order.taxGrossSales > 0);
+  if (typeof order.total !== 'number' || !Number.isFinite(order.total) || order.total <= 0) return false;
+  if (order.taxSnapshotStatus && order.taxSnapshotStatus !== 'calculated') return true;
+  return !(typeof order.taxGrossSales === 'number'
+    && Number.isFinite(order.taxGrossSales)
+    && order.taxGrossSales > 0);
 }
 
 /**
@@ -59,10 +59,13 @@ export function getRecordedTaxSnapshotValue(
  * Provides a clear per-order status for support exports without claiming
  * that a present snapshot has been independently validated.
  */
-export function getTaxSnapshotStatus(order: ReportTaxSnapshot): 'Missing / unverified' | 'Snapshot present' | 'No positive order total' {
-  if (hasMissingTaxSnapshot(order)) return 'Missing / unverified';
+export function getTaxSnapshotStatus(order: ReportTaxSnapshot): 'Legacy / unverified' | 'Not calculated' | 'Requires review' | 'Missing / unverified' | 'Calculated snapshot' | 'No positive order total' {
   if (typeof order.total === 'number' && Number.isFinite(order.total) && order.total <= 0) {
     return 'No positive order total';
   }
-  return 'Snapshot present';
+  if (order.taxSnapshotStatus === 'legacy_unknown') return 'Legacy / unverified';
+  if (order.taxSnapshotStatus === 'not_calculated') return 'Not calculated';
+  if (order.taxSnapshotStatus === 'requires_review') return 'Requires review';
+  if (hasMissingTaxSnapshot(order)) return 'Missing / unverified';
+  return 'Calculated snapshot';
 }
