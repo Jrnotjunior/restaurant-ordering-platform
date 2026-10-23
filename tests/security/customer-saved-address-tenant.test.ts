@@ -11,6 +11,7 @@ describe("customer saved-address tenant authorization", () => {
     "save_my_default_delivery_address",
     "set_my_customer_address_default",
     "get_my_customer_profile",
+    "delete_my_customer_address",
   ];
 
   it.each(functions)("checks single-tenant identity in %s", (name) => {
