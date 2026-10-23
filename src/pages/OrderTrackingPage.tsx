@@ -88,6 +88,14 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
 
   useEffect(() => {
     let cancelled = false;
+
+    // Only query timeline metadata after the primary tracking read has
+    // succeeded for this order. The database RPC must still enforce access.
+    if (!order || order.orderId !== orderId) {
+      setShowNonDeliveryTimeline(false);
+      return () => { cancelled = true; };
+    }
+
     async function loadTimelineEntitlement() {
       if (!supabase) return;
       const { data, error: entitlementError } = await supabase.rpc(
@@ -100,7 +108,7 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
     }
     void loadTimelineEntitlement();
     return () => { cancelled = true; };
-  }, [orderId, expectedRestaurantId]);
+  }, [order, orderId, expectedRestaurantId]);
 
   useEffect(() => {
     if (!supabase) return;
