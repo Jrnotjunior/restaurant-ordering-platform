@@ -3,6 +3,7 @@ import { useRestaurant } from '../components/RestaurantProvider';
 import { useRestaurantOwnerAuth } from '../components/RestaurantOwnerAuthProvider';
 import { setRememberMePreference, supabase } from '../services/supabaseClient';
 import { getCurrentCustomerRestaurant } from '../modules/customer/customerAuthService';
+import { resolveAccountContext } from '../modules/auth/authService';
 
 export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: boolean }) {
   const restaurant = useRestaurant();
@@ -83,11 +84,37 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
     try {
       // Apply the selected persistence mode before Supabase stores the session.
       setRememberMePreference(rememberMe);
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
         password,
       });
       if (signInError) throw signInError;
+
+      // Validate privileged account tenancy immediately after password verification,
+      // before the global MFA gate can present an authenticator challenge.
+      // The RPC is scoped to auth.uid(); never resolve another account by email.
+      const signedInUser = signInData.user;
+      if (signedInUser) {
+        let accountContext;
+        try {
+          accountContext = await resolveAccountContext(signedInUser);
+        } catch {
+          await supabase.auth.signOut();
+          throw new Error('We could not verify this account for this restaurant. Sign-in has been stopped. Please use your restaurant’s own domain or contact support.');
+        }
+
+        const assignedRestaurantId = accountContext.accountType === 'owner'
+          ? accountContext.restaurant?.id ?? null
+          : accountContext.accountType === 'staff'
+            ? accountContext.staffRestaurantId
+            : null;
+        const privilegedAccount = accountContext.accountType === 'owner' || accountContext.accountType === 'staff';
+
+        if (privilegedAccount && (!restaurant.id || assignedRestaurantId !== restaurant.id)) {
+          await supabase.auth.signOut();
+          throw new Error('This account belongs to a different restaurant. Sign-in is blocked on this domain. Please use your restaurant’s own domain.');
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to sign in. Please check your credentials.');
     } finally {
