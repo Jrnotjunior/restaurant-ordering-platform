@@ -144,7 +144,7 @@ export function RiderRouteGuard({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-export function OwnerRestaurantGuard({ children }: { children: (restaurant: RestaurantConfig) => ReactNode }) {
+export function OwnerRestaurantGuard({ children, loginRestaurant = defaultRestaurant }: { children: (restaurant: RestaurantConfig) => ReactNode; loginRestaurant?: RestaurantConfig }) {
   const { restaurant, user, loading: authLoading } = useRestaurantOwnerAuth();
   const [checkingRole, setCheckingRole] = useState(true);
   const [roleCheckError, setRoleCheckError] = useState(false);
@@ -189,14 +189,14 @@ export function OwnerRestaurantGuard({ children }: { children: (restaurant: Rest
   }, [user, authLoading]);
 
   if (authLoading) return <section className="restaurant-owner-auth-loading">Loading restaurant session…</section>;
-  if (!user) return <RestaurantProvider restaurant={defaultRestaurant}><ThemeProvider restaurant={defaultRestaurant}><RestaurantOwnerLoginPage /></ThemeProvider></RestaurantProvider>;
+  if (!user) return <RestaurantProvider restaurant={loginRestaurant}><ThemeProvider restaurant={loginRestaurant}><RestaurantOwnerLoginPage /></ThemeProvider></RestaurantProvider>;
   if (checkingRole) return <section className="restaurant-owner-auth-loading">Checking account access…</section>;
   if (roleCheckError) return <section className="restaurant-owner-auth-no-restaurant"><div className="restaurant-owner-auth-no-restaurant-card"><p className="eyebrow">Restaurant operations</p><h1>Unable to verify account access</h1><p>We couldn't verify your employee permissions. Please refresh the page or contact support. The owner dashboard is unavailable until access can be verified.</p></div></section>;
   if (!restaurant) return <section className="restaurant-owner-auth-no-restaurant"><div className="restaurant-owner-auth-no-restaurant-card"><p className="eyebrow">Restaurant operations</p><h1>No restaurant assigned</h1><p>Your owner account is signed in, but it is not linked to an active restaurant yet. Set the restaurant's <code>owner_id</code> to your Supabase Auth user ID, then reload this page.</p><p><strong>Signed in as:</strong> {user.email ?? user.id}</p></div></section>;
   return children(ownerRestaurantConfig(restaurant));
 }
 
-export function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen' | 'dispatcher'; children: (restaurant: RestaurantConfig) => ReactNode }) {
+export function StaffRoleGuard({ role, children, loginRestaurant = defaultRestaurant }: { role: 'cashier' | 'kitchen' | 'dispatcher'; children: (restaurant: RestaurantConfig) => ReactNode; loginRestaurant?: RestaurantConfig }) {
   const { user, staffRole, staffRestaurantId, loading: authLoading } = useRestaurantOwnerAuth();
   const [checking, setChecking] = useState(true);
   const [allowed, setAllowed] = useState(false);
@@ -228,7 +228,7 @@ export function StaffRoleGuard({ role, children }: { role: 'cashier' | 'kitchen'
   }, [role, user, staffRole, staffRestaurantId, authLoading]);
 
   if (authLoading) return <section className="restaurant-owner-auth-loading">Loading employee session…</section>;
-  if (!user) return <RestaurantProvider restaurant={defaultRestaurant}><ThemeProvider restaurant={defaultRestaurant}><RestaurantOwnerLoginPage /></ThemeProvider></RestaurantProvider>;
+  if (!user) return <RestaurantProvider restaurant={loginRestaurant}><ThemeProvider restaurant={loginRestaurant}><RestaurantOwnerLoginPage /></ThemeProvider></RestaurantProvider>;
   if (checking) return <section className="restaurant-owner-auth-loading">Checking employee access…</section>;
   if (roleCheckError) {
     return <section className="restaurant-owner-auth-loading">Unable to verify employee permissions. Access is blocked; please refresh or contact support.</section>;
