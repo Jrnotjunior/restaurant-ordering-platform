@@ -32,4 +32,11 @@ describe("customer saved-address tenant authorization", () => {
       expect(body).toContain("customer_identity_is_single_tenant(auth.uid(), p_restaurant_id)");
     }
   });
+
+  it("restricts all saved-address RPCs to authenticated callers", () => {
+    for (const name of functions) {
+      expect(migration).toMatch(new RegExp(`revoke all on function public\\.${name}\\([^;]+ from public, anon;`, "i"));
+      expect(migration).toMatch(new RegExp(`grant execute on function public\\.${name}\\([^;]+ to authenticated;`, "i"));
+    }
+  });
 });
