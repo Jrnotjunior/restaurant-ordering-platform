@@ -40,13 +40,27 @@ BEGIN
     RAISE EXCEPTION 'Expected order ID predicate was not found in tracking function';
   END IF;
 
-  -- The original function's owner check remains in place. This additional
-  -- predicate means anonymous callers must present a correctly formatted
-  -- matching hash for a guest order; authenticated owner access remains intact.
-  v_tracking_definition := regexp_replace(
+  -- Preserve the original function's ownership predicate and add token
+  -- authorization for anonymous guest orders. Use literal replacements rather
+  -- than a regex so SQL string escaping cannot silently change the predicate.
+  v_tracking_definition := replace(
     v_tracking_definition,
-    'where o\.id = p_order_id',
+    'where o.id = p_order_id',
     'where o.id = p_order_id
+      and (
+        auth.uid() is not null
+        or (
+          o.customer_id is null
+          and p_guest_tracking_token_hash ~ ''^[0-9a-f]{64}$''
+          and o.guest_tracking_token_hash = p_guest_tracking_token_hash
+        )
+      )'
+  );
+
+  v_tracking_definition := replace(
+    v_tracking_definition,
+    'WHERE o.id = p_order_id',
+    'WHERE o.id = p_order_id
       AND (
         auth.uid() IS NOT NULL
         OR (
@@ -54,9 +68,9 @@ BEGIN
           AND p_guest_tracking_token_hash ~ ''^[0-9a-f]{64}$''
           AND o.guest_tracking_token_hash = p_guest_tracking_token_hash
         )
-      )',
-    'i'
+      )'
   );
+
 
   IF position('p_guest_tracking_token_hash' in v_tracking_definition) = 0
      OR position('o.guest_tracking_token_hash = p_guest_tracking_token_hash' in v_tracking_definition) = 0 THEN
