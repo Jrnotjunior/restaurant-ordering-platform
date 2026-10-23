@@ -32,11 +32,19 @@ export type ReportTaxSnapshot = {
   total?: number | null;
   taxGrossSales?: number | null;
   taxSnapshotStatus?: 'legacy_unknown' | 'not_calculated' | 'calculated' | 'requires_review' | null;
+  taxZeroRatedSales?: number | null;
+  itemsTaxClassified?: boolean;
 };
 
 export function hasMissingTaxSnapshot(order: ReportTaxSnapshot): boolean {
   if (typeof order.total !== 'number' || !Number.isFinite(order.total) || order.total <= 0) return false;
   if (order.taxSnapshotStatus && order.taxSnapshotStatus !== 'calculated') return true;
+  if (order.taxSnapshotStatus === 'calculated' && (
+    typeof order.taxZeroRatedSales !== 'number'
+    || !Number.isFinite(order.taxZeroRatedSales)
+    || order.taxZeroRatedSales < 0
+    || order.itemsTaxClassified !== true
+  )) return true;
   return !(typeof order.taxGrossSales === 'number'
     && Number.isFinite(order.taxGrossSales)
     && order.taxGrossSales > 0);
@@ -59,13 +67,19 @@ export function getRecordedTaxSnapshotValue(
  * Provides a clear per-order status for support exports without claiming
  * that a present snapshot has been independently validated.
  */
-export function getTaxSnapshotStatus(order: ReportTaxSnapshot): 'Legacy / unverified' | 'Not calculated' | 'Requires review' | 'Missing / unverified' | 'Calculated snapshot' | 'No positive order total' {
+export function getTaxSnapshotStatus(order: ReportTaxSnapshot): 'Legacy / unverified' | 'Not calculated' | 'Requires review' | 'Tax classification incomplete' | 'Missing / unverified' | 'Calculated snapshot' | 'No positive order total' {
   if (typeof order.total === 'number' && Number.isFinite(order.total) && order.total <= 0) {
     return 'No positive order total';
   }
   if (order.taxSnapshotStatus === 'legacy_unknown') return 'Legacy / unverified';
   if (order.taxSnapshotStatus === 'not_calculated') return 'Not calculated';
   if (order.taxSnapshotStatus === 'requires_review') return 'Requires review';
+  if (order.taxSnapshotStatus === 'calculated' && (
+    typeof order.taxZeroRatedSales !== 'number'
+    || !Number.isFinite(order.taxZeroRatedSales)
+    || order.taxZeroRatedSales < 0
+    || order.itemsTaxClassified !== true
+  )) return 'Tax classification incomplete';
   if (hasMissingTaxSnapshot(order)) return 'Missing / unverified';
   return 'Calculated snapshot';
 }
