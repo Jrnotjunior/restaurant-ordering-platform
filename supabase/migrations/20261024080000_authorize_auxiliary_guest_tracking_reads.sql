@@ -72,8 +72,8 @@ GRANT EXECUTE ON FUNCTION public.get_order_cancellation_refund_status(uuid, text
 
 -- Remove anonymous access to the older UUID-only helper signatures. Authenticated
 -- callers retain access, and the client uses the token-aware overloads for guests.
-REVOKE EXECUTE ON FUNCTION public.get_customer_order_created_at(uuid) FROM anon;
-REVOKE EXECUTE ON FUNCTION public.get_order_cancellation_refund_status(uuid) FROM anon;
+REVOKE EXECUTE ON FUNCTION public.get_customer_order_created_at(uuid) FROM anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.get_order_cancellation_refund_status(uuid) FROM anon, authenticated;
 
 NOTIFY pgrst, 'reload schema';
 COMMIT;
