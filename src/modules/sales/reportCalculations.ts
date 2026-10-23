@@ -34,11 +34,14 @@ export type ReportTaxSnapshot = {
   taxSnapshotStatus?: 'legacy_unknown' | 'not_calculated' | 'calculated' | 'requires_review' | null;
   taxZeroRatedSales?: number | null;
   itemsTaxClassified?: boolean;
+  discountBeneficiariesComplete?: boolean;
+  discountBeneficiaryCount?: number;
 };
 
 export function hasMissingTaxSnapshot(order: ReportTaxSnapshot): boolean {
   if (typeof order.total !== 'number' || !Number.isFinite(order.total) || order.total <= 0) return false;
   if (order.taxSnapshotStatus && order.taxSnapshotStatus !== 'calculated') return true;
+  if ((order.discountBeneficiaryCount ?? 0) > 0 && order.discountBeneficiariesComplete !== true) return true;
   if (order.taxSnapshotStatus === 'calculated' && (
     typeof order.taxZeroRatedSales !== 'number'
     || !Number.isFinite(order.taxZeroRatedSales)
