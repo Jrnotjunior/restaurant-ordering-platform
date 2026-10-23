@@ -71,6 +71,11 @@ const CATEGORIES: { value: ExpenseCategory; label: string }[] = [
   { value: 'supplies', label: 'Supplies' }, { value: 'other', label: 'Other' },
 ];
 const peso = (amount: number) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount);
+function getRecordedNonVatSalesValue(order: RestaurantOrder, value: number | null | undefined): number | '' {
+  if (order.taxVatRegistered !== false || hasMissingTaxSnapshot(order)) return '';
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) return '';
+  return value;
+}
 const todayKey = () => {
   const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
   const get = (type: string) => parts.find((part) => part.type === type)?.value ?? '';
@@ -446,8 +451,8 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
 
   function exportSales() {
     downloadSpreadsheet(`sales-report-${fromDate}-to-${toDate}.xlsx`, [
-      ['Order number','Order date','Status','Order type','Payment method','Payment status','Order total PHP','Discounts PHP','Net sales per order record PHP','Taxable sales PHP','VAT amount PHP','VAT-exempt sales PHP','Zero-rated sales PHP','VAT registration snapshot','Tax snapshot status'],
-      ...rangeOrders.map((order) => [order.orderNumber, order.createdAt, order.status, order.orderType, order.paymentMethod, order.paymentStatus, order.total, getRecordedReportDiscountTotal(order), getRecordedTaxSnapshotValue(order, order.taxNetSales), getRecordedTaxSnapshotValue(order, order.taxVatableSales), getRecordedTaxSnapshotValue(order, order.taxVatAmount), getRecordedTaxSnapshotValue(order, order.taxVatExemptSales), getRecordedTaxSnapshotValue(order, order.taxZeroRatedSales), hasMissingTaxSnapshot(order) ? 'Unverified' : order.taxVatRegistered ? 'Yes' : 'No', getTaxSnapshotStatus(order)]),
+      ['Order number','Order date','Status','Order type','Payment method','Payment status','Order total PHP','Discounts PHP','Net sales per order record PHP','VATable sales PHP','VAT amount PHP','VAT-exempt sales PHP','Zero-rated sales PHP','Non-VAT percentage-taxable sales classification PHP','Non-VAT exempt sales classification PHP','VAT registration snapshot','Tax snapshot status'],
+      ...rangeOrders.map((order) => [order.orderNumber, order.createdAt, order.status, order.orderType, order.paymentMethod, order.paymentStatus, order.total, getRecordedReportDiscountTotal(order), getRecordedTaxSnapshotValue(order, order.taxNetSales), order.taxVatRegistered ? getRecordedTaxSnapshotValue(order, order.taxVatableSales) : '', order.taxVatRegistered ? getRecordedTaxSnapshotValue(order, order.taxVatAmount) : '', order.taxVatRegistered ? getRecordedTaxSnapshotValue(order, order.taxVatExemptSales) : '', order.taxVatRegistered ? getRecordedTaxSnapshotValue(order, order.taxZeroRatedSales) : '', getRecordedNonVatSalesValue(order, order.taxPercentageTaxableSales), getRecordedNonVatSalesValue(order, order.taxNonVatExemptSales), hasMissingTaxSnapshot(order) ? 'Unverified' : order.taxVatRegistered ? 'Yes' : 'No', getTaxSnapshotStatus(order)]),
     ]);
   }
 
@@ -456,18 +461,21 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
       ['Tax-support sales detail (not an official tax return or invoice)',''],
       ['Period start', fromDate], ['Period end', toDate],
       ['Report generated', new Date().toISOString()],
-      ['Note','This support export covers paid orders excluding cancelled/refunded workflow states; unpaid, cancelled and refunded records remain available in the general sales and cancellation/refund review exports. For each included paid sale, tax values are exported only when its snapshot is marked calculated, has a positive gross-sales snapshot, records zero-rated sales, and every order line has a tax-category snapshot. Legacy, uncalculated, unclassified or review-required snapshots are left blank. Period net-sales, VAT and zero-rated totals are marked incomplete if any included paid sale lacks these controls. A calculated snapshot is not independently validated for tax compliance or BIR acceptance.'],
+      ['Note','This support export is not an official tax return or invoice. Included rows use the internal paid-sales rollup and exclude cancelled/refunded workflow states. Values are shown only for complete calculated snapshots with classified lines. VAT fields are blank for non-VAT snapshots; non-VAT percentage-taxable/exempt columns are sales classifications, not percentage-tax liability or extra buyer charges. Unresolved rows remain blank; a calculated snapshot has not been independently certified for tax compliance or BIR acceptance.'],
       [],
-      ['Order number','Transaction date','Order status','Payment status','Order total PHP','Discount amount PHP','Recorded net sales PHP','Recorded vatable sales PHP','Recorded VAT amount PHP','Recorded VAT-exempt sales PHP','Recorded zero-rated sales PHP','VAT registration snapshot','Tax snapshot status'],
-      ...paidSalesOrders.map((order) => [order.orderNumber, order.createdAt, order.status, order.paymentStatus, order.total, getRecordedReportDiscountTotal(order), getRecordedTaxSnapshotValue(order, order.taxNetSales), getRecordedTaxSnapshotValue(order, order.taxVatableSales), getRecordedTaxSnapshotValue(order, order.taxVatAmount), getRecordedTaxSnapshotValue(order, order.taxVatExemptSales), getRecordedTaxSnapshotValue(order, order.taxZeroRatedSales), hasMissingTaxSnapshot(order) ? 'Unverified' : order.taxVatRegistered ? 'Yes' : 'No', getTaxSnapshotStatus(order)]),
+      ['Order number','Transaction date','Order status','Payment status','Order total PHP','Discount amount PHP','Recorded net sales PHP','Recorded VATable sales PHP','Recorded VAT amount PHP','Recorded VAT-exempt sales PHP','Recorded zero-rated sales PHP','Non-VAT percentage-taxable sales classification PHP','Non-VAT exempt sales classification PHP','VAT registration snapshot','Tax snapshot status'],
+      ...paidSalesOrders.map((order) => [order.orderNumber, order.createdAt, order.status, order.paymentStatus, order.total, getRecordedReportDiscountTotal(order), getRecordedTaxSnapshotValue(order, order.taxNetSales), order.taxVatRegistered ? getRecordedTaxSnapshotValue(order, order.taxVatableSales) : '', order.taxVatRegistered ? getRecordedTaxSnapshotValue(order, order.taxVatAmount) : '', order.taxVatRegistered ? getRecordedTaxSnapshotValue(order, order.taxVatExemptSales) : '', order.taxVatRegistered ? getRecordedTaxSnapshotValue(order, order.taxZeroRatedSales) : '', getRecordedNonVatSalesValue(order, order.taxPercentageTaxableSales), getRecordedNonVatSalesValue(order, order.taxNonVatExemptSales), hasMissingTaxSnapshot(order) ? 'Unverified' : order.taxVatRegistered ? 'Yes' : 'No', getTaxSnapshotStatus(order)]),
       [],
       ['Paid sales orders in period', paidSalesOrders.length],
       ['Other order records not included in paid-sales total', rangeOrders.length - paidSalesOrders.length],
       ['Paid sales total PHP', totalSales],
       ['Paid sales orders missing tax snapshots', ordersMissingTaxSnapshots.length],
       ['Recorded net sales total PHP', taxSnapshotComplete ? taxSales : 'INCOMPLETE — one or more included paid sales lack tax snapshots'],
-      ['Recorded VAT total PHP', taxSnapshotComplete ? outputVat : 'INCOMPLETE — one or more included paid sales lack tax snapshots'],
-      ['Recorded zero-rated sales total PHP', taxSnapshotComplete ? zeroRatedSales : 'INCOMPLETE — zero-rated amount or item classification is missing for one or more included paid sales'],
+      ['Recorded VAT total PHP', taxSettings?.tax_vat_registered === false ? 'Not applicable — non-VAT configuration' : taxSnapshotComplete ? outputVat : 'INCOMPLETE — one or more included paid sales lack tax snapshots'],
+      ['Recorded zero-rated sales total PHP', taxSettings?.tax_vat_registered === false ? 'Not applicable — non-VAT sales classification is reported separately' : taxSnapshotComplete ? zeroRatedSales : 'INCOMPLETE — zero-rated amount or item classification is missing for one or more included paid sales'],
+      ['Non-VAT percentage-taxable sales classification PHP', taxSettings?.tax_vat_registered ? 'Not applicable — VAT-registered configuration' : nonVatSalesBreakdownComplete ? percentageTaxableSales : 'INCOMPLETE — require a verified non-VAT tax basis and complete supported snapshots'],
+      ['Non-VAT exempt sales classification PHP', taxSettings?.tax_vat_registered ? 'Not applicable — VAT-registered configuration' : nonVatSalesBreakdownComplete ? nonVatExemptSales : 'INCOMPLETE — require a verified non-VAT tax basis and complete supported snapshots'],
+      ['Non-VAT note','These are sales classifications only; no percentage-tax liability has been calculated.'],
     ]);
   }
 
@@ -776,7 +784,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
                   <strong>{ordersMissingTaxSnapshots.length}</strong>
                 </div>
               </div>
-              {!taxSettings.tax_vat_registered && <p className="business-reports-error" role="alert">The restaurant is currently configured as non-VAT, so the stored VAT rate is not used to calculate VAT. The current server calculator deliberately supports only VAT-registered, VAT-inclusive transactions without discounts. Non-VAT sales must remain under review until the applicable taxpayer/tax treatment is confirmed and a reviewed non-VAT calculation path is implemented. Do not change this setting merely to force a calculation.</p>}
+              {!taxSettings.tax_vat_registered && <p className="business-reports-error" role="alert">The restaurant is configured as non-VAT, so the stored VAT rate is not used to calculate VAT. A separate non-VAT sales-classification path is available only after a privileged reviewer verifies the taxpayer's documented tax basis and each order passes its line-classification and total checks; discounts and delivery-fee orders remain under review. These fields do not calculate percentage-tax liability. Do not change the registration setting merely to force a calculation.</p>}
               {taxSettings.tax_vat_registered && !taxSettings.tax_prices_vat_inclusive && <p className="business-reports-error" role="alert">The current server calculator supports VAT-inclusive prices only. VAT-exclusive pricing remains under review until a separate reviewed calculation path is implemented.</p>}
             </>}
             {birReadinessError && <p className="business-reports-error" role="alert">BIR readiness checklist could not be loaded: {birReadinessError}</p>}
