@@ -10,6 +10,8 @@ export type RestaurantCategory = {
   updatedAt: string;
 };
 
+export type ProductTaxCategory = 'standard_rate' | 'vat_exempt' | 'zero_rated';
+
 export type RestaurantProduct = {
   id: string;
   restaurantId: string;
@@ -18,6 +20,8 @@ export type RestaurantProduct = {
   slug: string;
   description: string;
   price: number;
+  /** NULL/undefined means tax treatment has not been reviewed. */
+  taxCategory?: ProductTaxCategory | null;
   imageUrl?: string;
   sortOrder: number;
   isAvailable: boolean;
