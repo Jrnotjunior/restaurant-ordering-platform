@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { createProduct, deleteProduct, getMenu, getOrCreateCategory, saveProductImage, setProductAvailability, setProductTaxCategory, updateProduct, uploadProductImage } from '../modules/products/productService';
-import type { RestaurantCategory, RestaurantProduct } from '../types/menu';
+import type { ProductTaxCategory, RestaurantCategory, RestaurantProduct } from '../types/menu';
 import { useOwnerUnsavedChanges } from '../contexts/OwnerUnsavedChangesContext';
 import { useOwnerUnsavedChangesTracking } from '../hooks/useOwnerUnsavedChangesTracking';
 
@@ -137,7 +137,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
 
       if (isAddingProduct) {
         const productId = await createProduct({ restaurantId, name, description, price, categoryId });
-        await setProductTaxCategory(productId, form.taxCategory ? form.taxCategory as 'standard_rate' | 'vat_exempt' | 'zero_rated' : null);
+        await setProductTaxCategory(productId, form.taxCategory ? form.taxCategory as ProductTaxCategory : null);
         if (imageFile) {
           const imageUrl = await uploadProductImage(restaurantId, productId, imageFile);
           await saveProductImage(productId, imageUrl);
