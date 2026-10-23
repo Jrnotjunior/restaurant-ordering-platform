@@ -3,6 +3,7 @@ import { getMenu, subscribeToCashierMenuChanges } from '../modules/products/prod
 import { createOrder } from '../modules/ordering/orderService';
 import { applyPosGroupDiscounts, confirmPosCashPayment, getCurrentCashierName, getRestaurantTaxSettings, type PosDiscountIdType, type PosDiscountType, type RestaurantTaxSettings } from '../modules/pos/posService';
 import { allocatePosEqualGroupShares, calculatePosStatutoryDiscountPreview } from '../modules/pos/statutoryDiscountCalculations';
+import { OperationalCustomerReceipt } from '../components/OperationalCustomerReceipt';
 import type { RestaurantProduct } from '../types/menu';
 import { MapboxDeliveryLocationPicker, type MapboxDeliveryAddress } from '../components/MapboxDeliveryLocationPicker';
 import { calculateDeliveryRoute, type DeliveryRouteQuote } from '../modules/location/locationService';
@@ -755,87 +756,47 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             <div className="pos-receipt-center">Prepare this order.</div>
           </div>
 
-          <div className="restaurant-pos-print-receipt restaurant-pos-customer-receipt">
-            <div className="pos-receipt-center">
-              <div className="pos-receipt-title">CUSTOMER RECEIPT</div>
-              <div className="pos-receipt-muted">Operational receipt — not a BIR-issued invoice</div>
-              <div className="pos-receipt-order-number">{printOrder.orderNumber}</div>
-              <div className="pos-receipt-muted">{new Date(printOrder.createdAt).toLocaleString()}</div>
-            </div>
-            <hr className="pos-receipt-divider" />
-            <div className="pos-receipt-center">
-              <div className="pos-receipt-label">
-                {printOrder.orderType === 'dine_in' ? 'DINE-IN' : printOrder.orderType === 'delivery' ? 'DELIVERY' : printOrder.orderType === 'pickup' ? 'PICKUP' : 'TAKE-OUT'}
-              </div>
-              <div>Cash • Paid</div>
-            </div>
-            <hr className="pos-receipt-divider" />
-            <div>
-              <div className="pos-receipt-label">Customer</div>
-              <div>{printOrder.customerName}</div>
-              {printOrder.orderType === 'delivery' && <>
-                <div>{printOrder.mobileNumber}</div>
-                <div>{printOrder.deliveryAddress}</div>
-              </>}
-            </div>
-            <div className="pos-receipt-row"><span>Cashier</span><span>{printOrder.cashierName}</span></div>
-            <hr className="pos-receipt-divider" />
-            {printOrder.notes && (
-              <>
-                <div className="pos-receipt-label">Special instructions</div>
-                <div>{printOrder.notes}</div>
-                <hr className="pos-receipt-divider" />
-              </>
-            )}
-            <div>
-              {printOrder.items.map((item) => (
-                <div className="pos-receipt-row" key={item.product.id}>
-                  <span>{item.quantity} × {item.product.name}</span>
-                  <span>₱{(item.product.price * item.quantity).toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-            <hr className="pos-receipt-divider" />
-            {printOrder.financials.grossSales > 0 && printOrder.showTaxBreakdown ? (
-              <>
-                <div className="pos-receipt-row"><span>Gross sales</span><span>₱{printOrder.financials.grossSales.toFixed(2)}</span></div>
-                <div className="pos-receipt-row"><span>VATable sales</span><span>₱{printOrder.financials.vatableSales.toFixed(2)}</span></div>
-                {printOrder.financials.vatAmount > 0 && <div className="pos-receipt-row"><span>VAT {printOrder.vatRate.toFixed(2)}%</span><span>₱{printOrder.financials.vatAmount.toFixed(2)}</span></div>}
-                {printOrder.financials.vatExemptSales > 0 && <div className="pos-receipt-row"><span>VAT-exempt sales</span><span>₱{printOrder.financials.vatExemptSales.toFixed(2)}</span></div>}
-              </>
-            ) : (
-              <div className="pos-receipt-row"><span>Subtotal</span><span>₱{printOrder.financials.grossSales.toFixed(2)}</span></div>
-            )}
-            {printOrder.financials.discountAmount > 0 && <div className="pos-receipt-row"><span>SC/PWD discount</span><span>-₱{printOrder.financials.discountAmount.toFixed(2)}</span></div>}
-            {printOrder.financials.loyaltyDiscountAmount > 0 && <div className="pos-receipt-row"><span>Loyalty Discount</span><span>-₱{printOrder.financials.loyaltyDiscountAmount.toFixed(2)}</span></div>}
-            {printOrder.deliveryFee > 0 && <div className="pos-receipt-row"><span>Delivery fee</span><span>₱{printOrder.deliveryFee.toFixed(2)}</span></div>}
-            <div className="pos-receipt-row pos-receipt-total">
-              <span>TOTAL</span>
-              <span>₱{printOrder.financials.total.toFixed(2)}</span>
-            </div>
-            <div className="pos-receipt-row"><span>Cash received</span><span>₱{printOrder.cashReceived.toFixed(2)}</span></div>
-            <div className="pos-receipt-row"><span>Change</span><span>₱{printOrder.change.toFixed(2)}</span></div>
-            {printOrder.beneficiaries.length > 0 && (
-              <>
-                <hr className="pos-receipt-divider" />
-                <div className="pos-receipt-label">SC/PWD DETAILS</div>
-                {printOrder.beneficiaries.map((beneficiary, index) => (
-                  <div key={index} className="pos-receipt-discount-detail">
-                    <div>{beneficiary.discountType.toUpperCase()} BENEFICIARY: {beneficiary.beneficiaryName}</div>
-                    <div>Address: {beneficiary.beneficiaryAddress}</div>
-                    {beneficiary.beneficiaryTin.trim() && <div>TIN: {beneficiary.beneficiaryTin}</div>}
-                    <div>{beneficiary.idType.replaceAll('_', ' ').toUpperCase()}: {beneficiary.idNumber}</div>
-                    <div>Group size: {printOrder.customerCount} {printOrder.customerCount === 1 ? 'customer' : 'customers'}</div>
-                    <div>Personal food share: ₱{beneficiary.eligibleGrossAmount.toFixed(2)}</div>
-                    <div>Eligible net amount: ₱{beneficiary.eligibleAmount.toFixed(2)} · Discount: ₱{beneficiary.discountAmount.toFixed(2)}</div>
-                  </div>
-                ))}
-                <div className="pos-receipt-signature">Customer signature: ____________________</div>
-              </>
-            )}
-            <hr className="pos-receipt-divider" />
-            <div className="pos-receipt-center">Thank you for your order!</div>
-          </div>
+          <OperationalCustomerReceipt
+            orderNumber={printOrder.orderNumber}
+            createdAt={printOrder.createdAt}
+            orderType={printOrder.orderType}
+            paymentLabel="Cash • Paid"
+            customerName={printOrder.customerName}
+            mobileNumber={printOrder.mobileNumber}
+            deliveryAddress={printOrder.deliveryAddress}
+            cashierName={printOrder.cashierName}
+            notes={printOrder.notes}
+            items={printOrder.items.map((item) => ({
+              id: item.product.id,
+              name: item.product.name,
+              quantity: item.quantity,
+              lineTotal: item.product.price * item.quantity,
+            }))}
+            grossSales={printOrder.financials.grossSales}
+            showTaxBreakdown={printOrder.showTaxBreakdown}
+            vatableSales={printOrder.financials.vatableSales}
+            vatAmount={printOrder.financials.vatAmount}
+            vatExemptSales={printOrder.financials.vatExemptSales}
+            vatRate={printOrder.vatRate}
+            discountAmount={printOrder.financials.discountAmount}
+            loyaltyDiscountAmount={printOrder.financials.loyaltyDiscountAmount}
+            deliveryFee={printOrder.deliveryFee}
+            total={printOrder.financials.total}
+            cashReceived={printOrder.cashReceived}
+            change={printOrder.change}
+            beneficiaries={printOrder.beneficiaries.map((beneficiary) => ({
+              discountType: beneficiary.discountType,
+              idType: beneficiary.idType,
+              idNumber: beneficiary.idNumber,
+              beneficiaryName: beneficiary.beneficiaryName,
+              beneficiaryAddress: beneficiary.beneficiaryAddress,
+              beneficiaryTin: beneficiary.beneficiaryTin,
+              groupSize: printOrder.customerCount,
+              eligibleGrossAmount: beneficiary.eligibleGrossAmount,
+              eligibleAmount: beneficiary.eligibleAmount,
+              discountAmount: beneficiary.discountAmount,
+            }))}
+          />
         </div>
       )}
     </section>
