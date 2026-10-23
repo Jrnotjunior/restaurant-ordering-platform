@@ -11,6 +11,8 @@ type RawOrderItem = {
   unit_price?: number | string;
   lineTotal?: number | string;
   line_total?: number | string;
+  taxCategory?: 'standard_rate' | 'vat_exempt' | 'zero_rated' | null;
+  tax_category_snapshot?: 'standard_rate' | 'vat_exempt' | 'zero_rated' | null;
 };
 
 type Row = {
