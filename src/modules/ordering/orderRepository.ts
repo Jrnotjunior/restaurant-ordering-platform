@@ -444,7 +444,7 @@ type Row = {
   loyalty_discount_amount?: number | string | null;
   discount_beneficiary_count?: number | null;
   discount_group_size?: number | null;
-  discount_beneficiaries?: { discountType?: string; discount_type?: string; idType?: string; discount_id_type?: string; idNumber?: string; discount_id_number?: string; eligibleAmount?: number | string; eligible_amount?: number | string; discountAmount?: number | string; discount_amount?: number | string }[] | null;
+  discount_beneficiaries?: { discountType?: string; discount_type?: string; idType?: string; discount_id_type?: string; idNumber?: string; discount_id_number?: string; beneficiaryName?: string | null; beneficiary_name?: string | null; beneficiaryTin?: string | null; beneficiary_tin?: string | null; beneficiaryAddress?: string | null; beneficiary_address?: string | null; eligibleAmount?: number | string; eligible_amount?: number | string; discountAmount?: number | string; discount_amount?: number | string }[] | null;
 };
 
 export async function getRestaurantOrders(restaurantId: string): Promise<RestaurantOrder[]> {
@@ -483,6 +483,9 @@ export async function getRestaurantOrders(restaurantId: string): Promise<Restaur
       discountType: (item.discountType ?? item.discount_type ?? 'senior') as PosDiscountType,
       idType: item.idType ?? item.discount_id_type ?? '',
       idNumber: item.idNumber ?? item.discount_id_number ?? '',
+      beneficiaryName: item.beneficiaryName ?? item.beneficiary_name ?? null,
+      beneficiaryTin: item.beneficiaryTin ?? item.beneficiary_tin ?? null,
+      beneficiaryAddress: item.beneficiaryAddress ?? item.beneficiary_address ?? null,
       eligibleAmount: Number(item.eligibleAmount ?? item.eligible_amount ?? 0),
       discountAmount: Number(item.discountAmount ?? item.discount_amount ?? 0),
     })),
