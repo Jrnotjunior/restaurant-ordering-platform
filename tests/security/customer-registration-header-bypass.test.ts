@@ -18,22 +18,7 @@ describe('customer registration tenant authorization', () => {
     expect(migration).toContain('if auth.uid() is null');
     expect(migration).toContain('where r.id = p_restaurant_id');
     expect(migration).toContain('and r.is_active = true');
-    expect(migration).toContain("v_phone !~ '^09[0-9]{9}
-  });
-
-  it('uses the split-name profile schema and creates the loyalty account', () => {
-    expect(migration).toContain('first_name');
-    expect(migration).toContain('last_name');
-    expect(migration).toContain('insert into public.customer_loyalty_accounts');
-    expect(migration).toContain('on conflict (customer_id) do nothing');
-  });
-
-  it('keeps the RPC available only to authenticated users', () => {
-    expect(migration).toContain('from public, anon');
-    expect(migration).toContain('to authenticated');
-  });
-});
-");
+    expect(migration).toContain("v_phone !~ '^09[0-9]{9}$'");
   });
 
   it('uses the split-name profile schema and creates the loyalty account', () => {
