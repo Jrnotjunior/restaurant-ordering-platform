@@ -45,6 +45,7 @@ export type PosDiscountBeneficiary = {
   beneficiaryAddress: string;
   eligibleAmount: number;
   discountAmount: number;
+  eligibleLines: { productId: string; eligibleAmount: number }[];
 };
 
 export async function applyPosGroupDiscounts(
@@ -73,6 +74,12 @@ export async function applyPosGroupDiscounts(
       beneficiary_name: beneficiary.beneficiaryName.trim(),
       beneficiary_tin: beneficiary.beneficiaryTin.trim() || null,
       beneficiary_address: beneficiary.beneficiaryAddress.trim(),
+      eligible_lines: beneficiary.eligibleLines
+        .filter((line) => Number.isFinite(line.eligibleAmount) && line.eligibleAmount > 0)
+        .map((line) => ({
+          product_id: line.productId,
+          eligible_amount: Number(line.eligibleAmount.toFixed(2)),
+        })),
     })),
   });
 
@@ -82,6 +89,29 @@ export async function applyPosGroupDiscounts(
   const discountAmount = Number(row.discount_amount);
   const beneficiaryCount = Number(row.beneficiary_count);
   const groupSizeResult = Number(row.group_size);
+  let beneficiaryBreakdown: { idNumber: string; eligibleAmount: number; discountAmount: number }[] = [];
+
+  // The server is authoritative for each beneficiary's VAT-exclusive eligible
+  // amount and rounded discount. This read is optional for workflow completion;
+  // the persisted allocation remains available for later reconciliation.
+  if (supabase && beneficiaryCount > 0) {
+    try {
+      const { data } = await supabase
+        .from('order_discount_beneficiaries')
+        .select('discount_id_number,eligible_amount,discount_amount')
+        .eq('order_id', orderId)
+        .order('created_at', { ascending: true });
+      if (data) {
+        beneficiaryBreakdown = data.map((item) => ({
+          idNumber: String(item.discount_id_number ?? ''),
+          eligibleAmount: Number(item.eligible_amount ?? 0),
+          discountAmount: Number(item.discount_amount ?? 0),
+        }));
+      }
+    } catch {
+      // Do not turn a successfully applied discount into a failed payment flow.
+    }
+  }
 
   return {
     orderId: row.order_id,
@@ -94,7 +124,7 @@ export async function applyPosGroupDiscounts(
     vatExemptSales: Number(row.vat_exempt_sales),
     netSales: Number(row.net_sales),
     total: Number(row.total),
-    eligibleShare: beneficiaryCount > 0 ? Number(((discountAmount / 0.20) / beneficiaryCount).toFixed(2)) : 0,
+    beneficiaryBreakdown,
   };
 }
 
