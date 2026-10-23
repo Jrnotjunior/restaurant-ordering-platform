@@ -4,6 +4,7 @@ import {
   getRecordedTaxSnapshotValue,
   getTaxSnapshotStatus,
   hasMissingTaxSnapshot,
+  isIncludedInPaidSalesRollup,
 } from './reportCalculations';
 
 describe('getRecordedReportDiscountTotal', () => {
@@ -115,5 +116,28 @@ describe('tax snapshot reporting safeguards', () => {
     expect(hasMissingTaxSnapshot(order)).toBe(true);
     expect(getTaxSnapshotStatus(order)).toBe('Beneficiary details incomplete');
     expect(getRecordedTaxSnapshotValue(order, 12)).toBe('');
+  });
+});
+
+
+describe('paid-sales rollup eligibility', () => {
+  it('includes a paid POS order while it is still preparing', () => {
+    expect(isIncludedInPaidSalesRollup({ paymentStatus: 'paid', status: 'preparing' })).toBe(true);
+  });
+
+  it('includes a paid order after workflow completion', () => {
+    expect(isIncludedInPaidSalesRollup({ paymentStatus: 'paid', status: 'completed' })).toBe(true);
+  });
+
+  it('excludes an order whose payment is still pending', () => {
+    expect(isIncludedInPaidSalesRollup({ paymentStatus: 'pending', status: 'preparing' })).toBe(false);
+  });
+
+  it('excludes a cancelled order even if the payment state still says paid', () => {
+    expect(isIncludedInPaidSalesRollup({ paymentStatus: 'paid', status: 'cancelled' })).toBe(false);
+  });
+
+  it('excludes a refunded payment', () => {
+    expect(isIncludedInPaidSalesRollup({ paymentStatus: 'refunded', status: 'completed' })).toBe(false);
   });
 });
