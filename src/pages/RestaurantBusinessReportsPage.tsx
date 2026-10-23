@@ -414,19 +414,24 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
       order.orderNumber,
       order.createdAt,
       beneficiary.discountType.toUpperCase(),
+      beneficiary.beneficiaryName ?? '',
+      beneficiary.beneficiaryAddress ?? '',
+      beneficiary.beneficiaryTin ?? '',
       beneficiary.idType,
+      beneficiary.idNumber,
       order.discountGroupSize,
       beneficiary.eligibleAmount,
       beneficiary.discountAmount,
+      beneficiary.beneficiaryName?.trim() && beneficiary.beneficiaryAddress?.trim() ? 'Recorded' : 'INCOMPLETE — name/address missing',
     ]));
     downloadSpreadsheet(`statutory-discount-support-${fromDate}-to-${toDate}.xlsx`, [
       ['Senior Citizen / PWD discount support — NOT an official BIR Sales Book',''],
       ['Period start', fromDate],
       ['Period end', toDate],
       ['Exported at', new Date().toISOString()],
-      ['Important limitation','This support export is incomplete for statutory BIR reporting. The application does not yet hold all required beneficiary identity fields and the applicable approved report format. ID numbers are intentionally omitted from this support export; reconcile against the lawful source records and accountant-approved report requirements.'],
+      ['Important limitation','This is a restricted reconciliation aid, not an official BIR Sales Book. It includes the beneficiary identity details currently recorded (name, address, TIN if given, and ID number) so authorized restaurant staff can reconcile source records. Historical rows missing name/address remain marked incomplete and are not backfilled. Store this file securely and follow applicable privacy rules. The prescribed BIR report format and route approval are not yet implemented.'],
       [],
-      ['Order number','Transaction date','Discount type','Recorded ID document type','Group size','Recorded eligible share PHP','Recorded discount PHP'],
+      ['Order number','Transaction date','Discount type','Beneficiary name','Beneficiary address','Beneficiary TIN (if recorded)','Recorded ID document type','Recorded ID number','Group size','Recorded eligible share PHP','Recorded discount PHP','Beneficiary details status'],
       ...rows,
     ]);
   }
