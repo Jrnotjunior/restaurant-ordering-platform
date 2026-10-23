@@ -1,6 +1,6 @@
 import { supabase, supabaseRpc } from '../../services/supabaseClient';
 import type { PosDiscountType } from '../../types/discount';
-import { createGuestOrderTrackingToken, saveGuestOrderTrackingToken } from './guestOrderTrackingToken';
+import { createGuestOrderTrackingToken, hashGuestOrderTrackingToken, readGuestOrderTrackingToken, saveGuestOrderTrackingToken } from './guestOrderTrackingToken';
 
 const GUEST_CANCEL_TOKEN_STORAGE_PREFIX = 'restaurant-ordering-guest-cancel-token:';
 
@@ -317,9 +317,18 @@ export async function createOrder(input: CreateOrderInput): Promise<CreatedOrder
 }
 
 export async function getOrderStatus(orderId: string): Promise<TrackedOrder> {
-  const rows = await supabaseRpc<TrackedOrderRow>('get_order_status_by_id', {
-    p_order_id: orderId,
-  });
+  // Prefer capability-based access for guest orders created by the updated
+  // checkout. Keep the UUID RPC temporarily for older orders and interrupted
+  // token-storage cases until migration and recovery flows are fully validated.
+  const guestTrackingToken = readGuestOrderTrackingToken(orderId);
+  const rows = guestTrackingToken
+    ? await supabaseRpc<TrackedOrderRow>('get_guest_order_status_by_tracking_token', {
+        p_order_id: orderId,
+        p_guest_tracking_token_hash: await hashGuestOrderTrackingToken(guestTrackingToken),
+      })
+    : await supabaseRpc<TrackedOrderRow>('get_order_status_by_id', {
+        p_order_id: orderId,
+      });
 
   const row = rows[0];
   if (!row) throw new Error('Order not found. Please check the order number.');
