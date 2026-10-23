@@ -194,7 +194,14 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const priceHasIncludedVat = Boolean(taxSettings?.vatRegistered && taxSettings.pricesVatInclusive);
   const vatRate = taxSettings?.vatRegistered ? taxSettings.vatRate : 0;
   const hasUnclassifiedCartItem = cart.some((item) => !item.product.taxCategory);
-  const cartTaxBreakdownReady = cart.length > 0 && !hasUnclassifiedCartItem;
+  const hasTaxCategoryRouteMismatch = Boolean(taxSettings && cart.some((item) => {
+    const category = item.product.taxCategory;
+    if (!category) return false;
+    return taxSettings.vatRegistered
+      ? category === 'percentage_taxable' || category === 'non_vat_exempt'
+      : category === 'standard_rate' || category === 'vat_exempt' || category === 'zero_rated';
+  }));
+  const cartTaxBreakdownReady = cart.length > 0 && !hasUnclassifiedCartItem && !hasTaxCategoryRouteMismatch;
   const taxBreakdownVisible = Boolean(taxSettings?.vatRegistered && cartTaxBreakdownReady && beneficiaries.length === 0);
   const deliveryFee = orderType === 'delivery' && deliveryRouteQuote?.inRange ? deliveryRouteQuote.deliveryFee : 0;
   const taxLines = cart.map((item) => ({
@@ -244,7 +251,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
       && uniqueBeneficiaryIds
       && beneficiaries.length <= effectiveGroupSize
       && allBeneficiariesHaveEligibleLines
-      && !(taxSettings?.vatRegistered && hasUnclassifiedCartItem)
+      && !(hasTaxCategoryRouteMismatch || (taxSettings?.vatRegistered && hasUnclassifiedCartItem))
   ));
   const cashPaymentReady = cart.length > 0 && discountAllocationReady && cashReceivedAmount >= total;
 
@@ -311,9 +318,11 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   async function placeOrder() {
     if (!cart.length || saving) return;
     if (!discountAllocationReady) {
-      setError(taxSettings?.vatRegistered && hasUnclassifiedCartItem
-        ? 'Review the tax category for every product before applying an SC/PWD discount.'
-        : 'Complete each beneficiary’s details and assign eligible amounts from order lines. The combined amount assigned to any line cannot exceed that line total.');
+      setError(hasTaxCategoryRouteMismatch
+        ? 'A product tax category does not match this restaurant’s stored VAT registration. Review the category before applying an SC/PWD discount.'
+        : taxSettings?.vatRegistered && hasUnclassifiedCartItem
+          ? 'Review the tax category for every product before applying an SC/PWD discount.'
+          : 'Complete each beneficiary’s details and assign eligible amounts from order lines. The combined amount assigned to any line cannot exceed that line total.');
       return;
     }
     if (cashReceivedAmount < total) {
@@ -633,9 +642,11 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             {beneficiaries.length > 0 && !discountAllocationReady && <p className="restaurant-pos-message is-error" role="alert">
               {!groupSizeValid
                 ? 'Enter a valid whole number of customers.'
-                : taxSettings?.vatRegistered && hasUnclassifiedCartItem
-                  ? 'Review the tax category for every product before applying an SC/PWD discount.'
-                  : !beneficiaryIdentityReady
+                : hasTaxCategoryRouteMismatch
+                  ? 'A product tax category does not match this restaurant’s stored VAT registration; review the category before applying the discount.'
+                  : taxSettings?.vatRegistered && hasUnclassifiedCartItem
+                    ? 'Review the tax category for every product before applying an SC/PWD discount.'
+                    : !beneficiaryIdentityReady
                     ? 'Enter every beneficiary’s full name, address, and ID number.'
                     : !uniqueBeneficiaryIds
                       ? 'Each beneficiary must use a different ID number for this order.'
