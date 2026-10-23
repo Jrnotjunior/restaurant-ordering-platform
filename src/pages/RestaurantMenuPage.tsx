@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { createProduct, deleteProduct, getMenu, getOrCreateCategory, saveProductImage, setProductAvailability, setProductTaxCategory, updateProduct, uploadProductImage } from '../modules/products/productService';
 import type { ProductTaxCategory, RestaurantCategory, RestaurantProduct } from '../types/menu';
+import { supabase } from '../services/supabaseClient';
 import { useOwnerUnsavedChanges } from '../contexts/OwnerUnsavedChangesContext';
 import { useOwnerUnsavedChangesTracking } from '../hooks/useOwnerUnsavedChangesTracking';
 
@@ -14,6 +15,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
   const { setUnsavedChanges } = useOwnerUnsavedChanges();
   const [categories, setCategories] = useState<RestaurantCategory[]>([]);
   const [products, setProducts] = useState<RestaurantProduct[]>([]);
+  const [taxVatRegistered, setTaxVatRegistered] = useState<boolean | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showUnavailable, setShowUnavailable] = useState(true);
   const [onlyUnclassifiedTax, setOnlyUnclassifiedTax] = useState(false);
@@ -36,6 +38,17 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
       const menu = await getMenu(restaurantId, true);
       setCategories(menu.categories);
       setProducts(menu.products);
+      const { data: taxSettings, error: taxSettingsError } = await supabase
+        .from('restaurants')
+        .select('tax_vat_registered')
+        .eq('id', restaurantId)
+        .maybeSingle();
+      if (taxSettingsError || !taxSettings) {
+        setTaxVatRegistered(null);
+        setError('The restaurant tax registration setting could not be verified. Tax-category edits are disabled until it can be loaded.');
+      } else {
+        setTaxVatRegistered(taxSettings.tax_vat_registered === true);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to load products.');
     } finally {
@@ -371,13 +384,21 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
               <label>Price<input type="number" min="0" step="0.01" value={form.price} onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))} /></label>
               <label>
                 Product tax classification
-                <select value={form.taxCategory} onChange={(event) => setForm((current) => ({ ...current, taxCategory: event.target.value }))} disabled={savingForm}>
+                <select value={form.taxCategory} onChange={(event) => setForm((current) => ({ ...current, taxCategory: event.target.value }))} disabled={savingForm || taxVatRegistered === null}>
                   <option value="">Unclassified — review required</option>
-                  <option value="standard_rate">Standard-rated (VAT-registered sellers only)</option>
-                  <option value="vat_exempt">VAT-exempt (VAT-registered seller)</option>
-                  <option value="zero_rated">Zero-rated (VAT-registered seller)</option>
-                  <option value="percentage_taxable">Sales subject to percentage tax (non-VAT seller)</option>
-                  <option value="non_vat_exempt">Exempt sales (non-VAT seller)</option>
+                  {form.taxCategory && taxVatRegistered !== null && (
+                    taxVatRegistered
+                      ? !(['standard_rate', 'vat_exempt', 'zero_rated'] as string[]).includes(form.taxCategory) && <option value={form.taxCategory}>Existing non-VAT category — correction required</option>
+                      : !(['percentage_taxable', 'non_vat_exempt'] as string[]).includes(form.taxCategory) && <option value={form.taxCategory}>Existing VAT category — correction required</option>
+                  )}
+                  {taxVatRegistered === true ? <>
+                    <option value="standard_rate">Standard-rated (VAT-registered seller)</option>
+                    <option value="vat_exempt">VAT-exempt (VAT-registered seller)</option>
+                    <option value="zero_rated">Zero-rated (VAT-registered seller)</option>
+                  </> : taxVatRegistered === false ? <>
+                    <option value="percentage_taxable">Sales subject to percentage tax (non-VAT seller)</option>
+                    <option value="non_vat_exempt">Exempt sales (non-VAT seller)</option>
+                  </> : null}
                 </select>
                 <span className="restaurant-product-category-hint">Choose only from the restaurant’s documented tax treatment after accountant review. Non-VAT options require verified taxpayer tax-basis evidence; percentage-taxable sales are a sales breakdown, not an extra charge to the customer. Unclassified items remain incomplete for BIR readiness; changing this setting never rewrites past order lines.</span>
               </label>
