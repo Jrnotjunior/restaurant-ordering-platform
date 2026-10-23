@@ -1,5 +1,6 @@
 import { supabase, supabaseRpc } from '../../services/supabaseClient';
 import type { PosDiscountType } from '../../types/discount';
+import { createGuestOrderTrackingToken, hashGuestOrderTrackingToken, readGuestOrderTrackingToken, saveGuestOrderTrackingToken } from './guestOrderTrackingToken';
 
 const GUEST_CANCEL_TOKEN_STORAGE_PREFIX = 'restaurant-ordering-guest-cancel-token:';
 
@@ -249,9 +250,10 @@ type TrackedOrderRow = {
 
 export async function createOrder(input: CreateOrderInput): Promise<CreatedOrder> {
   const guestCancelToken = await createGuestOrderCancellationToken();
+  const guestTrackingToken = await createGuestOrderTrackingToken();
   const rpcName = input.orderType === 'delivery' && !input.isThirdPartyCourier
-    ? 'create_order_from_delivery_quote_with_guest_cancel_token'
-    : 'create_order_with_guest_cancel_token';
+    ? 'create_order_from_delivery_quote_with_guest_tracking_token'
+    : 'create_order_with_guest_tracking_token';
 
   const rpcParams = input.orderType === 'delivery' && !input.isThirdPartyCourier
     ? {
@@ -272,6 +274,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreatedOrder
         p_customer_delivery_place_id: input.customerDeliveryPlaceId || null,
         p_delivery_quote_id: input.deliveryQuoteId || null,
         p_guest_cancel_token_hash: guestCancelToken.tokenHash,
+        p_guest_tracking_token_hash: guestTrackingToken.tokenHash,
       }
     : {
         p_restaurant_id: input.restaurantId,
@@ -292,6 +295,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreatedOrder
         p_customer_delivery_longitude: input.customerDeliveryLongitude ?? null,
         p_customer_delivery_place_id: input.customerDeliveryPlaceId || null,
         p_guest_cancel_token_hash: guestCancelToken.tokenHash,
+        p_guest_tracking_token_hash: guestTrackingToken.tokenHash,
       };
 
   const rows = await supabaseRpc<CreatedOrderRow>(rpcName, rpcParams);
@@ -300,6 +304,8 @@ export async function createOrder(input: CreateOrderInput): Promise<CreatedOrder
   if (!row) throw new Error('The order could not be created. Please try again.');
 
   saveGuestOrderCancellationToken(row.order_id, guestCancelToken.token);
+  // Raw tracking capability stays in this browser; only its hash was sent to SQL.
+  saveGuestOrderTrackingToken(row.order_id, guestTrackingToken.token);
 
   return {
     orderId: row.order_id,
@@ -311,9 +317,30 @@ export async function createOrder(input: CreateOrderInput): Promise<CreatedOrder
 }
 
 export async function getOrderStatus(orderId: string): Promise<TrackedOrder> {
-  const rows = await supabaseRpc<TrackedOrderRow>('get_order_status_by_id', {
-    p_order_id: orderId,
-  });
+  // Guest tracking must prove possession of the high-entropy capability.
+  // Never fall back to the UUID-only RPC for signed-out visitors: the order ID
+  // is an identifier, not an authorization credential. Authenticated customers
+  // may use the legacy RPC because the database function checks ownership.
+  const guestTrackingToken = readGuestOrderTrackingToken(orderId);
+  const guestTrackingTokenHash = guestTrackingToken
+    ? await hashGuestOrderTrackingToken(guestTrackingToken)
+    : null;
+  let rows: TrackedOrderRow[];
+  if (guestTrackingToken) {
+    rows = await supabaseRpc<TrackedOrderRow>('get_guest_order_status_by_tracking_token', {
+      p_order_id: orderId,
+      p_guest_tracking_token_hash: guestTrackingTokenHash,
+    });
+  } else {
+    if (!supabase) throw new Error('This guest tracking link is missing its access token. Please reopen the original order confirmation link.');
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError || !authData.user) {
+      throw new Error('This guest tracking link is missing its access token. Please reopen the original order confirmation link.');
+    }
+    rows = await supabaseRpc<TrackedOrderRow>('get_order_status_by_id', {
+      p_order_id: orderId,
+    });
+  }
 
   const row = rows[0];
   if (!row) throw new Error('Order not found. Please check the order number.');
@@ -324,12 +351,14 @@ export async function getOrderStatus(orderId: string): Promise<TrackedOrder> {
   const cancellationRefundRows = row.status === 'cancelled' && row.payment_method === 'gcash'
     ? await supabaseRpc<{ cancellation_refund_status: string | null }>('get_order_cancellation_refund_status', {
         p_order_id: orderId,
+        p_guest_tracking_token_hash: guestTrackingTokenHash,
       }).catch(() => [])
     : [];
   const cancellationRefundStatus = cancellationRefundRows[0]?.cancellation_refund_status ?? null;
 
   const createdAtRows = await supabaseRpc<{ created_at: string | null }>('get_customer_order_created_at', {
     p_order_id: orderId,
+    p_guest_tracking_token_hash: guestTrackingTokenHash,
   }).catch(() => []);
   const createdAt = createdAtRows[0]?.created_at ?? null;
   let storeAddress = row.store_address ?? null;
@@ -536,11 +565,6 @@ export function subscribeToOrderTrackingChanges(
 
   const channel = supabase
     .channel(`customer-order:${orderId}`)
-    .on(
-      'broadcast',
-      { event: 'customer_order_changed' },
-      () => onChange(),
-    )
     .on(
       'postgres_changes',
       {
