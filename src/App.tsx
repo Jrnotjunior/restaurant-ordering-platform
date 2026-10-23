@@ -17,6 +17,7 @@ import { RestaurantRecipesPage } from './pages/RestaurantRecipesPage';
 import { RestaurantCashierPosPage } from './pages/RestaurantCashierPosPage';
 import { RestaurantDeliveryDispatchPage } from './pages/RestaurantDeliveryDispatchPage';
 import { RestaurantSettingsPage } from './pages/RestaurantSettingsPage';
+import { SystemAdminNonVatTaxReviewPage } from './pages/SystemAdminNonVatTaxReviewPage';
 import { RestaurantWebsiteCustomizationPage } from './pages/RestaurantWebsiteCustomizationPage';
 import { RestaurantLoyaltyPage } from './pages/RestaurantLoyaltyPage';
 import { RestaurantOwnerLoginPage } from './pages/RestaurantOwnerLoginPage';
@@ -313,6 +314,7 @@ function AppContent() {
     isCashierPosPage,
     isRestaurantDeliveryDispatchPage,
     isRestaurantSettingsPage,
+    isSystemAdminNonVatTaxReviewPage,
     isRestaurantWebsiteCustomizationPage,
     isRestaurantLoyaltyPage,
     isRestaurantEmployeesPage,
@@ -359,6 +361,7 @@ function AppContent() {
     return () => { cancelled = true; };
   }, [restaurant.id, route]);
 
+  if (isSystemAdminNonVatTaxReviewPage) return <SystemAdminNonVatTaxReviewPage />;
   if (isTenantInviteLandingPage) return <TenantInviteLandingPage />;
   if (isTenantInvitePage) return <TenantOnboardingPage />;
   if (isEmployeeInvitePage) return <RestaurantEmployeeInvitePage />;
