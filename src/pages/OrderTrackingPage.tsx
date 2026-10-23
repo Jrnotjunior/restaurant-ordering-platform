@@ -478,7 +478,7 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
             <p className="order-rider-message">Hi! I'm {order.riderName}, and I'll be delivering your order shortly. You can contact me if you need assistance.</p>
             <div className="order-rider-actions">
               <a className="button button-primary" href={`tel:${order.riderPhone}`}>Call Rider</a>
-              <a className="button button-secondary" href={`sms:${order.riderPhone}`}>Text Rider</a>
+              <a className="button button-primary" href={`sms:${order.riderPhone}`}>Text Rider</a>
             </div>
           </section>
         )}
