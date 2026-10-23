@@ -288,6 +288,29 @@ function AppContent() {
     addCartItem(product);
   }
 
+  const hostname = window.location.hostname.trim().toLowerCase();
+  const isTenantStorefrontHost = hostname.endsWith('.web2table.io')
+    && hostname !== 'app.web2table.io';
+  const isManagementRoute = route.startsWith('#restaurant/')
+    || route.startsWith('#rider/');
+
+  // Tenant custom domains are customer storefronts, never the management app.
+  // Block rendering immediately, then send management routes to the canonical
+  // management origin while preserving the requested hash route.
+  useEffect(() => {
+    if (!isTenantStorefrontHost || !isManagementRoute) return;
+    const destination = new URL(window.location.href);
+    destination.hostname = 'app.web2table.io';
+    destination.protocol = 'https:';
+    destination.port = '';
+    destination.hash = route;
+    window.location.replace(destination.toString());
+  }, [isTenantStorefrontHost, isManagementRoute, route]);
+
+  if (isTenantStorefrontHost && isManagementRoute) {
+    return <main className="restaurant-owner-auth-page"><section className="restaurant-owner-auth-card" role="status"><h1>Opening Web2Table management</h1><p>Restaurant management is available on app.web2table.io. Redirecting you securely…</p></section></main>;
+  }
+
   const routeContext = resolveAppRoute(window.location, route);
   const {
     isMenuPage,
