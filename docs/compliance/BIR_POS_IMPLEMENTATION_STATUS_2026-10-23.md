@@ -23,6 +23,15 @@
 - Sensitive customer names, phone numbers, delivery addresses, and statutory discount ID numbers are not copied into the journal snapshots.
 - Added an **Activity Journal** tab and spreadsheet export in Business Reports. The UI explicitly describes the journal as technical audit evidence, not a BIR-approved e-Journal.
 
+### Tenant taxpayer profile and System Admin review workflow
+
+- Added a restricted `restaurant_taxpayer_profiles` table with registered legal name, trade name, TIN, registered address, branch code where applicable, taxpayer category, profile/review status, route choice, and fields for checked accreditation/PTU/Permit to Transmit references.
+- The table has RLS enabled and direct table grants revoked from `anon` and `authenticated`. Owner/System Admin access uses explicit authorization-checked RPCs.
+- Added Store Settings → Tax & receipts form for the owner to save a draft or submit the profile for platform review.
+- Added a System Admin review panel to the restaurant’s Settings page with a profile-status workflow, regulatory-route selector, permit/accreditation reference fields, approved software version, and review note.
+- The status “Reviewed” means platform review only. It does not itself certify or authorize BIR invoice issuance; actual route-specific proof must be verified from official documents.
+- These fields capture prerequisite evidence; the platform does not yet issue an official invoice from this profile.
+
 ### Database rollout and smoke test
 
 - The additive migration `20261023153000_bir_pos_journal_and_tax_status.sql` was applied to the Restaurant Ordering Platform Supabase project and the isolated Security Test project.
@@ -35,7 +44,7 @@
 
 1. **Regulatory route is not yet confirmed.** Obtain written guidance from BIR and a Philippine tax professional on whether Web2Table should pursue Sales Machine/Software supplier accreditation and tenant PTUs, ESP accreditation, both, or another approved route. Do not implement BIR transmission against an assumed API/schema.
 2. **No authorized invoice issuance ledger or running invoice serial has been enabled.** The existing `ORD-` order number remains an order identifier; it must not be relabelled as an invoice number. RMO No. 24-2023 specifies a minimum six-digit running serial for the applicable Sales Machine/Software route. The approved serial policy and tenant/branch allocation must be established before issuance is turned on.
-3. **No verified seller-taxpayer profile/onboarding flow yet.** The platform needs a controlled profile for registered legal name, TIN, registered address, branch code where applicable, taxpayer category, verification, and route/version/permit references. These details must be taken from valid official registration records and reviewed by the tenant/tax professional.
+3. **Taxpayer-profile capture/review is now present, but route evidence remains unverified.** The owner form and System Admin review panel exist. Details must still be checked against official registration records, and no profile state itself represents BIR approval.
 4. **Tax calculation is not yet tax-professional-approved across every channel.** Online payment finalization still needs a single approved calculation/finalization path. Statutory discounts, loyalty/promotional discounts, VAT-inclusive/exclusive prices, VAT-exempt and zero-rated cases, delivery fee treatment, rounding, refunds and adjustments require agreed truth tables and regression fixtures before tax snapshots can be called authoritative.
 5. **The statutory invoice template is not implemented.** Current POS printouts remain operational receipts. Required seller/buyer information, exact labels/fields, conditional creditable-withholding-tax data, reprint handling and required statements must be mapped to the current applicable issuance and approved route.
 6. **Required readings and backend reports are not implemented as approved fiscal artifacts.** RMO No. 24-2023 describes X/Z or equivalent readings for applicable routes, including sales/discount/refund/return/cancel/void detail and accumulated grand totals. It also describes backend summaries separating VATable, VAT-exempt and zero-rated sales and other reports. The subscription-software exception for e-Journal/X-Z applies only under its stated condition that the system transmits sales data to the BIR; do not assume it applies here.
