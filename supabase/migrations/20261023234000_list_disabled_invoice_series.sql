@@ -14,6 +14,7 @@ declare
   v_issued_document_count bigint := 0;
   v_unclassified_product_count bigint := 0;
   v_tax_review_order_count bigint := 0;
+  v_serial_series jsonb := '[]'::jsonb;
   v_profile_identity_complete boolean := false;
   v_route_evidence_recorded boolean := false;
   v_blockers jsonb := '[]'::jsonb;
