@@ -140,6 +140,58 @@
 .order-dine-in-number-card p:last-child{margin:0;color:var(--color-muted);font-size:.9rem;line-height:1.5}
 
 
+/* Keep the self-order tracking page focused; expand the receipt only when needed. */
+.order-customer-receipt-disclosure {
+  margin: 1.25rem 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  color: var(--color-text);
+  overflow: hidden;
+}
+.order-customer-receipt-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .8rem;
+  padding: 1rem;
+  list-style: none;
+  cursor: pointer;
+}
+.order-customer-receipt-summary::-webkit-details-marker {
+  display: none;
+}
+.order-customer-receipt-summary > span:first-child {
+  display: grid;
+  gap: .2rem;
+}
+.order-customer-receipt-summary strong {
+  font-size: .95rem;
+}
+.order-customer-receipt-summary small {
+  color: var(--color-text);
+  font-size: .8rem;
+}
+.order-customer-receipt-summary-action {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  white-space: nowrap;
+  font-size: .82rem;
+}
+.order-customer-receipt-summary-action > span {
+  font-size: 1rem;
+  transition: transform .18s ease;
+}
+.order-customer-receipt-disclosure[open] .order-customer-receipt-summary-action > span {
+  transform: rotate(180deg);
+}
+.order-customer-receipt-disclosure[open] > .order-customer-receipt {
+  margin-top: 0;
+  border-width: 1px 0 0;
+  border-radius: 0;
+}
+
 /* Customer receipt shown on order tracking and isolated for printing. */
 .order-customer-receipt {
   display: grid;
@@ -233,6 +285,18 @@
 }
 @media print {
   @page { margin: 6mm; }
+  .order-customer-receipt-disclosure {
+    display: block !important;
+    margin: 0 !important;
+    border: 0 !important;
+    overflow: visible !important;
+  }
+  .order-customer-receipt-disclosure > .order-customer-receipt-summary {
+    display: none !important;
+  }
+  .order-customer-receipt-disclosure > .order-customer-receipt {
+    display: grid !important;
+  }
   body * {
     visibility: hidden !important;
   }
