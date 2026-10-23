@@ -29,6 +29,14 @@ describe('loyalty redemption during pending payment creation', () => {
     expect(migration).toContain(') to anon, authenticated;');
   });
 
+  it('preserves the payment reference entropy and current checkout order types', () => {
+    expect(migration).toContain('set search_path = public, pg_temp');
+    expect(migration).toContain("where r.id = p_restaurant_id");
+    expect(migration).toContain('and r.is_active = true');
+    expect(migration).toContain("('delivery', 'take_out', 'pickup', 'dine_in')");
+    expect(migration).toContain("upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 32))");
+  });
+
   it('preserves server-side product pricing and pending payment creation', () => {
     expect(migration).toContain('and p.restaurant_id = p_restaurant_id');
     expect(migration).toContain('and p.is_available = true');
