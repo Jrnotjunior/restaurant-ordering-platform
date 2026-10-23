@@ -188,8 +188,12 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
       // This RPC confirms payment and persists status='preparing' atomically.
       // Do not call updateOrderStatus again: the database transition has already happened.
       await confirmPosCashPayment(order.orderId);
-      setOrders((current) => current.map((item) => item.orderId === order.orderId ? { ...item, paymentStatus: 'paid', status: 'preparing' } : item));
-      setSelectedOrder(null); setOpenColumn(null);
+      const paidOrder = { ...order, paymentStatus: 'paid' as const, status: 'preparing' as RestaurantOrderStatus };
+      setOrders((current) => current.map((item) => item.orderId === order.orderId ? paidOrder : item));
+      // Keep the updated paid order in the print view so both kitchen and customer
+      // receipts show the confirmed cash status and the same order totals.
+      setSelectedOrder(paidOrder);
+      window.setTimeout(() => window.print(), 100);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to confirm cash payment.');
     } finally { setUpdating(null); }
