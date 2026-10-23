@@ -576,7 +576,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
           <p className="website-customization-upload-description">Choose the logo customers see on your restaurant website.</p>
           <div className="website-customization-branding-grid">
             <div>
-              <div className="website-customization-logo-row website-customization-upload-row">
+              <div className="website-customization-logo-row website-customization-upload-row" style={{ minHeight: 0, padding: '8px 10px' }}>
                 <div className="website-customization-logo-preview website-customization-restaurant-logo-preview">{logoUrl ? <img src={logoUrl} alt="Restaurant logo" /> : <span>No logo</span>}</div>
                 <label className="button button-secondary website-customization-logo-button restaurant-compact-action">
                   {logoUploading ? 'Uploading…' : 'Choose logo'}
