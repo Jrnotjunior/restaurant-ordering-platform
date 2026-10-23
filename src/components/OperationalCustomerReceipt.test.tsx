@@ -1,0 +1,79 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { describe, expect, it } from 'vitest';
+import { OperationalCustomerReceipt, type OperationalCustomerReceiptProps } from './OperationalCustomerReceipt';
+
+const baseReceipt: OperationalCustomerReceiptProps = {
+  orderNumber: 'ORD-000020',
+  createdAt: '2026-10-24T05:42:25.000Z',
+  orderType: 'delivery',
+  paymentLabel: 'Cash • Paid',
+  customerName: 'Test Customer',
+  items: [
+    { id: 'a', name: 'Beef Bulgogi Rice Bowl', quantity: 1, lineTotal: 180 },
+    { id: 'b', name: 'Chicken Teriyaki Rice Bowl', quantity: 1, lineTotal: 160 },
+    { id: 'c', name: 'Chicken Cordon Bleu Rice Bowl', quantity: 1, lineTotal: 150 },
+  ],
+  grossSales: 490,
+  showTaxBreakdown: false,
+  vatableSales: 0,
+  vatAmount: 0,
+  vatExemptSales: 0,
+  vatRate: 12,
+  discountAmount: 0,
+  loyaltyDiscountAmount: 0,
+  deliveryFee: 70,
+  total: 560,
+};
+
+describe('OperationalCustomerReceipt', () => {
+  it('renders the shared receipt header, order, payment, item totals and delivery fee', () => {
+    const html = renderToStaticMarkup(<OperationalCustomerReceipt {...baseReceipt} />);
+
+    expect(html).toContain('CUSTOMER RECEIPT');
+    expect(html).toContain('Operational receipt — not a BIR-issued invoice');
+    expect(html).toContain('ORD-000020');
+    expect(html).toContain('Cash • Paid');
+    expect(html).toContain('Beef Bulgogi Rice Bowl');
+    expect(html).toContain('Delivery fee');
+    expect(html).toContain('₱70.00');
+    expect(html).toContain('₱560.00');
+  });
+
+  it('shows a statutory discount even when the operational tax breakdown is unavailable', () => {
+    const html = renderToStaticMarkup(<OperationalCustomerReceipt
+      {...baseReceipt}
+      grossSales={620}
+      discountAmount={41.34}
+      deliveryFee={0}
+      total={578.66}
+      beneficiaries={[{
+        discountType: 'pwd',
+        idType: 'pwd_id',
+        idNumber: '135626',
+        beneficiaryName: 'Test Customer',
+        groupSize: 3,
+        eligibleGrossAmount: 206.66,
+        eligibleAmount: 206.66,
+        discountAmount: 41.34,
+      }]}
+    />);
+
+    expect(html).toContain('SC/PWD discount');
+    expect(html).toContain('-₱41.34');
+    expect(html).toContain('PWD BENEFICIARY: Test Customer');
+    expect(html).toContain('Group size: 3 customers');
+    expect(html).toContain('Personal food share: ₱206.66');
+  });
+
+  it('is the single customer receipt template used by both POS and staff order handoff', () => {
+    const posSource = readFileSync(fileURLToPath(new URL('../pages/RestaurantCashierPosPage.tsx', import.meta.url)), 'utf8');
+    const staffOrdersSource = readFileSync(fileURLToPath(new URL('../pages/RestaurantOrdersPage.tsx', import.meta.url)), 'utf8');
+
+    expect(posSource).toContain('<OperationalCustomerReceipt');
+    expect(staffOrdersSource).toContain('<OperationalCustomerReceipt');
+    expect(staffOrdersSource).toContain('className="restaurant-pos-print-area"');
+    expect(staffOrdersSource).not.toContain('restaurant-order-print-receipt restaurant-customer-receipt');
+  });
+});
