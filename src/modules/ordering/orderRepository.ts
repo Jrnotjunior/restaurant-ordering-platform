@@ -122,6 +122,10 @@ export type RestaurantOrder = {
   taxVatAmount: number;
   taxVatExemptSales: number;
   taxNetSales: number;
+  /** NULL means zero-rated amount has not been calculated or verified. */
+  taxZeroRatedSales?: number | null;
+  /** False when any order item lacks a snapshotted tax category. */
+  itemsTaxClassified?: boolean;
   /** Provenance label distinguishing calculated tax from defaults and legacy records. */
   taxSnapshotStatus?: 'legacy_unknown' | 'not_calculated' | 'calculated' | 'requires_review';
   taxSnapshotVersion?: number | null;
@@ -131,7 +135,7 @@ export type RestaurantOrder = {
   discountGroupSize: number;
   discountBeneficiaries: { discountType: PosDiscountType; idType: string; idNumber: string; eligibleAmount: number; discountAmount: number }[];
   createdAt: string;
-  items: { id: string; productName: string; quantity: number; unitPrice: number; lineTotal: number }[];
+  items: { id: string; productName: string; quantity: number; unitPrice: number; lineTotal: number; taxCategory?: 'standard_rate' | 'vat_exempt' | 'zero_rated' | null }[];
 };
 
 
