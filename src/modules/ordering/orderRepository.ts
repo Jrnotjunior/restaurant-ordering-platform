@@ -124,6 +124,9 @@ export type RestaurantOrder = {
   taxNetSales: number;
   /** NULL means zero-rated amount has not been calculated or verified. */
   taxZeroRatedSales?: number | null;
+  /** Non-VAT sales classifications; not percentage-tax liability calculations. */
+  taxPercentageTaxableSales?: number | null;
+  taxNonVatExemptSales?: number | null;
   /** False when any order item lacks a snapshotted tax category. */
   itemsTaxClassified?: boolean;
   /** Provenance label distinguishing calculated tax from defaults and legacy records. */
@@ -137,7 +140,7 @@ export type RestaurantOrder = {
   /** False/undefined means statutory beneficiary support details are incomplete or unknown. */
   discountBeneficiariesComplete?: boolean;
   createdAt: string;
-  items: { id: string; productName: string; quantity: number; unitPrice: number; lineTotal: number; taxCategory?: 'standard_rate' | 'vat_exempt' | 'zero_rated' | null }[];
+  items: { id: string; productName: string; quantity: number; unitPrice: number; lineTotal: number; taxCategory?: 'standard_rate' | 'vat_exempt' | 'zero_rated' | 'percentage_taxable' | 'non_vat_exempt' | null }[];
 };
 
 
