@@ -22,7 +22,7 @@ returns table (
 )
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, pg_temp
 as $$
 declare
   v_payment_id uuid;
@@ -47,11 +47,21 @@ begin
     raise exception 'Restaurant is required';
   end if;
 
+  select *
+    into v_restaurant
+  from public.restaurants r
+  where r.id = p_restaurant_id
+    and r.is_active = true;
+
+  if not found then
+    raise exception 'Restaurant not found or inactive';
+  end if;
+
   if length(trim(coalesce(p_customer_name, ''))) = 0 then
     raise exception 'Customer name is required';
   end if;
 
-  if p_order_type not in ('delivery', 'pickup', 'dine_in') then
+  if p_order_type not in ('delivery', 'take_out', 'pickup', 'dine_in') then
     raise exception 'Invalid order type';
   end if;
 
@@ -199,7 +209,7 @@ begin
   end if;
 
   v_reference_number := 'PAY-' || to_char(now(), 'YYYYMMDD-HH24MISS') || '-' ||
-    upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8));
+    upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 32));
 
   insert into public.pending_online_payments (
     restaurant_id,
