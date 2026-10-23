@@ -26,8 +26,8 @@ describe('dispatch order mutation security boundary', () => {
   it('uses narrow RPCs instead of browser-side direct writes', () => {
     expect(repository).toContain("supabase.rpc('assign_delivery_order'");
     expect(repository).toContain("supabase.rpc('complete_dispatch_handoff'");
-    expect(repository).not.toMatch(/supabase\\.from\\(['"]orders['"]\\)\\.update\\s*\\(/);
-    expect(repository).not.toMatch(/supabase\\.from\\(['"]delivery_assignments['"]\\)\\.(insert|update|delete)\\s*\\(/);
+    expect(repository).not.toMatch(/supabase\.from\(['"]orders['"]\)\.update\s*\(/);
+    expect(repository).not.toMatch(/supabase\.from\(['"]delivery_assignments['"]\)\.(insert|update|delete)\s*\(/);
   });
 
   it('checks authentication, MFA, active dispatcher membership and active restaurant for assignment', () => {
@@ -80,10 +80,10 @@ describe('dispatch order mutation security boundary', () => {
   });
 
   it('restricts RPC execution to authenticated callers rather than PUBLIC or anon', () => {
-    expect(migration).toMatch(/revoke all on function public\\.assign_delivery_order\\(uuid, uuid, uuid\\) from public, anon/);
-    expect(migration).toMatch(/grant execute on function public\\.assign_delivery_order\\(uuid, uuid, uuid\\) to authenticated/);
-    expect(migration).toMatch(/revoke all on function public\\.complete_dispatch_handoff\\(uuid, uuid, text\\) from public, anon/);
-    expect(migration).toMatch(/grant execute on function public\\.complete_dispatch_handoff\\(uuid, uuid, text\\) to authenticated/);
+    expect(migration).toMatch(/revoke all on function public\.assign_delivery_order\(uuid, uuid, uuid\) from public, anon/);
+    expect(migration).toMatch(/grant execute on function public\.assign_delivery_order\(uuid, uuid, uuid\) to authenticated/);
+    expect(migration).toMatch(/revoke all on function public\.complete_dispatch_handoff\(uuid, uuid, text\) from public, anon/);
+    expect(migration).toMatch(/grant execute on function public\.complete_dispatch_handoff\(uuid, uuid, text\) to authenticated/);
     expect(assignment).toContain('security definer');
     expect(handoff).toContain('security definer');
     expect(assignment).toContain("set search_path to 'public', 'pg_temp'");
