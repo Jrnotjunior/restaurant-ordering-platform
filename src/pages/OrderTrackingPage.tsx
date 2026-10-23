@@ -353,7 +353,7 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
         {(isCashDineIn || isCashTakeOut) && !isCancelled ? (
           <section className="order-dine-in-number-card" aria-label="Cash order number for cashier">
             <p className="eyebrow">{isCashDineIn ? 'Dine-in' : 'Take-out'} · Tell the cashier</p>
-            <strong className="order-dine-in-number" style={{ color: theme.colors.text }}>{order.orderNumber}</strong>
+            <strong className="order-dine-in-number" style={{ color: theme.colors.primary }}>{order.orderNumber}</strong>
             <p>Give this order number to the cashier to help them find your order.</p>
           </section>
         ) : null}
