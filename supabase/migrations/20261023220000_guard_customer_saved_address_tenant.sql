@@ -418,3 +418,96 @@ revoke all on function public.set_my_customer_address_default(uuid,uuid) from pu
 grant execute on function public.set_my_customer_address_default(uuid,uuid) to authenticated;
 revoke all on function public.get_my_customer_profile(uuid) from public, anon;
 grant execute on function public.get_my_customer_profile(uuid) to authenticated;
+
+
+-- Deleting a saved address must enforce the same single-tenant identity guard.
+create or replace function public.delete_my_customer_address(
+  p_restaurant_id uuid,
+  p_address_id uuid
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_customer_id uuid;
+  v_was_default boolean;
+begin
+  if auth.uid() is null then
+    raise exception 'You must be signed in';
+  end if;
+  if p_restaurant_id is null
+     or not public.customer_identity_is_single_tenant(auth.uid(), p_restaurant_id) then
+    raise exception 'Customer account does not belong to this restaurant';
+  end if;
+  if p_restaurant_id <> public.get_request_restaurant_id() then
+    raise exception 'Customer data does not belong to the current restaurant';
+  end if;
+
+  select cp.id into v_customer_id
+  from public.customer_profiles cp
+  where cp.auth_user_id = auth.uid()
+    and cp.restaurant_id = p_restaurant_id
+  limit 1;
+
+  if v_customer_id is null then
+    raise exception 'Customer profile not found';
+  end if;
+
+  select ca.is_default into v_was_default
+  from public.customer_addresses ca
+  where ca.id = p_address_id
+    and ca.customer_id = v_customer_id
+    and ca.restaurant_id = p_restaurant_id;
+
+  if not found then
+    raise exception 'Address not found';
+  end if;
+
+  delete from public.customer_addresses
+  where id = p_address_id
+    and customer_id = v_customer_id
+    and restaurant_id = p_restaurant_id;
+
+  if v_was_default then
+    update public.customer_addresses ca
+    set is_default = true, updated_at = now()
+    where ca.id = (
+      select ca2.id
+      from public.customer_addresses ca2
+      where ca2.customer_id = v_customer_id
+        and ca2.restaurant_id = p_restaurant_id
+      order by ca2.created_at desc
+      limit 1
+    );
+
+    update public.customer_profiles cp
+    set default_delivery_city = ca.city,
+        default_delivery_barangay = ca.barangay,
+        default_delivery_address = ca.address,
+        updated_at = now()
+    from public.customer_addresses ca
+    where cp.id = v_customer_id
+      and ca.customer_id = v_customer_id
+      and ca.restaurant_id = p_restaurant_id
+      and ca.is_default = true;
+
+    if not exists (
+      select 1 from public.customer_addresses ca3
+      where ca3.customer_id = v_customer_id
+        and ca3.restaurant_id = p_restaurant_id
+    ) then
+      update public.customer_profiles
+      set default_delivery_city = null,
+          default_delivery_barangay = null,
+          default_delivery_address = null,
+          updated_at = now()
+      where id = v_customer_id;
+    end if;
+  end if;
+end;
+$$;
+
+revoke all on function public.delete_my_customer_address(uuid, uuid) from public, anon;
+grant execute on function public.delete_my_customer_address(uuid, uuid) to authenticated;
