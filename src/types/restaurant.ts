@@ -18,6 +18,7 @@ export type RestaurantTheme = {
     primary: string;
     primaryHover: string;
     primaryText: string;
+    icon?: string;
     secondary: string;
     secondaryText: string;
     background: string;
