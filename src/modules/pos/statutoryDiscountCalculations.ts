@@ -1,4 +1,4 @@
-export type PosTaxCategory = 'standard_rate' | 'vat_exempt' | 'zero_rated' | null;
+export type PosTaxCategory = 'standard_rate' | 'vat_exempt' | 'zero_rated' | 'percentage_taxable' | 'non_vat_exempt' | null;
 
 export type PosTaxLine = {
   productId: string;
@@ -123,7 +123,9 @@ export function calculatePosStatutoryDiscountPreview(input: PosStatutoryDiscount
   const eligibleZeroRatedDiscount = money(allocations.filter((allocation) => allocation.taxCategory === 'zero_rated')
     .reduce((sum, allocation) => sum + allocation.discountAmount, 0));
 
-  const allLinesClassified = lines.length > 0 && lines.every((line) => line.taxCategory !== null);
+  const allLinesClassified = lines.length > 0 && lines.every((line) => vatRegistered
+    ? line.taxCategory === 'standard_rate' || line.taxCategory === 'vat_exempt' || line.taxCategory === 'zero_rated'
+    : line.taxCategory === 'percentage_taxable' || line.taxCategory === 'non_vat_exempt');
   const baseStandardNet = money(lines.reduce((sum, line) => {
     if (line.taxCategory !== 'standard_rate') return sum;
     return sum + (vatRegistered && pricesVatInclusive
