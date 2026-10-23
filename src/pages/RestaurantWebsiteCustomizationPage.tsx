@@ -642,6 +642,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
               ['hero', 'Hero section color', websiteTheme.colors.hero ?? websiteTheme.colors.surface],
               ['productCard', 'Product card color', websiteTheme.colors.productCard ?? websiteTheme.colors.surface],
               ['text', 'Font color', websiteTheme.colors.text],
+              ['icon', 'Header icon color', websiteTheme.colors.icon ?? websiteTheme.colors.text],
               ['primary', 'Primary button color', websiteTheme.colors.primary],
               ['primaryText', 'Primary button font color', websiteTheme.colors.primaryText],
               ['secondary', 'Secondary button color', websiteTheme.colors.secondary],
@@ -689,6 +690,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
                 colors: {
                   ...defaultRestaurant.theme.colors,
                   header: defaultRestaurant.theme.colors.header ?? defaultRestaurant.theme.colors.background,
+                  icon: defaultRestaurant.theme.colors.icon ?? defaultRestaurant.theme.colors.text,
                   footer: defaultRestaurant.theme.colors.footer ?? defaultRestaurant.theme.colors.background,
                   footerText: defaultRestaurant.theme.colors.footerText ?? defaultRestaurant.theme.colors.muted,
                   hero: defaultRestaurant.theme.colors.hero ?? defaultRestaurant.theme.colors.surface,
