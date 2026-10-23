@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { cancelMyPendingOrder, getOrderStatus, hasGuestOrderCancellationToken, saveGuestOrderCancellationToken, subscribeToOrderTrackingChanges, type OrderStatus } from '../modules/ordering/orderService';
 import { supabase } from '../services/supabaseClient';
+import { useTheme } from '../components/ThemeProvider';
 import { getCancellationResultMessage, getTrackedPaymentStatusLabel } from '../modules/payments/refundStatusPresentation';
 import '../styles/order-tracking.css';
 
@@ -44,6 +45,7 @@ const deliveryStatusOrder: CustomerStatus[] = ['pending', 'confirmed', 'preparin
 const pickupStatusOrder: CustomerStatus[] = ['pending', 'confirmed', 'preparing', 'ready', 'completed'];
 
 export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTrackingPageProps) {
+  const theme = useTheme();
   const [order, setOrder] = useState<Awaited<ReturnType<typeof getOrderStatus>> | null>(null);
   const [error, setError] = useState('');
   const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
@@ -351,7 +353,7 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
         {(isCashDineIn || isCashTakeOut) && !isCancelled ? (
           <section className="order-dine-in-number-card" aria-label="Cash order number for cashier">
             <p className="eyebrow">{isCashDineIn ? 'Dine-in' : 'Take-out'} · Tell the cashier</p>
-            <strong className="order-dine-in-number">{order.orderNumber}</strong>
+            <strong className="order-dine-in-number" style={{ color: theme.colors.primary }}>{order.orderNumber}</strong>
             <p>Give this order number to the cashier to help them find your order.</p>
           </section>
         ) : null}
