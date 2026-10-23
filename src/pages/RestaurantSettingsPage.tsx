@@ -982,15 +982,15 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         </div>
 
                 {hasOnlinePayments && <div className="restaurant-settings-card restaurant-paymongo-card" id="store-payments" role="tabpanel" aria-labelledby="store-settings-tab-payments" hidden={activeSettingsTab !== 'payments'}>
-          <h2>Accepted Payment Methods</h2>
-          <p className="restaurant-settings-help">Choose whether this restaurant accepts online payments and which methods are available. These settings apply only to this restaurant. A method must also be supported by its connected PayMongo account.</p>
-          <label className="restaurant-settings-switch-row" style={{ marginTop: 14, paddingBottom: 14, borderBottom: '1px solid var(--border-color, #e5e7eb)' }}>
+          <label className="restaurant-settings-switch-row" style={{ marginTop: 0, paddingBottom: 14, borderBottom: '1px solid var(--border-color, #e5e7eb)' }}>
             <span><strong>Online Payments</strong><small style={{ display: 'block', fontWeight: 400, marginTop: 4 }}>{onlinePaymentsEnabled ? 'Customers can pay online using the enabled methods below.' : 'Online payment is turned off for this restaurant.'} System administrator controls this setting.</small></span>
             <span className="restaurant-settings-switch">
               <input type="checkbox" checked={onlinePaymentsEnabled} disabled aria-label="Online payments status (controlled by system administrator)" />
               <span className="restaurant-settings-switch-track" aria-hidden="true"><span className="restaurant-settings-switch-thumb" /></span>
             </span>
           </label>
+          <h2 style={{ marginTop: 18 }}>Accepted Payment Methods</h2>
+          <p className="restaurant-settings-help">Choose which payment methods this restaurant accepts. These settings apply only to this restaurant. A method must also be supported by its connected PayMongo account.</p>
           <div className="restaurant-settings-tax-grid" style={{ marginTop: 14, opacity: onlinePaymentsEnabled ? 1 : 0.55 }}>
             {([
               ['card', 'Card payments'],
