@@ -1,0 +1,66 @@
+# Web2Table — Invoice Requirements Matrix (working draft)
+
+**Updated:** 2026-10-24  
+**Repository:** `Jrnotjunior/restaurant-ordering-platform` (`main`)  
+**Status:** Engineering control matrix; not tax advice, not a BIR determination, and not evidence of accreditation or approval.
+
+## Release guardrails
+
+1. Keep current printouts labelled **“Operational receipt — not a BIR-issued invoice.”**
+2. Do not assign or display an official invoice serial, accreditation reference, PTU, Permit to Transmit, or BIR transmission status unless the applicable identifier is verified against approved records.
+3. Do not enable official issuance until Web2Table's applicable regulatory route and the tenant's prerequisites are confirmed in writing.
+4. Never infer a customer's tax status, buyer withholding-agent status, CWT tax base/rate/ATC, or CWT amount from order type, payment method, or a generic percentage.
+5. Do not backfill old invoices/transactions with fabricated tax classifications or identity data.
+
+## Requirement matrix
+
+| Area | Working requirement | Current evidence / gap | Engineering control / acceptance test | Approval dependency |
+|---|---|---|---|---|
+| Regulatory route | Confirm whether platform is pursuing Sales Machine/Software accreditation with tenant-user PTU handling, ESP accreditation, both, or another approved model. | Route decision brief exists; no approval or application is claimed. | Keep official invoice issuance disabled; store route status as unverified until evidence is reviewed. | Written BIR guidance / qualified Philippine tax professional. |
+| Seller/taxpayer identity | Render the seller's legally registered identity and registration details required by the applicable invoice rules and approved template. | Taxpayer profile draft exists; profile is not proof of registration, PTU, or accreditation. | Validate required fields against BIR registration documents; distinguish platform review from BIR approval. | Tenant documents and applicable BIR format. |
+| Official invoice numbering | Use a dedicated, controlled invoice series and running serial appropriate to the approved route; do not reuse order numbers. For the RMO 24-2023 Sales Machine/Software path, the referenced serial requirement includes a minimum six-digit running serial. | No approved invoice issuance ledger/serial allocator is implemented. | Before activation, add atomic serial allocation, uniqueness constraints, immutable issued-document records, concurrency/retry tests and audit history. | Route and serial format/sequence approval. |
+| Invoice contents | Map mandatory seller/buyer data, invoice date, line descriptions, quantities, unit amounts, totals, applicable tax breakdowns, discounts, required statements and conditional fields to the approved format. | Current customer printout is an operational receipt, not an official invoice. | Build a field-by-field template with source column, condition, validation and output test for each field. | Current RR/RMC plus approved route/template. |
+| VAT treatment | Separate VATable, VAT-exempt and zero-rated amounts where applicable; classify items and handle VAT-inclusive/exclusive prices and statutory discounts using accountant-approved rules. | Tax snapshots exist but are not accountant-approved for every combination. | Version the calculation rules; block official issuance when classification is missing or marked `requires_review`; test each combination. | Tenant tax registration and accountant sign-off. |
+| SC/PWD and other statutory discounts | Capture the legally required beneficiary, ID, discount and support data for each applicable statutory discount; preserve evidence without exposing it to unnecessary roles. | POS now captures beneficiary name, address, ID type/number and optional TIN; legacy incomplete records remain flagged. Other statutory categories and prescribed report formats still require review. | Validate eligibility, discount base and allocation; restrict access; test receipt/report consistency and missing-data lockout. | Current rules and accountant review. |
+| Creditable withholding tax (CWT) | Include a configured invoice data element/phrase such as “Less: Withholding Tax”, “Less: Creditable Withholding Tax” or “Less: CWT”; display the amount separately only when the transaction is subject to CWT. Do not require an amount for transactions not subject to CWT. | CWT field/phrase is not implemented in the official invoice layout because official issuance is not enabled. RR No. 6-2026 and RMC No. 112-2026 need final primary-source verification and route-specific interpretation. | Add CWT as a separate optional data element, not a generic discount; capture buyer-provided withholding details when applicable; calculate only from verified ATC, tax base and rate; reconcile invoice, receivable and ledger. Test applicable and not-applicable cases. | Confirm official circular text, effective/transitory deadline for this taxpayer/system category, and accountant-approved decision rules. |
+| Payment and CWT accounting | Keep gross sale recorded separately from CWT receivable/withheld amount; do not silently reduce sales or conflate CWT with payment processor fees, discounts or cash collected. | Current POS and online payment flows need unified tax/payment finalization review. | One idempotent finalization path; record gross invoice total, CWT where applicable, amount collectible, actual collection and any later remittance/withholding certificate separately. | Accountant-approved accounting mapping. |
+| Voids, refunds, returns and corrections | Preserve the original issued document and link each void/refund/credit/correction to it; never reuse a serial. | No complete issued-document lifecycle/adjustment ledger. | Immutable issuance, reason/actor/time, adjustment links, permission checks, and reconciliation in fiscal reports. | Route-specific BIR treatment. |
+| Reprints | Reprint the same issued document/serial and retain reprint audit metadata; never create a new invoice serial merely because paper is reprinted. | Current output is operational print and does not yet implement fiscal reprint semantics. | Test duplicate print, retry, lost response, and concurrent cashier actions. | Approved format and route. |
+| Fiscal journal and daily readings | Implement the e-Journal and X/Z or equivalent readings/reports applicable to the selected route. RMO 24-2023 contains a conditional exception for subscription software that transmits sales data to BIR; do not assume it applies without confirming the conditions. | Internal append-only POS journal exists; it is explicitly not BIR-approved e-Journal. Official readings are not implemented. | Route-configured journal/readings; business-day close lockout where required; refund/void/discount/VAT reconciliation; reprint for audit; daily totals tie to issued documents. | Confirm route and any conditional exception. |
+| Backend reports | Provide prescribed VAT category, statutory discount, void, sales summary and other route-required reports. | Internal sales/tax reporting exists but is not a complete approved fiscal report set. | Maintain report definitions, totals-to-ledger reconciliation and export tests against approved report examples. | Current prescribed forms and route. |
+| Electronic invoice/transmission | If required for the selected taxpayer/system route, create structured invoice data and reliable transmission with acknowledgements, retries, idempotency and error reconciliation. | No BIR transmission/acknowledgement queue is implemented. | Never mark transmitted without a verified acknowledgement; retain payload/hash, status, attempts and response; no duplicate transmission on retry. | Tenant applicability, route, interface specification and access approval. |
+| Tenant isolation and permissions | A tenant can only issue/read its own invoices, tax profile, journal and reports; sensitive beneficiary identity is available only to authorized roles. | Existing tenant RLS/RPC protections and restricted beneficiary reads are in place; full adversarial test matrix remains open. | Cross-tenant negative tests for every RPC and export; role tests for owner/cashier/dispatcher/system admin; no direct writes around privileged RPCs. | Security review and release sign-off. |
+| Software version and material changes | Track approved software version and assess changes against the selected route's change-notification/approval rules. | Taxpayer profile has draft version/reference fields; no route-specific release gate is enforced. | Bind release version to route/approval metadata; require change review for invoice numbering, core sales recording, architecture, hosting, security or integration changes. | BIR determination for the selected route. |
+
+## CWT implementation notes (do not overgeneralize)
+
+BIR's RR No. 6-2026 is listed on the official RR index as amending mandatory invoice information to include CWT information. A secondary reproduction of RMC No. 112-2026 dated 22 October 2026 states that:
+- CWT amount is shown separately only when the particular transaction is subject to CWT;
+- the buyer/payor determines withholding-agent status and the applicable income-payment classification, ATC, rate, tax base and amount, communicating applicable details to the seller before invoice finalization;
+- CRM/POS and other invoicing software should have the CWT phrase and field available in the registered/accredited configuration;
+- blank, N/A or 0.00 may be allowed where CWT does not apply; and
+- transitory deadlines vary by invoicing/system category, with different treatment for certain electronic-invoicing software and existing POS systems.
+
+Because the official BIR RMC index search result currently does not visibly list RMC No. 112-2026, treat the above as a **provisional engineering interpretation** until the signed official circular and applicable deadline are confirmed. Do not infer that Web2Table falls into a particular category or deadline.
+
+Sources:
+- Official BIR 2026 Revenue Regulations index: https://www.bir.gov.ph/2026-Revenue-Regulations (RR No. 6-2026 listed 1 October 2026).
+- Official BIR 2026 Revenue Memorandum Circulars index: https://www.bir.gov.ph/2026-Revenue-Memorandum-Circulars (RMC No. 98-2026 listed 22 September 2026; verify any later circular directly with BIR).
+- Official RMO No. 24-2023 full text: https://bir-cdn.bir.gov.ph/local/pdf/RMO%20No.%2024-2023.pdf
+- Secondary text of RMC No. 112-2026 for verification only: https://www.lexiquire.com/laws/RMC%20No~%20112-2026
+- Existing Web2Table route decision brief: `docs/compliance/BIR_POS_REGULATORY_ROUTE_DECISION_BRIEF_2026-10-20.md`
+
+## Required acceptance gates before enabling official issuance
+
+- [ ] Regulatory route and tenant-specific applicability documented and reviewed.
+- [ ] Seller registration, accreditation/PTU/permit identifiers verified against source documents.
+- [ ] Approved invoice field/format matrix signed off by Philippine tax professional.
+- [ ] Atomic invoice serial allocator and immutable issued-document lifecycle tested.
+- [ ] VAT, VAT-exempt, zero-rated, SC/PWD and other statutory discount calculations signed off.
+- [ ] CWT applicability, buyer-supplied inputs, amount presentation and ledger reconciliation tested.
+- [ ] Voids/refunds/reprints, day close, fiscal readings and required backend reports implemented.
+- [ ] Transmission and acknowledgement handling implemented if required.
+- [ ] Tenant/role security tests, concurrency tests and end-to-end production-like acceptance tests pass.
+- [ ] Formal BIR submissions, permits, accreditation and any required demonstration/approval completed.
+
+**Release statement:** This matrix is a planning/control artifact only. Web2Table must not be represented as BIR-accredited or as issuing official BIR invoices until all applicable gates are satisfied.
