@@ -384,7 +384,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-switch input:checked + .website-customization-switch-track .website-customization-switch-thumb{transform:translateX(20px)}
         .website-customization-toggle-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:22px}
         .website-customization-toggle{display:flex;align-items:center;gap:8px;min-height:44px;font-size:14px;font-weight:600}
-        .website-customization-actions-bar{display:flex;justify-content:flex-end}
+        .website-customization-actions-bar{display:flex;align-items:center;justify-content:flex-end;gap:16px}
         .website-customization-confirm-overlay{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.45)}
         .website-customization-confirm-modal{width:min(420px,100%);box-sizing:border-box;padding:24px;border:1px solid #dbe2ea;border-radius:14px;background:#fff;box-shadow:0 20px 60px rgba(15,23,42,.2)}
         .website-customization-confirm-modal h2{margin:0 0 8px;color:#0f172a;font-size:20px}
