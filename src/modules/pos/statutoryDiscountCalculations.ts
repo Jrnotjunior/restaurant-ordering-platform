@@ -25,6 +25,58 @@ export type PosStatutoryDiscountPreviewInput = {
 const money = (amount: number) =>
   Number((Number.isFinite(amount) ? amount : 0).toFixed(2));
 
+
+/**
+ * Splits each order line's cents evenly across the whole group, then returns
+ * only the allocations belonging to registered SC/PWD beneficiaries.
+ * Residual cents are rotated across group members and assigned to non-beneficiaries
+ * first where possible, so eligible allocations never exceed an order line.
+ */
+export function allocatePosEqualGroupShares(
+  lines: PosTaxLine[],
+  customerCount: number,
+  beneficiaryCount: number,
+): PosEligibleLineAllocationInput[][] {
+  const groupSize = Math.floor(customerCount);
+  if (!Number.isFinite(customerCount) || groupSize < 1
+    || !Number.isFinite(beneficiaryCount) || beneficiaryCount < 1) {
+    return [];
+  }
+
+  const count = Math.min(Math.floor(beneficiaryCount), groupSize);
+  if (count < 1) return [];
+
+  const result: PosEligibleLineAllocationInput[][] = Array.from({ length: count }, () => []);
+  // Start assigning residual cents after the beneficiary slots to avoid
+  // systematically giving beneficiaries every rounding remainder.
+  let pennyCursor = count % groupSize;
+
+  lines.forEach((line) => {
+    const lineCents = Math.max(0, Math.round((Number.isFinite(line.lineTotal) ? line.lineTotal : 0) * 100));
+    if (lineCents <= 0) return;
+
+    const baseCents = Math.floor(lineCents / groupSize);
+    const remainderCents = lineCents % groupSize;
+
+    for (let beneficiaryIndex = 0; beneficiaryIndex < count; beneficiaryIndex += 1) {
+      const distance = (beneficiaryIndex - pennyCursor + groupSize) % groupSize;
+      const allocatedCents = baseCents + (distance < remainderCents ? 1 : 0);
+      if (allocatedCents <= 0) continue;
+
+      result[beneficiaryIndex].push({
+        productId: line.productId,
+        taxCategory: line.taxCategory,
+        eligibleGross: money(allocatedCents / 100),
+      });
+    }
+
+    // Whole-group shares advance to the next cent recipient across line breaks.
+    pennyCursor = (pennyCursor + remainderCents) % groupSize;
+  });
+
+  return result;
+}
+
 /**
  * Operational POS preview only. The persisted statutory-discount tax snapshot
  * must remain requires_review until the applicable allocation rules are
