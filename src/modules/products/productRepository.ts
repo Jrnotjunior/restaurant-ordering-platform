@@ -21,6 +21,7 @@ type ProductRow = {
   slug: string;
   description: string;
   price: number;
+  tax_category?: 'standard_rate' | 'vat_exempt' | 'zero_rated' | null;
   image_url: string | null;
   sort_order: number;
   is_available: boolean;
@@ -41,7 +42,7 @@ export async function getMenu(restaurantId: string, includeUnavailable = false):
 
   let productQuery = supabase
     .from('products')
-    .select('id,restaurant_id,category_id,name,slug,description,price,image_url,sort_order,is_available,created_at,updated_at')
+    .select('id,restaurant_id,category_id,name,slug,description,price,tax_category,image_url,sort_order,is_available,created_at,updated_at')
     .eq('restaurant_id', restaurantId)
     .order('sort_order', { ascending: true })
     .order('name', { ascending: true });
@@ -76,6 +77,7 @@ export async function getMenu(restaurantId: string, includeUnavailable = false):
       slug: product.slug,
       description: product.description,
       price: Number(product.price),
+      taxCategory: product.tax_category ?? null,
       imageUrl: product.image_url ?? undefined,
       sortOrder: product.sort_order,
       isAvailable: product.is_available,
@@ -181,4 +183,14 @@ export function subscribeToCashierMenuChanges(restaurantId: string, onChange: ()
   return () => {
     void supabase?.removeChannel(channel);
   };
+}
+
+
+export async function setProductTaxCategory(productId: string, taxCategory: 'standard_rate' | 'vat_exempt' | 'zero_rated' | null) {
+  if (!supabase) throw new Error('Supabase environment variables are not configured.');
+  const { error } = await supabase.rpc('set_restaurant_product_tax_category', {
+    p_product_id: productId,
+    p_tax_category: taxCategory,
+  });
+  if (error) throw new Error(`Unable to save product tax classification: ${error.message}`);
 }
