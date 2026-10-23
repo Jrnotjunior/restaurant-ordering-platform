@@ -131,6 +131,10 @@ Deno.serve(async (request) => {
         return jsonResponse({ error: "This restaurant storefront domain is not configured correctly. Please contact the restaurant before trying payment again." }, 409);
       }
 
+      if (restaurant.online_payment_methods?.enabled === false) {
+        return jsonResponse({ error: "Online payments are currently turned off by this restaurant. Please choose another payment method." }, 409);
+      }
+
       if (getPaymentMethodTypes(restaurant.online_payment_methods).length === 0) {
         return jsonResponse({ error: "This restaurant has no online payment methods enabled. Please contact the restaurant." }, 409);
       }
@@ -188,6 +192,9 @@ Deno.serve(async (request) => {
         restaurantId: pendingPayment.restaurant_id,
       });
       return jsonResponse({ error: "This restaurant storefront domain is not configured correctly. Please contact the restaurant before trying payment again." }, 409);
+    }
+    if (restaurantDomain?.online_payment_methods?.enabled === false) {
+      return jsonResponse({ error: "Online payments are currently turned off by this restaurant. Please choose another payment method." }, 409);
     }
     if (pendingPayment.status !== "pending") {
       return jsonResponse({ error: "This payment is no longer awaiting payment." }, 409);
