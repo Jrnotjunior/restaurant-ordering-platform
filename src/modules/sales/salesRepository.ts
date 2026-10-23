@@ -11,8 +11,8 @@ type RawOrderItem = {
   unit_price?: number | string;
   lineTotal?: number | string;
   line_total?: number | string;
-  taxCategory?: 'standard_rate' | 'vat_exempt' | 'zero_rated' | null;
-  tax_category_snapshot?: 'standard_rate' | 'vat_exempt' | 'zero_rated' | null;
+  taxCategory?: 'standard_rate' | 'vat_exempt' | 'zero_rated' | 'percentage_taxable' | 'non_vat_exempt' | null;
+  tax_category_snapshot?: 'standard_rate' | 'vat_exempt' | 'zero_rated' | 'percentage_taxable' | 'non_vat_exempt' | null;
 };
 
 type Row = {
@@ -52,14 +52,19 @@ type Row = {
 };
 
 export async function getRestaurantSales(restaurantId: string): Promise<RestaurantOrder[]> {
-  const [rows, taxStatusRows] = await Promise.all([
+  const [rows, taxStatusRows, nonVatSnapshotRows] = await Promise.all([
     supabaseRpc<Row>('get_restaurant_sales', { p_restaurant_id: restaurantId }),
     supabaseRpc<{ order_id: string; tax_snapshot_status: NonNullable<Row['tax_snapshot_status']>; tax_snapshot_version: number | string | null; tax_zero_rated_sales: number | string | null; items_tax_classified: boolean; discount_beneficiaries_complete: boolean }>(
       'get_restaurant_tax_snapshot_statuses',
       { p_restaurant_id: restaurantId },
     ),
+    supabaseRpc<{ order_id: string; tax_percentage_taxable_sales: number | string | null; tax_non_vat_exempt_sales: number | string | null }>(
+      'get_restaurant_non_vat_tax_snapshot_amounts',
+      { p_restaurant_id: restaurantId },
+    ),
   ]);
   const taxStatuses = new Map(taxStatusRows.map((row) => [row.order_id, row]));
+  const nonVatSnapshots = new Map(nonVatSnapshotRows.map((row) => [row.order_id, row]));
 
   return rows.map((row): RestaurantOrder => ({
     orderId: row.order_id,
@@ -87,6 +92,8 @@ export async function getRestaurantSales(restaurantId: string): Promise<Restaura
     taxVatExemptSales: Number(row.tax_vat_exempt_sales ?? 0),
     taxNetSales: Number(row.tax_net_sales ?? 0),
     taxZeroRatedSales: taxStatuses.get(row.order_id)?.tax_zero_rated_sales == null ? null : Number(taxStatuses.get(row.order_id)?.tax_zero_rated_sales),
+    taxPercentageTaxableSales: nonVatSnapshots.get(row.order_id)?.tax_percentage_taxable_sales == null ? null : Number(nonVatSnapshots.get(row.order_id)?.tax_percentage_taxable_sales),
+    taxNonVatExemptSales: nonVatSnapshots.get(row.order_id)?.tax_non_vat_exempt_sales == null ? null : Number(nonVatSnapshots.get(row.order_id)?.tax_non_vat_exempt_sales),
     itemsTaxClassified: taxStatuses.get(row.order_id)?.items_tax_classified ?? false,
     discountBeneficiariesComplete: taxStatuses.get(row.order_id)?.discount_beneficiaries_complete ?? false,
     taxSnapshotStatus: taxStatuses.get(row.order_id)?.tax_snapshot_status ?? 'legacy_unknown',
