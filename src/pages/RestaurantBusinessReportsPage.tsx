@@ -14,8 +14,29 @@ type Props = { restaurantId: string };
 type ExpenseCategory = 'ingredients' | 'payroll' | 'rent' | 'utilities' | 'packaging' | 'delivery' | 'marketing' | 'maintenance' | 'supplies' | 'other';
 type Expense = { id: string; expense_date: string; category: ExpenseCategory; description: string; amount: number | string; created_at: string };
 type TaxProduct = { id: string; name: string; tax_category: 'standard_rate' | 'vat_exempt' | 'zero_rated' | null };
-type Tab = 'overview' | 'expenses' | 'payments' | 'tax' | 'journal';
+type Tab = 'overview' | 'expenses' | 'payments' | 'tax' | 'journal' | 'readings';
 type PosJournalEntry = { journal_id: number | string; occurred_at: string; transaction_id: number | string; order_id: string | null; order_number: string | null; event_type: string; operation: string; actor_user_id: string | null; actor_role: string | null; old_values: Record<string, unknown> | null; new_values: Record<string, unknown> | null };
+type PosReadingSnapshot = {
+  reading_id: string;
+  is_official: false;
+  notice: string;
+  reading_type: 'x_preview' | 'z_preview';
+  business_date: string;
+  timezone: string;
+  generated_at: string;
+  generated_by: string | null;
+  order_counts: { all_orders: number; completed: number; cancelled: number; paid: number; pending_payment: number; refunded: number };
+  platform_totals_php: { completed_order_totals: number; completed_order_discounts: number; completed_order_delivery_fees: number; cumulative_completed_order_totals_through_date: number };
+  tax_summary: { complete: boolean; orders_needing_review: number; unclassified_order_lines: number; vatable_sales_php: number | null; vat_amount_php: number | null; vat_exempt_sales_php: number | null; zero_rated_sales_php: number | null };
+};
+type PosReadingPreviewRow = {
+  reading_id: string; business_date: string; reading_type: 'x_preview' | 'z_preview'; generated_at: string;
+  order_count: number; completed_order_count: number; cancelled_order_count: number; paid_order_count: number;
+  pending_payment_count: number; refunded_order_count: number; completed_sales_total: number | string;
+  cumulative_completed_sales_total: number | string; discounts_total: number | string; delivery_fee_total: number | string;
+  tax_review_order_count: number; unclassified_line_count: number; tax_summary_complete: boolean;
+  snapshot: PosReadingSnapshot; is_official: false;
+};
 
 const CATEGORIES: { value: ExpenseCategory; label: string }[] = [
   { value: 'ingredients', label: 'Ingredients & food' }, { value: 'payroll', label: 'Payroll' },
@@ -111,6 +132,12 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
   const [journal, setJournal] = useState<PosJournalEntry[]>([]);
   const [journalLoading, setJournalLoading] = useState(false);
   const [journalError, setJournalError] = useState('');
+  const [readingDate, setReadingDate] = useState(todayKey);
+  const [readingPreview, setReadingPreview] = useState<PosReadingSnapshot | null>(null);
+  const [readingHistory, setReadingHistory] = useState<PosReadingPreviewRow[]>([]);
+  const [readingLoading, setReadingLoading] = useState(false);
+  const [readingGenerating, setReadingGenerating] = useState(false);
+  const [readingError, setReadingError] = useState('');
 
   async function loadData() {
     if (!supabase) { setError('Supabase is not configured.'); setLoading(false); return; }
@@ -141,6 +168,10 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
   useEffect(() => {
     if (tab === 'journal') void loadJournal();
   }, [tab, restaurantId, fromDate, toDate]);
+
+  useEffect(() => {
+    if (tab === 'readings') void loadReadingHistory();
+  }, [tab, restaurantId, readingDate]);
 
   const rangeOrders = useMemo(() => orders.filter((order) => {
     const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(order.createdAt));
@@ -227,6 +258,97 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
         entry.old_values ? JSON.stringify(entry.old_values) : '',
         entry.new_values ? JSON.stringify(entry.new_values) : '',
       ]),
+    ]);
+  }
+
+  async function loadReadingHistory(): Promise<PosReadingPreviewRow[] | null> {
+    if (!supabase) {
+      setReadingError('Supabase is not configured.');
+      return null;
+    }
+    setReadingLoading(true);
+    setReadingError('');
+    try {
+      const { data, error: readingLoadError } = await supabase.rpc('get_pos_sales_reading_previews', {
+        p_restaurant_id: restaurantId,
+        p_business_date: readingDate,
+        p_limit: 25,
+      });
+      if (readingLoadError) throw readingLoadError;
+      const rows = (data ?? []) as unknown as PosReadingPreviewRow[];
+      setReadingHistory(rows);
+      return rows;
+    } catch (loadError) {
+      const message = loadError instanceof Error ? loadError.message : 'Unable to load daily sales reading previews.';
+      setReadingError(message);
+      return null;
+    } finally {
+      setReadingLoading(false);
+    }
+  }
+
+  async function generateReadingPreview(readingType: 'x_preview' | 'z_preview') {
+    if (!supabase) {
+      setReadingError('Supabase is not configured.');
+      return;
+    }
+    setReadingGenerating(true);
+    setReadingError('');
+    setNotice('');
+    try {
+      const { data, error: generateError } = await supabase.rpc('generate_pos_sales_reading_preview', {
+        p_restaurant_id: restaurantId,
+        p_business_date: readingDate,
+        p_reading_type: readingType,
+      });
+      if (generateError) throw generateError;
+      setReadingPreview(data as unknown as PosReadingSnapshot);
+      setNotice(readingType === 'x_preview'
+        ? 'X-style sales preview generated. This is an internal report, not an official BIR reading.'
+        : 'Z-style day-close preview generated. This does not close or lock the business day and is not an official BIR Z-Reading.');
+      await loadReadingHistory();
+    } catch (generateError) {
+      setReadingError(generateError instanceof Error ? generateError.message : 'Unable to generate the sales reading preview.');
+    } finally {
+      setReadingGenerating(false);
+    }
+  }
+
+  function exportReadingPreview(snapshot: PosReadingSnapshot) {
+    downloadSpreadsheet(`pos-reading-preview-${snapshot.reading_type}-${snapshot.business_date}-${snapshot.reading_id.slice(0, 8)}.xlsx`, [
+      ['INTERNAL POS SALES READING PREVIEW — NOT AN OFFICIAL BIR READING',''],
+      ['Reading ID', snapshot.reading_id],
+      ['Reading type', snapshot.reading_type],
+      ['Business date', snapshot.business_date],
+      ['Timezone', snapshot.timezone],
+      ['Generated at', snapshot.generated_at],
+      ['Official BIR reading', 'NO'],
+      ['Notice', snapshot.notice],
+      [],
+      ['Order counts','Count'],
+      ['All orders', snapshot.order_counts.all_orders],
+      ['Completed', snapshot.order_counts.completed],
+      ['Cancelled', snapshot.order_counts.cancelled],
+      ['Paid', snapshot.order_counts.paid],
+      ['Payment pending', snapshot.order_counts.pending_payment],
+      ['Refunded', snapshot.order_counts.refunded],
+      [],
+      ['Platform totals PHP','Amount'],
+      ['Completed order totals', snapshot.platform_totals_php.completed_order_totals],
+      ['Recorded discounts', snapshot.platform_totals_php.completed_order_discounts],
+      ['Recorded delivery fees', snapshot.platform_totals_php.completed_order_delivery_fees],
+      ['Cumulative completed order totals through date', snapshot.platform_totals_php.cumulative_completed_order_totals_through_date],
+      [],
+      ['Tax completeness','Value'],
+      ['Tax summary complete', snapshot.tax_summary.complete ? 'YES — still requires professional review' : 'NO — tax fields are not reported as complete'],
+      ['Completed orders needing review', snapshot.tax_summary.orders_needing_review],
+      ['Unclassified order lines', snapshot.tax_summary.unclassified_order_lines],
+      ['Recorded VATable sales PHP', snapshot.tax_summary.vatable_sales_php ?? 'INCOMPLETE'],
+      ['Recorded VAT PHP', snapshot.tax_summary.vat_amount_php ?? 'INCOMPLETE'],
+      ['Recorded VAT-exempt sales PHP', snapshot.tax_summary.vat_exempt_sales_php ?? 'INCOMPLETE'],
+      ['Recorded zero-rated sales PHP', snapshot.tax_summary.zero_rated_sales_php ?? 'INCOMPLETE'],
+      [],
+      ['This report is only an implementation preview. It is not a BIR X/Z reading, tax return, invoice, certificate, or substitute for approved report formats.'],
     ]);
   }
 
@@ -386,7 +508,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
         @media(max-width:760px){.business-reports-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.business-reports-card,.business-reports-panel{padding:13px}.business-reports-range{align-items:stretch}.business-reports-range label{flex:1 1 130px}.business-reports-range input{width:100%}}
       `}</style>
       <nav className="business-reports-tabs" role="tablist" aria-label="Business report sections">
-        {([['overview','Overview'],['expenses','Expenses & Profit'],['payments','Payments'],['tax','Tax Reports'],['journal','Activity Journal']] as [Tab,string][]).map(([key,label]) => <button key={key} type="button" role="tab" aria-selected={tab===key} onClick={() => {setTab(key);setError('');setNotice('');setJournalError('');}}>{label}</button>)}
+        {([['overview','Overview'],['expenses','Expenses & Profit'],['payments','Payments'],['tax','Tax Reports'],['journal','Activity Journal'],['readings','Daily Readings']] as [Tab,string][]).map(([key,label]) => <button key={key} type="button" role="tab" aria-selected={tab===key} onClick={() => {setTab(key);setError('');setNotice('');setJournalError('');setReadingError('');}}>{label}</button>)}
       </nav>
       {error && <div className="business-reports-error" role="alert">{error}</div>}
       {notice && <div className="business-reports-notice" role="status">{notice}</div>}
@@ -464,6 +586,68 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
               {rangeOrders.filter((order) => ['pending','failed','refunded'].includes(order.paymentStatus)).sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).map((order) => <tr key={order.orderId}><td>{order.orderNumber}</td><td>{order.createdAt.slice(0,10)}</td><td>{order.status}</td><td>{order.paymentMethod === 'gcash' ? 'GCash / online' : 'Cash'}</td><td>{order.paymentStatus}</td><td>{peso(order.total)}</td></tr>)}
               {!rangeOrders.some((order) => ['pending','failed','refunded'].includes(order.paymentStatus)) && <tr><td colSpan={6}>No pending, failed, or refunded payment records in this period.</td></tr>}
             </tbody></table></div>
+          </section>
+        </>}
+        {tab === 'readings' && <>
+          <section className="business-reports-panel">
+            <div className="business-reports-panel-heading">
+              <div><h2>Daily sales readings (internal preview)</h2><p>Generate an X-style current report or a Z-style day-close preview for review. These previews do not close the business day, lock sales, or count as official BIR readings.</p></div>
+            <div className="business-reports-actions">
+              <label className="business-reports-field"><span>Business date</span><input type="date" value={readingDate} max={todayKey} onChange={(event) => { setReadingDate(event.target.value); setReadingPreview(null); }} /></label>
+            </div>
+            </div>
+            <p className="business-reports-muted">BIR rules for the applicable Sales Machine/Software route require specific readings or approved equivalents and backend reports. This preview is development groundwork only; its figures must be reconciled against approved tax rules, original payment records, and the prescribed BIR format.</p>
+            {readingError && <p className="business-reports-error" role="alert">{readingError}</p>}
+            <div className="business-reports-actions" style={{ justifyContent: 'flex-start', flexWrap: 'wrap' }}>
+              <button className="business-reports-button" type="button" onClick={() => void generateReadingPreview('x_preview')} disabled={readingGenerating || readingLoading || !readingDate}>{readingGenerating ? 'Generating…' : 'Generate X-style preview'}</button>
+              <button className="business-reports-button business-reports-export restaurant-export-button restaurant-compact-action" type="button" onClick={() => void generateReadingPreview('z_preview')} disabled={readingGenerating || readingLoading || !readingDate}>{readingGenerating ? 'Generating…' : 'Generate Z-style day-close preview'}</button>
+              <button className="business-reports-button" type="button" onClick={() => void loadReadingHistory()} disabled={readingLoading || readingGenerating}>{readingLoading ? 'Loading…' : 'Refresh history'}</button>
+            </div>
+            {readingPreview && readingPreview.business_date === readingDate && <>
+              <div style={{ marginTop: 18, padding: 14, border: '1px solid #d97706', borderRadius: 8, background: '#fffbeb' }}>
+                <strong style={{ color: '#92400e' }}>INTERNAL PREVIEW — NOT A BIR READING</strong>
+                <p style={{ margin: '6px 0 0', color: '#92400e' }}>{readingPreview.notice}</p>
+              </div>
+              <div className="business-reports-cards" style={{ marginTop: 14 }}>
+                <div className="business-reports-card"><small>All orders</small><strong>{readingPreview.order_counts.all_orders}</strong></div>
+                <div className="business-reports-card"><small>Completed orders</small><strong>{readingPreview.order_counts.completed}</strong></div>
+                <div className="business-reports-card"><small>Cancelled</small><strong>{readingPreview.order_counts.cancelled}</strong></div>
+                <div className="business-reports-card"><small>Refunded</small><strong>{readingPreview.order_counts.refunded}</strong></div>
+                <div className="business-reports-card"><small>Completed order totals</small><strong>{peso(readingPreview.platform_totals_php.completed_order_totals)}</strong></div>
+                <div className="business-reports-card"><small>Cumulative completed totals</small><strong>{peso(readingPreview.platform_totals_php.cumulative_completed_order_totals_through_date)}</strong></div>
+                <div className="business-reports-card"><small>Recorded discounts</small><strong>{peso(readingPreview.platform_totals_php.completed_order_discounts)}</strong></div>
+                <div className="business-reports-card"><small>Delivery fees</small><strong>{peso(readingPreview.platform_totals_php.completed_order_delivery_fees)}</strong></div>
+              </div>
+              <section className="business-reports-panel" style={{ marginTop: 14 }}>
+                <div className="business-reports-panel-heading">
+                  <div><h3>Tax summary completeness</h3><p>{readingPreview.tax_summary.complete ? 'The current platform completeness checks passed; professional verification is still required.' : 'Incomplete. Do not treat these tax totals as authoritative.'}</p></div>
+                  <button className="business-reports-button business-reports-export restaurant-export-button restaurant-compact-action" type="button" onClick={() => exportReadingPreview(readingPreview)}>Export preview (.xlsx)</button>
+                </div>
+                <div className="business-reports-cards">
+                  <div className="business-reports-card"><small>Orders needing tax review</small><strong>{readingPreview.tax_summary.orders_needing_review}</strong></div>
+                  <div className="business-reports-card"><small>Unclassified order lines</small><strong>{readingPreview.tax_summary.unclassified_order_lines}</strong></div>
+                  <div className="business-reports-card"><small>Recorded VATable sales</small><strong>{readingPreview.tax_summary.vatable_sales_php == null ? 'Incomplete' : peso(readingPreview.tax_summary.vatable_sales_php)}</strong></div>
+                  <div className="business-reports-card"><small>Recorded VAT</small><strong>{readingPreview.tax_summary.vat_amount_php == null ? 'Incomplete' : peso(readingPreview.tax_summary.vat_amount_php)}</strong></div>
+                  <div className="business-reports-card"><small>VAT-exempt sales</small><strong>{readingPreview.tax_summary.vat_exempt_sales_php == null ? 'Incomplete' : peso(readingPreview.tax_summary.vat_exempt_sales_php)}</strong></div>
+                  <div className="business-reports-card"><small>Zero-rated sales</small><strong>{readingPreview.tax_summary.zero_rated_sales_php == null ? 'Incomplete' : peso(readingPreview.tax_summary.zero_rated_sales_php)}</strong></div>
+                </div>
+              </section>
+            </>}
+            <section style={{ marginTop: 20 }}>
+              <h3>Generated preview history</h3>
+              {readingLoading ? <p className="business-reports-muted">Loading preview history…</p> : readingHistory.length === 0 ? <p className="business-reports-muted">No readings have been generated for this business date.</p> : (
+                <div className="business-reports-table-wrap"><table className="business-reports-table">
+                  <thead><tr><th>Generated at (Manila)</th><th>Type</th><th>Orders</th><th>Completed total</th><th>Tax status</th><th>Snapshot</th></tr></thead>
+                  <tbody>{readingHistory.map((entry) => <tr key={entry.reading_id}>
+                    <td>{new Intl.DateTimeFormat('en-PH', { timeZone: 'Asia/Manila', dateStyle: 'medium', timeStyle: 'medium' }).format(new Date(entry.generated_at))}</td>
+                    <td>{entry.reading_type === 'x_preview' ? 'X-style preview' : 'Z-style day-close preview'}</td>
+                    <td>{entry.order_count}</td><td>{peso(Number(entry.completed_sales_total))}</td>
+                    <td>{entry.tax_summary_complete ? 'Needs professional review' : 'Incomplete'}</td>
+                    <td><details><summary>Details</summary><pre style={{ whiteSpace: 'pre-wrap', maxWidth: 420, overflowWrap: 'anywhere' }}>{JSON.stringify(entry.snapshot, null, 2)}</pre></details></td>
+                  </tr>)}</tbody>
+                </table></div>
+              )}
+            </section>
           </section>
         </>}
         {tab === 'journal' && <>
