@@ -122,6 +122,9 @@ export type RestaurantOrder = {
   taxVatAmount: number;
   taxVatExemptSales: number;
   taxNetSales: number;
+  /** Provenance label distinguishing calculated tax from defaults and legacy records. */
+  taxSnapshotStatus?: 'legacy_unknown' | 'not_calculated' | 'calculated' | 'requires_review';
+  taxSnapshotVersion?: number | null;
   discountAmount: number;
   loyaltyDiscountAmount: number;
   discountBeneficiaryCount: number;
