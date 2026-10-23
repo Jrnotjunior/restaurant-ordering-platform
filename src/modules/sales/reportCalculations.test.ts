@@ -101,4 +101,19 @@ describe('tax snapshot reporting safeguards', () => {
     expect(hasMissingTaxSnapshot(order)).toBe(true);
     expect(getTaxSnapshotStatus(order)).toBe('Tax classification incomplete');
   });
+
+  it('flags statutory-discount sales when beneficiary name or address is missing', () => {
+    const order = {
+      total: 112,
+      taxGrossSales: 100,
+      taxSnapshotStatus: 'calculated' as const,
+      taxZeroRatedSales: 0,
+      itemsTaxClassified: true,
+      discountBeneficiaryCount: 1,
+      discountBeneficiariesComplete: false,
+    };
+    expect(hasMissingTaxSnapshot(order)).toBe(true);
+    expect(getTaxSnapshotStatus(order)).toBe('Beneficiary details incomplete');
+    expect(getRecordedTaxSnapshotValue(order, 12)).toBe('');
+  });
 });
