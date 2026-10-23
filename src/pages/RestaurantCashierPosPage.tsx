@@ -216,19 +216,11 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
     pricesVatInclusive: priceHasIncludedVat,
     vatRate,
   });
-  const eligibleAllocations = statutoryPreview.allocations;
   const discountAmount = statutoryPreview.discountAmount;
   const allocatedEligibleGross = statutoryPreview.allocatedEligibleGross;
-  const eligibleStandardGross = statutoryPreview.eligibleStandardGross;
-  const eligibleStandardNet = statutoryPreview.eligibleStandardNet;
-  const eligibleStandardDiscount = statutoryPreview.eligibleStandardDiscount;
-  const eligibleExemptDiscount = statutoryPreview.eligibleExemptDiscount;
-  const eligibleZeroRatedDiscount = statutoryPreview.eligibleZeroRatedDiscount;
   const vatableSales = statutoryPreview.vatableSales;
   const vatAmount = statutoryPreview.vatAmount;
   const vatExemptSales = statutoryPreview.vatExemptSales;
-  const zeroRatedSales = statutoryPreview.zeroRatedSales;
-  const netSales = statutoryPreview.netSales;
   const preLoyaltyTotal = statutoryPreview.preLoyaltyTotal;
   const loyaltyDiscountPreview = beneficiaries.length === 0 && redeemPoints && selectedCustomerId && loyaltyRedemption?.enabled
     ? Math.min(money(loyaltyRedemption.discountAmount), preLoyaltyTotal)
@@ -313,18 +305,26 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   }
 
   function getBeneficiaryPreviewAmounts(beneficiary: DraftBeneficiary) {
-    let eligibleAmount = 0;
-    let discount = 0;
-    cart.forEach((item) => {
-      const gross = money(Number(beneficiary.eligibleLineAmounts[item.product.id] || 0));
-      if (gross <= 0) return;
-      const net = priceHasIncludedVat && item.product.taxCategory === 'standard_rate'
-        ? money(gross / (1 + vatRate / 100)
-        ) : gross;
-      eligibleAmount += net;
-      discount += money(net * 0.20);
+    const preview = calculatePosStatutoryDiscountPreview({
+      lines: cart.map((item) => ({
+        productId: item.product.id,
+        lineTotal: item.product.price * item.quantity,
+        taxCategory: item.product.taxCategory ?? null,
+      })),
+      allocations: cart.map((item) => ({
+        productId: item.product.id,
+        taxCategory: item.product.taxCategory ?? null,
+        eligibleGross: money(Number(beneficiary.eligibleLineAmounts[item.product.id] || 0)),
+      })),
+      subtotal,
+      vatRegistered: Boolean(taxSettings?.vatRegistered),
+      pricesVatInclusive: priceHasIncludedVat,
+      vatRate,
     });
-    return { eligibleAmount: money(eligibleAmount), discountAmount: money(discount) };
+    return {
+      eligibleAmount: money(preview.allocations.reduce((sum, allocation) => sum + allocation.eligibleNet, 0)),
+      discountAmount: preview.discountAmount,
+    };
   }
 
   function changeGroupSize(value: string) {
