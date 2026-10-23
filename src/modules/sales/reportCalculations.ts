@@ -70,10 +70,11 @@ export function getRecordedTaxSnapshotValue(
  * Provides a clear per-order status for support exports without claiming
  * that a present snapshot has been independently validated.
  */
-export function getTaxSnapshotStatus(order: ReportTaxSnapshot): 'Legacy / unverified' | 'Not calculated' | 'Requires review' | 'Tax classification incomplete' | 'Missing / unverified' | 'Calculated snapshot' | 'No positive order total' {
+export function getTaxSnapshotStatus(order: ReportTaxSnapshot): 'Legacy / unverified' | 'Not calculated' | 'Requires review' | 'Tax classification incomplete' | 'Beneficiary details incomplete' | 'Missing / unverified' | 'Calculated snapshot' | 'No positive order total' {
   if (typeof order.total === 'number' && Number.isFinite(order.total) && order.total <= 0) {
     return 'No positive order total';
   }
+  if ((order.discountBeneficiaryCount ?? 0) > 0 && order.discountBeneficiariesComplete !== true) return 'Beneficiary details incomplete';
   if (order.taxSnapshotStatus === 'legacy_unknown') return 'Legacy / unverified';
   if (order.taxSnapshotStatus === 'not_calculated') return 'Not calculated';
   if (order.taxSnapshotStatus === 'requires_review') return 'Requires review';
