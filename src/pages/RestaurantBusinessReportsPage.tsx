@@ -287,6 +287,43 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
     ]);
   }
 
+  function exportStatutoryDiscountSupport() {
+    const rows = rangeOrders.flatMap((order) => (order.discountBeneficiaries ?? []).map((beneficiary) => [
+      order.orderNumber,
+      order.createdAt,
+      beneficiary.discountType.toUpperCase(),
+      beneficiary.idType,
+      order.discountGroupSize,
+      beneficiary.eligibleAmount,
+      beneficiary.discountAmount,
+    ]));
+    downloadSpreadsheet(`statutory-discount-support-${fromDate}-to-${toDate}.xlsx`, [
+      ['Senior Citizen / PWD discount support — NOT an official BIR Sales Book',''],
+      ['Period start', fromDate],
+      ['Period end', toDate],
+      ['Exported at', new Date().toISOString()],
+      ['Important limitation','This support export is incomplete for statutory BIR reporting. The application does not yet hold all required beneficiary identity fields and the applicable approved report format. ID numbers are intentionally omitted from this support export; reconcile against the lawful source records and accountant-approved report requirements.'],
+      [],
+      ['Order number','Transaction date','Discount type','Recorded ID document type','Group size','Recorded eligible share PHP','Recorded discount PHP'],
+      ...rows,
+    ]);
+  }
+
+  function exportVoidAndRefundReview() {
+    const candidates = rangeOrders.filter((order) => order.status === 'cancelled' || order.paymentStatus === 'refunded');
+    downloadSpreadsheet(`cancelled-refunded-review-${fromDate}-to-${toDate}.xlsx`, [
+      ['Cancelled / refunded transaction review — NOT an official BIR Void Report',''],
+      ['Period start', fromDate],
+      ['Period end', toDate],
+      ['Exported at', new Date().toISOString()],
+      ['Important limitation','This support list uses current order/payment status only. It is not a full BIR void/adjustment report because authorized invoice serials, complete immutable issue/void links and the approved fiscal report format are not yet enabled. Verify every row with source payment/refund records.'],
+      [],
+      ['Order number','Transaction date','Order status','Payment method','Payment status','Order total PHP'],
+      ...candidates.map((order) => [order.orderNumber, order.createdAt, order.status, order.paymentMethod, order.paymentStatus, order.total]),
+      ['Cancelled/refunded review records', candidates.length],
+    ]);
+  }
+
   function exportPayments() {
     downloadSpreadsheet(`payment-reconciliation-${fromDate}-to-${toDate}.xlsx`, [
       ['Payment reconciliation support report (not a provider settlement statement)',''],
@@ -486,6 +523,14 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
               </>}
               {!taxProducts.some((product) => !product.tax_category) && taxProducts.length > 0 && <p className="business-reports-muted">All menu products have a category recorded. This does not certify that the chosen categories are correct or that tax calculations are complete.</p>}
             </>}
+          </section>
+          <section className="business-reports-panel">
+            <h2>Discount and cancellation review</h2>
+            <p>These are reconciliation aids for an accountant and support the gap review; they are not the prescribed official BIR Senior Citizen/PWD Sales Books or Void Report.</p>
+            <div className="business-reports-actions" style={{ justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+              <button className="business-reports-button business-reports-export restaurant-export-button restaurant-compact-action" type="button" onClick={exportStatutoryDiscountSupport}>Export SC/PWD support (.xlsx)</button>
+              <button className="business-reports-button business-reports-export restaurant-export-button restaurant-compact-action" type="button" onClick={exportVoidAndRefundReview}>Export cancelled/refunded review (.xlsx)</button>
+            </div>
           </section>
           <section className="business-reports-panel"><h2>Tax-support exports</h2>
             <p>These files summarize order and tax fields already recorded by the platform. They are supporting records for review by your accountant, not official BIR invoices, books, returns, or confirmation that your business is tax-compliant. No tax rate is inferred when order tax data is missing.</p>
