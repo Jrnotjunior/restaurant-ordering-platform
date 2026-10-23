@@ -203,7 +203,7 @@ begin
     'notice', 'Readiness status is a platform checklist only. It is not BIR accreditation, a permit, or tax advice.'
   );
 end;
-$function$
+$function$;
 
 revoke all on function public.get_restaurant_bir_issuance_readiness(uuid) from public, anon;
 grant execute on function public.get_restaurant_bir_issuance_readiness(uuid) to authenticated;
