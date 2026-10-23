@@ -413,7 +413,7 @@ function AppContent() {
           : <MenuPage onAddToCart={addToCart} cartCount={cartCount} />;
 
   if (isCashierPosPage) {
-    return <StaffRoleGuard role="cashier">{(staffRestaurant) => (
+    return <StaffRoleGuard role="cashier" loginRestaurant={restaurant}>{(staffRestaurant) => (
       <RestaurantProvider restaurant={staffRestaurant}>
         <ThemeProvider restaurant={staffRestaurant}>
           <RestaurantLayout hideChrome role="cashier">
@@ -427,7 +427,7 @@ function AppContent() {
   }
 
   if (isCashierPage) {
-    return <StaffRoleGuard role="cashier">{(staffRestaurant) => (
+    return <StaffRoleGuard role="cashier" loginRestaurant={restaurant}>{(staffRestaurant) => (
       <RestaurantProvider restaurant={staffRestaurant}>
         <ThemeProvider restaurant={staffRestaurant}>
           <RestaurantLayout hideChrome role="cashier">
@@ -441,7 +441,7 @@ function AppContent() {
   }
 
   if (isKitchenPage || isKitchenMenuPage) {
-    return <StaffRoleGuard role="kitchen">{(staffRestaurant) => (
+    return <StaffRoleGuard role="kitchen" loginRestaurant={restaurant}>{(staffRestaurant) => (
       <RestaurantProvider restaurant={staffRestaurant}>
         <ThemeProvider restaurant={staffRestaurant}>
           <RestaurantLayout hideChrome role="kitchen">
@@ -455,7 +455,7 @@ function AppContent() {
   }
 
   if (isCashierSalesPage) {
-    return <StaffRoleGuard role="cashier">{(staffRestaurant) => (
+    return <StaffRoleGuard role="cashier" loginRestaurant={restaurant}>{(staffRestaurant) => (
       <RestaurantProvider restaurant={staffRestaurant}>
         <ThemeProvider restaurant={staffRestaurant}>
           <RestaurantLayout hideChrome role="cashier">
@@ -469,7 +469,7 @@ function AppContent() {
   }
 
   if (isDispatcherPage) {
-    return <StaffRoleGuard role="dispatcher">{(staffRestaurant) => (
+    return <StaffRoleGuard role="dispatcher" loginRestaurant={restaurant}>{(staffRestaurant) => (
       <RestaurantProvider restaurant={staffRestaurant}>
         <ThemeProvider restaurant={staffRestaurant}>
           <RestaurantLayout hideChrome role="dispatcher">
@@ -485,7 +485,7 @@ function AppContent() {
   if (restaurantRoleRoute) {
     if (authLoading) return <section className="restaurant-owner-auth-loading">Loading restaurant session…</section>;
     if (authError && !isSupabaseConfigured) return <section className="restaurant-owner-auth-loading">{authError}</section>;
-    return <OwnerRestaurantGuard>{(ownerRestaurant) => (
+    return <OwnerRestaurantGuard loginRestaurant={restaurant}>{(ownerRestaurant) => (
       <RestaurantProvider restaurant={ownerRestaurant}>
         <ThemeProvider restaurant={ownerRestaurant}>
           <RestaurantLayout hideChrome role={restaurantRoleRoute} ownerDashboard={restaurantRoleRoute === 'owner'}>
@@ -518,7 +518,7 @@ function AppContent() {
   if (isRestaurantOperationsPage) {
     if (authLoading) return <section className="restaurant-owner-auth-loading">Loading owner session…</section>;
     if (authError && !isSupabaseConfigured) return <section className="restaurant-owner-auth-loading">{authError}</section>;
-    return <OwnerRestaurantGuard>{(ownerRestaurant) => (
+    return <OwnerRestaurantGuard loginRestaurant={restaurant}>{(ownerRestaurant) => (
       <RestaurantProvider restaurant={ownerRestaurant}>
         <ThemeProvider restaurant={ownerRestaurant}>
           <OwnerUnsavedChangesProvider>
