@@ -72,8 +72,8 @@ BEGIN
   );
 
 
-  IF position('p_guest_tracking_token_hash' in v_tracking_definition) = 0
-     OR position('o.guest_tracking_token_hash = p_guest_tracking_token_hash' in v_tracking_definition) = 0 THEN
+  IF position('p_guest_tracking_token_hash' in lower(v_tracking_definition)) = 0
+     OR position('o.guest_tracking_token_hash = p_guest_tracking_token_hash' in lower(v_tracking_definition)) = 0 THEN
     RAISE EXCEPTION 'Could not safely add guest tracking token authorization predicate';
   END IF;
 
