@@ -79,6 +79,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
   const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
   const [cashOnPickupEnabled, setCashOnPickupEnabled] = useState(true);
   const [cashOnTakeOutEnabled, setCashOnTakeOutEnabled] = useState(true);
+  const [onlinePaymentsEnabled, setOnlinePaymentsEnabled] = useState(true);
   const [storeAddress, setStoreAddress] = useState('');
   // Public storefront config may omit the database ID; the cart product carries the resolved tenant ID.
   const restaurantId = restaurant.id ?? items[0]?.product.restaurantId;
@@ -170,7 +171,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
     async function loadCashOnDeliverySetting() {
       const { data, error } = await client
         .from('restaurants')
-        .select('cash_on_delivery_enabled,cash_on_pickup_enabled,cash_on_take_out_enabled')
+        .select('cash_on_delivery_enabled,cash_on_pickup_enabled,cash_on_take_out_enabled,online_payment_methods')
         .eq('id', restaurantId)
         .single();
 
@@ -178,6 +179,7 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
       if (!error) setCashOnDeliveryEnabled(data?.cash_on_delivery_enabled !== false);
       if (!error) setCashOnPickupEnabled(data?.cash_on_pickup_enabled !== false);
       if (!error) setCashOnTakeOutEnabled(data?.cash_on_take_out_enabled !== false);
+      if (!error) setOnlinePaymentsEnabled(!(data?.online_payment_methods && typeof data.online_payment_methods === 'object' && (data.online_payment_methods as Record<string, unknown>).enabled === false));
       if (!error) setCashOnTakeOutEnabled(data?.cash_on_take_out_enabled !== false);
     }
 
@@ -880,10 +882,12 @@ export function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
             <div><p className="eyebrow">Checkout</p><h2 id="payment-modal-title">Choose your payment method</h2><p>Select how you would like to pay for this order.</p></div>
             <button className="payment-modal-close" type="button" aria-label="Close payment method" onClick={() => setShowPaymentModal(false)} disabled={isSubmitting}>×</button>
           </div>
-          {thirdPartyCourierDelivery && <p className="courier-payment-note"><strong>Pickup with your own courier.</strong> Online payment is required. After payment is confirmed, your order will be sent to the kitchen for preparation. Please make sure your courier is available when the order is ready. The restaurant does not provide delivery to your destination and is not responsible for courier delays or unavailability after the order is ready.</p>}
+          {thirdPartyCourierDelivery && !onlinePaymentsEnabled && <p className="checkout-error" role="alert">This restaurant has turned off online payments, which are required for pickup with your own courier. Please contact the restaurant or choose another available order type.</p>}
+          {thirdPartyCourierDelivery && onlinePaymentsEnabled && <p className="courier-payment-note"><strong>Pickup with your own courier.</strong> Online payment is required. After payment is confirmed, your order will be sent to the kitchen for preparation. Please make sure your courier is available when the order is ready. The restaurant does not provide delivery to your destination and is not responsible for courier delays or unavailability after the order is ready.</p>}
           <div className="payment-method-options">
             {paymentMethods
               .filter((method) => !thirdPartyCourierDelivery || method.value === 'online')
+              .filter((method) => method.value !== 'online' || onlinePaymentsEnabled)
               .filter((method) => !(orderType === 'delivery' && method.value === 'cash' && !cashOnDeliveryEnabled))
               .filter((method) => !(orderType === 'pickup' && method.value === 'cash' && !cashOnPickupEnabled))
               .filter((method) => !(orderType === 'take_out' && method.value === 'cash' && !cashOnTakeOutEnabled))
