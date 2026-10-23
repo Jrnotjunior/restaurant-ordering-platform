@@ -40,6 +40,8 @@ type Row = {
   tax_vat_amount?: number | string | null;
   tax_vat_exempt_sales?: number | string | null;
   tax_net_sales?: number | string | null;
+  tax_snapshot_status?: 'legacy_unknown' | 'not_calculated' | 'calculated' | 'requires_review' | null;
+  tax_snapshot_version?: number | string | null;
   discount_amount?: number | string | null;
   loyalty_discount_amount?: number | string | null;
   discount_beneficiary_count?: number | null;
@@ -48,7 +50,14 @@ type Row = {
 };
 
 export async function getRestaurantSales(restaurantId: string): Promise<RestaurantOrder[]> {
-  const rows = await supabaseRpc<Row>('get_restaurant_sales', { p_restaurant_id: restaurantId });
+  const [rows, taxStatusRows] = await Promise.all([
+    supabaseRpc<Row>('get_restaurant_sales', { p_restaurant_id: restaurantId }),
+    supabaseRpc<{ order_id: string; tax_snapshot_status: NonNullable<Row['tax_snapshot_status']>; tax_snapshot_version: number | string | null }>(
+      'get_restaurant_tax_snapshot_statuses',
+      { p_restaurant_id: restaurantId },
+    ),
+  ]);
+  const taxStatuses = new Map(taxStatusRows.map((row) => [row.order_id, row]));
 
   return rows.map((row): RestaurantOrder => ({
     orderId: row.order_id,
@@ -75,6 +84,8 @@ export async function getRestaurantSales(restaurantId: string): Promise<Restaura
     taxVatAmount: Number(row.tax_vat_amount ?? 0),
     taxVatExemptSales: Number(row.tax_vat_exempt_sales ?? 0),
     taxNetSales: Number(row.tax_net_sales ?? 0),
+    taxSnapshotStatus: taxStatuses.get(row.order_id)?.tax_snapshot_status ?? 'legacy_unknown',
+    taxSnapshotVersion: taxStatuses.get(row.order_id)?.tax_snapshot_version == null ? null : Number(taxStatuses.get(row.order_id)?.tax_snapshot_version),
     discountAmount: Number(row.discount_amount ?? 0),
     loyaltyDiscountAmount: Number(row.loyalty_discount_amount ?? 0),
     discountBeneficiaryCount: Number(row.discount_beneficiary_count ?? 0),
