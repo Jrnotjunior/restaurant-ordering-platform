@@ -793,6 +793,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
           <section className="business-reports-panel">
             <h2>Menu tax classification</h2>
             <p>Every product category must match the restaurant's verified tax treatment. These values are configuration inputs, not a tax determination. Set them in Menu Management only after review with the restaurant's accountant.</p>
+            <p><a href="#restaurant/menu">Open Menu Management</a> to review each product's tax category. Do not assign a category based only on the product name; confirm the correct treatment with the restaurant's accountant.</p>
             {taxProductsError && <p className="business-reports-error" role="alert">Menu classification data could not be loaded: {taxProductsError}</p>}
             {!taxProductsError && <>
               <div className="business-reports-cards">
