@@ -196,6 +196,10 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
         setSelectedOrder(paidOrder);
       });
       window.print();
+      // Cashier work ends after the customer/kitchen slips are printed and
+      // the order is handed to the kitchen. Do not leave the kitchen's
+      // next-stage "Mark Ready" action open in the cashier workspace.
+      setSelectedOrder(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to confirm cash payment.');
     } finally { setUpdating(null); }
