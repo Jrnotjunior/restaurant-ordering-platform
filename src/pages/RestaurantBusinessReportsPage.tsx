@@ -13,6 +13,7 @@ import { supabase } from '../services/supabaseClient';
 type Props = { restaurantId: string };
 type ExpenseCategory = 'ingredients' | 'payroll' | 'rent' | 'utilities' | 'packaging' | 'delivery' | 'marketing' | 'maintenance' | 'supplies' | 'other';
 type Expense = { id: string; expense_date: string; category: ExpenseCategory; description: string; amount: number | string; created_at: string };
+type TaxProduct = { id: string; name: string; tax_category: 'standard_rate' | 'vat_exempt' | 'zero_rated' | null };
 type Tab = 'overview' | 'expenses' | 'payments' | 'tax' | 'journal';
 type PosJournalEntry = { journal_id: number | string; occurred_at: string; transaction_id: number | string; order_id: string | null; order_number: string | null; event_type: string; operation: string; actor_user_id: string | null; actor_role: string | null; old_values: Record<string, unknown> | null; new_values: Record<string, unknown> | null };
 
@@ -94,6 +95,8 @@ function downloadSpreadsheet(filename: string, rows: unknown[][]) {
 export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
   const [tab, setTab] = useState<Tab>('overview');
   const [orders, setOrders] = useState<RestaurantOrder[]>([]);
+  const [taxProducts, setTaxProducts] = useState<TaxProduct[]>([]);
+  const [taxProductsError, setTaxProductsError] = useState('');
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [fromDate, setFromDate] = useState(monthStart);
   const [toDate, setToDate] = useState(todayKey);
@@ -113,13 +116,21 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
     if (!supabase) { setError('Supabase is not configured.'); setLoading(false); return; }
     setLoading(true); setError('');
     try {
-      const [sales, expenseResult] = await Promise.all([
+      const [sales, expenseResult, taxProductResult] = await Promise.all([
         getRestaurantSales(restaurantId),
         supabase.from('restaurant_business_expenses').select('id,expense_date,category,description,amount,created_at').eq('restaurant_id', restaurantId).order('expense_date', { ascending: false }).limit(2000),
+        supabase.from('products').select('id,name,tax_category').eq('restaurant_id', restaurantId).order('name', { ascending: true }).limit(2000),
       ]);
       if (expenseResult.error) throw expenseResult.error;
       setOrders(sales);
       setExpenses((expenseResult.data ?? []) as Expense[]);
+      if (taxProductResult.error) {
+        setTaxProducts([]);
+        setTaxProductsError(taxProductResult.error.message);
+      } else {
+        setTaxProducts((taxProductResult.data ?? []) as TaxProduct[]);
+        setTaxProductsError('');
+      }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load business reports. Apply the business expenses database migration if this is the first setup.');
     } finally { setLoading(false); }
@@ -453,6 +464,29 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
             <div className="business-reports-card"><small>Recorded zero-rated sales</small><strong>{taxSnapshotComplete ? peso(zeroRatedSales) : 'Incomplete'}</strong></div>
           </div>
           {ordersMissingTaxSnapshots.length > 0 && <p className="business-reports-error" role="alert">{ordersMissingTaxSnapshots.length} order(s) in this period have tax snapshots that are legacy-unverified, not calculated, missing, or marked for review. Tax fields are intentionally left blank until the server-side calculation status is confirmed. These supporting reports are not a substitute for an accountant's review.</p>}
+          <section className="business-reports-panel">
+            <h2>Menu tax classification</h2>
+            <p>Every product category must match the restaurant's verified tax treatment. These values are configuration inputs, not a tax determination. Set them in Menu Management only after review with the restaurant's accountant.</p>
+            {taxProductsError && <p className="business-reports-error" role="alert">Menu classification data could not be loaded: {taxProductsError}</p>}
+            {!taxProductsError && <>
+              <div className="business-reports-cards">
+                <div className="business-reports-card"><small>Menu products</small><strong>{taxProducts.length}</strong></div>
+                <div className="business-reports-card"><small>Unclassified products</small><strong>{taxProducts.filter((product) => !product.tax_category).length}</strong></div>
+                <div className="business-reports-card"><small>Standard-rated</small><strong>{taxProducts.filter((product) => product.tax_category === 'standard_rate').length}</strong></div>
+                <div className="business-reports-card"><small>VAT-exempt</small><strong>{taxProducts.filter((product) => product.tax_category === 'vat_exempt').length}</strong></div>
+                <div className="business-reports-card"><small>Zero-rated</small><strong>{taxProducts.filter((product) => product.tax_category === 'zero_rated').length}</strong></div>
+              </div>
+              {taxProducts.some((product) => !product.tax_category) && <>
+                <p className="business-reports-error" role="alert">{taxProducts.filter((product) => !product.tax_category).length} product(s) still have no reviewed tax classification. Orders containing those items remain incomplete for tax-support reporting.</p>
+                <div className="business-reports-table-wrap"><table className="business-reports-table">
+                  <thead><tr><th>Product</th><th>Classification</th></tr></thead>
+                  <tbody>{taxProducts.filter((product) => !product.tax_category).slice(0, 25).map((product) => <tr key={product.id}><td>{product.name}</td><td>Unclassified — review required</td></tr>)}</tbody>
+                </table></div>
+                {taxProducts.filter((product) => !product.tax_category).length > 25 && <p className="business-reports-muted">Showing the first 25 unclassified items. Open Store Settings → Menu Management to review the remaining products.</p>}
+              </>}
+              {!taxProducts.some((product) => !product.tax_category) && taxProducts.length > 0 && <p className="business-reports-muted">All menu products have a category recorded. This does not certify that the chosen categories are correct or that tax calculations are complete.</p>}
+            </>}
+          </section>
           <section className="business-reports-panel"><h2>Tax-support exports</h2>
             <p>These files summarize order and tax fields already recorded by the platform. They are supporting records for review by your accountant, not official BIR invoices, books, returns, or confirmation that your business is tax-compliant. No tax rate is inferred when order tax data is missing.</p>
             <p className="business-reports-muted">Orders with VAT registration recorded: {vatConfiguredOrders} of {completedOrders.length} completed orders in this period. Completed orders missing tax snapshots: {completedOrdersMissingTaxSnapshots.length}. Check your business registration and tax treatment with your accountant before relying on these totals.</p>
