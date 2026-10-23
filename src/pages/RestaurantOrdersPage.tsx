@@ -3,6 +3,7 @@ import { createPortal, flushSync } from 'react-dom';
 import { getRestaurantOrders, updateOrderStatus, sendOrderToKitchen, cancelRestaurantOrder, type RestaurantOrder, type RestaurantOrderStatus } from '../modules/ordering/orderService';
 import { getKitchenOrders, updateKitchenOrderStatus } from '../modules/kitchen/kitchenService';
 import { confirmPosCashPayment } from '../modules/pos/posService';
+import { OperationalCustomerReceipt } from '../components/OperationalCustomerReceipt';
 import { supabase } from '../services/supabaseClient';
 
 type Props = { restaurantId: string; role?: 'owner' | 'cashier' | 'kitchen' };
@@ -299,34 +300,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
           .restaurant-order-list-status{display:none}
           .restaurant-order-modal-actions .button{flex:1;min-width:130px}
         }
-        .restaurant-order-print-receipt{display:none}
-        @media print{
-          @page{size:80mm auto;margin:0}
-          html,body{width:80mm!important;margin:0!important;padding:0!important;background:#fff!important}
-          body *{visibility:hidden!important}
-          .restaurant-order-print-receipt,.restaurant-order-print-receipt *{visibility:visible!important}
-          .restaurant-order-print-receipt{display:block!important;width:80mm!important;max-width:80mm!important;box-sizing:border-box!important;margin:0!important;padding:4mm 4mm 6mm!important;font-family:Arial,sans-serif!important;font-size:12px!important;line-height:1.4!important;color:#000!important;background:#fff!important}
-          .restaurant-kitchen-receipt{page-break-after:always!important;break-after:page!important}
-          .receipt-kitchen-item{display:grid!important;grid-template-columns:minmax(0,1fr) 35px!important;gap:8px!important;font-size:15px!important;font-weight:700!important;margin-bottom:8px!important}.receipt-kitchen-item strong{text-align:right!important}
-          .receipt-discount-detail{margin-top:6px!important;font-size:10px!important;line-height:1.35!important}
-          .receipt-signature-line{margin-top:14px!important;font-size:10px!important}
-          .restaurant-order-print-receipt *{box-sizing:border-box!important}
-          .receipt-center{text-align:center!important}
-          .receipt-title{font-size:18px!important;line-height:1.2!important;font-weight:800!important;margin:0 0 5px!important}
-          .receipt-order-number{font-size:13px!important;line-height:1.25!important;font-weight:800!important;word-break:break-word!important}
-          .receipt-muted{font-size:11px!important}
-          .receipt-divider{border:0!important;border-top:1px dashed #000!important;margin:9px 0!important}
-          .receipt-row{display:flex!important;justify-content:space-between!important;align-items:flex-start!important;gap:12px!important}
-          .receipt-row span:first-child{min-width:0!important}
-          .receipt-row span:last-child{white-space:nowrap!important;text-align:right!important}
-          .receipt-label{font-weight:700!important}
-          .receipt-item{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:start!important;column-gap:10px!important}
-          .receipt-item + .receipt-item{margin-top:3px!important}
-          .receipt-item-name{min-width:0!important;overflow-wrap:anywhere!important}
-          .receipt-item > span:last-child{white-space:nowrap!important;text-align:right!important}
-          .receipt-total{font-size:16px!important;line-height:1.25!important;font-weight:800!important}
-          .receipt-center:last-child{font-size:11px!important}
-        }
+
       `}</style>
 
             {role !== 'owner' && <div className="restaurant-page-header">
@@ -738,122 +712,87 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
             </div>}
           </div>
 
-          <div className="restaurant-order-print-receipt restaurant-kitchen-receipt" aria-hidden="true">
-            <div className="receipt-center">
-              <div className="receipt-title">KITCHEN ORDER</div>
-              <div className="receipt-order-number">{selectedOrder.orderNumber}</div>
-              <div className="receipt-muted">{new Date(selectedOrder.createdAt).toLocaleString()}</div>
+        </div>,
+        document.body,
+      )}
+
+
+      {selectedOrder && createPortal(
+        <div className="restaurant-pos-print-area" aria-hidden="true">
+          <div className="restaurant-pos-print-receipt restaurant-pos-kitchen-receipt">
+            <div className="pos-receipt-center">
+              <div className="pos-receipt-title">KITCHEN ORDER</div>
+              <div className="pos-receipt-order-number">{selectedOrder.orderNumber}</div>
+              <div className="pos-receipt-muted">{new Date(selectedOrder.createdAt).toLocaleString()}</div>
             </div>
-            <hr className="receipt-divider" />
-            <div className="receipt-center">
-              <div className="receipt-label">
-                {selectedOrder.orderType === 'dine_in'
-                  ? 'DINE-IN'
-                  : selectedOrder.orderType === 'take_out'
-                    ? 'TAKE-OUT'
-                    : selectedOrder.orderType === 'pickup'
-                      ? 'PICKUP'
-                      : 'DELIVERY'}
+            <hr className="pos-receipt-divider" />
+            <div className="pos-receipt-center">
+              <div className="pos-receipt-label">
+                {selectedOrder.orderType === 'dine_in' ? 'DINE-IN' : selectedOrder.orderType === 'take_out' ? 'TAKE-OUT' : selectedOrder.orderType === 'pickup' ? 'PICKUP' : 'DELIVERY'}
               </div>
               {selectedOrder.customerName && <div>{selectedOrder.customerName}</div>}
             </div>
             {selectedOrder.notes.trim() && (
               <>
-                <hr className="receipt-divider" />
+                <hr className="pos-receipt-divider" />
                 <div>
-                  <div className="receipt-label">SPECIAL INSTRUCTIONS</div>
+                  <div className="pos-receipt-label">Special instructions</div>
                   <div style={{ whiteSpace: 'pre-wrap' }}>{selectedOrder.notes}</div>
                 </div>
               </>
             )}
-            <hr className="receipt-divider" />
+            <hr className="pos-receipt-divider" />
             <div>
               {selectedOrder.items.map((item) => (
-                <div className="receipt-kitchen-item" key={item.id}>
-                  <span>{item.productName}</span>
+                <div className="pos-receipt-kitchen-item" key={item.id}>
                   <strong>×{item.quantity}</strong>
+                  <span>{item.productName}</span>
                 </div>
               ))}
             </div>
-            <hr className="receipt-divider" />
-            <div className="receipt-center">Prepare this order.</div>
+            <hr className="pos-receipt-divider" />
+            <div className="pos-receipt-center">Prepare this order.</div>
           </div>
 
-          <div className="restaurant-order-print-receipt restaurant-customer-receipt" aria-hidden="true">
-            <div className="receipt-center">
-              <div className="receipt-title">CUSTOMER RECEIPT</div>
-              <div className="receipt-order-number">{selectedOrder.orderNumber}</div>
-              <div className="receipt-muted">{new Date(selectedOrder.createdAt).toLocaleString()}</div>
-            </div>
-            <hr className="receipt-divider" />
-            <div className="receipt-center">
-              <div className="receipt-label">
-                {selectedOrder.orderType === 'dine_in'
-                  ? 'DINE-IN'
-                  : selectedOrder.orderType === 'take_out'
-                    ? 'TAKE-OUT'
-                    : selectedOrder.orderType === 'pickup'
-                      ? 'PICKUP'
-                      : 'DELIVERY'}
-              </div>
-              <div>{paymentLabel(selectedOrder)}</div>
-            </div>
-            <hr className="receipt-divider" />
-            <div>
-              <div className="receipt-label">Customer</div>
-              <div>{selectedOrder.customerName || 'Guest'}</div>
-            </div>
-            <hr className="receipt-divider" />
-            <div>
-              {selectedOrder.items.map((item) => (
-                <div className="receipt-item" key={item.id}>
-                  <span className="receipt-item-name">{item.quantity} × {item.productName}</span>
-                  <span>₱{item.lineTotal.toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-            <hr className="receipt-divider" />
-            {selectedOrder.taxGrossSales > 0 ? (
-              <>
-                <div className="receipt-row"><span>Gross sales</span><span>₱{selectedOrder.taxGrossSales.toFixed(2)}</span></div>
-                <div className="receipt-row"><span>VATable sales</span><span>₱{selectedOrder.taxVatableSales.toFixed(2)}</span></div>
-                {selectedOrder.taxVatAmount > 0 && <div className="receipt-row"><span>VAT {selectedOrder.taxVatRate.toFixed(2)}%</span><span>₱{selectedOrder.taxVatAmount.toFixed(2)}</span></div>}
-                {selectedOrder.taxVatExemptSales > 0 && <div className="receipt-row"><span>VAT-exempt sales</span><span>₱{selectedOrder.taxVatExemptSales.toFixed(2)}</span></div>}
-                {selectedOrder.discountAmount > 0 && <div className="receipt-row"><span>SC/PWD discount</span><span>-₱{selectedOrder.discountAmount.toFixed(2)}</span></div>}
-              </>
-            ) : (
-              <div className="receipt-row"><span>Subtotal</span><span>₱{selectedOrder.items.reduce((sum, item) => sum + item.lineTotal, 0).toFixed(2)}</span></div>
-            )}
-            {selectedOrder.loyaltyDiscountAmount > 0 && (
-              <div className="receipt-row"><span>Loyalty Discount</span><span>-₱{selectedOrder.loyaltyDiscountAmount.toFixed(2)}</span></div>
-            )}
-            {selectedOrder.orderType === 'delivery' && selectedOrder.shippingFee > 0 && (
-              <div className="receipt-row"><span>Delivery fee</span><span>₱{selectedOrder.shippingFee.toFixed(2)}</span></div>
-            )}
-            <div className="receipt-row receipt-total">
-              <span>TOTAL</span>
-              <span>₱{selectedOrder.total.toFixed(2)}</span>
-            </div>
-            {selectedOrder.discountBeneficiaries.length > 0 && (
-              <>
-                <hr className="receipt-divider" />
-                <div className="receipt-label">SC/PWD DETAILS</div>
-                {selectedOrder.discountBeneficiaries.map((beneficiary, index) => (
-                  <div key={index} className="receipt-discount-detail">
-                    <div>{beneficiary.discountType.toUpperCase()} ID: {beneficiary.idNumber}</div>
-                    <div>Eligible: ₱{beneficiary.eligibleAmount.toFixed(2)} · Discount: ₱{beneficiary.discountAmount.toFixed(2)}</div>
-                  </div>
-                ))}
-                <div className="receipt-signature-line">Customer signature: ____________________</div>
-              </>
-            )}
-            <hr className="receipt-divider" />
-            <div className="receipt-center">Thank you for your order!</div>
-          </div>
+          <OperationalCustomerReceipt
+            orderNumber={selectedOrder.orderNumber}
+            createdAt={selectedOrder.createdAt}
+            orderType={selectedOrder.orderType}
+            paymentLabel={paymentLabel(selectedOrder)}
+            customerName={selectedOrder.customerName}
+            notes={selectedOrder.notes}
+            items={selectedOrder.items.map((item) => ({
+              id: item.id,
+              name: item.productName,
+              quantity: item.quantity,
+              lineTotal: item.lineTotal,
+            }))}
+            grossSales={selectedOrder.taxGrossSales > 0
+              ? selectedOrder.taxGrossSales
+              : selectedOrder.items.reduce((sum, item) => sum + item.lineTotal, 0)}
+            showTaxBreakdown={selectedOrder.taxGrossSales > 0}
+            vatableSales={selectedOrder.taxVatableSales}
+            vatAmount={selectedOrder.taxVatAmount}
+            vatExemptSales={selectedOrder.taxVatExemptSales}
+            vatRate={selectedOrder.taxVatRate}
+            discountAmount={selectedOrder.discountAmount}
+            loyaltyDiscountAmount={selectedOrder.loyaltyDiscountAmount}
+            deliveryFee={selectedOrder.orderType === 'delivery' ? selectedOrder.shippingFee : 0}
+            total={selectedOrder.total}
+            beneficiaries={selectedOrder.discountBeneficiaries.map((beneficiary) => ({
+              discountType: beneficiary.discountType,
+              idType: beneficiary.idType,
+              idNumber: beneficiary.idNumber,
+              beneficiaryName: beneficiary.beneficiaryName,
+              beneficiaryAddress: beneficiary.beneficiaryAddress,
+              beneficiaryTin: beneficiary.beneficiaryTin,
+              eligibleAmount: beneficiary.eligibleAmount,
+              discountAmount: beneficiary.discountAmount,
+            }))}
+          />
         </div>,
         document.body,
       )}
-
       {cancelConfirmationOrder && createPortal(
         <div
           className="restaurant-order-cancel-modal-backdrop"
