@@ -67,6 +67,17 @@ describe('OperationalCustomerReceipt', () => {
     expect(html).toContain('Personal food share: ₱206.66');
   });
 
+  it('renders the same customer receipt identity and disclaimer for every order type', () => {
+    const orderTypes: OperationalCustomerReceiptProps['orderType'][] = ['dine_in', 'take_out', 'pickup', 'delivery'];
+    for (const orderType of orderTypes) {
+      const html = renderToStaticMarkup(<OperationalCustomerReceipt {...baseReceipt} orderType={orderType} />);
+      expect(html).toContain('CUSTOMER RECEIPT');
+      expect(html).toContain('Operational receipt — not a BIR-issued invoice');
+      expect(html).toContain('ORD-000020');
+      expect(html).toContain('TOTAL');
+    }
+  });
+
   it('is the single customer receipt template used by both POS and staff order handoff', () => {
     const posSource = readFileSync(fileURLToPath(new URL('../pages/RestaurantCashierPosPage.tsx', import.meta.url)), 'utf8');
     const staffOrdersSource = readFileSync(fileURLToPath(new URL('../pages/RestaurantOrdersPage.tsx', import.meta.url)), 'utf8');
