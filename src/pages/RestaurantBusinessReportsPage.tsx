@@ -625,10 +625,12 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
                 <div className="business-reports-card"><small>Completed orders</small><strong>{readingPreview.order_counts.completed}</strong></div>
                 <div className="business-reports-card"><small>Cancelled</small><strong>{readingPreview.order_counts.cancelled}</strong></div>
                 <div className="business-reports-card"><small>Refunded</small><strong>{readingPreview.order_counts.refunded}</strong></div>
-                <div className="business-reports-card"><small>Completed order totals</small><strong>{peso(readingPreview.platform_totals_php.completed_order_totals)}</strong></div>
-                <div className="business-reports-card"><small>Cumulative completed totals</small><strong>{peso(readingPreview.platform_totals_php.cumulative_completed_order_totals_through_date)}</strong></div>
-                <div className="business-reports-card"><small>Recorded discounts</small><strong>{peso(readingPreview.platform_totals_php.completed_order_discounts)}</strong></div>
-                <div className="business-reports-card"><small>Delivery fees</small><strong>{peso(readingPreview.platform_totals_php.completed_order_delivery_fees)}</strong></div>
+                <div className="business-reports-card"><small>Paid sales total</small><strong>{readingPreview.platform_totals_php.paid_sales_total == null ? 'Not captured' : peso(readingPreview.platform_totals_php.paid_sales_total)}</strong></div>
+                <div className="business-reports-card"><small>Cumulative paid sales through date</small><strong>{readingPreview.platform_totals_php.cumulative_paid_sales_total == null ? 'Not captured' : peso(readingPreview.platform_totals_php.cumulative_paid_sales_total)}</strong></div>
+                <div className="business-reports-card"><small>Paid sales orders</small><strong>{readingPreview.platform_totals_php.paid_sales_order_count ?? 'Not captured'}</strong></div>
+                <div className="business-reports-card"><small>Discounts on paid sales</small><strong>{readingPreview.platform_totals_php.paid_order_discounts == null ? 'Not captured' : peso(readingPreview.platform_totals_php.paid_order_discounts)}</strong></div>
+                <div className="business-reports-card"><small>Delivery fees on paid sales</small><strong>{readingPreview.platform_totals_php.paid_order_delivery_fees == null ? 'Not captured' : peso(readingPreview.platform_totals_php.paid_order_delivery_fees)}</strong></div>
+                <div className="business-reports-card"><small>Workflow-completed order totals</small><strong>{peso(readingPreview.platform_totals_php.completed_order_totals)}</strong></div>
               </div>
               <section className="business-reports-panel" style={{ marginTop: 14 }}>
                 <div className="business-reports-panel-heading">
