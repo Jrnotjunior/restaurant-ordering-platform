@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { createPortal, flushSync } from 'react-dom';
 import { getRestaurantOrders, updateOrderStatus, sendOrderToKitchen, cancelRestaurantOrder, type RestaurantOrder, type RestaurantOrderStatus } from '../modules/ordering/orderService';
 import { getKitchenOrders, updateKitchenOrderStatus } from '../modules/kitchen/kitchenService';
 import { confirmPosCashPayment } from '../modules/pos/posService';
@@ -189,11 +189,13 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
       // Do not call updateOrderStatus again: the database transition has already happened.
       await confirmPosCashPayment(order.orderId);
       const paidOrder = { ...order, paymentStatus: 'paid' as const, status: 'preparing' as RestaurantOrderStatus };
-      setOrders((current) => current.map((item) => item.orderId === order.orderId ? paidOrder : item));
-      // Keep the updated paid order in the print view so both kitchen and customer
-      // receipts show the confirmed cash status and the same order totals.
-      setSelectedOrder(paidOrder);
-      window.setTimeout(() => window.print(), 100);
+      // Flush the updated paid order into the hidden print markup before opening
+      // the browser dialog; a timer here can cause the print request to be missed.
+      flushSync(() => {
+        setOrders((current) => current.map((item) => item.orderId === order.orderId ? paidOrder : item));
+        setSelectedOrder(paidOrder);
+      });
+      window.print();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to confirm cash payment.');
     } finally { setUpdating(null); }
