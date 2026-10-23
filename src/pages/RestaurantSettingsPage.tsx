@@ -392,6 +392,8 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         });
         setTaxpayerError('');
       }
+      const { data: managerData } = await supabase.rpc('is_system_admin_manager');
+      setCanManageNonVatTaxBasis(managerData === true);
 
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load store settings.');
