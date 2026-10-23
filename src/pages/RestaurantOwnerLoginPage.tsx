@@ -8,7 +8,15 @@ import { resolveAccountContext } from '../modules/auth/authService';
 export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: boolean }) {
   const restaurant = useRestaurant();
   const { user, accountType, staffRole, staffRestaurantId, loading: authLoading, signOut, error: authError } = useRestaurantOwnerAuth();
-  const [error, setError] = useState('');
+  const [error, setError] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('web2table:tenant-login-error');
+      if (saved) sessionStorage.removeItem('web2table:tenant-login-error');
+      return saved || '';
+    } catch {
+      return '';
+    }
+  });
   const [submitting, setSubmitting] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -111,12 +119,29 @@ export function RestaurantOwnerLoginPage({ staffOnly = false }: { staffOnly?: bo
         const privilegedAccount = accountContext.accountType === 'owner' || accountContext.accountType === 'staff';
 
         if (privilegedAccount && (!restaurant.id || assignedRestaurantId !== restaurant.id)) {
+          const message = 'This account belongs to a different restaurant. Sign-in is blocked on this domain. Please use your restaurant’s own domain.';
+          // Persist the message across auth-provider redirects/remounts caused by sign-out.
+          try {
+            sessionStorage.setItem('web2table:tenant-login-error', message);
+          } catch {
+            // The visible state below still provides feedback when storage is unavailable.
+          }
+          setError(message);
           await supabase.auth.signOut();
-          throw new Error('This account belongs to a different restaurant. Sign-in is blocked on this domain. Please use your restaurant’s own domain.');
+          return;
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to sign in. Please check your credentials.');
+      const message = err instanceof Error ? err.message : 'Unable to sign in. Please check your credentials.';
+      setError(message);
+      // Preserve tenant-verification failures if signing out remounts the login page.
+      if (message.includes('different restaurant') || message.includes('could not verify this account for this restaurant')) {
+        try {
+          sessionStorage.setItem('web2table:tenant-login-error', message);
+        } catch {
+          // Ignore unavailable browser storage.
+        }
+      }
     } finally {
       setSubmitting(false);
     }
