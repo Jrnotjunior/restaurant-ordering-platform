@@ -7,7 +7,7 @@
  * the customer's browser/recovery fragment. Do not log the raw token.
  */
 const GUEST_ORDER_TRACKING_TOKEN_BYTES = 32;
-const GUEST_ORDER_TRACKING_TOKEN_PATTERN = /^[0-9a-f]{64}$/i;
+const GUEST_ORDER_TRACKING_TOKEN_PATTERN = /^[0-9a-f]{64}$/;
 
 function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
@@ -23,7 +23,7 @@ export async function hashGuestOrderTrackingToken(token: string): Promise<string
     throw new Error('Your browser cannot securely validate an order-tracking token. Please update your browser.');
   }
 
-  const digest = await secureCrypto.subtle.digest('SHA-256', new TextEncoder().encode(token.toLowerCase()));
+  const digest = await secureCrypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
   return bytesToHex(new Uint8Array(digest));
 }
 
