@@ -593,7 +593,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
             <div className="business-reports-panel-heading">
               <div><h2>Daily sales readings (internal preview)</h2><p>Generate an X-style current report or a Z-style day-close preview for review. These previews do not close the business day, lock sales, or count as official BIR readings.</p></div>
             <div className="business-reports-actions">
-              <label className="business-reports-field"><span>Business date</span><input type="date" value={readingDate} max={todayKey} onChange={(event) => { setReadingDate(event.target.value); setReadingPreview(null); }} /></label>
+              <label className="business-reports-field"><span>Business date</span><input type="date" value={readingDate} max={todayKey()} onChange={(event) => { setReadingDate(event.target.value); setReadingPreview(null); }} /></label>
             </div>
             </div>
             <p className="business-reports-muted">BIR rules for the applicable Sales Machine/Software route require specific readings or approved equivalents and backend reports. This preview is development groundwork only; its figures must be reconciled against approved tax rules, original payment records, and the prescribed BIR format.</p>
