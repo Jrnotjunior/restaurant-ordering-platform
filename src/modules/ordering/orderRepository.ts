@@ -134,6 +134,8 @@ export type RestaurantOrder = {
   discountBeneficiaryCount: number;
   discountGroupSize: number;
   discountBeneficiaries: { discountType: PosDiscountType; idType: string; idNumber: string; beneficiaryName?: string | null; beneficiaryTin?: string | null; beneficiaryAddress?: string | null; eligibleAmount: number; discountAmount: number }[];
+  /** False/undefined means statutory beneficiary support details are incomplete or unknown. */
+  discountBeneficiariesComplete?: boolean;
   createdAt: string;
   items: { id: string; productName: string; quantity: number; unitPrice: number; lineTotal: number; taxCategory?: 'standard_rate' | 'vat_exempt' | 'zero_rated' | null }[];
 };
