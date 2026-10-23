@@ -23,6 +23,7 @@ type PosPrintOrder = {
   createdAt: string;
   items: CartItem[];
   beneficiaries: PrintedBeneficiary[];
+  showTaxBreakdown: boolean;
   financials: {
     discountAmount: number;
     loyaltyDiscountAmount: number;
@@ -210,6 +211,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const eligibleZeroRatedDiscount = money(eligibleAllocations.filter((allocation) => allocation.taxCategory === 'zero_rated').reduce((sum, allocation) => sum + allocation.discountAmount, 0));
   const hasUnclassifiedCartItem = cart.some((item) => !item.product.taxCategory);
   const cartTaxBreakdownReady = cart.length > 0 && !hasUnclassifiedCartItem;
+  const taxBreakdownVisible = Boolean(taxSettings?.vatRegistered && cartTaxBreakdownReady && beneficiaries.length === 0);
   const baseStandardNet = money(cart.reduce((sum, item) => {
     if (item.product.taxCategory !== 'standard_rate') return sum;
     const lineGross = item.product.price * item.quantity;
@@ -272,11 +274,21 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
       if (existing) return current.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
       return [...current, { product, quantity: 1 }];
     });
+    setBeneficiaries((current) => current.map((beneficiary) => {
+      const eligibleLineAmounts = { ...beneficiary.eligibleLineAmounts };
+      delete eligibleLineAmounts[product.id];
+      return { ...beneficiary, eligibleLineAmounts };
+    }));
     setSuccess('');
   }
 
   function changeQuantity(productId: string, amount: number) {
     setCart((current) => current.map((item) => item.product.id === productId ? { ...item, quantity: item.quantity + amount } : item).filter((item) => item.quantity > 0));
+    setBeneficiaries((current) => current.map((beneficiary) => {
+      const eligibleLineAmounts = { ...beneficiary.eligibleLineAmounts };
+      delete eligibleLineAmounts[productId];
+      return { ...beneficiary, eligibleLineAmounts };
+    }));
   }
 
   function addBeneficiary(type: PosDiscountType) {
@@ -432,6 +444,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             discountAmount: saved?.discountAmount ?? preview.discountAmount,
           };
         }),
+        showTaxBreakdown: taxBreakdownVisible,
         financials: {
           ...financials,
           loyaltyDiscountAmount,
@@ -667,6 +680,19 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             ))}
 
             {beneficiaries.length > 0 && <p className="restaurant-pos-discount-note">Enter only the portion of each order line attributable to this beneficiary under the applicable SC/PWD rules; do not assume equal group shares. Combined allocations cannot exceed the line total. VAT-registered restaurants must classify every item before applying the discount. One person may use either Senior Citizen or PWD benefit for a transaction, not both, and the cashier must verify the required ID.</p>}
+            {beneficiaries.length > 0 && !discountAllocationReady && <p className="restaurant-pos-message is-error" role="alert">
+              {taxSettings?.vatRegistered && hasUnclassifiedCartItem
+                ? 'Review the tax category for every product before applying an SC/PWD discount.'
+                : !beneficiaryIdentityReady
+                  ? 'Enter every beneficiary’s full name, address, and ID number.'
+                  : !uniqueBeneficiaryIds
+                    ? 'Each beneficiary must use a different ID number for this order.'
+                    : !allBeneficiariesHaveEligibleLines
+                      ? 'Enter a positive eligible amount on at least one order line for each beneficiary.'
+                      : !allocationsDoNotExceedLines
+                        ? 'Combined eligible amounts cannot exceed the total for each order line.'
+                        : 'Complete the required beneficiary and line-allocation details.'}
+            </p>}
           </div>
 
           <label className="restaurant-pos-field restaurant-pos-notes-field">
@@ -697,11 +723,11 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
           <div className="restaurant-pos-totals">
             <div className="restaurant-pos-total"><span>Subtotal</span><strong>₱{subtotal.toFixed(2)}</strong></div>
             {orderType === 'delivery' && <div className="restaurant-pos-total"><span>Delivery fee</span><strong>₱{deliveryFee.toFixed(2)}</strong></div>}
-            {taxSettings?.vatRegistered && <div className="restaurant-pos-total"><span>VATable sales</span><strong>₱{vatableSales.toFixed(2)}</strong></div>}
-            {taxSettings?.vatRegistered && <div className="restaurant-pos-total"><span>VAT {taxSettings.vatRate.toFixed(2)}%</span><strong>₱{vatAmount.toFixed(2)}</strong></div>}
+            {taxBreakdownVisible && <div className="restaurant-pos-total"><span>VATable sales</span><strong>₱{vatableSales.toFixed(2)}</strong></div>}
+            {taxBreakdownVisible && <div className="restaurant-pos-total"><span>VAT {taxSettings?.vatRate.toFixed(2)}%</span><strong>₱{vatAmount.toFixed(2)}</strong></div>}
             {beneficiaries.length > 0 && <>
               <div className="restaurant-pos-total"><span>Allocated eligible line amounts</span><strong>₱{allocatedEligibleGross.toFixed(2)}</strong></div>
-              {taxSettings?.vatRegistered && <div className="restaurant-pos-total"><span>VAT-exempt sales</span><strong>₱{vatExemptSales.toFixed(2)}</strong></div>}
+              {taxBreakdownVisible && <div className="restaurant-pos-total"><span>VAT-exempt sales</span><strong>₱{vatExemptSales.toFixed(2)}</strong></div>}
               <div className="restaurant-pos-total restaurant-pos-discount-total"><span>Senior / PWD Discount</span><strong>-₱{discountAmount.toFixed(2)}</strong></div>
             </>}
             {redeemPoints && loyaltyDiscountPreview > 0 && <div className="restaurant-pos-total restaurant-pos-discount-total"><span>Loyalty Discount</span><strong>-₱{loyaltyDiscountPreview.toFixed(2)}</strong></div>}
@@ -821,7 +847,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
               ))}
             </div>
             <hr className="pos-receipt-divider" />
-            {printOrder.financials.grossSales > 0 && taxSettings?.vatRegistered ? (
+            {printOrder.financials.grossSales > 0 && printOrder.showTaxBreakdown ? (
               <>
                 <div className="pos-receipt-row"><span>Gross sales</span><span>₱{printOrder.financials.grossSales.toFixed(2)}</span></div>
                 <div className="pos-receipt-row"><span>VATable sales</span><span>₱{printOrder.financials.vatableSales.toFixed(2)}</span></div>
@@ -850,6 +876,10 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
                     <div>Address: {beneficiary.beneficiaryAddress}</div>
                     {beneficiary.beneficiaryTin.trim() && <div>TIN: {beneficiary.beneficiaryTin}</div>}
                     <div>{beneficiary.idType.replaceAll('_', ' ').toUpperCase()}: {beneficiary.idNumber}</div>
+                    {Object.entries(beneficiary.eligibleLineAmounts).filter(([, value]) => Number(value) > 0).map(([productId, value]) => {
+                      const item = printOrder.items.find((candidate) => candidate.product.id === productId);
+                      return item ? <div key={productId}>{item.product.name}: ₱{Number(value).toFixed(2)} eligible at menu price</div> : null;
+                    })}
                     <div>Eligible net amount: ₱{beneficiary.eligibleAmount.toFixed(2)} · Discount: ₱{beneficiary.discountAmount.toFixed(2)}</div>
                   </div>
                 ))}
