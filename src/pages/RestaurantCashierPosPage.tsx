@@ -238,7 +238,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
         ? Math.max(money(netSales + vatAmount), 0)
         : Math.max(money(subtotal + vatAmount - eligibleStandardNet * vatRate / 100 - discountAmount), 0)))
     : Math.max(money(subtotal - discountAmount), 0);
-  const loyaltyDiscountPreview = redeemPoints && selectedCustomerId && loyaltyRedemption?.enabled
+  const loyaltyDiscountPreview = beneficiaries.length === 0 && redeemPoints && selectedCustomerId && loyaltyRedemption?.enabled
     ? Math.min(money(loyaltyRedemption.discountAmount), preLoyaltyTotal)
     : 0;
   const deliveryFee = orderType === 'delivery' && deliveryRouteQuote?.inRange ? deliveryRouteQuote.deliveryFee : 0;
@@ -266,7 +266,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
       && beneficiary.beneficiaryName.trim().length > 0
       && beneficiary.beneficiaryAddress.trim().length > 0,
   );
-  const discountAllocationReady = beneficiaries.length === 0 || (
+  const discountAllocationReady = !(beneficiaries.length > 0 && redeemPoints) && (beneficiaries.length === 0 || (
     beneficiaryIdentityReady
       && uniqueBeneficiaryIds
       && beneficiaries.length <= effectiveGroupSize
@@ -274,7 +274,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
       && allBeneficiariesHaveEligibleLines
       && allocationsDoNotExceedLines
       && !(taxSettings?.vatRegistered && hasUnclassifiedCartItem)
-  );
+  ));
   const cashPaymentReady = cart.length > 0 && discountAllocationReady && cashReceivedAmount >= total;
 
   function addProduct(product: RestaurantProduct) {
@@ -302,6 +302,8 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
 
   function addBeneficiary(type: PosDiscountType) {
     if (beneficiaries.length >= effectiveGroupSize) return;
+    // Statutory SC/PWD discount and loyalty redemption are mutually exclusive.
+    setRedeemPoints(false);
     setBeneficiaries((current) => [...current, { discountType: type, idType: defaultIdType(type), idNumber: '', beneficiaryName: '', beneficiaryTin: '', beneficiaryAddress: '', eligibleLineAmounts: {} }]);
   }
 
@@ -559,12 +561,14 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
                 <input
                   type="checkbox"
                   checked={redeemPoints}
-                  disabled={saving}
+                  disabled={saving || beneficiaries.length > 0}
                   onChange={(event) => setRedeemPoints(event.target.checked)}
                 />
                 <span>
                   <strong>Redeem {loyaltyRedemption.pointsRequired} points</strong>
-                  <small>Apply ₱{loyaltyRedemption.discountAmount.toFixed(2)} off this order.</small>
+                  <small>{beneficiaries.length > 0
+                    ? 'Not available with a Senior Citizen / PWD statutory discount. Remove the beneficiary first to redeem points.'
+                    : `Apply ₱${loyaltyRedemption.discountAmount.toFixed(2)} off this order.`}</small>
                 </span>
               </label>
             )}
