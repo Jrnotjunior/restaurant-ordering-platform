@@ -1,6 +1,6 @@
 # Web2Table POS — BIR Readiness Implementation Status
 
-**Updated:** 2026-10-23  
+**Updated:** 2026-10-24  
 **Repository:** `Jrnotjunior/restaurant-ordering-platform` (`main`)  
 **Status:** Technical groundwork in progress. **Not BIR-accredited, not a BIR-issued invoice implementation, and not approval to represent this system as compliant.**
 
@@ -58,6 +58,18 @@
 - Added Business Reports → **Daily Readings** with a Manila-date selector, X-style preview generation, Z-style day-close preview generation, historical snapshots and spreadsheet export.
 - The UI and database explicitly force `is_official = false`. Generating a Z-style preview does **not** close/lock the business day and is not represented as a BIR Z-Reading. The prescribed reading/report format and route-specific end-of-day lock still need to be implemented after regulatory route confirmation.
 
+### Statutory discount beneficiary details and restricted access
+
+- Extended `order_discount_beneficiaries` with nullable beneficiary full name, TIN (when provided/applicable), and address fields. Historical rows are intentionally not backfilled with guessed identity details.
+- The POS requires beneficiary full name, address, ID type, and ID number before allowing the statutory-discount workflow to proceed; TIN is captured when provided/applicable.
+- POS receipt output includes the recorded beneficiary details and a physical customer-signature line. The paper is explicitly labelled an **operational receipt, not a BIR-issued invoice**; this does not satisfy or imply approval of the official invoice format.
+- Sales report mapping and the restricted SC/PWD reconciliation export include the recorded identity fields and flag missing historical name/address values as incomplete. The export remains a reconciliation aid, not an official BIR discount book.
+- Tax readiness now exposes beneficiary completeness. A discounted transaction with missing beneficiary name/address remains `requires_review`; report calculations also return **Beneficiary details incomplete** rather than showing the snapshot as complete.
+- Direct beneficiary table reads are restricted to the restaurant owner and active cashier role because the table now contains sensitive identity information. Existing RLS remains in force.
+- Rollback-only database tests passed for beneficiary field persistence and for ensuring missing name/address leaves the tax snapshot under review. These tests did not retain test orders.
+- Applied follow-up migrations to both the Restaurant Ordering Platform and isolated Security Test Supabase projects: `20261023242000_restrict_taxpayer_and_reading_writes.sql`, `20261023243000_pos_discount_beneficiary_details.sql`, `20261023244000_beneficiary_tax_report_status.sql`, and `20261023245000_restrict_beneficiary_identity_reads.sql`.
+- GitHub Actions passed for platform commit `adc0a094980596bab1c62754a66753091a324891`: Pull Request Build Check, Hostinger production build, and GitHub Pages deployment. A green workflow does not by itself prove the live production app-to-database flow or establish BIR approval.
+
 ### Privileged write access hardening
 
 - Added `public.is_system_admin_manager()`, requiring a valid System Admin JWT role, AAL2 MFA, active System Admin access, active status, and owner/administrator access level.
@@ -72,7 +84,7 @@
 - Rollback-only tests passed for journal event creation and actor context, immutable invoice-ledger rows, duplicate serial rejection, and product tax-category snapshotting. Test rows were rolled back.
 - The readiness RPC returns current blockers for the connected Web2Table restaurant: missing taxpayer profile, no configured serial series, and official invoice issuance disabled.
 - Build/deployment workflows passed for the prior platform commit `4d904ed`; the most recent report-export changes are currently building. Check the linked GitHub Actions runs before release acceptance.
-- The follow-up `20261023160000_journal_pos_discount_beneficiary_changes.sql` was applied to both projects.
+- The follow-up `20261023160000_journal_pos_discount_beneficiary_changes.sql` was applied to both projects. The later beneficiary-detail and read-access migrations listed above were also applied to both projects.
 - Schema checks confirmed the status columns, trigger names, and owner/admin-scoped journal RPCs exist in both connected projects.
 - A test transaction in the isolated Security Test project produced `SALE_CREATED` and `ORDER_ITEM_ADDED` journal events; the transaction was rolled back and no test order was retained.
 - GitHub Actions for the UI/schema work passed at commit `181fa23`: build, deployment, and the Pull Request Build Check. Verify the live deployment and app-to-database paths during release acceptance.
