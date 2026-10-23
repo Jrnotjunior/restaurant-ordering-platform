@@ -24,13 +24,6 @@ describe('guest order-tracking token primitives', () => {
     expect(await hashGuestOrderTrackingToken(first.token)).toBe(first.tokenHash);
   });
 
-  it('accepts uppercase hex but hashes it canonically', async () => {
-    vi.stubGlobal('crypto', webcrypto as unknown as Crypto);
-    const token = 'ab'.repeat(32);
-
-    expect(await hashGuestOrderTrackingToken(token.toUpperCase())).toBe(await hashGuestOrderTrackingToken(token));
-  });
-
   it('rejects missing, short, or non-hex tokens before hashing', async () => {
     vi.stubGlobal('crypto', webcrypto as unknown as Crypto);
 
@@ -38,6 +31,7 @@ describe('guest order-tracking token primitives', () => {
     await expect(hashGuestOrderTrackingToken('ab'.repeat(31))).rejects.toThrow('Invalid guest order-tracking token format');
     await expect(hashGuestOrderTrackingToken('g1'.repeat(32))).rejects.toThrow('Invalid guest order-tracking token format');
     expect(isGuestOrderTrackingTokenFormat('ab'.repeat(32))).toBe(true);
+    expect(isGuestOrderTrackingTokenFormat('AB'.repeat(32))).toBe(false);
     expect(isGuestOrderTrackingTokenFormat('ab'.repeat(31))).toBe(false);
   });
 
