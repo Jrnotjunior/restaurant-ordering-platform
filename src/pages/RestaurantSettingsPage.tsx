@@ -1023,7 +1023,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
             ))}
           </div>
           <div className="restaurant-settings-actions">
-            <button className="button button-primary restaurant-compact-action" type="submit" disabled={loading || saving}>
+            <button className="button button-primary restaurant-compact-action" type="submit" disabled={loading || saving || !onlinePaymentsEnabled}>
               {saving ? 'Saving…' : 'Save'}
             </button>
           </div>
