@@ -168,10 +168,10 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
     }));
   }, [rangeOrders]);
 
-  async function loadJournal(): Promise<PosJournalEntry[]> {
+  async function loadJournal(): Promise<PosJournalEntry[] | null> {
     if (!supabase) {
       setJournalError('Supabase is not configured.');
-      return [];
+      return null;
     }
     setJournalLoading(true);
     setJournalError('');
@@ -192,7 +192,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
     } catch (loadError) {
       const message = loadError instanceof Error ? loadError.message : 'Unable to load the POS activity journal.';
       setJournalError(message);
-      return [];
+      return null;
     } finally {
       setJournalLoading(false);
     }
@@ -200,7 +200,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
 
   async function exportJournal() {
     const entries = await loadJournal();
-    if (journalError) return;
+    if (entries === null) return;
     downloadSpreadsheet(`pos-activity-journal-${fromDate}-to-${toDate}.xlsx`, [
       ['POS activity journal (append-only platform record; not a BIR approval/certificate)',''],
       ['Period start', fromDate],
