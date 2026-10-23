@@ -167,10 +167,12 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
     if (!supabase) { setError('Supabase is not configured.'); setLoading(false); return; }
     setLoading(true); setError('');
     try {
-      const [sales, expenseResult, taxProductResult] = await Promise.all([
+      const [sales, expenseResult, taxProductResult, taxSettingsResult, readinessResult] = await Promise.all([
         getRestaurantSales(restaurantId),
         supabase.from('restaurant_business_expenses').select('id,expense_date,category,description,amount,created_at').eq('restaurant_id', restaurantId).order('expense_date', { ascending: false }).limit(2000),
         supabase.from('products').select('id,name,tax_category').eq('restaurant_id', restaurantId).order('name', { ascending: true }).limit(2000),
+        supabase.from('restaurants').select('tax_vat_registered,tax_prices_vat_inclusive,tax_vat_rate').eq('id', restaurantId).maybeSingle(),
+        supabase.rpc('get_restaurant_bir_issuance_readiness', { p_restaurant_id: restaurantId }),
       ]);
       if (expenseResult.error) throw expenseResult.error;
       setOrders(sales);
@@ -181,6 +183,20 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
       } else {
         setTaxProducts((taxProductResult.data ?? []) as TaxProduct[]);
         setTaxProductsError('');
+      }
+      if (taxSettingsResult.error || !taxSettingsResult.data) {
+        setTaxSettings(null);
+        setTaxSettingsError(taxSettingsResult.error?.message ?? 'Restaurant tax settings were not returned.');
+      } else {
+        setTaxSettings(taxSettingsResult.data as RestaurantTaxSettings);
+        setTaxSettingsError('');
+      }
+      if (readinessResult.error || !readinessResult.data) {
+        setBirReadiness(null);
+        setBirReadinessError(readinessResult.error?.message ?? 'BIR readiness checklist was not returned.');
+      } else {
+        setBirReadiness(readinessResult.data as RestaurantBirReadiness);
+        setBirReadinessError('');
       }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load business reports. Apply the business expenses database migration if this is the first setup.');
