@@ -687,9 +687,6 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
                 <strong className="restaurant-order-modal-total">₱{selectedOrder.total.toFixed(2)}</strong>
               </div>
             )}
-            {selectedOrder.status === 'pending' && selectedOrder.paymentMethod === 'cash' && selectedOrder.paymentStatus !== 'paid' && (
-              <p style={{ marginTop: 16 }}>Confirm the cash payment before sending this order to the kitchen.</p>
-            )}
             {selectedOrder.status === 'pending' && !isPaymentReady(selectedOrder) && selectedOrder.paymentMethod !== 'cash' && (
               <p style={{ marginTop: 16 }}>Payment must be completed before this order can enter the kitchen.</p>
             )}
