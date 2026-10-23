@@ -10,7 +10,7 @@ import { attachCustomerToOrder, findCustomersByName, getLoyaltyRedemptionSetting
 
 type Props = { restaurantId: string };
 type CartItem = { product: RestaurantProduct; quantity: number };
-type DraftBeneficiary = { discountType: PosDiscountType; idType: PosDiscountIdType; idNumber: string };
+type DraftBeneficiary = { discountType: PosDiscountType; idType: PosDiscountIdType; idNumber: string; beneficiaryName: string; beneficiaryTin: string; beneficiaryAddress: string };
 type PosPrintOrder = {
   orderNumber: string;
   customerName: string;
@@ -217,7 +217,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
 
   function addBeneficiary(type: PosDiscountType) {
     if (beneficiaries.length >= effectiveGroupSize) return;
-    setBeneficiaries((current) => [...current, { discountType: type, idType: defaultIdType(type), idNumber: '' }]);
+    setBeneficiaries((current) => [...current, { discountType: type, idType: defaultIdType(type), idNumber: '', beneficiaryName: '', beneficiaryTin: '', beneficiaryAddress: '' }]);
   }
 
   function removeBeneficiary(index: number) {
@@ -350,7 +350,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
     }
   }
 
-  const discountReady = beneficiaries.every((beneficiary) => beneficiary.idNumber.trim().length > 0) && beneficiaries.length <= effectiveGroupSize;
+  const discountReady = beneficiaries.every((beneficiary) => beneficiary.idNumber.trim().length > 0 && beneficiary.beneficiaryName.trim().length > 0 && beneficiary.beneficiaryAddress.trim().length > 0) && beneficiaries.length <= effectiveGroupSize;
 
   return (
     <section className="restaurant-page restaurant-pos-page">
@@ -508,6 +508,9 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
                   <strong>{beneficiary.discountType === 'senior' ? 'Senior Citizen' : 'PWD'} #{index + 1}</strong>
                   <button type="button" onClick={() => removeBeneficiary(index)} disabled={saving}>Remove</button>
                 </div>
+                <label className="restaurant-pos-field"><span>Beneficiary full name *</span><input value={beneficiary.beneficiaryName} maxLength={250} autoComplete="name" onChange={(event) => updateBeneficiary(index, { beneficiaryName: event.target.value })} placeholder="Name as shown on ID" disabled={saving} required /></label>
+                <label className="restaurant-pos-field"><span>Beneficiary address *</span><input value={beneficiary.beneficiaryAddress} maxLength={1000} autoComplete="street-address" onChange={(event) => updateBeneficiary(index, { beneficiaryAddress: event.target.value })} placeholder="Registered / residential address" disabled={saving} required /></label>
+                <label className="restaurant-pos-field"><span>Beneficiary TIN (if applicable)</span><input value={beneficiary.beneficiaryTin} maxLength={64} autoComplete="off" onChange={(event) => updateBeneficiary(index, { beneficiaryTin: event.target.value })} placeholder="Enter TIN if provided / applicable" disabled={saving} /></label>
                 <label className="restaurant-pos-field"><span>ID type</span><select value={beneficiary.idType} onChange={(event) => updateBeneficiary(index, { idType: event.target.value as PosDiscountIdType })} disabled={saving}>
                   {idOptions[beneficiary.discountType].map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                 </select></label>
@@ -697,7 +700,10 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
                   const beneficiaryDiscount = printOrder.financials.discountAmount / printOrder.beneficiaries.length;
                   return (
                     <div key={index} className="pos-receipt-discount-detail">
-                      <div>{beneficiary.discountType.toUpperCase()} ID: {beneficiary.idNumber}</div>
+                      <div>{beneficiary.discountType.toUpperCase()} BENEFICIARY: {beneficiary.beneficiaryName}</div>
+                      <div>Address: {beneficiary.beneficiaryAddress}</div>
+                      {beneficiary.beneficiaryTin.trim() && <div>TIN: {beneficiary.beneficiaryTin}</div>}
+                      <div>{beneficiary.idType.replaceAll('_', ' ').toUpperCase()}: {beneficiary.idNumber}</div>
                       <div>Eligible: ₱{eligibleAmount.toFixed(2)} · Discount: ₱{beneficiaryDiscount.toFixed(2)}</div>
                     </div>
                   );
