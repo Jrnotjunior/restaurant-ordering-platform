@@ -18,6 +18,8 @@ type Delivery = {
   customerName: string;
   mobileNumber: string;
   address: string;
+  subtotal: number;
+  deliveryFee: number;
   total: number;
   items: DeliveryItem[];
   status: DeliveryStatus;
@@ -91,7 +93,7 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
 
       const { data: order, error: orderError } = await supabase
         .from('orders')
-        .select('id,order_number,customer_name,mobile_number,delivery_address,delivery_barangay,total,delivery_status,payment_method,payment_status,delivery_failure_reason')
+        .select('id,order_number,customer_name,mobile_number,delivery_address,delivery_barangay,subtotal,delivery_fee,total,delivery_status,payment_method,payment_status,delivery_failure_reason')
         .eq('id', orderId)
         .eq('rider_id', rider.id)
         .maybeSingle();
@@ -111,6 +113,8 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
         customerName: order.customer_name,
         mobileNumber: order.mobile_number,
         address: order.delivery_address ?? order.delivery_barangay ?? 'Delivery address not provided',
+        subtotal: Number(order.subtotal ?? 0),
+        deliveryFee: Number(order.delivery_fee ?? 0),
         total: Number(order.total),
         items: ((items ?? []) as Array<{ id: string; product_name: string; quantity: number; line_total: number | string }>).map((item) => ({
           id: item.id,
@@ -338,6 +342,8 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
                 <div className="rider-delivery-items">
                   {delivery.items.map((item) => <div className="rider-delivery-item" key={item.id}><span><strong>{item.quantity}×</strong> {item.name}</span><span>₱{item.total.toFixed(2)}</span></div>)}
                 </div>
+                <div className="rider-delivery-total"><span>Subtotal</span><strong>₱{delivery.subtotal.toFixed(2)}</strong></div>
+                <div className="rider-delivery-total"><span>Delivery fee</span><strong>₱{delivery.deliveryFee.toFixed(2)}</strong></div>
                 <div className="rider-delivery-total"><span>Order total</span><strong>₱{delivery.total.toFixed(2)}</strong></div>
               </>
             ) : null}
