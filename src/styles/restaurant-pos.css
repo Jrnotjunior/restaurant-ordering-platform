@@ -23,7 +23,8 @@
   body:has(> .restaurant-pos-print-area) > :not(.restaurant-pos-print-area){display:none!important}
   body:has(> .restaurant-pos-print-area) > .restaurant-pos-print-area{position:static!important;margin:0!important}
   .restaurant-pos-print-receipt{display:block!important;width:80mm!important;max-width:80mm!important;box-sizing:border-box!important;margin:0!important;padding:4mm 4mm 6mm!important;font-family:Arial,sans-serif!important;font-size:12px!important;line-height:1.4!important;color:#000!important;background:#fff!important}
-  .restaurant-pos-kitchen-receipt{page-break-after:always!important;break-after:page!important}
+  .restaurant-pos-kitchen-receipt{display:block!important;width:80mm!important;max-width:80mm!important;page-break-after:always!important;break-after:page!important}
+  .restaurant-pos-customer-receipt{display:block!important;width:80mm!important;max-width:80mm!important;page-break-before:always!important;break-before:page!important;page-break-inside:avoid!important;break-inside:avoid!important}
   .pos-receipt-center{text-align:center!important}
   .pos-receipt-title{font-size:18px!important;line-height:1.2!important;font-weight:800!important;margin:0 0 5px!important}
   .pos-receipt-order-number{font-size:13px!important;line-height:1.25!important;font-weight:800!important;word-break:break-word!important}
