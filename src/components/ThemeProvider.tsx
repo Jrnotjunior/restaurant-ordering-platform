@@ -15,6 +15,7 @@ function applyTheme(theme: RestaurantTheme) {
   root.style.setProperty('--color-primary', theme.colors.primary);
   root.style.setProperty('--color-primary-hover', theme.colors.primaryHover);
   root.style.setProperty('--color-primary-text', theme.colors.primaryText);
+  root.style.setProperty('--color-icon', theme.colors.icon ?? theme.colors.text);
   root.style.setProperty('--color-secondary', theme.colors.secondary);
   root.style.setProperty('--color-secondary-text', theme.colors.secondaryText);
   root.style.setProperty('--color-background', theme.colors.background);
