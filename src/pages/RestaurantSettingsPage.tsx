@@ -242,6 +242,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
   const [deliveryLocationLongitude, setDeliveryLocationLongitude] = useState<number | null>(null);
   const [orderingEnabled, setOrderingEnabled] = useState(true);
   const [onlinePaymentMethods, setOnlinePaymentMethods] = useState<OnlinePaymentMethods>(DEFAULT_ONLINE_PAYMENT_METHODS);
+  const [onlinePaymentsEnabled, setOnlinePaymentsEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -321,6 +322,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       setHours(normalizeHours(data?.operating_hours));
       setOrderingEnabled(data?.ordering_enabled !== false);
       setOnlinePaymentMethods(normalizeOnlinePaymentMethods(data?.online_payment_methods));
+      setOnlinePaymentsEnabled(!(data?.online_payment_methods && typeof data.online_payment_methods === 'object' && (data.online_payment_methods as Record<string, unknown>).enabled === false));
       setVatRegistered(Boolean(data?.tax_vat_registered));
       setPricesVatInclusive(Boolean(data?.tax_prices_vat_inclusive));
       setVatRate(String(data?.tax_vat_rate ?? 12));
@@ -529,7 +531,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
       // UPDATE may return no error when RLS filters the row, leaving settings unchanged.
       const { data: savedPaymentMethodRows, error: paymentMethodsSaveError } = await supabase.rpc('update_restaurant_online_payment_methods', {
         p_restaurant_id: restaurantId,
-        p_methods: onlinePaymentMethods,
+        p_methods: { ...onlinePaymentMethods, enabled: onlinePaymentsEnabled },
       });
       if (paymentMethodsSaveError) throw paymentMethodsSaveError;
       const savedPaymentMethodRow = Array.isArray(savedPaymentMethodRows) ? savedPaymentMethodRows[0] : null;
@@ -981,8 +983,15 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
 
                 {hasOnlinePayments && <div className="restaurant-settings-card restaurant-paymongo-card" id="store-payments" role="tabpanel" aria-labelledby="store-settings-tab-payments" hidden={activeSettingsTab !== 'payments'}>
           <h2>Accepted Payment Methods</h2>
-          <p className="restaurant-settings-help">Choose which methods this restaurant accepts. These settings apply only to this restaurant; each tenant manages its own options. A method must also be supported by its connected PayMongo account.</p>
-          <div className="restaurant-settings-tax-grid" style={{ marginTop: 14 }}>
+          <p className="restaurant-settings-help">Choose whether this restaurant accepts online payments and which methods are available. These settings apply only to this restaurant. A method must also be supported by its connected PayMongo account.</p>
+          <label className="restaurant-settings-switch-row" style={{ marginTop: 14, paddingBottom: 14, borderBottom: '1px solid var(--border-color, #e5e7eb)' }}>
+            <span><strong>Online Payments</strong><small style={{ display: 'block', fontWeight: 400, marginTop: 4 }}>{onlinePaymentsEnabled ? 'Customers can pay online using the enabled methods below.' : 'Online payment is turned off for this restaurant.'}</small></span>
+            <span className="restaurant-settings-switch">
+              <input type="checkbox" checked={onlinePaymentsEnabled} disabled={loading || saving} onChange={(event) => { setOnlinePaymentsEnabled(event.target.checked); setMessage(''); setError(''); }} aria-label="Enable online payments" />
+              <span className="restaurant-settings-switch-track" aria-hidden="true"><span className="restaurant-settings-switch-thumb" /></span>
+            </span>
+          </label>
+          <div className="restaurant-settings-tax-grid" style={{ marginTop: 14, opacity: onlinePaymentsEnabled ? 1 : 0.55 }}>
             {([
               ['card', 'Card payments'],
               ['gcash', 'GCash'],
@@ -998,7 +1007,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
                   <input
                     type="checkbox"
                     checked={onlinePaymentMethods[key]}
-                    disabled={loading || saving}
+                    disabled={loading || saving || !onlinePaymentsEnabled}
                     onChange={(event) => {
                       setOnlinePaymentMethods((current) => ({ ...current, [key]: event.target.checked }));
                       setMessage('');
