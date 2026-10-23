@@ -1,5 +1,3 @@
-import type { ReactNode } from 'react';
-
 export type OperationalReceiptItem = {
   id: string;
   name: string;
