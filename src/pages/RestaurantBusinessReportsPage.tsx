@@ -6,6 +6,7 @@ import {
   getRecordedTaxSnapshotValue,
   getTaxSnapshotStatus,
   hasMissingTaxSnapshot,
+  isIncludedInPaidSalesRollup,
 } from '../modules/sales/reportCalculations';
 import type { RestaurantOrder } from '../modules/ordering/orderService';
 import { supabase } from '../services/supabaseClient';
@@ -178,19 +179,19 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
     return date >= fromDate && date <= toDate;
   }), [orders, fromDate, toDate]);
   const completedOrders = useMemo(() => rangeOrders.filter((order) => order.status === 'completed'), [rangeOrders]);
+  const paidSalesOrders = useMemo(() => rangeOrders.filter(isIncludedInPaidSalesRollup), [rangeOrders]);
   const rangeExpenses = useMemo(() => expenses.filter((expense) => expense.expense_date >= fromDate && expense.expense_date <= toDate), [expenses, fromDate, toDate]);
-  const totalSales = completedOrders.reduce((sum, order) => sum + order.total, 0);
-  const discounts = completedOrders.reduce((sum, order) => sum + getRecordedReportDiscountTotal(order), 0);
-  const ordersMissingTaxSnapshots = rangeOrders.filter(hasMissingTaxSnapshot);
-  const completedOrdersMissingTaxSnapshots = completedOrders.filter(hasMissingTaxSnapshot);
-  const taxSnapshotComplete = completedOrdersMissingTaxSnapshots.length === 0;
-  const completedOrdersWithTaxSnapshots = completedOrders.filter((order) => !hasMissingTaxSnapshot(order));
-  const taxSales = completedOrdersWithTaxSnapshots.reduce((sum, order) => sum + (order.taxNetSales ?? 0), 0);
-  const outputVat = completedOrdersWithTaxSnapshots.reduce((sum, order) => sum + (order.taxVatAmount ?? 0), 0);
-  const zeroRatedSales = completedOrdersWithTaxSnapshots.reduce((sum, order) => sum + (order.taxZeroRatedSales ?? 0), 0);
+  const totalSales = paidSalesOrders.reduce((sum, order) => sum + order.total, 0);
+  const discounts = paidSalesOrders.reduce((sum, order) => sum + getRecordedReportDiscountTotal(order), 0);
+  const ordersMissingTaxSnapshots = paidSalesOrders.filter(hasMissingTaxSnapshot);
+  const taxSnapshotComplete = paidSalesOrders.length > 0 && ordersMissingTaxSnapshots.length === 0;
+  const paidSalesOrdersWithTaxSnapshots = paidSalesOrders.filter((order) => !hasMissingTaxSnapshot(order));
+  const taxSales = paidSalesOrdersWithTaxSnapshots.reduce((sum, order) => sum + (order.taxNetSales ?? 0), 0);
+  const outputVat = paidSalesOrdersWithTaxSnapshots.reduce((sum, order) => sum + (order.taxVatAmount ?? 0), 0);
+  const zeroRatedSales = paidSalesOrdersWithTaxSnapshots.reduce((sum, order) => sum + (order.taxZeroRatedSales ?? 0), 0);
   const totalExpenses = rangeExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
   const estimatedOperatingResult = totalSales - totalExpenses;
-  const vatConfiguredOrders = completedOrders.filter((order) => order.taxVatRegistered).length;
+  const vatConfiguredOrders = paidSalesOrders.filter((order) => order.taxVatRegistered).length;
   const paymentTotals = useMemo(() => {
     const statuses = ['paid', 'pending', 'failed', 'refunded'] as const;
     return statuses.map((status) => ({
@@ -402,17 +403,18 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
       ['Tax-support sales detail (not an official tax return or invoice)',''],
       ['Period start', fromDate], ['Period end', toDate],
       ['Report generated', new Date().toISOString()],
-      ['Note','For positive-total orders, tax values are exported only when the order is marked calculated, has a positive gross-sales snapshot, has a recorded zero-rated amount, and every line has a snapshotted tax classification. Legacy, uncalculated, unclassified or review-required snapshots are left blank. Period net-sales, VAT and zero-rated totals are marked incomplete if any completed order in the period lacks those controls. A calculated snapshot is not independently validated for tax compliance.'],
+      ['Note','This support export covers paid orders excluding cancelled/refunded workflow states; unpaid, cancelled and refunded records remain available in the general sales and cancellation/refund review exports. For each included paid sale, tax values are exported only when its snapshot is marked calculated, has a positive gross-sales snapshot, records zero-rated sales, and every order line has a tax-category snapshot. Legacy, uncalculated, unclassified or review-required snapshots are left blank. Period net-sales, VAT and zero-rated totals are marked incomplete if any included paid sale lacks these controls. A calculated snapshot is not independently validated for tax compliance or BIR acceptance.'],
       [],
       ['Order number','Transaction date','Order status','Payment status','Order total PHP','Discount amount PHP','Recorded net sales PHP','Recorded vatable sales PHP','Recorded VAT amount PHP','Recorded VAT-exempt sales PHP','Recorded zero-rated sales PHP','VAT registration snapshot','Tax snapshot status'],
-      ...rangeOrders.map((order) => [order.orderNumber, order.createdAt, order.status, order.paymentStatus, order.total, getRecordedReportDiscountTotal(order), getRecordedTaxSnapshotValue(order, order.taxNetSales), getRecordedTaxSnapshotValue(order, order.taxVatableSales), getRecordedTaxSnapshotValue(order, order.taxVatAmount), getRecordedTaxSnapshotValue(order, order.taxVatExemptSales), getRecordedTaxSnapshotValue(order, order.taxZeroRatedSales), hasMissingTaxSnapshot(order) ? 'Unverified' : order.taxVatRegistered ? 'Yes' : 'No', getTaxSnapshotStatus(order)]),
+      ...paidSalesOrders.map((order) => [order.orderNumber, order.createdAt, order.status, order.paymentStatus, order.total, getRecordedReportDiscountTotal(order), getRecordedTaxSnapshotValue(order, order.taxNetSales), getRecordedTaxSnapshotValue(order, order.taxVatableSales), getRecordedTaxSnapshotValue(order, order.taxVatAmount), getRecordedTaxSnapshotValue(order, order.taxVatExemptSales), getRecordedTaxSnapshotValue(order, order.taxZeroRatedSales), hasMissingTaxSnapshot(order) ? 'Unverified' : order.taxVatRegistered ? 'Yes' : 'No', getTaxSnapshotStatus(order)]),
       [],
-      ['Orders in period with missing tax snapshots', ordersMissingTaxSnapshots.length],
-      ['Completed orders in period', completedOrders.length], ['Completed order totals PHP', totalSales],
-      ['Completed orders missing tax snapshots', completedOrdersMissingTaxSnapshots.length],
-      ['Recorded net sales total PHP', taxSnapshotComplete ? taxSales : 'INCOMPLETE — one or more completed orders lack tax snapshots'],
-      ['Recorded VAT total PHP', taxSnapshotComplete ? outputVat : 'INCOMPLETE — one or more completed orders lack tax snapshots'],
-      ['Recorded zero-rated sales total PHP', taxSnapshotComplete ? zeroRatedSales : 'INCOMPLETE — zero-rated amount or item classification is missing for one or more completed orders'],
+      ['Paid sales orders in period', paidSalesOrders.length],
+      ['Other order records not included in paid-sales total', rangeOrders.length - paidSalesOrders.length],
+      ['Paid sales total PHP', totalSales],
+      ['Paid sales orders missing tax snapshots', ordersMissingTaxSnapshots.length],
+      ['Recorded net sales total PHP', taxSnapshotComplete ? taxSales : 'INCOMPLETE — one or more included paid sales lack tax snapshots'],
+      ['Recorded VAT total PHP', taxSnapshotComplete ? outputVat : 'INCOMPLETE — one or more included paid sales lack tax snapshots'],
+      ['Recorded zero-rated sales total PHP', taxSnapshotComplete ? zeroRatedSales : 'INCOMPLETE — zero-rated amount or item classification is missing for one or more included paid sales'],
     ]);
   }
 
