@@ -762,7 +762,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
         .restaurant-settings-confirm-modal p{margin:0;color:#64748b;line-height:1.5}
         .restaurant-settings-confirm-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
         @media(max-width:480px){.restaurant-settings-confirm-actions{flex-direction:column-reverse}.restaurant-settings-confirm-actions .button{width:100%}}
-        .restaurant-settings-actions{display:flex;justify-content:flex-end}
+        .restaurant-settings-actions{display:flex;justify-content:flex-end;position:relative;clear:both;margin-top:18px;padding-top:4px;z-index:1}
 .restaurant-paymongo-card{position:relative}
         .restaurant-paymongo-error{display:grid;gap:4px;margin:0 0 16px;padding:13px 15px;border:1px solid #fecaca;border-radius:10px;background:#fef2f2;color:#991b1b;line-height:1.4}
         .restaurant-paymongo-error strong{font-size:14px}
