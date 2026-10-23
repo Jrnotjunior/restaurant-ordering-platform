@@ -54,7 +54,7 @@ type Row = {
 export async function getRestaurantSales(restaurantId: string): Promise<RestaurantOrder[]> {
   const [rows, taxStatusRows] = await Promise.all([
     supabaseRpc<Row>('get_restaurant_sales', { p_restaurant_id: restaurantId }),
-    supabaseRpc<{ order_id: string; tax_snapshot_status: NonNullable<Row['tax_snapshot_status']>; tax_snapshot_version: number | string | null; tax_zero_rated_sales: number | string | null; items_tax_classified: boolean }>(
+    supabaseRpc<{ order_id: string; tax_snapshot_status: NonNullable<Row['tax_snapshot_status']>; tax_snapshot_version: number | string | null; tax_zero_rated_sales: number | string | null; items_tax_classified: boolean; discount_beneficiaries_complete: boolean }>(
       'get_restaurant_tax_snapshot_statuses',
       { p_restaurant_id: restaurantId },
     ),
@@ -88,6 +88,7 @@ export async function getRestaurantSales(restaurantId: string): Promise<Restaura
     taxNetSales: Number(row.tax_net_sales ?? 0),
     taxZeroRatedSales: taxStatuses.get(row.order_id)?.tax_zero_rated_sales == null ? null : Number(taxStatuses.get(row.order_id)?.tax_zero_rated_sales),
     itemsTaxClassified: taxStatuses.get(row.order_id)?.items_tax_classified ?? false,
+    discountBeneficiariesComplete: taxStatuses.get(row.order_id)?.discount_beneficiaries_complete ?? false,
     taxSnapshotStatus: taxStatuses.get(row.order_id)?.tax_snapshot_status ?? 'legacy_unknown',
     taxSnapshotVersion: taxStatuses.get(row.order_id)?.tax_snapshot_version == null ? null : Number(taxStatuses.get(row.order_id)?.tax_snapshot_version),
     discountAmount: Number(row.discount_amount ?? 0),
