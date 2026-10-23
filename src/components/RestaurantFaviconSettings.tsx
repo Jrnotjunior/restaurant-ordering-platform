@@ -58,7 +58,7 @@ export function RestaurantFaviconSettings({ restaurantId, faviconUrl, disabled =
   }
 
   return (
-    <div className="website-customization-upload-row">
+    <div className="website-customization-upload-row" style={{ minHeight: 0, padding: '8px 10px' }}>
         <div className="website-customization-logo-preview" aria-label="Favicon preview">
           {faviconUrl ? <img src={faviconUrl} alt="Restaurant favicon preview" /> : <span>Default icon</span>}
         </div>
