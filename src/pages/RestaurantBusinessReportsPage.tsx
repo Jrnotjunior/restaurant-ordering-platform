@@ -52,7 +52,7 @@ type PosReadingSnapshot = {
   generated_by: string | null;
   order_counts: { all_orders: number; completed: number; cancelled: number; paid: number; pending_payment: number; refunded: number };
   platform_totals_php: { paid_sales_order_count?: number; paid_sales_total?: number | null; cumulative_paid_sales_total?: number | null; paid_order_discounts?: number | null; paid_order_delivery_fees?: number | null; completed_order_totals: number; completed_order_discounts: number; completed_order_delivery_fees: number; cumulative_completed_order_totals_through_date: number };
-  tax_summary: { complete: boolean; orders_needing_review: number; unclassified_order_lines: number; vatable_sales_php: number | null; vat_amount_php: number | null; vat_exempt_sales_php: number | null; zero_rated_sales_php: number | null };
+  tax_summary: { complete: boolean; orders_needing_review: number; unclassified_order_lines: number; vatable_sales_php: number | null; vat_amount_php: number | null; vat_exempt_sales_php: number | null; zero_rated_sales_php: number | null; percentage_taxable_sales_php?: number | null; non_vat_exempt_sales_php?: number | null; tax_basis_note?: string };
 };
 type PosReadingPreviewRow = {
   reading_id: string; business_date: string; reading_type: 'x_preview' | 'z_preview'; generated_at: string;
@@ -696,11 +696,17 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
                 <div className="business-reports-cards">
                   <div className="business-reports-card"><small>Orders needing tax review</small><strong>{readingPreview.tax_summary.orders_needing_review}</strong></div>
                   <div className="business-reports-card"><small>Unclassified order lines</small><strong>{readingPreview.tax_summary.unclassified_order_lines}</strong></div>
-                  <div className="business-reports-card"><small>Recorded VATable sales</small><strong>{readingPreview.tax_summary.vatable_sales_php == null ? 'Incomplete' : peso(readingPreview.tax_summary.vatable_sales_php)}</strong></div>
-                  <div className="business-reports-card"><small>Recorded VAT</small><strong>{readingPreview.tax_summary.vat_amount_php == null ? 'Incomplete' : peso(readingPreview.tax_summary.vat_amount_php)}</strong></div>
-                  <div className="business-reports-card"><small>VAT-exempt sales</small><strong>{readingPreview.tax_summary.vat_exempt_sales_php == null ? 'Incomplete' : peso(readingPreview.tax_summary.vat_exempt_sales_php)}</strong></div>
-                  <div className="business-reports-card"><small>Zero-rated sales</small><strong>{readingPreview.tax_summary.zero_rated_sales_php == null ? 'Incomplete' : peso(readingPreview.tax_summary.zero_rated_sales_php)}</strong></div>
+                  {taxSettings?.tax_vat_registered === false ? <>
+                    <div className="business-reports-card"><small>Sales subject to percentage tax (classification only)</small><strong>{readingPreview.tax_summary.percentage_taxable_sales_php == null ? 'Incomplete' : peso(readingPreview.tax_summary.percentage_taxable_sales_php)}</strong></div>
+                    <div className="business-reports-card"><small>Non-VAT exempt sales</small><strong>{readingPreview.tax_summary.non_vat_exempt_sales_php == null ? 'Incomplete' : peso(readingPreview.tax_summary.non_vat_exempt_sales_php)}</strong></div>
+                  </> : <>
+                    <div className="business-reports-card"><small>Recorded VATable sales</small><strong>{readingPreview.tax_summary.vatable_sales_php == null ? 'Incomplete' : peso(readingPreview.tax_summary.vatable_sales_php)}</strong></div>
+                    <div className="business-reports-card"><small>Recorded VAT</small><strong>{readingPreview.tax_summary.vat_amount_php == null ? 'Incomplete' : peso(readingPreview.tax_summary.vat_amount_php)}</strong></div>
+                    <div className="business-reports-card"><small>VAT-exempt sales</small><strong>{readingPreview.tax_summary.vat_exempt_sales_php == null ? 'Incomplete' : peso(readingPreview.tax_summary.vat_exempt_sales_php)}</strong></div>
+                    <div className="business-reports-card"><small>Zero-rated sales</small><strong>{readingPreview.tax_summary.zero_rated_sales_php == null ? 'Incomplete' : peso(readingPreview.tax_summary.zero_rated_sales_php)}</strong></div>
+                  </>}
                 </div>
+                {readingPreview.tax_summary.tax_basis_note && <p className="business-reports-muted">{readingPreview.tax_summary.tax_basis_note}</p>}
               </section>
             </>}
             <section style={{ marginTop: 20 }}>
