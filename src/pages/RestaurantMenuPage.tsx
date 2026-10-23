@@ -304,7 +304,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
                     <span className="product-card-price">₱{product.price.toFixed(2)}</span>
                     <p>{product.description || 'No description.'}</p>
                     <span className={`restaurant-product-tax-category-label${product.taxCategory ? '' : ' is-unclassified'}`}>
-                      Tax: {product.taxCategory === 'standard_rate' ? 'Standard-rated' : product.taxCategory === 'vat_exempt' ? 'VAT-exempt' : product.taxCategory === 'zero_rated' ? 'Zero-rated' : 'Unclassified — review required'}
+                      Tax: {product.taxCategory === 'standard_rate' ? 'Standard-rated (VAT)' : product.taxCategory === 'vat_exempt' ? 'VAT-exempt' : product.taxCategory === 'zero_rated' ? 'Zero-rated (VAT)' : product.taxCategory === 'percentage_taxable' ? 'Subject to percentage tax (non-VAT)' : product.taxCategory === 'non_vat_exempt' ? 'Exempt sales (non-VAT)' : 'Unclassified — review required'}
                     </span>
                   </div>
                 </div>
@@ -374,10 +374,12 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
                 <select value={form.taxCategory} onChange={(event) => setForm((current) => ({ ...current, taxCategory: event.target.value }))} disabled={savingForm}>
                   <option value="">Unclassified — review required</option>
                   <option value="standard_rate">Standard-rated (VAT-registered sellers only)</option>
-                  <option value="vat_exempt">VAT-exempt</option>
-                  <option value="zero_rated">Zero-rated</option>
+                  <option value="vat_exempt">VAT-exempt (VAT-registered seller)</option>
+                  <option value="zero_rated">Zero-rated (VAT-registered seller)</option>
+                  <option value="percentage_taxable">Sales subject to percentage tax (non-VAT seller)</option>
+                  <option value="non_vat_exempt">Exempt sales (non-VAT seller)</option>
                 </select>
-                <span className="restaurant-product-category-hint">Choose only from the restaurant’s documented tax treatment after accountant review. Unclassified items will be flagged as incomplete for BIR readiness; changing this setting does not rewrite past orders.</span>
+                <span className="restaurant-product-category-hint">Choose only from the restaurant’s documented tax treatment after accountant review. Non-VAT options require verified taxpayer tax-basis evidence; percentage-taxable sales are a sales breakdown, not an extra charge to the customer. Unclassified items remain incomplete for BIR readiness; changing this setting never rewrites past order lines.</span>
               </label>
               <label>
                 Category
