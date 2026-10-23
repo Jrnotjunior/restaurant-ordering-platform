@@ -14,7 +14,7 @@ import { supabase } from '../services/supabaseClient';
 type Props = { restaurantId: string };
 type ExpenseCategory = 'ingredients' | 'payroll' | 'rent' | 'utilities' | 'packaging' | 'delivery' | 'marketing' | 'maintenance' | 'supplies' | 'other';
 type Expense = { id: string; expense_date: string; category: ExpenseCategory; description: string; amount: number | string; created_at: string };
-type TaxProduct = { id: string; name: string; tax_category: 'standard_rate' | 'vat_exempt' | 'zero_rated' | null };
+type TaxProduct = { id: string; name: string; tax_category: 'standard_rate' | 'vat_exempt' | 'zero_rated' | 'percentage_taxable' | 'non_vat_exempt' | null };
 type RestaurantTaxSettings = {
   tax_vat_registered: boolean;
   tax_prices_vat_inclusive: boolean;
@@ -32,6 +32,8 @@ type RestaurantBirReadiness = {
   unclassified_product_count: number;
   completed_orders_needing_tax_review: number;
   paid_orders_needing_tax_review: number;
+  non_vat_tax_basis: 'unconfirmed' | 'subject_to_percentage_tax' | 'not_subject_to_percentage_tax';
+  non_vat_tax_basis_verified: boolean;
   official_invoice_issuance_api_enabled: boolean;
   is_bir_accredited: boolean;
   blockers: string[];
@@ -231,6 +233,15 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
   const taxSales = paidSalesOrdersWithTaxSnapshots.reduce((sum, order) => sum + (order.taxNetSales ?? 0), 0);
   const outputVat = paidSalesOrdersWithTaxSnapshots.reduce((sum, order) => sum + (order.taxVatAmount ?? 0), 0);
   const zeroRatedSales = paidSalesOrdersWithTaxSnapshots.reduce((sum, order) => sum + (order.taxZeroRatedSales ?? 0), 0);
+  const percentageTaxableSales = paidSalesOrdersWithTaxSnapshots.reduce((sum, order) => sum + (order.taxPercentageTaxableSales ?? 0), 0);
+  const nonVatExemptSales = paidSalesOrdersWithTaxSnapshots.reduce((sum, order) => sum + (order.taxNonVatExemptSales ?? 0), 0);
+  const nonVatSalesBreakdownComplete = taxSnapshotComplete && paidSalesOrders.every((order) =>
+    order.taxVatRegistered === false
+    && typeof order.taxPercentageTaxableSales === 'number'
+    && Number.isFinite(order.taxPercentageTaxableSales)
+    && typeof order.taxNonVatExemptSales === 'number'
+    && Number.isFinite(order.taxNonVatExemptSales)
+  );
   const totalExpenses = rangeExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
   const estimatedOperatingResult = totalSales - totalExpenses;
   const vatConfiguredOrders = paidSalesOrders.filter((order) => order.taxVatRegistered).length;
@@ -770,6 +781,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
                 <div className="business-reports-card"><small>Invoice series configured</small><strong>{birReadiness.configured_series_count}</strong></div>
                 <div className="business-reports-card"><small>Invoice series enabled</small><strong>{birReadiness.enabled_series_count}</strong></div>
                 <div className="business-reports-card"><small>Issued document records</small><strong>{birReadiness.issued_document_count}</strong></div>
+                {!taxSettings?.tax_vat_registered && <div className="business-reports-card"><small>Non-VAT tax basis</small><strong>{birReadiness.non_vat_tax_basis_verified ? (birReadiness.non_vat_tax_basis === 'subject_to_percentage_tax' ? 'Percentage-tax basis verified' : 'Not subject to percentage tax') : 'Not verified'}</strong></div>}
                 <div className="business-reports-card"><small>Menu products needing tax classification</small><strong>{birReadiness.unclassified_product_count}</strong></div>
                 <div className="business-reports-card"><small>Paid orders needing tax review (all-time)</small><strong>{birReadiness.paid_orders_needing_tax_review}</strong></div>
                 <div className="business-reports-card"><small>Platform accreditation status</small><strong>{birReadiness.is_bir_accredited ? 'Verified in app' : 'Not accredited'}</strong></div>
@@ -786,8 +798,13 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
             <div className="business-reports-card"><small>Paid sales</small><strong>{peso(totalSales)}</strong></div>
             <div className="business-reports-card"><small>Discounts recorded</small><strong>{peso(discounts)}</strong></div>
             <div className="business-reports-card"><small>Recorded net sales</small><strong>{taxSnapshotComplete ? peso(taxSales) : 'Incomplete'}</strong></div>
-            <div className="business-reports-card"><small>Recorded output VAT</small><strong>{taxSnapshotComplete ? peso(outputVat) : 'Incomplete'}</strong></div>
-            <div className="business-reports-card"><small>Recorded zero-rated sales</small><strong>{taxSnapshotComplete ? peso(zeroRatedSales) : 'Incomplete'}</strong></div>
+            {taxSettings?.tax_vat_registered ? <>
+              <div className="business-reports-card"><small>Recorded output VAT</small><strong>{taxSnapshotComplete ? peso(outputVat) : 'Incomplete'}</strong></div>
+              <div className="business-reports-card"><small>Recorded zero-rated sales</small><strong>{taxSnapshotComplete ? peso(zeroRatedSales) : 'Incomplete'}</strong></div>
+            </> : <>
+              <div className="business-reports-card"><small>Sales subject to percentage tax (sales classification)</small><strong>{nonVatSalesBreakdownComplete ? peso(percentageTaxableSales) : 'Incomplete'}</strong></div>
+              <div className="business-reports-card"><small>Non-VAT exempt sales</small><strong>{nonVatSalesBreakdownComplete ? peso(nonVatExemptSales) : 'Incomplete'}</strong></div>
+            </>}
           </div>
           {ordersMissingTaxSnapshots.length > 0 && <p className="business-reports-error" role="alert">{ordersMissingTaxSnapshots.length} paid sale order(s) in this period have tax snapshots that are legacy-unverified, not calculated, missing, or marked for review. Tax fields are intentionally left blank until the server-side calculation status is confirmed. These supporting reports are not a substitute for an accountant's review.</p>}
           <section className="business-reports-panel">
@@ -801,7 +818,9 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
                 <div className="business-reports-card"><small>Unclassified products</small><strong>{taxProducts.filter((product) => !product.tax_category).length}</strong></div>
                 <div className="business-reports-card"><small>Standard-rated</small><strong>{taxProducts.filter((product) => product.tax_category === 'standard_rate').length}</strong></div>
                 <div className="business-reports-card"><small>VAT-exempt</small><strong>{taxProducts.filter((product) => product.tax_category === 'vat_exempt').length}</strong></div>
-                <div className="business-reports-card"><small>Zero-rated</small><strong>{taxProducts.filter((product) => product.tax_category === 'zero_rated').length}</strong></div>
+                <div className="business-reports-card"><small>Zero-rated (VAT)</small><strong>{taxProducts.filter((product) => product.tax_category === 'zero_rated').length}</strong></div>
+                <div className="business-reports-card"><small>Percentage-taxable (non-VAT)</small><strong>{taxProducts.filter((product) => product.tax_category === 'percentage_taxable').length}</strong></div>
+                <div className="business-reports-card"><small>Exempt sales (non-VAT)</small><strong>{taxProducts.filter((product) => product.tax_category === 'non_vat_exempt').length}</strong></div>
               </div>
               {taxProducts.some((product) => !product.tax_category) && <>
                 <p className="business-reports-error" role="alert">{taxProducts.filter((product) => !product.tax_category).length} product(s) still have no reviewed tax classification. Orders containing those items remain incomplete for tax-support reporting.</p>
