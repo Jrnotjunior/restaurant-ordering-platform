@@ -97,6 +97,6 @@ describe('dispatch order mutation security boundary', () => {
   });
 
   it('does not revoke broad orders-table UPDATE privileges in the additive RPC migration', () => {
-    expect(migration).not.toMatch(/revoke\\s+update\\s+on\\s+table\\s+public\\.orders/i);
+    expect(migration).not.toMatch(/revoke\s+update\s+on\s+table\s+public\.orders/i);
   });
 });
