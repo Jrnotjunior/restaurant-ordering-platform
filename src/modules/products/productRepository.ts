@@ -1,4 +1,4 @@
-import type { RestaurantCategory, RestaurantProduct } from '../../types/menu';
+import type { ProductTaxCategory, RestaurantCategory, RestaurantProduct } from '../../types/menu';
 import { supabase, supabaseRpc } from '../../services/supabaseClient';
 
 type CategoryRow = {
@@ -21,7 +21,7 @@ type ProductRow = {
   slug: string;
   description: string;
   price: number;
-  tax_category?: 'standard_rate' | 'vat_exempt' | 'zero_rated' | null;
+  tax_category?: ProductTaxCategory | null;
   image_url: string | null;
   sort_order: number;
   is_available: boolean;
@@ -186,7 +186,7 @@ export function subscribeToCashierMenuChanges(restaurantId: string, onChange: ()
 }
 
 
-export async function setProductTaxCategory(productId: string, taxCategory: 'standard_rate' | 'vat_exempt' | 'zero_rated' | null) {
+export async function setProductTaxCategory(productId: string, taxCategory: ProductTaxCategory | null) {
   if (!supabase) throw new Error('Supabase environment variables are not configured.');
   const { error } = await supabase.rpc('set_restaurant_product_tax_category', {
     p_product_id: productId,
