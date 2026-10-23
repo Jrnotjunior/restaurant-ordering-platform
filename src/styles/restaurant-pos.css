@@ -12,11 +12,11 @@
 
 .restaurant-pos-print-area{display:none}
 @media print{
-  @page{size:80mm auto;margin:0}
+  @page{size:80mm 250mm;margin:0}
   html,body{width:80mm!important;margin:0!important;padding:0!important;background:#fff!important}
   body *{visibility:hidden!important}
   .restaurant-pos-print-area,.restaurant-pos-print-area *{visibility:visible!important}
-  .restaurant-pos-print-area{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:0!important;position:static!important;width:80mm!important;max-width:80mm!important}
+  .restaurant-pos-print-area{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:0!important;position:static!important;width:80mm!important;max-width:80mm!important;min-height:0!important;height:auto!important;overflow:visible!important}
   /* The staff handoff print area is portalled directly to body. Hide the app
      and fixed modal in print layout so the kitchen ticket starts at page top.
      POS print areas are nested in the app, so that route keeps its current flow. */
