@@ -23,6 +23,14 @@
 - Sensitive customer names, phone numbers, delivery addresses, and statutory discount ID numbers are not copied into the journal snapshots.
 - Added an **Activity Journal** tab and spreadsheet export in Business Reports. The UI explicitly describes the journal as technical audit evidence, not a BIR-approved e-Journal.
 
+### Gated invoice-issuance ledger (storage only; official issue flow disabled)
+
+- Added per-tenant/branch/document-type issuance-control rows with an explicit enabled flag and next-serial cursor. No series row is created by the migration, and there is no default serial such as `1` that could collide with a tenant's pre-existing authorized series.
+- Added an immutable issued-document snapshot store with independent serial fields, a minimum six-digit display label constraint, seller/buyer/line-item/financial snapshots, and uniqueness constraints preventing duplicate serials or duplicate invoice types for a single order.
+- Added an append-only event store for future reprints, voids, refund links, and credit/debit adjustments.
+- Direct `anon`, `authenticated`, and `service_role` table grants are revoked. There is deliberately **no issuance RPC**, no enabled configuration row, and no code path that creates an official invoice from this migration.
+- This is storage groundwork only. A future approved path must verify the route/permit, use an authorized starting serial for each branch and document series, atomically allocate serials, snapshot the approved invoice fields, and implement the applicable void/reprint/adjustment/report/transmission requirements before enabling issuance.
+
 ### Tenant taxpayer profile and System Admin review workflow
 
 - Added a restricted `restaurant_taxpayer_profiles` table with registered legal name, trade name, TIN, registered address, branch code where applicable, taxpayer category, profile/review status, route choice, and fields for checked accreditation/PTU/Permit to Transmit references.
