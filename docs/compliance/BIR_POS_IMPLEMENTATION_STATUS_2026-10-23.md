@@ -50,10 +50,24 @@
 - The status “Reviewed” means platform review only. It does not itself certify or authorize BIR invoice issuance; actual route-specific proof must be verified from official documents.
 - These fields capture prerequisite evidence; the platform does not yet issue an official invoice from this profile.
 
+### Daily sales reading previews (internal-only; not official BIR readings)
+
+- Added `public.pos_sales_reading_previews` and owner/System Admin-scoped RPCs to generate and list X-style current previews and Z-style day-close previews for a selected Manila business date.
+- Previews preserve immutable history and show all/completed/cancelled/paid/pending/refunded counts, completed order totals, recorded discounts and delivery fees, cumulative completed order totals through the date, and tax completeness diagnostics.
+- VATable, VAT, VAT-exempt and zero-rated totals are left NULL/incomplete if the existing tax snapshot checks fail or any completed order line has no tax-category snapshot.
+- Added Business Reports → **Daily Readings** with a Manila-date selector, X-style preview generation, Z-style day-close preview generation, historical snapshots and spreadsheet export.
+- The UI and database explicitly force `is_official = false`. Generating a Z-style preview does **not** close/lock the business day and is not represented as a BIR Z-Reading. The prescribed reading/report format and route-specific end-of-day lock still need to be implemented after regulatory route confirmation.
+
+### Privileged write access hardening
+
+- Added `public.is_system_admin_manager()`, requiring a valid System Admin JWT role, AAL2 MFA, active System Admin access, active status, and owner/administrator access level.
+- Restricted taxpayer profile review, disabled invoice series configuration, and online-payment master changes to this helper. The online-payment trigger also uses it, preventing a `view_only` admin from bypassing the UI and changing the master switch through an alternate RPC.
+- Tested the role boundary in a rollback-only SQL transaction: manager access worked; view-only access was denied for serial configuration, taxpayer review, and online payment changes. The enabled-series state remained false and all test rows were rolled back.
+
 ### Database rollout and smoke test
 
 - The additive migration `20261023153000_bir_pos_journal_and_tax_status.sql` was applied to the Restaurant Ordering Platform Supabase project and the isolated Security Test project.
-- The follow-up migrations `20261023160000_journal_pos_discount_beneficiary_changes.sql`, `20261023170000_restaurant_taxpayer_profile.sql`, `20261023180000_bir_invoice_issuance_ledger.sql`, `20261023183000_pos_journal_actor_context.sql`, `20261023190000_bir_issuance_readiness_status.sql`, `20261023200000_product_tax_classification.sql`, `20261023203000_tax_classification_in_sales_reports.sql`, `20261023210000_bir_ledger_read_policies.sql`, and `20261023220000_gate_tax_snapshot_completeness.sql` were applied to both connected projects. The invoice-issuance config has zero rows and zero enabled series; no invoices are created by the new code.
+- The follow-up migrations `20261023160000_journal_pos_discount_beneficiary_changes.sql`, `20261023170000_restaurant_taxpayer_profile.sql`, `20261023180000_bir_invoice_issuance_ledger.sql`, `20261023183000_pos_journal_actor_context.sql`, `20261023190000_bir_issuance_readiness_status.sql`, `20261023200000_product_tax_classification.sql`, `20261023203000_tax_classification_in_sales_reports.sql`, `20261023210000_bir_ledger_read_policies.sql`, `20261023220000_gate_tax_snapshot_completeness.sql`, `20261023223000_bir_readiness_tax_gap_counts.sql`, `20261023230000_configure_disabled_invoice_series.sql`, `20261023233000_validate_invoice_serial_series.sql`, `20261023234000_list_disabled_invoice_series.sql`, `20261023240000_pos_sales_reading_previews.sql`, and `20261023241000_restrict_admin_fiscal_writes.sql` were applied to both connected projects. The invoice-issuance config has zero rows and zero enabled series; no invoices are created by the new code.
 - Explicit owner/System Admin SELECT policies were added for sensitive taxpayer profiles and issued-document storage as defense in depth; direct table grants remain revoked.
 - Rollback-only tests passed for journal event creation and actor context, immutable invoice-ledger rows, duplicate serial rejection, and product tax-category snapshotting. Test rows were rolled back.
 - The readiness RPC returns current blockers for the connected Web2Table restaurant: missing taxpayer profile, no configured serial series, and official invoice issuance disabled.
