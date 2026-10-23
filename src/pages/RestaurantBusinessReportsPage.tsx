@@ -14,6 +14,7 @@ type Props = { restaurantId: string };
 type ExpenseCategory = 'ingredients' | 'payroll' | 'rent' | 'utilities' | 'packaging' | 'delivery' | 'marketing' | 'maintenance' | 'supplies' | 'other';
 type Expense = { id: string; expense_date: string; category: ExpenseCategory; description: string; amount: number | string; created_at: string };
 type Tab = 'overview' | 'expenses' | 'payments' | 'tax';
+type PosJournalEntry = { journal_id: number | string; occurred_at: string; transaction_id: number | string; order_id: string | null; order_number: string | null; event_type: string; operation: string; actor_user_id: string | null; actor_role: string | null; old_values: Record<string, unknown> | null; new_values: Record<string, unknown> | null };
 
 const CATEGORIES: { value: ExpenseCategory; label: string }[] = [
   { value: 'ingredients', label: 'Ingredients & food' }, { value: 'payroll', label: 'Payroll' },
@@ -104,6 +105,9 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [journal, setJournal] = useState<PosJournalEntry[]>([]);
+  const [journalLoading, setJournalLoading] = useState(false);
+  const [journalError, setJournalError] = useState('');
 
   async function loadData() {
     if (!supabase) { setError('Supabase is not configured.'); setLoading(false); return; }
@@ -122,6 +126,10 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
   }
 
   useEffect(() => { void loadData(); }, [restaurantId]);
+
+  useEffect(() => {
+    if (tab === 'journal') void loadJournal();
+  }, [tab, restaurantId, fromDate, toDate]);
 
   const rangeOrders = useMemo(() => orders.filter((order) => {
     const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(order.createdAt));
@@ -159,6 +167,56 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
       recordedNet: rangeOrders.filter((order) => order.paymentMethod === method && order.paymentStatus === 'paid').reduce((sum, order) => sum + (order.paymongoNetAmount ?? 0), 0),
     }));
   }, [rangeOrders]);
+
+  async function loadJournal(): Promise<PosJournalEntry[]> {
+    if (!supabase) {
+      setJournalError('Supabase is not configured.');
+      return [];
+    }
+    setJournalLoading(true);
+    setJournalError('');
+    try {
+      const fromBoundary = new Date(`${fromDate}T00:00:00+08:00`).toISOString();
+      const toBoundaryDate = new Date(`${toDate}T00:00:00+08:00`);
+      toBoundaryDate.setUTCDate(toBoundaryDate.getUTCDate() + 1);
+      const { data, error: journalLoadError } = await supabase.rpc('get_restaurant_pos_sales_journal', {
+        p_restaurant_id: restaurantId,
+        p_from: fromBoundary,
+        p_to: toBoundaryDate.toISOString(),
+        p_limit: 5000,
+      });
+      if (journalLoadError) throw journalLoadError;
+      const entries = (data ?? []) as unknown as PosJournalEntry[];
+      setJournal(entries);
+      return entries;
+    } catch (loadError) {
+      const message = loadError instanceof Error ? loadError.message : 'Unable to load the POS activity journal.';
+      setJournalError(message);
+      return [];
+    } finally {
+      setJournalLoading(false);
+    }
+  }
+
+  async function exportJournal() {
+    const entries = await loadJournal();
+    if (journalError) return;
+    downloadSpreadsheet(`pos-activity-journal-${fromDate}-to-${toDate}.xlsx`, [
+      ['POS activity journal (append-only platform record; not a BIR approval/certificate)',''],
+      ['Period start', fromDate],
+      ['Period end', toDate],
+      ['Exported at', new Date().toISOString()],
+      ['Important note','This journal records order, item, payment, financial and tax snapshot state changes captured after the journal migration. It is not represented as a BIR-certified e-Journal and does not replace required invoice issuance, readings, backend reports, or transmission until the applicable BIR route is confirmed.'],
+      [],
+      ['Journal ID','Occurred at','Database transaction ID','Order number','Order ID','Event','Operation','Actor user ID','Actor role','Old values JSON','New values JSON'],
+      ...entries.map((entry) => [
+        entry.journal_id, entry.occurred_at, entry.transaction_id, entry.order_number ?? '', entry.order_id ?? '',
+        entry.event_type, entry.operation, entry.actor_user_id ?? '', entry.actor_role ?? '',
+        entry.old_values ? JSON.stringify(entry.old_values) : '',
+        entry.new_values ? JSON.stringify(entry.new_values) : '',
+      ]),
+    ]);
+  }
 
   async function addExpense(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(''); setNotice('');
@@ -278,7 +336,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
         @media(max-width:760px){.business-reports-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.business-reports-card,.business-reports-panel{padding:13px}.business-reports-range{align-items:stretch}.business-reports-range label{flex:1 1 130px}.business-reports-range input{width:100%}}
       `}</style>
       <nav className="business-reports-tabs" role="tablist" aria-label="Business report sections">
-        {([['overview','Overview'],['expenses','Expenses & Profit'],['payments','Payments'],['tax','Tax Reports']] as [Tab,string][]).map(([key,label]) => <button key={key} type="button" role="tab" aria-selected={tab===key} onClick={() => {setTab(key);setError('');setNotice('');}}>{label}</button>)}
+        {([['overview','Overview'],['expenses','Expenses & Profit'],['payments','Payments'],['tax','Tax Reports'],['journal','Activity Journal']] as [Tab,string][]).map(([key,label]) => <button key={key} type="button" role="tab" aria-selected={tab===key} onClick={() => {setTab(key);setError('');setNotice('');setJournalError('');}}>{label}</button>)}
       </nav>
       {error && <div className="business-reports-error" role="alert">{error}</div>}
       {notice && <div className="business-reports-notice" role="status">{notice}</div>}
@@ -356,6 +414,32 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
               {rangeOrders.filter((order) => ['pending','failed','refunded'].includes(order.paymentStatus)).sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).map((order) => <tr key={order.orderId}><td>{order.orderNumber}</td><td>{order.createdAt.slice(0,10)}</td><td>{order.status}</td><td>{order.paymentMethod === 'gcash' ? 'GCash / online' : 'Cash'}</td><td>{order.paymentStatus}</td><td>{peso(order.total)}</td></tr>)}
               {!rangeOrders.some((order) => ['pending','failed','refunded'].includes(order.paymentStatus)) && <tr><td colSpan={6}>No pending, failed, or refunded payment records in this period.</td></tr>}
             </tbody></table></div>
+          </section>
+        </>}
+        {tab === 'journal' && <>
+          <section className="business-reports-panel">
+            <div className="business-reports-panel-heading">
+              <div><h2>POS activity journal</h2><p>Append-only history of order, line-item, payment, financial and tax-snapshot changes for the selected period.</p></div>
+              <div className="business-reports-actions">
+                <button className="business-reports-button" type="button" onClick={() => void loadJournal()} disabled={journalLoading}>{journalLoading ? 'Loading…' : 'Refresh journal'}</button>
+                <button className="business-reports-button business-reports-export restaurant-export-button restaurant-compact-action" type="button" onClick={() => void exportJournal()} disabled={journalLoading}>Export journal (.xlsx)</button>
+              </div>
+            </div>
+            <p className="business-reports-muted">The export includes before/after values for auditable changes while excluding customer name, contact number, delivery address, and statutory-discount ID numbers from journal snapshots. This is a technical audit journal, not a BIR-issued accreditation or proof that the prescribed e-Journal format has been accepted.</p>
+            {journalError && <p className="business-reports-error" role="alert">{journalError}</p>}
+            <div className="business-reports-table-wrap"><table className="business-reports-table">
+              <thead><tr><th>When (Manila)</th><th>Order</th><th>Event</th><th>Operation</th><th>Actor</th><th>Recorded state</th></tr></thead>
+              <tbody>
+                {journal.map((entry) => <tr key={String(entry.journal_id)}>
+                  <td>{new Intl.DateTimeFormat('en-PH', { timeZone: 'Asia/Manila', dateStyle: 'medium', timeStyle: 'medium' }).format(new Date(entry.occurred_at))}</td>
+                  <td>{entry.order_number ?? '—'}</td><td>{entry.event_type}</td><td>{entry.operation}</td>
+                  <td>{entry.actor_role ?? 'Database'}{entry.actor_user_id ? <small style={{ display: 'block' }}>{entry.actor_user_id}</small> : null}</td>
+                  <td><details><summary>Before / after</summary><pre style={{ whiteSpace: 'pre-wrap', maxWidth: 420, overflowWrap: 'anywhere' }}>{JSON.stringify({ before: entry.old_values, after: entry.new_values }, null, 2)}</pre></details></td>
+                </tr>)}
+                {journal.length === 0 && <tr><td colSpan={6}>{journalLoading ? 'Loading activity…' : 'No journal events found for this period.'}</td></tr>}
+              </tbody>
+            </table></div>
+            <p className="business-reports-muted">Showing up to 5,000 newest captured events. The journal begins recording from deployment onward and does not reconstruct events that happened before it existed.</p>
           </section>
         </>}
         {tab === 'tax' && <>
