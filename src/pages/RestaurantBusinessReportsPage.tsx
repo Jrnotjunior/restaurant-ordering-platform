@@ -26,7 +26,7 @@ type PosReadingSnapshot = {
   generated_at: string;
   generated_by: string | null;
   order_counts: { all_orders: number; completed: number; cancelled: number; paid: number; pending_payment: number; refunded: number };
-  platform_totals_php: { completed_order_totals: number; completed_order_discounts: number; completed_order_delivery_fees: number; cumulative_completed_order_totals_through_date: number };
+  platform_totals_php: { paid_sales_order_count?: number; paid_sales_total?: number | null; cumulative_paid_sales_total?: number | null; paid_order_discounts?: number | null; paid_order_delivery_fees?: number | null; completed_order_totals: number; completed_order_discounts: number; completed_order_delivery_fees: number; cumulative_completed_order_totals_through_date: number };
   tax_summary: { complete: boolean; orders_needing_review: number; unclassified_order_lines: number; vatable_sales_php: number | null; vat_amount_php: number | null; vat_exempt_sales_php: number | null; zero_rated_sales_php: number | null };
 };
 type PosReadingPreviewRow = {
