@@ -144,7 +144,7 @@ export function RiderRouteGuard({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-export function OwnerRestaurantGuard({ children, loginRestaurant = defaultRestaurant }: { children: (restaurant: RestaurantConfig) => ReactNode; loginRestaurant?: RestaurantConfig }) {
+export function OwnerRestaurantGuard({ children, loginRestaurant = defaultRestaurant, tenantResolved = false }: { children: (restaurant: RestaurantConfig) => ReactNode; loginRestaurant?: RestaurantConfig; tenantResolved?: boolean }) {
   const { restaurant, user, loading: authLoading } = useRestaurantOwnerAuth();
   const [checkingRole, setCheckingRole] = useState(true);
   const [roleCheckError, setRoleCheckError] = useState(false);
@@ -188,15 +188,18 @@ export function OwnerRestaurantGuard({ children, loginRestaurant = defaultRestau
     return () => { mounted = false; };
   }, [user, authLoading]);
 
+  if (!tenantResolved) return <section className="restaurant-owner-auth-loading">Verifying this restaurant domain…</section>;
+  if (!loginRestaurant.id) return <section className="restaurant-owner-auth-no-restaurant"><div className="restaurant-owner-auth-no-restaurant-card"><h1>Restaurant domain not configured</h1><p>This domain is not currently linked to an active restaurant. Please contact support.</p></div></section>;
   if (authLoading) return <section className="restaurant-owner-auth-loading">Loading restaurant session…</section>;
   if (!user) return <RestaurantProvider restaurant={loginRestaurant}><ThemeProvider restaurant={loginRestaurant}><RestaurantOwnerLoginPage /></ThemeProvider></RestaurantProvider>;
   if (checkingRole) return <section className="restaurant-owner-auth-loading">Checking account access…</section>;
   if (roleCheckError) return <section className="restaurant-owner-auth-no-restaurant"><div className="restaurant-owner-auth-no-restaurant-card"><p className="eyebrow">Restaurant operations</p><h1>Unable to verify account access</h1><p>We couldn't verify your employee permissions. Please refresh the page or contact support. The owner dashboard is unavailable until access can be verified.</p></div></section>;
+  if (restaurant && restaurant.id !== loginRestaurant.id) return <section className="restaurant-owner-auth-no-restaurant"><div className="restaurant-owner-auth-no-restaurant-card"><p className="eyebrow">Domain access blocked</p><h1>This account belongs to a different restaurant</h1><p>You are signed in, but this custom domain belongs to another restaurant. Sign out and use your own restaurant's domain. Access has been blocked.</p></div></section>;
   if (!restaurant) return <section className="restaurant-owner-auth-no-restaurant"><div className="restaurant-owner-auth-no-restaurant-card"><p className="eyebrow">Restaurant operations</p><h1>No restaurant assigned</h1><p>Your owner account is signed in, but it is not linked to an active restaurant yet. Set the restaurant's <code>owner_id</code> to your Supabase Auth user ID, then reload this page.</p><p><strong>Signed in as:</strong> {user.email ?? user.id}</p></div></section>;
   return children(ownerRestaurantConfig(restaurant));
 }
 
-export function StaffRoleGuard({ role, children, loginRestaurant = defaultRestaurant }: { role: 'cashier' | 'kitchen' | 'dispatcher'; children: (restaurant: RestaurantConfig) => ReactNode; loginRestaurant?: RestaurantConfig }) {
+export function StaffRoleGuard({ role, children, loginRestaurant = defaultRestaurant, tenantResolved = false }: { role: 'cashier' | 'kitchen' | 'dispatcher'; children: (restaurant: RestaurantConfig) => ReactNode; loginRestaurant?: RestaurantConfig; tenantResolved?: boolean }) {
   const { user, staffRole, staffRestaurantId, loading: authLoading } = useRestaurantOwnerAuth();
   const [checking, setChecking] = useState(true);
   const [allowed, setAllowed] = useState(false);
@@ -227,9 +230,12 @@ export function StaffRoleGuard({ role, children, loginRestaurant = defaultRestau
     return () => { mounted = false; };
   }, [role, user, staffRole, staffRestaurantId, authLoading]);
 
+  if (!tenantResolved) return <section className="restaurant-owner-auth-loading">Verifying this restaurant domain…</section>;
+  if (!loginRestaurant.id) return <section className="restaurant-owner-auth-no-restaurant"><div className="restaurant-owner-auth-no-restaurant-card"><h1>Restaurant domain not configured</h1><p>This domain is not currently linked to an active restaurant. Please contact support.</p></div></section>;
   if (authLoading) return <section className="restaurant-owner-auth-loading">Loading employee session…</section>;
   if (!user) return <RestaurantProvider restaurant={loginRestaurant}><ThemeProvider restaurant={loginRestaurant}><RestaurantOwnerLoginPage /></ThemeProvider></RestaurantProvider>;
   if (checking) return <section className="restaurant-owner-auth-loading">Checking employee access…</section>;
+  if (allowed && staffRestaurantId !== loginRestaurant.id) return <section className="restaurant-owner-auth-no-restaurant"><div className="restaurant-owner-auth-no-restaurant-card"><p className="eyebrow">Domain access blocked</p><h1>This employee belongs to a different restaurant</h1><p>This custom domain belongs to another restaurant. Your workspace is blocked here. Use the domain assigned to your restaurant.</p></div></section>;
   if (roleCheckError) {
     return <section className="restaurant-owner-auth-loading">Unable to verify employee permissions. Access is blocked; please refresh or contact support.</section>;
   }
