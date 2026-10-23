@@ -300,6 +300,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-upload-row .website-customization-logo-preview img{width:100%;height:100%;object-fit:contain}
         .website-customization-card .website-customization-logo-row{margin-top:0}
         .website-customization-card .website-customization-upload-row{width:100%;max-width:none}
+        .website-customization-card .website-customization-branding-grid .website-customization-upload-row{min-height:0;padding:8px 10px;}
         .website-customization-upload-row .website-customization-logo-button{flex:0 0 auto}
         .website-customization-upload-heading{margin:0 0 12px;font-size:16px;font-weight:700;line-height:1.35}
         .website-customization-upload-description{margin:0 0 14px;font-size:14px;line-height:1.5;color:#334155}
