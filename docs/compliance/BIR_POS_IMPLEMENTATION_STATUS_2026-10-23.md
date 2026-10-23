@@ -11,7 +11,7 @@
 - Added `orders.tax_snapshot_status` and `orders.tax_snapshot_version`.
 - Existing orders are marked `legacy_unknown`; no historical amounts, tax rates, or invoices were inferred or backfilled.
 - New orders default to `not_calculated` until a server-side routine records a calculation.
-- The existing POS tax-finalization routine marks its saved result `calculated` with calculation version 1.
+- The existing POS tax-finalization routine marks a result `calculated` with version 1 only when the restaurant is VAT-registered and every order line has an explicit `standard_rate` classification. Non-VAT registrations, unclassified lines, VAT-exempt product lines, and zero-rated product lines are marked `requires_review` under the current formula rather than incorrectly treated as complete.
 - If a later financial update changes subtotal, delivery fee, discount or order total without recalculating the tax snapshot, the status becomes `requires_review`.
 - Tax-support reports now leave tax amounts blank and identify missing/legacy/review-required calculations rather than presenting schema-default zeroes as calculated tax.
 
@@ -22,6 +22,16 @@
 - The journal is append-only for application roles and is readable through an owner/system-admin-scoped RPC.
 - Sensitive customer names, phone numbers, delivery addresses, and statutory discount ID numbers are not copied into the journal snapshots.
 - Added an **Activity Journal** tab and spreadsheet export in Business Reports. The UI explicitly describes the journal as technical audit evidence, not a BIR-approved e-Journal.
+
+### Menu tax classification and tax-report completeness
+
+- Added nullable `products.tax_category` choices for `standard_rate`, `vat_exempt`, and `zero_rated`. Existing menu products remain NULL/unclassified; the migration does not guess their treatment.
+- Added `order_items.tax_category_snapshot`; a database trigger captures the product's classification when a new order line is created. Later product edits do not rewrite historical order lines.
+- Added an owner-authorized RPC to set a product category and a visible classification field/status in Menu Management.
+- Added `orders.tax_zero_rated_sales` as nullable: NULL means unknown/not calculated, not a zero amount. Sales reporting now receives zero-rated provenance and whether every line has a tax-category snapshot.
+- Tax reports flag a snapshot as incomplete if the zero-rated amount is unknown or any line is unclassified. The report shows product classification counts and the first 25 unclassified menu items, and exports zero-rated fields as blank while unresolved.
+- Added supporting exports for recorded Senior Citizen/PWD discount amounts and cancelled/refunded transactions. They are explicitly labelled reconciliation aids, not the prescribed official BIR discount books or Void Report; the required approved format and certain identity/event fields are still missing.
+- The current formula is deliberately gated: only VAT-registered orders with all standard-rated line items can be marked calculated under version 1. VAT-exempt/zero-rated item handling, non-VAT tax reporting, and other treatments remain marked for review until accountant-approved truth tables and regression tests are implemented.
 
 ### Gated invoice-issuance ledger (storage only; official issue flow disabled)
 
@@ -43,6 +53,11 @@
 ### Database rollout and smoke test
 
 - The additive migration `20261023153000_bir_pos_journal_and_tax_status.sql` was applied to the Restaurant Ordering Platform Supabase project and the isolated Security Test project.
+- The follow-up migrations `20261023160000_journal_pos_discount_beneficiary_changes.sql`, `20261023170000_restaurant_taxpayer_profile.sql`, `20261023180000_bir_invoice_issuance_ledger.sql`, `20261023183000_pos_journal_actor_context.sql`, `20261023190000_bir_issuance_readiness_status.sql`, `20261023200000_product_tax_classification.sql`, `20261023203000_tax_classification_in_sales_reports.sql`, `20261023210000_bir_ledger_read_policies.sql`, and `20261023220000_gate_tax_snapshot_completeness.sql` were applied to both connected projects. The invoice-issuance config has zero rows and zero enabled series; no invoices are created by the new code.
+- Explicit owner/System Admin SELECT policies were added for sensitive taxpayer profiles and issued-document storage as defense in depth; direct table grants remain revoked.
+- Rollback-only tests passed for journal event creation and actor context, immutable invoice-ledger rows, duplicate serial rejection, and product tax-category snapshotting. Test rows were rolled back.
+- The readiness RPC returns current blockers for the connected Web2Table restaurant: missing taxpayer profile, no configured serial series, and official invoice issuance disabled.
+- Build/deployment workflows passed for the prior platform commit `4d904ed`; the most recent report-export changes are currently building. Check the linked GitHub Actions runs before release acceptance.
 - The follow-up `20261023160000_journal_pos_discount_beneficiary_changes.sql` was applied to both projects.
 - Schema checks confirmed the status columns, trigger names, and owner/admin-scoped journal RPCs exist in both connected projects.
 - A test transaction in the isolated Security Test project produced `SALE_CREATED` and `ORDER_ITEM_ADDED` journal events; the transaction was rolled back and no test order was retained.
