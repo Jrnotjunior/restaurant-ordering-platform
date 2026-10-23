@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { getMenu, subscribeToCashierMenuChanges } from '../modules/products/productService';
 import { createOrder } from '../modules/ordering/orderService';
 import { applyPosGroupDiscounts, confirmPosCashPayment, getCurrentCashierName, getRestaurantTaxSettings, type PosDiscountIdType, type PosDiscountType, type RestaurantTaxSettings } from '../modules/pos/posService';
-import { calculatePosStatutoryDiscountPreview } from '../modules/pos/statutoryDiscountCalculations';
+import { allocatePosEqualGroupShares, calculatePosStatutoryDiscountPreview } from '../modules/pos/statutoryDiscountCalculations';
 import type { RestaurantProduct } from '../types/menu';
 import { MapboxDeliveryLocationPicker, type MapboxDeliveryAddress } from '../components/MapboxDeliveryLocationPicker';
 import { calculateDeliveryRoute, type DeliveryRouteQuote } from '../modules/location/locationService';
@@ -11,8 +11,8 @@ import { attachCustomerToOrder, findCustomersByName, getLoyaltyRedemptionSetting
 
 type Props = { restaurantId: string };
 type CartItem = { product: RestaurantProduct; quantity: number };
-type DraftBeneficiary = { discountType: PosDiscountType; idType: PosDiscountIdType; idNumber: string; beneficiaryName: string; beneficiaryTin: string; beneficiaryAddress: string; eligibleLineAmounts: Record<string, string> };
-type PrintedBeneficiary = DraftBeneficiary & { eligibleAmount: number; discountAmount: number };
+type DraftBeneficiary = { discountType: PosDiscountType; idType: PosDiscountIdType; idNumber: string; beneficiaryName: string; beneficiaryTin: string; beneficiaryAddress: string };
+type PrintedBeneficiary = DraftBeneficiary & { eligibleGrossAmount: number; eligibleAmount: number; discountAmount: number };
 type PosPrintOrder = {
   orderNumber: string;
   customerName: string;
@@ -21,6 +21,7 @@ type PosPrintOrder = {
   notes: string;
   cashierName: string;
   orderType: 'dine_in' | 'take_out' | 'pickup' | 'delivery';
+  customerCount: number;
   createdAt: string;
   items: CartItem[];
   beneficiaries: PrintedBeneficiary[];
@@ -187,28 +188,27 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
 
   const money = (amount: number) => Number((Number.isFinite(amount) ? amount : 0).toFixed(2));
   const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0), [cart]);
-  const effectiveGroupSize = Math.max(Number(groupSize) || 1, 1);
+  const groupSizeValid = groupSize !== '' && Number.isInteger(Number(groupSize)) && Number(groupSize) >= 1;
+  const effectiveGroupSize = groupSizeValid ? Math.floor(Number(groupSize)) : 1;
   const priceHasIncludedVat = Boolean(taxSettings?.vatRegistered && taxSettings.pricesVatInclusive);
   const vatRate = taxSettings?.vatRegistered ? taxSettings.vatRate : 0;
   const hasUnclassifiedCartItem = cart.some((item) => !item.product.taxCategory);
   const cartTaxBreakdownReady = cart.length > 0 && !hasUnclassifiedCartItem;
   const taxBreakdownVisible = Boolean(taxSettings?.vatRegistered && cartTaxBreakdownReady && beneficiaries.length === 0);
   const deliveryFee = orderType === 'delivery' && deliveryRouteQuote?.inRange ? deliveryRouteQuote.deliveryFee : 0;
-  const allocationInputs = beneficiaries.flatMap((beneficiary) => cart.flatMap((item) => {
-    const eligibleGross = money(Number(beneficiary.eligibleLineAmounts[item.product.id] || 0));
-    if (eligibleGross <= 0) return [];
-    return [{
-      productId: item.product.id,
-      taxCategory: item.product.taxCategory ?? null,
-      eligibleGross,
-    }];
+  const taxLines = cart.map((item) => ({
+    productId: item.product.id,
+    lineTotal: money(item.product.price * item.quantity),
+    taxCategory: item.product.taxCategory ?? null,
   }));
+  const beneficiaryLineAllocations = allocatePosEqualGroupShares(
+    taxLines,
+    effectiveGroupSize,
+    beneficiaries.length,
+  );
+  const allocationInputs = beneficiaryLineAllocations.flat();
   const statutoryPreview = calculatePosStatutoryDiscountPreview({
-    lines: cart.map((item) => ({
-      productId: item.product.id,
-      lineTotal: item.product.price * item.quantity,
-      taxCategory: item.product.taxCategory ?? null,
-    })),
+    lines: taxLines,
     allocations: allocationInputs,
     subtotal,
     deliveryFee,
@@ -228,34 +228,21 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
   const total = Math.max(money(statutoryPreview.totalWithDeliveryFee - loyaltyDiscountPreview), 0);
   const cashReceivedAmount = Number(cashReceived) || 0;
   const change = Math.max(money(cashReceivedAmount - total), 0);
-  const eligibleLineAmountsValid = beneficiaries.every((beneficiary) =>
-    Object.values(beneficiary.eligibleLineAmounts).every((value) =>
-      value.trim() === '' || (Number.isFinite(Number(value)) && Number(value) >= 0 && Math.abs(Number(value) - money(Number(value))) < 0.00001),
-    ),
-  );
-  const allocationsDoNotExceedLines = cart.every((item) => {
-    const lineTotal = money(item.product.price * item.quantity);
-    const allocated = beneficiaries.reduce((sum, beneficiary) => (
-      sum + money(Math.max(Number(beneficiary.eligibleLineAmounts[item.product.id]) || 0, 0))
-    ), 0);
-    return allocated <= lineTotal + 0.001;
-  });
   const uniqueBeneficiaryIds = new Set(beneficiaries.map((beneficiary) => beneficiary.idNumber.trim()).filter(Boolean)).size === beneficiaries.filter((beneficiary) => beneficiary.idNumber.trim()).length;
-  const allBeneficiariesHaveEligibleLines = beneficiaries.every((beneficiary) =>
-    Object.values(beneficiary.eligibleLineAmounts).some((value) => money(Number(value)) >= 0.01 && Number.isFinite(Number(value))),
-  );
+  const allBeneficiariesHaveEligibleLines = beneficiaries.length === 0
+    || (beneficiaryLineAllocations.length === beneficiaries.length
+      && beneficiaryLineAllocations.every((allocations) => allocations.length > 0));
   const beneficiaryIdentityReady = beneficiaries.every((beneficiary) =>
     beneficiary.idNumber.trim().length > 0
       && beneficiary.beneficiaryName.trim().length > 0
       && beneficiary.beneficiaryAddress.trim().length > 0,
   );
   const discountAllocationReady = !(beneficiaries.length > 0 && redeemPoints) && (beneficiaries.length === 0 || (
-    beneficiaryIdentityReady
+    groupSizeValid
+      && beneficiaryIdentityReady
       && uniqueBeneficiaryIds
       && beneficiaries.length <= effectiveGroupSize
-      && eligibleLineAmountsValid
       && allBeneficiariesHaveEligibleLines
-      && allocationsDoNotExceedLines
       && !(taxSettings?.vatRegistered && hasUnclassifiedCartItem)
   ));
   const cashPaymentReady = cart.length > 0 && discountAllocationReady && cashReceivedAmount >= total;
@@ -266,28 +253,18 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
       if (existing) return current.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
       return [...current, { product, quantity: 1 }];
     });
-    setBeneficiaries((current) => current.map((beneficiary) => {
-      const eligibleLineAmounts = { ...beneficiary.eligibleLineAmounts };
-      delete eligibleLineAmounts[product.id];
-      return { ...beneficiary, eligibleLineAmounts };
-    }));
     setSuccess('');
   }
 
   function changeQuantity(productId: string, amount: number) {
     setCart((current) => current.map((item) => item.product.id === productId ? { ...item, quantity: item.quantity + amount } : item).filter((item) => item.quantity > 0));
-    setBeneficiaries((current) => current.map((beneficiary) => {
-      const eligibleLineAmounts = { ...beneficiary.eligibleLineAmounts };
-      delete eligibleLineAmounts[productId];
-      return { ...beneficiary, eligibleLineAmounts };
-    }));
   }
 
   function addBeneficiary(type: PosDiscountType) {
     if (beneficiaries.length >= effectiveGroupSize) return;
     // Statutory SC/PWD discount and loyalty redemption are mutually exclusive.
     setRedeemPoints(false);
-    setBeneficiaries((current) => [...current, { discountType: type, idType: defaultIdType(type), idNumber: '', beneficiaryName: '', beneficiaryTin: '', beneficiaryAddress: '', eligibleLineAmounts: {} }]);
+    setBeneficiaries((current) => [...current, { discountType: type, idType: defaultIdType(type), idNumber: '', beneficiaryName: '', beneficiaryTin: '', beneficiaryAddress: '' }]);
   }
 
   function removeBeneficiary(index: number) {
@@ -298,30 +275,18 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
     setBeneficiaries((current) => current.map((beneficiary, itemIndex) => itemIndex === index ? { ...beneficiary, ...patch } : beneficiary));
   }
 
-  function updateEligibleLineAmount(index: number, productId: string, amount: string) {
-    setBeneficiaries((current) => current.map((beneficiary, itemIndex) => itemIndex === index
-      ? { ...beneficiary, eligibleLineAmounts: { ...beneficiary.eligibleLineAmounts, [productId]: amount } }
-      : beneficiary));
-  }
-
-  function getBeneficiaryPreviewAmounts(beneficiary: DraftBeneficiary) {
+  function getBeneficiaryPreviewAmounts(beneficiaryIndex: number) {
+    const allocations = beneficiaryLineAllocations[beneficiaryIndex] ?? [];
     const preview = calculatePosStatutoryDiscountPreview({
-      lines: cart.map((item) => ({
-        productId: item.product.id,
-        lineTotal: item.product.price * item.quantity,
-        taxCategory: item.product.taxCategory ?? null,
-      })),
-      allocations: cart.map((item) => ({
-        productId: item.product.id,
-        taxCategory: item.product.taxCategory ?? null,
-        eligibleGross: money(Number(beneficiary.eligibleLineAmounts[item.product.id] || 0)),
-      })),
+      lines: taxLines,
+      allocations,
       subtotal,
       vatRegistered: Boolean(taxSettings?.vatRegistered),
       pricesVatInclusive: priceHasIncludedVat,
       vatRate,
     });
     return {
+      eligibleGrossAmount: money(allocations.reduce((sum, allocation) => sum + allocation.eligibleGross, 0)),
       eligibleAmount: money(preview.allocations.reduce((sum, allocation) => sum + allocation.eligibleNet, 0)),
       discountAmount: preview.discountAmount,
     };
@@ -332,7 +297,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
       setGroupSize('');
       return;
     }
-    const nextSize = Math.max(Number(value) || 1, 1);
+    const nextSize = Math.max(Math.floor(Number(value) || 1), 1);
     setGroupSize(nextSize);
     setBeneficiaries((current) => current.slice(0, nextSize));
   }
@@ -405,16 +370,17 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
       const financials = await applyPosGroupDiscounts(
         created.orderId,
         effectiveGroupSize,
-        beneficiaries.map((beneficiary) => ({
+        beneficiaries.map((beneficiary, index) => ({
           discountType: beneficiary.discountType,
           idType: beneficiary.idType,
           idNumber: beneficiary.idNumber,
           beneficiaryName: beneficiary.beneficiaryName,
           beneficiaryTin: beneficiary.beneficiaryTin,
           beneficiaryAddress: beneficiary.beneficiaryAddress,
-          eligibleLines: Object.entries(beneficiary.eligibleLineAmounts)
-            .map(([productId, value]) => ({ productId, eligibleAmount: Number(value) }))
-            .filter((line) => Number.isFinite(line.eligibleAmount) && line.eligibleAmount > 0),
+          eligibleLines: (beneficiaryLineAllocations[index] ?? []).map((line) => ({
+            productId: line.productId,
+            eligibleAmount: line.eligibleGross,
+          })),
         })),
       );
 
@@ -435,13 +401,15 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
         notes: notes.trim(),
         cashierName,
         orderType,
+        customerCount: effectiveGroupSize,
         createdAt: new Date().toISOString(),
         items: cart.map((item) => ({ ...item })),
-        beneficiaries: beneficiaries.map((beneficiary) => {
+        beneficiaries: beneficiaries.map((beneficiary, index) => {
           const saved = financials.beneficiaryBreakdown?.find((item) => item.idNumber === beneficiary.idNumber.trim());
-          const preview = getBeneficiaryPreviewAmounts(beneficiary);
+          const preview = getBeneficiaryPreviewAmounts(index);
           return {
             ...beneficiary,
+            eligibleGrossAmount: preview.eligibleGrossAmount,
             eligibleAmount: saved?.eligibleAmount ?? preview.eligibleAmount,
             discountAmount: saved?.discountAmount ?? preview.discountAmount,
           };
@@ -630,7 +598,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
 
           <div className="restaurant-pos-discount">
             <div className="restaurant-pos-discount-header"><strong>Senior / PWD Discount</strong><span>20%</span></div>
-            <label className="restaurant-pos-field"><span>Number of customers</span><input type="number" min={1} value={groupSize} onChange={(event) => changeGroupSize(event.target.value)} disabled={saving} /></label>
+            <label className="restaurant-pos-field"><span>Number of customers</span><input type="number" min={1} step={1} value={groupSize} onChange={(event) => changeGroupSize(event.target.value)} disabled={saving} /></label>
 
             <div className="restaurant-pos-discount-types">
               <button type="button" onClick={() => addBeneficiary('senior')} disabled={saving || beneficiaries.length >= effectiveGroupSize}>+ Senior Citizen</button>
@@ -651,54 +619,28 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
                 </select></label>
                 <label className="restaurant-pos-field"><span>ID number</span><input value={beneficiary.idNumber} onChange={(event) => updateBeneficiary(index, { idNumber: event.target.value })} placeholder="Enter ID number" disabled={saving} /></label>
                 <div className="restaurant-pos-beneficiary-lines">
-                  <strong>Eligible order lines for this beneficiary</strong>
-                  {cart.length === 0 ? <p>Add order items first, then allocate the amount attributable to this person.</p> : cart.map((item) => {
-                    const lineTotal = money(item.product.price * item.quantity);
-                    const allocatedToOthers = beneficiaries.reduce((sum, other, otherIndex) => (
-                      otherIndex === index ? sum : sum + Math.max(Number(other.eligibleLineAmounts[item.product.id]) || 0, 0)
-                    ), 0);
-                    const remainingForThisBeneficiary = money(Math.max(lineTotal - allocatedToOthers, 0));
-                    const amount = beneficiary.eligibleLineAmounts[item.product.id] ?? '';
-                    const itemUnclassified = !item.product.taxCategory;
-                    return (
-                      <label className="restaurant-pos-field" key={item.product.id}>
-                        <span>{item.quantity} × {item.product.name} · line ₱{lineTotal.toFixed(2)}</span>
-                        <input
-                          type="number"
-                          min="0"
-                          max={remainingForThisBeneficiary}
-                          step="0.01"
-                          inputMode="decimal"
-                          value={amount}
-                          onChange={(event) => updateEligibleLineAmount(index, item.product.id, event.target.value)}
-                          placeholder="Eligible amount (₱)"
-                          disabled={saving || (Boolean(taxSettings?.vatRegistered) && itemUnclassified)}
-                        />
-                        {taxSettings?.vatRegistered && itemUnclassified && <small>Tax category must be reviewed before allocating this line.</small>}
-                        <small>Remaining available on this line: ₱{remainingForThisBeneficiary.toFixed(2)}</small>
-                      </label>
-                    );
-                  })}
-                  <p>Assigned eligible amount: ₱{getBeneficiaryPreviewAmounts(beneficiary).eligibleAmount.toFixed(2)} · 20% discount preview: ₱{getBeneficiaryPreviewAmounts(beneficiary).discountAmount.toFixed(2)}</p>
+                  <strong>Automatic group-share calculation</strong>
+                  <p>Food subtotal: ₱{money(subtotal).toFixed(2)} ÷ {effectiveGroupSize} {effectiveGroupSize === 1 ? 'customer' : 'customers'}</p>
+                  <p>Personal food share: ₱{getBeneficiaryPreviewAmounts(index).eligibleGrossAmount.toFixed(2)}</p>
+                  <p>20% discount preview: ₱{getBeneficiaryPreviewAmounts(index).discountAmount.toFixed(2)}</p>
+                  <small>Calculated automatically. No amount entry is needed for individual products. Delivery fees are not included in the food share.</small>
                 </div>
               </div>
             ))}
 
-            {beneficiaries.length > 0 && <p className="restaurant-pos-discount-note">Enter only the portion of each order line attributable to this beneficiary under the applicable SC/PWD rules; do not assume equal group shares. Combined allocations cannot exceed the line total. VAT-registered restaurants must classify every item before applying the discount. One person may use either Senior Citizen or PWD benefit for a transaction, not both, and the cashier must verify the required ID.</p>}
+            {beneficiaries.length > 0 && <p className="restaurant-pos-discount-note">The food subtotal is split across the entered customer count. Only a verified Senior Citizen or PWD beneficiary’s allocated share receives the 20% discount. VAT-registered restaurants must classify every item before applying the discount; confirm the group-share method is appropriate for the transaction and verify the required ID.</p>}
             {beneficiaries.length > 0 && !discountAllocationReady && <p className="restaurant-pos-message is-error" role="alert">
-              {taxSettings?.vatRegistered && hasUnclassifiedCartItem
-                ? 'Review the tax category for every product before applying an SC/PWD discount.'
-                : !beneficiaryIdentityReady
-                  ? 'Enter every beneficiary’s full name, address, and ID number.'
-                  : !uniqueBeneficiaryIds
-                    ? 'Each beneficiary must use a different ID number for this order.'
-                    : !eligibleLineAmountsValid
-                      ? 'Eligible amounts must be valid, non-negative amounts with no more than two decimal places.'
+              {!groupSizeValid
+                ? 'Enter a valid whole number of customers.'
+                : taxSettings?.vatRegistered && hasUnclassifiedCartItem
+                  ? 'Review the tax category for every product before applying an SC/PWD discount.'
+                  : !beneficiaryIdentityReady
+                    ? 'Enter every beneficiary’s full name, address, and ID number.'
+                    : !uniqueBeneficiaryIds
+                      ? 'Each beneficiary must use a different ID number for this order.'
                       : !allBeneficiariesHaveEligibleLines
-                        ? 'Enter a positive eligible amount on at least one order line for each beneficiary.'
-                        : !allocationsDoNotExceedLines
-                        ? 'Combined eligible amounts cannot exceed the total for each order line.'
-                        : 'Complete the required beneficiary and line-allocation details.'}
+                        ? 'There is no positive order-line share to allocate to every listed beneficiary. Check the customer count and order total.'
+                        : 'Complete the required beneficiary details.'}
             </p>}
           </div>
 
@@ -733,7 +675,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             {taxBreakdownVisible && <div className="restaurant-pos-total"><span>VATable sales</span><strong>₱{vatableSales.toFixed(2)}</strong></div>}
             {taxBreakdownVisible && <div className="restaurant-pos-total"><span>VAT {taxSettings?.vatRate.toFixed(2)}%</span><strong>₱{vatAmount.toFixed(2)}</strong></div>}
             {beneficiaries.length > 0 && <>
-              <div className="restaurant-pos-total"><span>Allocated eligible line amounts</span><strong>₱{allocatedEligibleGross.toFixed(2)}</strong></div>
+              <div className="restaurant-pos-total"><span>Eligible food share(s)</span><strong>₱{allocatedEligibleGross.toFixed(2)}</strong></div>
               {taxBreakdownVisible && <div className="restaurant-pos-total"><span>VAT-exempt sales</span><strong>₱{vatExemptSales.toFixed(2)}</strong></div>}
               <div className="restaurant-pos-total restaurant-pos-discount-total"><span>Senior / PWD Discount</span><strong>-₱{discountAmount.toFixed(2)}</strong></div>
             </>}
@@ -883,10 +825,8 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
                     <div>Address: {beneficiary.beneficiaryAddress}</div>
                     {beneficiary.beneficiaryTin.trim() && <div>TIN: {beneficiary.beneficiaryTin}</div>}
                     <div>{beneficiary.idType.replaceAll('_', ' ').toUpperCase()}: {beneficiary.idNumber}</div>
-                    {Object.entries(beneficiary.eligibleLineAmounts).filter(([, value]) => Number(value) > 0).map(([productId, value]) => {
-                      const item = printOrder.items.find((candidate) => candidate.product.id === productId);
-                      return item ? <div key={productId}>{item.product.name}: ₱{Number(value).toFixed(2)} eligible at menu price</div> : null;
-                    })}
+                    <div>Group size: {printOrder.customerCount} {printOrder.customerCount === 1 ? 'customer' : 'customers'}</div>
+                    <div>Personal food share: ₱{beneficiary.eligibleGrossAmount.toFixed(2)}</div>
                     <div>Eligible net amount: ₱{beneficiary.eligibleAmount.toFixed(2)} · Discount: ₱{beneficiary.discountAmount.toFixed(2)}</div>
                   </div>
                 ))}
