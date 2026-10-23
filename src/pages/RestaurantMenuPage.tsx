@@ -16,6 +16,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
   const [products, setProducts] = useState<RestaurantProduct[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showUnavailable, setShowUnavailable] = useState(true);
+  const [onlyUnclassifiedTax, setOnlyUnclassifiedTax] = useState(false);
   const [searchProduct, setSearchProduct] = useState('');
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -51,14 +52,15 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
     return products.filter((product) => {
       const categoryMatch = selectedCategory === 'all' || product.categoryId === selectedCategory;
       const availabilityMatch = showUnavailable || product.isAvailable;
+      const taxReviewMatch = !onlyUnclassifiedTax || !product.taxCategory;
       const category = categories.find((item) => item.id === product.categoryId);
       const searchMatch = !query
         || product.name.toLowerCase().includes(query)
         || product.description.toLowerCase().includes(query)
         || Boolean(category?.name.toLowerCase().includes(query));
-      return categoryMatch && availabilityMatch && searchMatch;
+      return categoryMatch && availabilityMatch && taxReviewMatch && searchMatch;
     });
-  }, [products, categories, selectedCategory, showUnavailable, searchProduct]);
+  }, [products, categories, selectedCategory, showUnavailable, onlyUnclassifiedTax, searchProduct]);
 
   async function toggleAvailability(product: RestaurantProduct) {
     setSavingId(product.id);
@@ -276,6 +278,10 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
           <label className="restaurant-menu-toggle">
             <input type="checkbox" checked={showUnavailable} onChange={(event) => setShowUnavailable(event.target.checked)} />
             <span>Show unavailable</span>
+          </label>
+          <label className="restaurant-menu-toggle">
+            <input type="checkbox" checked={onlyUnclassifiedTax} onChange={(event) => setOnlyUnclassifiedTax(event.target.checked)} />
+            <span>Only products needing tax classification ({products.filter((product) => !product.taxCategory).length})</span>
           </label>
         </div>
 
