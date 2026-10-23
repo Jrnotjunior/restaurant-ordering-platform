@@ -832,7 +832,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
               <div className="pos-receipt-row"><span>Subtotal</span><span>₱{printOrder.financials.grossSales.toFixed(2)}</span></div>
             )}
             {printOrder.financials.discountAmount > 0 && <div className="pos-receipt-row"><span>SC/PWD discount</span><span>-₱{printOrder.financials.discountAmount.toFixed(2)}</span></div>}
-            {printOrder.financials.loyaltyDiscountAmount > 0 && <div className="pos-receipt-row"><span>Loyalty Discount</span><span>-₱{printOrder.financials.loyaltyDiscountAmount.toFixed(2)}</span></div>
+            {printOrder.financials.loyaltyDiscountAmount > 0 && <div className="pos-receipt-row"><span>Loyalty Discount</span><span>-₱{printOrder.financials.loyaltyDiscountAmount.toFixed(2)}</span></div>}
             {printOrder.deliveryFee > 0 && <div className="pos-receipt-row"><span>Delivery fee</span><span>₱{printOrder.deliveryFee.toFixed(2)}</span></div>}
             <div className="pos-receipt-row pos-receipt-total">
               <span>TOTAL</span>
