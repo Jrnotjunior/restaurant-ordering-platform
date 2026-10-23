@@ -298,6 +298,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
         .website-customization-card .website-customization-branding-grid .website-customization-upload-row{width:100%;max-width:none;}
         .website-customization-upload-row .website-customization-logo-preview{width:96px;height:96px;flex:0 0 96px;box-sizing:border-box}
         .website-customization-upload-row .website-customization-logo-preview img{width:100%;height:100%;object-fit:contain}
+        .website-customization-upload-row .website-customization-restaurant-logo-preview img{object-fit:cover}
         .website-customization-card .website-customization-logo-row{margin-top:0}
         .website-customization-card .website-customization-upload-row{width:100%;max-width:none}
         .website-customization-card .website-customization-branding-grid .website-customization-upload-row{min-height:0;padding:8px 10px;}
@@ -575,7 +576,7 @@ export function RestaurantWebsiteCustomizationPage({ restaurantId }: Props) {
           <div className="website-customization-branding-grid">
             <div>
               <div className="website-customization-logo-row website-customization-upload-row">
-                <div className="website-customization-logo-preview">{logoUrl ? <img src={logoUrl} alt="Restaurant logo" /> : <span>No logo</span>}</div>
+                <div className="website-customization-logo-preview website-customization-restaurant-logo-preview">{logoUrl ? <img src={logoUrl} alt="Restaurant logo" /> : <span>No logo</span>}</div>
                 <label className="button button-secondary website-customization-logo-button restaurant-compact-action">
                   {logoUploading ? 'Uploading…' : 'Choose logo'}
                   <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => void handleLogoChange(event)} disabled={loading || saving || logoUploading} />
