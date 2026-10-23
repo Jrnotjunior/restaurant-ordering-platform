@@ -322,11 +322,14 @@ export async function getOrderStatus(orderId: string): Promise<TrackedOrder> {
   // is an identifier, not an authorization credential. Authenticated customers
   // may use the legacy RPC because the database function checks ownership.
   const guestTrackingToken = readGuestOrderTrackingToken(orderId);
+  const guestTrackingTokenHash = guestTrackingToken
+    ? await hashGuestOrderTrackingToken(guestTrackingToken)
+    : null;
   let rows: TrackedOrderRow[];
   if (guestTrackingToken) {
     rows = await supabaseRpc<TrackedOrderRow>('get_guest_order_status_by_tracking_token', {
       p_order_id: orderId,
-      p_guest_tracking_token_hash: await hashGuestOrderTrackingToken(guestTrackingToken),
+      p_guest_tracking_token_hash: guestTrackingTokenHash,
     });
   } else {
     if (!supabase) throw new Error('This guest tracking link is missing its access token. Please reopen the original order confirmation link.');
@@ -348,12 +351,14 @@ export async function getOrderStatus(orderId: string): Promise<TrackedOrder> {
   const cancellationRefundRows = row.status === 'cancelled' && row.payment_method === 'gcash'
     ? await supabaseRpc<{ cancellation_refund_status: string | null }>('get_order_cancellation_refund_status', {
         p_order_id: orderId,
+        p_guest_tracking_token_hash: guestTrackingTokenHash,
       }).catch(() => [])
     : [];
   const cancellationRefundStatus = cancellationRefundRows[0]?.cancellation_refund_status ?? null;
 
   const createdAtRows = await supabaseRpc<{ created_at: string | null }>('get_customer_order_created_at', {
     p_order_id: orderId,
+    p_guest_tracking_token_hash: guestTrackingTokenHash,
   }).catch(() => []);
   const createdAt = createdAtRows[0]?.created_at ?? null;
   let storeAddress = row.store_address ?? null;
