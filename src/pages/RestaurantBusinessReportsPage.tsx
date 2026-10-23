@@ -529,32 +529,33 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
       {loading ? <div className="business-reports-panel">Loading business data…</div> : <>
         {tab === 'overview' && <>
           <div className="business-reports-cards">
-            <div className="business-reports-card"><small>Completed sales</small><strong>{peso(totalSales)}</strong></div>
-            <div className="business-reports-card"><small>Completed orders</small><strong>{completedOrders.length}</strong></div>
-            <div className="business-reports-card"><small>Average order value</small><strong>{peso(completedOrders.length ? totalSales / completedOrders.length : 0)}</strong></div>
+            <div className="business-reports-card"><small>Paid sales</small><strong>{peso(totalSales)}</strong></div>
+            <div className="business-reports-card"><small>Paid sales orders</small><strong>{paidSalesOrders.length}</strong></div>
+            <div className="business-reports-card"><small>Average paid order value</small><strong>{peso(paidSalesOrders.length ? totalSales / paidSalesOrders.length : 0)}</strong></div>
+            <div className="business-reports-card"><small>Operationally completed orders</small><strong>{completedOrders.length}</strong></div>
             <div className="business-reports-card"><small>Recorded expenses</small><strong>{peso(totalExpenses)}</strong></div>
           </div>
           <section className="business-reports-panel">
             <div className="business-reports-header">
-              <div><h2>Sales by day</h2><p>Completed orders only. Cancelled and incomplete orders are not included in sales totals.</p></div>
+              <div><h2>Paid sales by day</h2><p>Counts paid orders unless their workflow status is cancelled or refunded. Kitchen/workflow completion is tracked separately. This is an internal rollup, not an official BIR sales report.</p></div>
               <div className="business-reports-range">
                 <label>From<input type="date" value={fromDate} max={toDate} onChange={(event) => setFromDate(event.target.value)} /></label>
                 <label>To<input type="date" value={toDate} min={fromDate} onChange={(event) => setToDate(event.target.value)} /></label>
               </div>
             </div>
-            <div className="business-reports-table-wrap"><table className="business-reports-table"><thead><tr><th>Date</th><th>Completed orders</th><th>Sales</th></tr></thead><tbody>
-              {Array.from(new Set(completedOrders.map((order) => new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(order.createdAt))))).sort((a,b)=>b.localeCompare(a)).map((date) => {
-                const dayOrders = completedOrders.filter((order) => new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(order.createdAt)) === date);
+            <div className="business-reports-table-wrap"><table className="business-reports-table"><thead><tr><th>Date</th><th>Paid sales orders</th><th>Paid sales</th></tr></thead><tbody>
+              {Array.from(new Set(paidSalesOrders.map((order) => new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(order.createdAt))))).sort((a,b)=>b.localeCompare(a)).map((date) => {
+                const dayOrders = paidSalesOrders.filter((order) => new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(order.createdAt)) === date);
                 return <tr key={date}><td>{date}</td><td>{dayOrders.length}</td><td>{peso(dayOrders.reduce((sum,order)=>sum+order.total,0))}</td></tr>;
               })}
-              {!completedOrders.length && <tr><td colSpan={3}>No completed orders in this period.</td></tr>}
+              {!paidSalesOrders.length && <tr><td colSpan={3}>No paid sales orders in this period.</td></tr>}
             </tbody></table></div>
             <div className="business-reports-actions" style={{ justifyContent: 'flex-end' }}><button className="business-reports-button business-reports-export restaurant-export-button restaurant-compact-action" type="button" onClick={exportSales}>Export sales (.xlsx)</button></div>
           </section>
         </>}
         {tab === 'expenses' && <>
           <div className="business-reports-cards">
-            <div className="business-reports-card"><small>Completed sales</small><strong>{peso(totalSales)}</strong></div>
+            <div className="business-reports-card"><small>Paid sales</small><strong>{peso(totalSales)}</strong></div>
             <div className="business-reports-card"><small>Recorded expenses</small><strong>{peso(totalExpenses)}</strong></div>
             <div className="business-reports-card"><small>Estimated operating result</small><strong>{peso(estimatedOperatingResult)}</strong></div>
             <div className="business-reports-card"><small>Expense entries</small><strong>{rangeExpenses.length}</strong></div>
@@ -694,13 +695,13 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
         </>}
         {tab === 'tax' && <>
           <div className="business-reports-cards">
-            <div className="business-reports-card"><small>Completed sales</small><strong>{peso(totalSales)}</strong></div>
+            <div className="business-reports-card"><small>Paid sales</small><strong>{peso(totalSales)}</strong></div>
             <div className="business-reports-card"><small>Discounts recorded</small><strong>{peso(discounts)}</strong></div>
             <div className="business-reports-card"><small>Recorded net sales</small><strong>{taxSnapshotComplete ? peso(taxSales) : 'Incomplete'}</strong></div>
             <div className="business-reports-card"><small>Recorded output VAT</small><strong>{taxSnapshotComplete ? peso(outputVat) : 'Incomplete'}</strong></div>
             <div className="business-reports-card"><small>Recorded zero-rated sales</small><strong>{taxSnapshotComplete ? peso(zeroRatedSales) : 'Incomplete'}</strong></div>
           </div>
-          {ordersMissingTaxSnapshots.length > 0 && <p className="business-reports-error" role="alert">{ordersMissingTaxSnapshots.length} order(s) in this period have tax snapshots that are legacy-unverified, not calculated, missing, or marked for review. Tax fields are intentionally left blank until the server-side calculation status is confirmed. These supporting reports are not a substitute for an accountant's review.</p>}
+          {ordersMissingTaxSnapshots.length > 0 && <p className="business-reports-error" role="alert">{ordersMissingTaxSnapshots.length} paid sale order(s) in this period have tax snapshots that are legacy-unverified, not calculated, missing, or marked for review. Tax fields are intentionally left blank until the server-side calculation status is confirmed. These supporting reports are not a substitute for an accountant's review.</p>}
           <section className="business-reports-panel">
             <h2>Menu tax classification</h2>
             <p>Every product category must match the restaurant's verified tax treatment. These values are configuration inputs, not a tax determination. Set them in Menu Management only after review with the restaurant's accountant.</p>
@@ -734,7 +735,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
           </section>
           <section className="business-reports-panel"><h2>Tax-support exports</h2>
             <p>These files summarize order and tax fields already recorded by the platform. They are supporting records for review by your accountant, not official BIR invoices, books, returns, or confirmation that your business is tax-compliant. No tax rate is inferred when order tax data is missing.</p>
-            <p className="business-reports-muted">Orders with VAT registration recorded: {vatConfiguredOrders} of {completedOrders.length} completed orders in this period. Completed orders missing tax snapshots: {completedOrdersMissingTaxSnapshots.length}. Check your business registration and tax treatment with your accountant before relying on these totals.</p>
+            <p className="business-reports-muted">Orders with VAT registration recorded: {vatConfiguredOrders} of {paidSalesOrders.length} paid sales orders in this period. Paid sales orders missing tax snapshots: {ordersMissingTaxSnapshots.length}. Check your business registration and tax treatment with your accountant before relying on these totals.</p>
             <div className="business-reports-actions" style={{ justifyContent: 'flex-end' }}><button className="business-reports-button business-reports-export restaurant-export-button restaurant-compact-action" type="button" onClick={exportTaxSupport}>Export tax-support (.xlsx)</button><button className="business-reports-button business-reports-export restaurant-export-button restaurant-compact-action" type="button" onClick={exportSales}>Export detailed sales (.xlsx)</button></div>
           </section>
           <section className="business-reports-panel"><h2>Included in the export</h2><ul><li>Order number, date, status, and payment status</li><li>Recorded order amount and discounts</li><li>Recorded net sales, vatable sales, VAT amount, and VAT-exempt sales when available</li></ul><p>Tax status and amounts are taken from existing order records. Review data quality and applicable requirements before filing.</p></section>
