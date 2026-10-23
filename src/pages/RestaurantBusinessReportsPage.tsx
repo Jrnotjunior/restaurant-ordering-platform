@@ -138,6 +138,10 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
   const [orders, setOrders] = useState<RestaurantOrder[]>([]);
   const [taxProducts, setTaxProducts] = useState<TaxProduct[]>([]);
   const [taxProductsError, setTaxProductsError] = useState('');
+  const [taxSettings, setTaxSettings] = useState<RestaurantTaxSettings | null>(null);
+  const [taxSettingsError, setTaxSettingsError] = useState('');
+  const [birReadiness, setBirReadiness] = useState<RestaurantBirReadiness | null>(null);
+  const [birReadinessError, setBirReadinessError] = useState('');
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [fromDate, setFromDate] = useState(monthStart);
   const [toDate, setToDate] = useState(todayKey);
