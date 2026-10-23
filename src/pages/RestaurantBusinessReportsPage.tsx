@@ -15,6 +15,25 @@ type Props = { restaurantId: string };
 type ExpenseCategory = 'ingredients' | 'payroll' | 'rent' | 'utilities' | 'packaging' | 'delivery' | 'marketing' | 'maintenance' | 'supplies' | 'other';
 type Expense = { id: string; expense_date: string; category: ExpenseCategory; description: string; amount: number | string; created_at: string };
 type TaxProduct = { id: string; name: string; tax_category: 'standard_rate' | 'vat_exempt' | 'zero_rated' | null };
+type RestaurantTaxSettings = {
+  tax_vat_registered: boolean;
+  tax_prices_vat_inclusive: boolean;
+  tax_vat_rate: number | string;
+};
+type RestaurantBirReadiness = {
+  taxpayer_profile_exists: boolean;
+  taxpayer_identity_complete: boolean;
+  taxpayer_profile_status: string;
+  regulatory_route: string;
+  route_evidence_recorded: boolean;
+  configured_series_count: number;
+  enabled_series_count: number;
+  issued_document_count: number;
+  official_invoice_issuance_api_enabled: boolean;
+  is_bir_accredited: boolean;
+  blockers: string[];
+  notice: string;
+};
 type Tab = 'overview' | 'expenses' | 'payments' | 'tax' | 'journal' | 'readings';
 type PosJournalEntry = { journal_id: number | string; occurred_at: string; transaction_id: number | string; order_id: string | null; order_number: string | null; event_type: string; operation: string; actor_user_id: string | null; actor_role: string | null; old_values: Record<string, unknown> | null; new_values: Record<string, unknown> | null };
 type PosReadingSnapshot = {
