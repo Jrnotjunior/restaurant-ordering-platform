@@ -530,6 +530,66 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
     }
   }
 
+  async function saveNonVatTaxBasis() {
+    if (!supabase) return setTaxpayerError('Supabase is not configured.');
+    if (taxpayerProfile.non_vat_tax_basis !== 'unconfirmed' && !taxpayerProfile.non_vat_tax_basis_reference.trim()) {
+      setTaxpayerError('A registration-document or written tax-advice reference is required.');
+      return;
+    }
+    setNonVatBasisBusy(true);
+    setTaxpayerError('');
+    setTaxpayerMessage('');
+    try {
+      const { data, error: saveError } = await supabase.rpc('save_restaurant_non_vat_tax_basis', {
+        p_restaurant_id: restaurantId,
+        p_non_vat_tax_basis: taxpayerProfile.non_vat_tax_basis,
+        p_evidence_reference: taxpayerProfile.non_vat_tax_basis_reference,
+      });
+      if (saveError) throw saveError;
+      const profile = (data && typeof data === 'object' ? data : {}) as Partial<TaxpayerProfileForm>;
+      setTaxpayerProfile((current) => ({
+        ...current,
+        non_vat_tax_basis: profile.non_vat_tax_basis ?? current.non_vat_tax_basis,
+        non_vat_tax_basis_reference: profile.non_vat_tax_basis_reference ?? current.non_vat_tax_basis_reference,
+        non_vat_tax_basis_verified_at: profile.non_vat_tax_basis_verified_at ?? null,
+        non_vat_tax_basis_review_note: profile.non_vat_tax_basis_review_note ?? '',
+      }));
+      setTaxpayerMessage('Request saved. A privileged reviewer must verify the cited evidence before non-VAT calculation can use it. This is not BIR approval.');
+    } catch (saveError) {
+      setTaxpayerError(saveError instanceof Error ? saveError.message : 'Unable to save the non-VAT tax-basis request.');
+    } finally {
+      setNonVatBasisBusy(false);
+    }
+  }
+
+  async function confirmNonVatTaxBasis() {
+    if (!supabase || !canManageNonVatTaxBasis) return;
+    setNonVatBasisBusy(true);
+    setTaxpayerError('');
+    setTaxpayerMessage('');
+    try {
+      const { data, error: reviewError } = await supabase.rpc('system_admin_confirm_restaurant_non_vat_tax_basis', {
+        p_restaurant_id: restaurantId,
+        p_review_note: nonVatBasisReviewNote,
+      });
+      if (reviewError) throw reviewError;
+      const profile = (data && typeof data === 'object' ? data : {}) as Partial<TaxpayerProfileForm>;
+      setTaxpayerProfile((current) => ({
+        ...current,
+        non_vat_tax_basis: profile.non_vat_tax_basis ?? current.non_vat_tax_basis,
+        non_vat_tax_basis_reference: profile.non_vat_tax_basis_reference ?? current.non_vat_tax_basis_reference,
+        non_vat_tax_basis_verified_at: profile.non_vat_tax_basis_verified_at ?? null,
+        non_vat_tax_basis_review_note: profile.non_vat_tax_basis_review_note ?? '',
+      }));
+      setTaxpayerMessage('Evidence review recorded in the audit journal. This is internal platform review, not BIR approval.');
+      setNonVatBasisReviewNote('');
+    } catch (reviewError) {
+      setTaxpayerError(reviewError instanceof Error ? reviewError.message : 'Unable to verify the non-VAT evidence.');
+    } finally {
+      setNonVatBasisBusy(false);
+    }
+  }
+
   function updateDay(day: DayKey, patch: Partial<DayHours>) {
     setHours((current) => ({
       ...current,
