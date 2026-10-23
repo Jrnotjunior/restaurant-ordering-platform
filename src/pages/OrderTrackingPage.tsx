@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { cancelMyPendingOrder, getOrderStatus, hasGuestOrderCancellationToken, saveGuestOrderCancellationToken, subscribeToOrderTrackingChanges, type OrderStatus } from '../modules/ordering/orderService';
+import { isGuestOrderTrackingTokenFormat, saveGuestOrderTrackingToken } from '../modules/ordering/guestOrderTrackingToken';
 import { supabase } from '../services/supabaseClient';
 import { getCancellationResultMessage, getTrackedPaymentStatusLabel } from '../modules/payments/refundStatusPresentation';
 import '../styles/order-tracking.css';
@@ -56,19 +57,33 @@ export function OrderTrackingPage({ orderId, expectedRestaurantId }: OrderTracki
   const [guestCancelTokenRecoveredForOrder, setGuestCancelTokenRecoveredForOrder] = useState<string | null>(null);
 
   useEffect(() => {
-    // Secure one-time recovery links deliver the raw guest cancellation token
-    // only in the URL fragment, which is not sent to the web server. Store it
-    // locally and immediately remove it from the visible/history URL.
-    const match = window.location.hash.match(/^#guest-cancel-token=([0-9a-f]{64})$/i);
-    if (!match) {
-      setGuestCancelTokenRecoveredForOrder(null);
-      return;
+    // One-time recovery links carry capabilities only in the URL fragment,
+    // which is not sent to the web server. Support the legacy cancellation-only
+    // format and a combined fragment, then remove secrets from the visible URL.
+    const fragment = window.location.hash.startsWith('#')
+      ? window.location.hash.slice(1)
+      : '';
+    const values = new URLSearchParams(fragment);
+    const cancellationToken = values.get('guest-cancel-token');
+    const trackingToken = values.get('guest-tracking-token');
+
+    if (cancellationToken && /^[0-9a-f]{64}$/i.test(cancellationToken)) {
+      saveGuestOrderCancellationToken(orderId, cancellationToken.toLowerCase());
     }
-    const token = match[1].toLowerCase();
-    saveGuestOrderCancellationToken(orderId, token);
+    if (trackingToken && isGuestOrderTrackingTokenFormat(trackingToken.toLowerCase())) {
+      saveGuestOrderTrackingToken(orderId, trackingToken.toLowerCase());
+    }
+
     const recovered = hasGuestOrderCancellationToken(orderId);
     setGuestCancelTokenRecoveredForOrder(recovered ? orderId : null);
-    window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search);
+
+    if (cancellationToken || trackingToken) {
+      window.history.replaceState(
+        window.history.state,
+        '',
+        window.location.pathname + window.location.search,
+      );
+    }
   }, [orderId]);
 
   useEffect(() => {
