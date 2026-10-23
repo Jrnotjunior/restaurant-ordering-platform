@@ -44,7 +44,7 @@ describe('tax snapshot reporting safeguards', () => {
   });
 
   it('does not label a zero VAT result as missing when gross sales were recorded', () => {
-    const order = { total: 100, taxGrossSales: 100 };
+    const order = { total: 100, taxGrossSales: 100, taxSnapshotStatus: 'calculated' as const, taxZeroRatedSales: 0, itemsTaxClassified: true };
     expect(hasMissingTaxSnapshot(order)).toBe(false);
     expect(getRecordedTaxSnapshotValue(order, 0)).toBe(0);
     expect(getTaxSnapshotStatus(order)).toBe('Calculated snapshot');
@@ -87,5 +87,18 @@ describe('tax snapshot reporting safeguards', () => {
     const order = { total: 112, taxGrossSales: 100, taxSnapshotStatus: 'not_calculated' as const };
     expect(hasMissingTaxSnapshot(order)).toBe(true);
     expect(getTaxSnapshotStatus(order)).toBe('Not calculated');
+  });
+
+  it('flags calculated snapshots with unknown zero-rated sales', () => {
+    const order = { total: 112, taxGrossSales: 100, taxSnapshotStatus: 'calculated' as const, itemsTaxClassified: true };
+    expect(hasMissingTaxSnapshot(order)).toBe(true);
+    expect(getTaxSnapshotStatus(order)).toBe('Tax classification incomplete');
+    expect(getRecordedTaxSnapshotValue(order, 112)).toBe('');
+  });
+
+  it('flags calculated snapshots with unclassified line items', () => {
+    const order = { total: 112, taxGrossSales: 100, taxSnapshotStatus: 'calculated' as const, taxZeroRatedSales: 0, itemsTaxClassified: false };
+    expect(hasMissingTaxSnapshot(order)).toBe(true);
+    expect(getTaxSnapshotStatus(order)).toBe('Tax classification incomplete');
   });
 });
