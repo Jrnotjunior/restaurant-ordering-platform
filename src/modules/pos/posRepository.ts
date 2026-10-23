@@ -75,11 +75,11 @@ export async function applyPosGroupDiscounts(
       beneficiary_tin: beneficiary.beneficiaryTin.trim() || null,
       beneficiary_address: beneficiary.beneficiaryAddress.trim(),
       eligible_lines: beneficiary.eligibleLines
-        .filter((line) => Number.isFinite(line.eligibleAmount) && line.eligibleAmount > 0)
         .map((line) => ({
           product_id: line.productId,
           eligible_amount: Number(line.eligibleAmount.toFixed(2)),
-        })),
+        }))
+        .filter((line) => Number.isFinite(line.eligible_amount) && line.eligible_amount > 0),
     })),
   });
 
