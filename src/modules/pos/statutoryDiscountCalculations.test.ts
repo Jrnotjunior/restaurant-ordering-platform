@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculatePosStatutoryDiscountPreview } from './statutoryDiscountCalculations';
+import { allocatePosEqualGroupShares, calculatePosStatutoryDiscountPreview } from './statutoryDiscountCalculations';
 
 const mixedLines = [
   { productId: 'standard', lineTotal: 112, taxCategory: 'standard_rate' as const },
@@ -116,5 +116,68 @@ describe('calculatePosStatutoryDiscountPreview', () => {
 
     expect(result.allocations.map((allocation) => allocation.discountAmount)).toEqual([0.01, 0.01]);
     expect(result.discountAmount).toBe(0.02);
+  });
+});
+
+describe('allocatePosEqualGroupShares', () => {
+  it('splits an order across customers and applies allocations only to the beneficiary', () => {
+    const lines = [
+      { productId: 'bowl', lineTotal: 180, taxCategory: 'standard_rate' as const },
+      { productId: 'cookie', lineTotal: 130, taxCategory: 'vat_exempt' as const },
+      { productId: 'pasta', lineTotal: 150, taxCategory: 'standard_rate' as const },
+    ];
+
+    const [seniorShare] = allocatePosEqualGroupShares(lines, 2, 1);
+
+    expect(seniorShare.reduce((sum, line) => sum + line.eligibleGross, 0)).toBe(230);
+    expect(seniorShare.map((line) => line.eligibleGross)).toEqual([90, 65, 75]);
+  });
+
+  it('keeps every line allocation within the line total when all group members qualify', () => {
+    const lines = [
+      { productId: 'one', lineTotal: 10.01, taxCategory: 'vat_exempt' as const },
+      { productId: 'two', lineTotal: 8.02, taxCategory: 'zero_rated' as const },
+      { productId: 'three', lineTotal: 4.99, taxCategory: 'standard_rate' as const },
+    ];
+
+    const shares = allocatePosEqualGroupShares(lines, 3, 3);
+    expect(shares).toHaveLength(3);
+
+    for (const line of lines) {
+      const totalAllocated = shares.reduce((sum, share) => sum + (
+        share.find((allocation) => allocation.productId === line.productId)?.eligibleGross ?? 0
+      ), 0);
+      expect(totalAllocated).toBeCloseTo(line.lineTotal, 2);
+    }
+
+    const grossShares = shares.map((share) =>
+      share.reduce((sum, allocation) => sum + allocation.eligibleGross, 0),
+    );
+    expect(Math.max(...grossShares) - Math.min(...grossShares)).toBeLessThanOrEqual(0.01);
+  });
+
+  it('splits an order of ten people to one registered beneficiary without manual line amounts', () => {
+    const lines = [
+      { productId: 'rice', lineTotal: 600, taxCategory: 'standard_rate' as const },
+      { productId: 'meal', lineTotal: 910, taxCategory: 'standard_rate' as const },
+    ];
+
+    const [beneficiaryShare] = allocatePosEqualGroupShares(lines, 10, 1);
+    expect(beneficiaryShare.reduce((sum, line) => sum + line.eligibleGross, 0)).toBe(151);
+    expect(beneficiaryShare.every((line) => line.eligibleGross <= (
+      lines.find((item) => item.productId === line.productId)?.lineTotal ?? 0
+    ))).toBe(true);
+  });
+
+  it('allocates the complete line value when there is one customer and one beneficiary', () => {
+    const lines = [
+      { productId: 'meal', lineTotal: 180, taxCategory: 'standard_rate' as const },
+      { productId: 'drink', lineTotal: 50, taxCategory: 'vat_exempt' as const },
+    ];
+
+    expect(allocatePosEqualGroupShares(lines, 1, 1)[0]).toEqual([
+      { productId: 'meal', taxCategory: 'standard_rate', eligibleGross: 180 },
+      { productId: 'drink', taxCategory: 'vat_exempt', eligibleGross: 50 },
+    ]);
   });
 });
