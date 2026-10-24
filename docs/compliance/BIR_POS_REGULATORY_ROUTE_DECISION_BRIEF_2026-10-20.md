@@ -13,13 +13,19 @@ The two paths should not be conflated. They may have overlapping system requirem
 
 ## Verified official material reviewed
 
-### Re-verification note — 2026-10-21
+### Re-verification note — 2026-10-24
 
-- The official BIR homepage currently advertises an ESP application window running **16–30 October 2026** and separately shows a public advisory stating that, as of 14 September 2026, no entity had been accredited/authorized/certified/recognized/endorsed as an official BIR ESP. Official landing page: https://www.bir.gov.ph/ (rechecked 2026-10-21).
-- The official BIR 2026 RMC index search result currently shows RMC No. 98-2026 (22 September) and RMC No. 108-2026 (1 October) among its latest entries, but did not surface the claimed later ESP-specific circular in the indexed official results: https://www.bir.gov.ph/2026-Revenue-Memorandum-Circulars
-- A secondary legal-site result titled “RMC No. 110-2026” reproduces an ESP requirements document whose body/header instead says “REVENUE MEMORANDUM CIRCULAR NO. 140-2026” and is dated 12 October 2026. Because the identifier conflicts and I could not verify a matching official BIR copy, **do not treat this secondary copy or its detailed eligibility requirements as authoritative** until the BIR confirms the correct issuance and provides its official text. Secondary result for verification only: https://batasnatin.com/laws/rmc-no-110-2026-prescribing-the-accreditation-technical-operational-securi
-- This discrepancy does not change the core decision: Web2Table must not choose the ESP path or implement BIR transmission based only on a search result. Before relying on the closing ESP application window, ask BIR directly for the current application advisory, correct issuance number/full text, applicant qualification criteria, and whether Web2Table’s intended service model must pursue ESP accreditation, Sales Machine/Software supplier accreditation plus tenant-user PTUs, both, or another approved route.
-- No BIR application has been submitted, no formal advice has been received, and no accreditation/approval is claimed.
+The official BIR website was rechecked on **24 October 2026**:
+
+- The BIR homepage currently advertises an application window for Electronic Invoicing Service Provider (ESP) accreditation from **16 through 30 October 2026**. Six calendar days remain as of this review; eligibility, submission mechanics and completeness requirements must be confirmed directly with the BIR before deciding to apply.
+- The official BIR “What’s New” page now lists **RMC No. 110-2026**, prescribing ESP accreditation, technical, operational, security, data-governance, institutional, legal and continuing-compliance requirements, and **RMC No. 112-2026**, clarifying RR No. 6-2026 on separate CWT presentation and transitory guidelines. Official index: https://www.bir.gov.ph/whats-new
+- The official BIR homepage still shows a public advisory that, as of 14 September 2026, no entity had been accredited/authorized/certified/recognized/endorsed as an official BIR ESP. That advisory is a dated status statement, not proof of the current accreditation status of any particular entity. Verify status directly with BIR before contracting or describing any provider as accredited.
+- The BIR's official 2026 Revenue Regulations index lists RR No. 6-2026 under the 1 October 2026 date and describes it as adding applicable CWT information to mandatory invoice information: https://www.bir.gov.ph/2026-Revenue-Regulations
+- The official BIR indexes establish that RMC Nos. 110-2026 and 112-2026 are listed issuances. During this pass, direct retrieval of their signed full-text attachments from the official pages failed; detailed ESP and CWT transition provisions must therefore be checked against the official full texts/checklists obtained from BIR, not only secondary reproductions.
+- Secondary summaries of RMC No. 112-2026 describe different CWT functionality deadlines by system category: generally 31 December 2026 for CAS/CBA and invoicing software covered by mandatory electronic invoicing, and 31 March 2027 for existing POS/CRM and other systems not yet covered by that mandate, subject to any earlier/later BIR direction. These dates are **not yet confirmed here against the signed official circular** and must not be hard-coded as a single deadline for all Web2Table tenants.
+- No BIR application has been submitted by this work, no formal written route determination has been received, and no accreditation/approval is claimed.
+
+**Immediate decision required:** because Web2Table is a multi-tenant restaurant platform, have the product/business owner contact BIR and Philippine tax counsel immediately to establish whether the intended service model requires Route A, Route B, both, or a different approved model. If ESP eligibility is plausible and the business wants that path, request the official application checklist and confirm whether a complete application can be submitted by **30 October 2026**. Do not assume eligibility or submit unsupported representations simply to meet the window.
 
 
 ### 1. RMO No. 24-2023: CRM/POS/other Sales Machine/Software path
@@ -72,13 +78,23 @@ BIR EIS public portal and advisories: https://eis.bir.gov.ph/
 
 The full text and any incorporated technical annexes must be obtained and clause-mapped before development. This brief does not assume a specific payload schema, API authentication method, transmission timing, acknowledgement format or certification test from the issuance title alone.
 
-### 5. RR No. 6-2026: invoice mandatory information
+### 5. RR No. 6-2026 and RMC No. 112-2026: conditional CWT invoice information
 
-The official 2026 Revenue Regulations index lists RR No. 6-2026, dated 1 October 2026, as amending mandatory invoice information under Section 6(B) of RR No. 7-2024 to include creditable withholding-tax information.
+The official BIR 2026 Revenue Regulations index lists RR No. 6-2026 as amending mandatory invoice information under Section 6(B) of RR No. 7-2024 to include applicable creditable withholding-tax (CWT) information. The official BIR “What's New” page lists RMC No. 112-2026 as clarifying RR No. 6-2026 and providing transitory guidance.
 
-Official index: https://www.bir.gov.ph/2026-Revenue-Regulations
+Official sources:
+- RR index: https://www.bir.gov.ph/2026-Revenue-Regulations
+- BIR issuances index: https://www.bir.gov.ph/whats-new
 
-This is another reason not to implement a static invoice template from a 2024 sample. The complete text must be mapped to transaction-specific conditional fields with a tax professional; do not indiscriminately add withholding-tax amounts to all restaurant invoices or omit them where applicable.
+Secondary summaries of RMC No. 112-2026 report that:
+- CWT is a separate invoice item **only when the particular transaction is legally subject to withholding**. It is not a universal restaurant surcharge or a generic discount.
+- For transactions subject to CWT, the invoice must be able to show the prescribed phrase (such as “Less: Withholding Tax”, “Less: Creditable Withholding Tax” or “Less: CWT”) and the transaction-specific amount.
+- When CWT is not applicable, sources report that the field may be left blank or marked “N/A” or “0.00”, subject to the official text and approved invoice route.
+- The reported transition dates differ by system category: generally **31 December 2026** for CAS/CBA and other software covered by mandatory electronic invoicing, and **31 March 2027** for existing POS/CRM and systems not yet covered by mandatory electronic invoicing, unless a different date is prescribed. Do not apply one date to all tenants without determining their classification and verifying the signed circular.
+- A software change solely for CWT support may be treated as a limited system change under the circular's criteria, but this must be confirmed for the selected route; existing notification/reporting requirements may still apply.
+
+The full signed text and transitory clauses were not directly retrieved from a BIR-hosted attachment during this pass. Treat the category-specific deadlines and change classifications above as provisional secondary-source summaries until they are checked against the official circular and the taxpayer's classification. Before activating invoice issuance, create accountant-approved conditional test cases covering (a) CWT applicable with buyer-supplied, verified withholding details and (b) CWT not applicable; retain gross sales, CWT receivable/withheld amount and collectible amount as separate concepts. Do not infer buyer withholding-agent status, ATC, base, rate or amount from order type, payment method or generic percentage.
+
 
 ### 6. Current ESP application window and BIR warning about unaccredited providers
 
