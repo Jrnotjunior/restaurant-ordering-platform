@@ -36,18 +36,18 @@ describe('cashier handoff workflow boundary', () => {
     expect(paidOrderHandoff).toContain('if (!isPaymentReady(order))');
     expect(paidOrderHandoff).toContain('await sendOrderToKitchen(order.orderId)');
     expect(paidOrderHandoff.indexOf('await sendOrderToKitchen(order.orderId)'))
-      .toBeLessThan(paidOrderHandoff.indexOf('window.print()'));
+      .toBeLessThan(paidOrderHandoff.indexOf('\n      window.print();'));
     expect(paidOrderHandoff).toContain('flushSync(() =>');
     expect(paidOrderHandoff).toContain('closeOrderList()');
     expect(paidOrderHandoff.indexOf('window.print()'))
-      .toBeLessThan(paidOrderHandoff.indexOf('closeOrderList()'));
+      .toBeLessThan(paidOrderHandoff.indexOf('\n      closeOrderList();'));
   });
 
   it('closes the parent and selected-order dialogs after cash receipt printing', () => {
     expect(cashConfirmation).toContain('window.print()');
     expect(cashConfirmation).toContain('closeOrderList()');
-    expect(cashConfirmation.indexOf('window.print()'))
-      .toBeLessThan(cashConfirmation.indexOf('closeOrderList()'));
+    expect(cashConfirmation.indexOf('\n      window.print();'))
+      .toBeLessThan(cashConfirmation.indexOf('\n      closeOrderList();'));
   });
 
   it('keeps the internal kitchen ticket separate from the customer receipt template', () => {
