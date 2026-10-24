@@ -1,24 +1,11 @@
--- Keep internal X/Z-style preview tax completeness aligned with paid-sale review gates.
--- Missing statutory discount beneficiary details must prevent the preview from claiming
--- a complete tax summary. Existing immutable previews are not rewritten.
--- Separate payment-recognized sales from kitchen/workflow completion.
--- X/Z-style rows remain internal previews, never official BIR readings.
--- Existing immutable snapshots are not rewritten or backfilled.
-
-COMMENT ON COLUMN public.pos_sales_reading_previews.completed_sales_total IS
-  'Order totals whose operational workflow status was completed at preview time. This is not the paid-sales amount and must not be used as the sales basis.';
-COMMENT ON COLUMN public.pos_sales_reading_previews.cumulative_completed_sales_total IS
-  'Cumulative operationally completed order totals through the business date. Not a BIR grand-total counter and not the paid-sales amount.';
-
-CREATE OR REPLACE FUNCTION public.generate_pos_sales_reading_preview(
-  p_restaurant_id uuid,
-  p_business_date date,
-  p_reading_type text
-)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, pg_temp
+-- Align the live sales-reading preview with the paid-sale beneficiary completeness gate.
+-- The body below preserves the current production implementation and adds only the missing
+-- statutory-discount beneficiary completeness check. Existing snapshots are not rewritten.
+CREATE OR REPLACE FUNCTION public.generate_pos_sales_reading_preview(p_restaurant_id uuid, p_business_date date, p_reading_type text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
   v_from timestamptz;
@@ -45,6 +32,8 @@ DECLARE
   v_vat numeric(14,2);
   v_exempt numeric(14,2);
   v_zero_rated numeric(14,2);
+  v_percentage_taxable numeric(14,2);
+  v_non_vat_exempt numeric(14,2);
   v_reading_id uuid;
   v_snapshot jsonb;
 BEGIN
@@ -172,8 +161,10 @@ BEGIN
       coalesce(sum(o.tax_vatable_sales), 0)::numeric(14,2),
       coalesce(sum(o.tax_vat_amount), 0)::numeric(14,2),
       coalesce(sum(o.tax_vat_exempt_sales), 0)::numeric(14,2),
-      coalesce(sum(o.tax_zero_rated_sales), 0)::numeric(14,2)
-    INTO v_vatable, v_vat, v_exempt, v_zero_rated
+      coalesce(sum(o.tax_zero_rated_sales), 0)::numeric(14,2),
+      coalesce(sum(o.tax_percentage_taxable_sales), 0)::numeric(14,2),
+      coalesce(sum(o.tax_non_vat_exempt_sales), 0)::numeric(14,2)
+    INTO v_vatable, v_vat, v_exempt, v_zero_rated, v_percentage_taxable, v_non_vat_exempt
     FROM public.orders o
     WHERE o.restaurant_id = p_restaurant_id
       AND o.created_at >= v_from AND o.created_at < v_to
@@ -215,7 +206,10 @@ BEGIN
       'vatable_sales_php', v_vatable,
       'vat_amount_php', v_vat,
       'vat_exempt_sales_php', v_exempt,
-      'zero_rated_sales_php', v_zero_rated
+      'zero_rated_sales_php', v_zero_rated,
+      'percentage_taxable_sales_php', v_percentage_taxable,
+      'non_vat_exempt_sales_php', v_non_vat_exempt,
+      'tax_basis_note', 'Non-VAT amounts are sales classifications only; this preview does not calculate percentage-tax liability.'
     )
   );
 
@@ -241,10 +235,11 @@ BEGIN
     'generated_by', auth.uid()
   );
 END;
-$function$;
+$function$
+
 
 REVOKE ALL ON FUNCTION public.generate_pos_sales_reading_preview(uuid,date,text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.generate_pos_sales_reading_preview(uuid,date,text) TO authenticated;
 
 COMMENT ON FUNCTION public.generate_pos_sales_reading_preview(uuid,date,text) IS
-  'Generates immutable internal X/Z-style previews. Separates payment-recognized sales from kitchen completion state. Not an official BIR reading; approved fiscal rules and formal authorization remain prerequisites.';
+  'Generates immutable internal X/Z-style previews. Tax completeness includes statutory discount beneficiary record completeness. Not an official BIR reading; approved fiscal rules and formal authorization remain prerequisites.';
