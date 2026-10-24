@@ -53,6 +53,16 @@ describe('System Admin / restaurant platform isolation', () => {
     expect(isolationMigration).toContain('FROM PUBLIC, anon, authenticated');
   });
 
+  it('blocks System Admin identities before resolving restaurant tenant data', () => {
+    expect(appSource).toContain("supabase.rpc('is_system_admin')");
+    expect(appSource).toContain("setApplicationAccess('system-admin')");
+    expect(appSource).toContain('System Admin is separate from this application');
+    expect(appSource.indexOf("supabase.rpc('is_system_admin')")).toBeLessThan(
+      appSource.indexOf('restaurantRepository.getRestaurant(lookup)'),
+    );
+    expect(appSource).toContain('Restaurant data is hidden because this account could not be verified');
+  });
+
   it('keeps the System Admin tax-review screen out of the restaurant app', () => {
     expect(appSource).not.toContain("import { SystemAdminNonVatTaxReviewPage }");
     expect(appSource).toContain('This System Admin feature is not available in the Restaurant Ordering Platform.');
