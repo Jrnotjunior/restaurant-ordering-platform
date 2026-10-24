@@ -101,6 +101,64 @@ describe('calculatePosStatutoryDiscountPreview', () => {
     expect(result.totalWithDeliveryFee).toBe(108);
   });
 
+  it('supports reviewed non-VAT sales categories without creating VAT or percentage-tax charges', () => {
+    const result = calculatePosStatutoryDiscountPreview({
+      lines: [
+        { productId: 'meal', lineTotal: 80, taxCategory: 'percentage_taxable' },
+        { productId: 'exempt', lineTotal: 20, taxCategory: 'non_vat_exempt' },
+      ],
+      allocations: [],
+      subtotal: 100,
+      deliveryFee: 0,
+      vatRegistered: false,
+      pricesVatInclusive: false,
+      vatRate: 12,
+    });
+
+    expect(result.allLinesClassified).toBe(true);
+    expect(result.vatableSales).toBe(0);
+    expect(result.vatAmount).toBe(0);
+    expect(result.vatExemptSales).toBe(0);
+    expect(result.zeroRatedSales).toBe(0);
+    expect(result.netSales).toBe(100);
+    expect(result.totalWithDeliveryFee).toBe(100);
+  });
+
+  it('flags VAT categories as incompatible with a non-VAT sales-classification route', () => {
+    const result = calculatePosStatutoryDiscountPreview({
+      lines: [
+        { productId: 'meal', lineTotal: 80, taxCategory: 'standard_rate' },
+        { productId: 'exempt', lineTotal: 20, taxCategory: 'vat_exempt' },
+      ],
+      allocations: [],
+      subtotal: 100,
+      vatRegistered: false,
+      pricesVatInclusive: false,
+      vatRate: 12,
+    });
+
+    expect(result.allLinesClassified).toBe(false);
+    expect(result.vatableSales).toBe(0);
+    expect(result.vatAmount).toBe(0);
+    expect(result.netSales).toBe(100);
+  });
+
+  it('flags non-VAT categories as incompatible with the VAT calculation route', () => {
+    const result = calculatePosStatutoryDiscountPreview({
+      lines: [
+        { productId: 'meal', lineTotal: 80, taxCategory: 'percentage_taxable' },
+        { productId: 'exempt', lineTotal: 20, taxCategory: 'non_vat_exempt' },
+      ],
+      allocations: [],
+      subtotal: 100,
+      vatRegistered: true,
+      pricesVatInclusive: true,
+      vatRate: 12,
+    });
+
+    expect(result.allLinesClassified).toBe(false);
+  });
+
   it('rounds discounts per allocation line before summing the order discount', () => {
     const result = calculatePosStatutoryDiscountPreview({
       lines: [{ productId: 'meal', lineTotal: 0.10, taxCategory: 'vat_exempt' }],
