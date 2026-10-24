@@ -89,3 +89,15 @@ The database's foreign-key rules set `loyalty_transactions.order_id` and `pendin
 No user records were targeted for deletion. The 13 auth users were present after cleanup; because no pre-delete user count was captured in this cleanup operation, this is a post-operation count rather than a before/after comparison. No invoice issuance settings were enabled or changed.
 
 This cleanup removes the test orders and their cascading child records; it does not establish BIR readiness. Taxpayer profiles and approval evidence still need to be configured and verified before official invoice issuance can be enabled.
+
+
+### Post-cleanup follow-up: orphaned online payments and loyalty rows
+
+A read-only follow-up on 24 October 2026 found these rows after order deletion:
+
+- `pending_online_payments`: 6 rows have status `paid` with `order_id IS NULL`; all 6 retain checkout-session IDs and checkout URLs. Another 2 rows have status `pending` with no order; 1 of these retains a checkout session and URL.
+- `loyalty_transactions`: 4 `earn` rows remain unlinked, totaling 25 points.
+
+No payment, loyalty, or customer rows were modified in this follow-up. The live `finalize_online_payment` function only returns an existing order for the `paid` plus non-null order-link case; a `paid` record with a null order link fails its non-pending status guard rather than recreating an order. The two still-`pending` payment records are different: if an outstanding checkout can still be completed and its webhook accepted, the finalization flow may create a new order. This should be resolved by reviewing/expiring or cancelling stale test checkout records through the supported payment workflow, after confirming the intended cleanup scope. Do not directly delete customer/user records or adjust customer loyalty balances as part of order cleanup.
+
+These counts describe the test dataset only and are not evidence of real historical sales.
