@@ -452,24 +452,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
                   ))}
                 </div>
               )}
-              {!hasKitchenModule && (
-                <div style={{ marginTop: 24 }}>
-                  <h2 style={{ fontSize: 18, marginBottom: 10 }}>Preparing & collection</h2>
-                  <p style={{ color: '#64748b', fontSize: 13, marginTop: 0 }}>Manage take-out, pickup, and dine-in orders without a separate Kitchen role.</p>
-                  {boardOrders.filter((order) => ['take_out', 'pickup', 'dine_in'].includes(order.orderType) && ['confirmed', 'preparing', 'ready'].includes(order.status)).length === 0 ? (
-                    <div className="restaurant-order-list-empty">No orders are being prepared or waiting for collection.</div>
-                  ) : (
-                    <div className="restaurant-order-list restaurant-order-list-scroll">
-                      {boardOrders.filter((order) => ['take_out', 'pickup', 'dine_in'].includes(order.orderType) && ['confirmed', 'preparing', 'ready'].includes(order.status)).map((order) => (
-                        <button className="restaurant-order-list-item" key={order.orderId} type="button" onClick={() => setSelectedOrder(order)}>
-                          <span><span className="restaurant-order-list-number">{order.orderNumber}</span><span style={{ display: 'block', marginTop: 3, fontSize: 13, color: '#64748b' }}>{order.customerName} · {order.orderType === 'dine_in' ? 'Dine-in' : order.orderType === 'take_out' ? 'Take-out' : 'Pickup'}</span></span>
-                          <span className="restaurant-order-list-meta"><span className="restaurant-order-list-status">{statusLabels[order.status]}</span><span className="restaurant-order-list-total">₱{order.total.toFixed(2)}</span></span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+
             </section>
           );
         })()
