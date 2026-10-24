@@ -774,7 +774,7 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
             grossSales={selectedOrder.taxGrossSales > 0
               ? selectedOrder.taxGrossSales
               : selectedOrder.items.reduce((sum, item) => sum + item.lineTotal, 0)}
-            showTaxBreakdown={selectedOrder.taxGrossSales > 0}
+            showTaxBreakdown={selectedOrder.taxVatRegistered && selectedOrder.taxGrossSales > 0}
             vatableSales={selectedOrder.taxVatableSales}
             vatAmount={selectedOrder.taxVatAmount}
             vatExemptSales={selectedOrder.taxVatExemptSales}
