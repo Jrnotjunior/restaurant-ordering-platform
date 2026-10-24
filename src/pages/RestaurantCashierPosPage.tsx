@@ -203,8 +203,15 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
       : category === 'standard_rate' || category === 'vat_exempt' || category === 'zero_rated';
   }));
   const cartTaxBreakdownReady = cart.length > 0 && !hasUnclassifiedCartItem && !hasTaxCategoryRouteMismatch;
-  const taxBreakdownVisible = Boolean(taxSettings?.vatRegistered && cartTaxBreakdownReady && beneficiaries.length === 0);
   const deliveryFee = orderType === 'delivery' && deliveryRouteQuote?.inRange ? deliveryRouteQuote.deliveryFee : 0;
+  const taxBreakdownVisible = Boolean(
+    taxSettings?.vatRegistered
+    && taxSettings.pricesVatInclusive
+    && cartTaxBreakdownReady
+    && beneficiaries.length === 0
+    && deliveryFee === 0
+    && !(redeemPoints && selectedCustomerId)
+  );
   const taxLines = cart.map((item) => ({
     productId: item.product.id,
     lineTotal: money(item.product.price * item.quantity),
