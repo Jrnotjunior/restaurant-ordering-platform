@@ -800,6 +800,8 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
             loyaltyDiscountAmount={selectedOrder.loyaltyDiscountAmount}
             deliveryFee={selectedOrder.orderType === 'delivery' ? selectedOrder.shippingFee : 0}
             total={selectedOrder.total}
+            cashReceived={selectedOrder.cashReceived ?? undefined}
+            change={selectedOrder.cashChange ?? undefined}
             beneficiaries={selectedOrder.discountBeneficiaries.map((beneficiary) => ({
               discountType: beneficiary.discountType,
               idType: beneficiary.idType,
