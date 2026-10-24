@@ -18,6 +18,8 @@ describe('rider cash collection and delivery totals guardrails', () => {
     expect(riderPage).toContain("await supabaseRpc('rider_confirm_cash_collection'");
     expect(riderPage).toContain("delivery.paymentStatus !== 'paid' ? (");
     expect(riderPage).toContain('Cash collection pending');
+    expect(riderPage).toContain("'Slide to mark delivered'");
+    expect(riderPage).not.toContain('Slide to collect cash');
   });
 
   it('shows subtotal, delivery fee, and order total as separate values', () => {
