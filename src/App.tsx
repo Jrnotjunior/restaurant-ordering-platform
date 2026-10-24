@@ -98,6 +98,7 @@ function PublicCustomerRouteGuard({ children }: { children: ReactNode }) {
 function AppContent() {
   const [restaurant, setRestaurant] = useState<RestaurantConfig>(defaultRestaurant);
   const [restaurantResolved, setRestaurantResolved] = useState(false);
+  const [applicationAccess, setApplicationAccess] = useState<'checking' | 'restaurant' | 'system-admin' | 'error'>('checking');
   const [route, setRoute] = useState(() => {
     const hashRoute = normalizeHashRoute(window.location.hash || '');
     if (hashRoute) return hashRoute;
@@ -228,37 +229,84 @@ function AppContent() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
   useEffect(() => {
-    if (!isSupabaseConfigured) return;
+    if (authLoading) return;
 
     let cancelled = false;
     const hostname = window.location.hostname.trim().toLowerCase();
     const configuredSlug = currentRestaurantLookup.slug;
     const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
-    // GitHub Pages hosts the app under a shared github.io hostname, not the
-    // restaurant's custom domain. Resolve the configured demo tenant by slug
-    // there so its saved storefront settings (including faviconUrl) load.
     const isGitHubPagesHost = hostname === 'github.io' || hostname.endsWith('.github.io');
     const lookup = !isLocalHost && hostname && !isGitHubPagesHost
       ? { domain: hostname }
       : { slug: configuredSlug };
 
-    restaurantRepository.getRestaurant(lookup)
-      .then((loadedRestaurant) => {
+    const resolveAccessThenRestaurant = async () => {
+      // The standalone System Admin app is moving to a different repository.
+      // Do not resolve a restaurant or render restaurant data for that identity.
+      const claimedRole = String(user?.app_metadata?.role ?? user?.user_metadata?.role ?? '')
+        .trim()
+        .toLowerCase()
+        .replace(/[ -]/g, '_');
+      if (user && ['system_admin', 'systemadmin', 'platform_admin', 'admin'].includes(claimedRole)) {
+        setApplicationAccess('system-admin');
+        setRestaurantResolved(true);
+        return;
+      }
+
+      // Some deployments identify System Admin through the database allowlist
+      // rather than a JWT role claim. Check that identity before loading a tenant.
+      if (user && supabase) {
+        try {
+          const { data, error } = await supabase.rpc('is_system_admin');
+          if (cancelled) return;
+          if (error) {
+            console.error('Unable to verify System Admin separation.', error);
+            setApplicationAccess('error');
+            setRestaurantResolved(true);
+            return;
+          }
+          if (data === true) {
+            setApplicationAccess('system-admin');
+            setRestaurantResolved(true);
+            return;
+          }
+        } catch (error) {
+          if (cancelled) return;
+          console.error('Unable to verify System Admin separation.', error);
+          setApplicationAccess('error');
+          setRestaurantResolved(true);
+          return;
+        }
+      }
+
+      if (cancelled) return;
+      if (!isSupabaseConfigured) {
+        setApplicationAccess('restaurant');
+        setRestaurantResolved(true);
+        return;
+      }
+
+      try {
+        const loadedRestaurant = await restaurantRepository.getRestaurant(lookup);
         if (cancelled) return;
         if (loadedRestaurant) setRestaurant(loadedRestaurant);
         setRestaurantResolved(true);
-      })
-      .catch((error: unknown) => {
+        setApplicationAccess('restaurant');
+      } catch (error) {
         console.error('Unable to load restaurant from Supabase.', error);
-        if (!cancelled) setRestaurantResolved(true);
-      });
+        if (!cancelled) {
+          setRestaurantResolved(true);
+          setApplicationAccess('restaurant');
+        }
+      }
+    };
 
+    void resolveAccessThenRestaurant();
     return () => {
       cancelled = true;
     };
-  }, []);
-
-  const [showStoreClosedModal, setShowStoreClosedModal] = useState(false);
+  }, [authLoading, user?.id]);
+, setShowStoreClosedModal] = useState(false);
 
   async function addToCart(product: RestaurantProduct) {
     let storeOpen = true;
@@ -360,7 +408,25 @@ function AppContent() {
     return () => { cancelled = true; };
   }, [restaurant.id, route]);
 
-  if (isSystemAdminNonVatTaxReviewPage) return <section className="restaurant-owner-auth-loading" role="alert">This System Admin feature is not available in the Restaurant Ordering Platform. Use the separate platform administration workspace.</section>;
+  if (applicationAccess === 'system-admin') {
+    return <main className="restaurant-owner-auth-loading" role="status">
+      <h1>System Admin is separate from this application</h1>
+      <p>This repository is for restaurant ordering only. No restaurant workspace or restaurant data is available to System Admin here.</p>
+      <p>Open the separate System Admin application repository to continue.</p>
+    </main>;
+  }
+  if (applicationAccess === 'error' && user) {
+    return <main className="restaurant-owner-auth-loading" role="alert">
+      <h1>Access verification unavailable</h1>
+      <p>Restaurant data is hidden because this account could not be verified against the System Admin access boundary. Retry after connectivity is restored.</p>
+      <button type="button" className="button button-secondary" onClick={() => window.location.reload()}>Retry</button>
+    </main>;
+  }
+  if (user && applicationAccess === 'checking') {
+    return <section className="restaurant-owner-auth-loading" role="status">Verifying application access…</section>;
+  }
+
+  if (isSystemAdminNonVatTaxReviewPage) return <section className="restaurant-owner-auth-loading" role="alert">This System Admin feature is not available in the Restaurant Ordering Platform. Use the separate System Admin application.</section>;
   if (isTenantInviteLandingPage) return <TenantInviteLandingPage />;
   if (isTenantInvitePage) return <TenantOnboardingPage />;
   if (isEmployeeInvitePage) return <RestaurantEmployeeInvitePage />;
