@@ -101,3 +101,15 @@ A read-only follow-up on 24 October 2026 found these rows after order deletion:
 No payment, loyalty, or customer rows were modified in this follow-up. The live `finalize_online_payment` function only returns an existing order for the `paid` plus non-null order-link case; a `paid` record with a null order link fails its non-pending status guard rather than recreating an order. The two still-`pending` payment records are different: if an outstanding checkout can still be completed and its webhook accepted, the finalization flow may create a new order. This should be resolved by reviewing/expiring or cancelling stale test checkout records through the supported payment workflow, after confirming the intended cleanup scope. Do not directly delete customer/user records or adjust customer loyalty balances as part of order cleanup.
 
 These counts describe the test dataset only and are not evidence of real historical sales.
+
+
+### Follow-up cleanup of orphaned test online-payment records — 24 October 2026
+
+After the user confirmed the remaining online-payment records were test-order data and authorized their deletion, deleted all 8 rows in `public.pending_online_payments` that remained after order cleanup. Verification in a separate read-only query confirmed:
+
+- `pending_online_payments` rows remaining: 0
+- `orders` rows remaining: 0
+- `auth.users` rows remaining: 13; no auth users were targeted for deletion
+- Orphaned `loyalty_transactions` rows remaining: 4 (25 points net); left untouched because removing transaction history without reconciling the associated loyalty balances is a separate financial-state change
+
+This cleanup concerns the test dataset only. It does not establish BIR accreditation or enable official invoice issuance.
