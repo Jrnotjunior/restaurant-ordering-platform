@@ -774,9 +774,12 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
               quantity: item.quantity,
               lineTotal: item.lineTotal,
             }))}
-            grossSales={selectedOrder.taxGrossSales > 0
+            grossSales={selectedOrder.taxVatRegistered
+              && selectedOrder.taxSnapshotStatus === 'calculated'
+              && selectedOrder.taxZeroRatedSales != null
+              && selectedOrder.itemsTaxClassified === true
               ? selectedOrder.taxGrossSales
-              : selectedOrder.items.reduce((sum, item) => sum + item.lineTotal, 0)}
+              : (selectedOrder.subtotal ?? selectedOrder.items.reduce((sum, item) => sum + item.lineTotal, 0))}
             showTaxBreakdown={selectedOrder.taxVatRegistered && selectedOrder.taxSnapshotStatus === 'calculated' && selectedOrder.taxGrossSales > 0 && selectedOrder.taxZeroRatedSales != null && selectedOrder.itemsTaxClassified === true}
             vatableSales={selectedOrder.taxVatableSales}
             vatAmount={selectedOrder.taxVatAmount}
