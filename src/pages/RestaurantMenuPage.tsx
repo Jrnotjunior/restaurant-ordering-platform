@@ -38,6 +38,7 @@ export function RestaurantMenuPage({ restaurantId }: Props) {
       const menu = await getMenu(restaurantId, true);
       setCategories(menu.categories);
       setProducts(menu.products);
+      if (!supabase) throw new Error('Supabase environment variables are not configured.');
       const { data: taxSettings, error: taxSettingsError } = await supabase
         .from('restaurants')
         .select('tax_vat_registered')
