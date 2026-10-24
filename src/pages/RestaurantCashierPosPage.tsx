@@ -13,7 +13,7 @@ import { attachCustomerToOrder, findCustomersByName, getLoyaltyRedemptionSetting
 type Props = { restaurantId: string };
 type CartItem = { product: RestaurantProduct; quantity: number };
 type DraftBeneficiary = { discountType: PosDiscountType; idType: PosDiscountIdType; idNumber: string; beneficiaryName: string; beneficiaryTin: string; beneficiaryAddress: string };
-type PrintedBeneficiary = DraftBeneficiary & { eligibleGrossAmount: number; eligibleAmount: number; discountAmount: number };
+type PrintedBeneficiary = DraftBeneficiary & { eligibleGrossAmount: number; eligibleAmount: number; discountAmount: number; groupSize?: number | null };
 type PosPrintOrder = {
   orderNumber: string;
   customerName: string;
@@ -27,6 +27,7 @@ type PosPrintOrder = {
   items: CartItem[];
   receiptSnapshot: PosOrderReceiptSnapshot | null;
   beneficiaries: PrintedBeneficiary[];
+  receiptOtherDiscountAmount: number;
   showTaxBreakdown: boolean;
   vatRate: number;
   financials: {
@@ -467,6 +468,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
         eligibleGrossAmount: Number(beneficiary.eligibleGrossAmount ?? 0),
         eligibleAmount: Number(beneficiary.eligibleAmount ?? 0),
         discountAmount: Number(beneficiary.discountAmount ?? 0),
+        groupSize: Number(beneficiary.groupSize ?? receiptSnapshot?.discount_group_size ?? effectiveGroupSize),
       }));
       const fallbackBeneficiaries: PrintedBeneficiary[] = beneficiaries.map((beneficiary, index) => {
         const saved = financials.beneficiaryBreakdown?.find((item) => item.idNumber === beneficiary.idNumber.trim());
@@ -476,6 +478,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
           eligibleGrossAmount: preview.eligibleGrossAmount,
           eligibleAmount: saved?.eligibleAmount ?? preview.eligibleAmount,
           discountAmount: saved?.discountAmount ?? preview.discountAmount,
+          groupSize: effectiveGroupSize,
         };
       });
 
@@ -844,12 +847,19 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             deliveryAddress={printOrder.deliveryAddress}
             cashierName={printOrder.cashierName}
             notes={printOrder.notes}
-            items={printOrder.items.map((item) => ({
-              id: item.product.id,
-              name: item.product.name,
-              quantity: item.quantity,
-              lineTotal: item.product.price * item.quantity,
-            }))}
+            items={printOrder.receiptSnapshot
+              ? printOrder.receiptSnapshot.items.map((item) => ({
+                id: item.id,
+                name: item.name,
+                quantity: Number(item.quantity),
+                lineTotal: Number(item.lineTotal),
+              }))
+              : printOrder.items.map((item) => ({
+                id: item.product.id,
+                name: item.product.name,
+                quantity: item.quantity,
+                lineTotal: item.product.price * item.quantity,
+              }))}
             grossSales={printOrder.financials.grossSales}
             showTaxBreakdown={printOrder.showTaxBreakdown}
             vatableSales={printOrder.financials.vatableSales}
@@ -858,6 +868,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             zeroRatedSales={printOrder.financials.zeroRatedSales}
             vatRate={printOrder.vatRate}
             discountAmount={printOrder.financials.discountAmount}
+            otherDiscountAmount={printOrder.receiptOtherDiscountAmount}
             loyaltyDiscountAmount={printOrder.financials.loyaltyDiscountAmount}
             deliveryFee={printOrder.deliveryFee}
             total={printOrder.financials.total}
@@ -870,7 +881,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
               beneficiaryName: beneficiary.beneficiaryName,
               beneficiaryAddress: beneficiary.beneficiaryAddress,
               beneficiaryTin: beneficiary.beneficiaryTin,
-              groupSize: printOrder.customerCount,
+              groupSize: beneficiary.groupSize ?? printOrder.customerCount,
               eligibleGrossAmount: beneficiary.eligibleGrossAmount,
               eligibleAmount: beneficiary.eligibleAmount,
               discountAmount: beneficiary.discountAmount,
