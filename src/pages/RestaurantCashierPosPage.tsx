@@ -245,7 +245,11 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
       && beneficiary.beneficiaryName.trim().length > 0
       && beneficiary.beneficiaryAddress.trim().length > 0,
   );
-  const discountAllocationReady = !(beneficiaries.length > 0 && redeemPoints) && (beneficiaries.length === 0 || (
+  // Never allow a POS checkout to proceed when a product tax category conflicts
+  // with the tenant's stored VAT-registration route. This applies even with no discounts.
+  const discountAllocationReady = !hasTaxCategoryRouteMismatch
+    && !(beneficiaries.length > 0 && redeemPoints)
+    && (beneficiaries.length === 0 || (
     groupSizeValid
       && beneficiaryIdentityReady
       && uniqueBeneficiaryIds
