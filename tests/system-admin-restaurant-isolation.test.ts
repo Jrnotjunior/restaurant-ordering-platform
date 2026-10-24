@@ -6,6 +6,10 @@ const isolationMigration = readFileSync(
   'utf8',
 );
 const appSource = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
+const ownerSettingsMigration = readFileSync(
+  new URL('../supabase/migrations/20261024101500_owner_controls_restaurant_settings_after_admin_isolation.sql', import.meta.url),
+  'utf8',
+);
 
 describe('System Admin / restaurant platform isolation', () => {
   it('removes System Admin policies from restaurant and tenant financial records', () => {
@@ -26,7 +30,10 @@ describe('System Admin / restaurant platform isolation', () => {
     expect(isolationMigration).toContain("'save_restaurant_non_vat_tax_basis'");
     expect(isolationMigration).toContain("'save_restaurant_taxpayer_profile'");
     expect(isolationMigration).toContain("Could not isolate System Admin access");
-    expect(isolationMigration).toContain('REVOKE ALL ON FUNCTION public.protect_system_workflow_settings()');
+    expect(ownerSettingsMigration).toContain('public.protect_system_admin_online_payments_toggle()');
+    expect(ownerSettingsMigration).toContain('public.protect_system_admin_restaurant_tax_settings()');
+    expect(ownerSettingsMigration).toContain('Only the restaurant owner may change online payment availability.');
+    expect(ownerSettingsMigration).toContain('Only the restaurant owner may change restaurant tax and pickup/take-out settings.');
   });
 
   it('revokes execution on System Admin tenant inspection and mutation RPCs', () => {
