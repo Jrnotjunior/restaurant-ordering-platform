@@ -72,3 +72,37 @@ For implementation acceptance:
 - [ ] Formal BIR submissions, permits, accreditation and any required demonstration/approval completed.
 
 **Release statement:** This matrix is a planning/control artifact only. Web2Table must not be represented as BIR-accredited or as issuing official BIR invoices until all applicable gates are satisfied.
+
+## Regulatory update — 24 October 2026 (CWT and ESP requirements)
+
+This section records newly indexed BIR issuances and prevents the earlier working draft from being treated as the final approved invoice specification.
+
+### Primary-source status
+
+- BIR's official **2026 Revenue Regulations** index lists RR No. 6-2026 (1 October 2026), amending mandatory invoice information to include creditable withholding tax (CWT) information: https://www.bir.gov.ph/2026-Revenue-Regulations
+- BIR's official **What's New** index lists RMC No. 112-2026 as clarifying RR No. 6-2026 and providing transitory guidelines, and RMC No. 110-2026 as prescribing ESP accreditation, technical, operational, security, data-governance, institutional, legal and continuing-compliance requirements: https://www.bir.gov.ph/whats-new
+- The official BIR homepage advertises ESP accreditation applications for 16–30 October 2026 and separately displays a 14 September advisory stating no entity had been accredited/authorized/recognized as an ESP as of that date. That older advisory does not establish the status of any specific applicant today: https://www.bir.gov.ph/
+- RMO No. 24-2023 remains the primary source to assess for the traditional POS/Sales Machine/Software accreditation path: https://bir-cdn.bir.gov.ph/local/pdf/RMO%20No.%2024-2023.pdf
+
+The BIR index confirms the issuances exist, but this engineering pass has not independently verified every clause against the signed official full text of RMC Nos. 110-2026 and 112-2026. Do not treat a secondary summary or OCR extraction as a substitute for the signed circular, annexes, and current BIR checklist.
+
+### Updated engineering controls
+
+| Control | Current interpretation for engineering | Gate / evidence still required |
+|---|---|---|
+| CWT invoice field | Model the CWT phrase/field as an available part of the registered/accredited invoice configuration, not as a generic discount. Do not force a CWT amount on every sale. | Verify the signed RR 6-2026/RMC 112-2026 texts and applicable transition period with the relevant BIR office/tax adviser. |
+| CWT applicability | Do not infer that CWT applies because an order is B2B, online, or paid by a particular method. The buyer/payor's withholding obligation and transaction facts matter. | Capture buyer-provided withholding-agent status and applicable classification/ATC, rate, base and amount only when applicable and reasonably determinable; keep provenance and actor audit. |
+| Gross sale and CWT | Preserve the gross invoice/sales amount. If applicable, represent CWT separately and reconcile net amount due; do not deduct CWT from gross sales, VAT sales or VAT base as if it were a discount. | Accountant-reviewed accounting mapping and tests for applicable/non-applicable CWT cases. |
+| CWT auditability | Changes to CWT treatment need actor/time and traceability; supporting invoice, books and withholding certificate should reconcile where applicable. | Schema and permission review before implementation; regression tests for unauthorized edits and post-issuance changes. |
+| System-change classification | Do not assume a CWT-only modification automatically requires a full new accreditation, or that it never requires notification. | Obtain and apply the exact RMC 112-2026 limited-vs-material system-change conditions and any RMO 24-2023/RMO 9-2021 notice requirements. |
+| ESP route | ESP accreditation is a distinct route with its own current accreditation requirements; it does not automatically replace taxpayer/tenant-specific POS/CAS/PTI obligations. | Determine the platform's actual service model and eligibility; obtain the official current checklist and written route guidance. Do not claim ESP status. |
+| Official issuance gate | Keep official invoice issuance disabled until the selected route, tenant identity, required registrations/permits, invoice specification, serial control and applicable transmission/reading requirements are verified. | Written BIR/qualified Philippine tax guidance plus complete tenant evidence and acceptance results. |
+
+### Next implementation order
+
+1. Obtain and archive the signed official RMC 110-2026 and RMC 112-2026 texts plus annexes/checklists; review the official text rather than secondary extracts.
+2. Record a route decision for this platform: traditional Sales Machine/Software supplier path, ESP path, both, or another written BIR-approved model. Do not make a route selection by inference.
+3. Once the route and applicable CWT transition are confirmed, implement the CWT field as a separate optional fiscal element behind the existing issuance gate, with provenance/audit fields and tests. Do not enable official issuance as part of that change.
+4. Re-run readiness counts and test the tenant-specific registration/identity gates before any issuance pilot.
+
+**No production data or issuance configuration was changed by this documentation update.** This matrix remains an engineering work product, not legal advice, a BIR determination, or evidence of accreditation.
