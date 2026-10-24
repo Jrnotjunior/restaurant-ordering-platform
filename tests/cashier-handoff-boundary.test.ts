@@ -57,4 +57,20 @@ describe('cashier handoff workflow boundary', () => {
     expect(ordersPage).toContain('className="restaurant-pos-print-area"');
     expect(ordersPage).toContain('className="restaurant-order-modal"');
   });
+  it('never gives cashier kitchen status controls, even when no kitchen module is configured', () => {
+    const advanceAction = sectionBetween(
+      ordersPage,
+      'async function advance(order: RestaurantOrder)',
+      'async function confirmCashPayment',
+    );
+
+    expect(advanceAction).toContain("if (role !== 'kitchen') return;");
+    expect(advanceAction).toContain('await updateKitchenOrderStatus(order.orderId, status)');
+    expect(advanceAction).not.toContain('cashierCanManageNoKitchen');
+    expect(ordersPage).not.toContain('hasKitchenModule');
+    expect(ordersPage).not.toContain('Start Preparing');
+    expect(ordersPage).not.toContain('Mark Served');
+    expect(ordersPage).toContain("role === 'kitchen' && nextStatus[selectedOrder.status]");
+  });
+
 });
