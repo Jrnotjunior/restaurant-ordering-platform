@@ -2,7 +2,7 @@
 
 ## Change summary
 
-The production Supabase project was updated by migration `20261024100000_isolate_system_admin_from_restaurant_data`. The migration is also committed in this repository. It changes authorization only and does not delete or rewrite users, restaurants, orders, or operational records.
+The production Supabase project was updated by migrations `20261024100000_isolate_system_admin_from_restaurant_data` and `20261024101500_owner_controls_restaurant_settings_after_admin_isolation`. Both migrations are committed in this repository. It changes authorization only and does not delete or rewrite users, restaurants, orders, or operational records.
 
 ## Enforced boundaries
 
@@ -10,7 +10,7 @@ The production Supabase project was updated by migration `20261024100000_isolate
 - Removed System Admin cross-tenant reads for taxpayer profiles, POS sales journal, POS sales-reading previews, invoice issuance configuration, issued sales documents, and issued-document events. Replaced those read policies with restaurant-owner-scoped policies.
 - Updated owner-facing RPC authorization so System Admin status alone no longer authorizes access to BIR readiness, taxpayer profiles, POS sales journal/reading previews, tax snapshot statuses/amounts, or taxpayer-profile/tax-basis writes. Existing owner access and explicitly permitted cashier read paths remain.
 - Revoked authenticated execution of System Admin RPCs for restaurant owner/staff identity inspection, restaurant settings, online-payment settings, invoice-series configuration, non-VAT tax-basis review, taxpayer-profile review, tenant deletion, and restaurant-specific Mapbox usage.
-- Updated the restaurant workflow-settings trigger so the restaurant owner, rather than System Admin, is authorized to change the protected workflow settings.
+- Updated the live online-payment and tax/workflow settings triggers so the restaurant owner, rather than System Admin, is authorized to change protected tenant settings. Removed the unused helper function created during the initial isolation migration after confirming no trigger referenced it.
 - Removed the System Admin non-VAT review page from the restaurant application route. The route now directs users to the separate platform administration workspace.
 
 ## Live verification performed
