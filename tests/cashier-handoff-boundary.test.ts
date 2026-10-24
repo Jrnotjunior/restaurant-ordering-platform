@@ -5,6 +5,10 @@ const ordersPage = readFileSync(
   new URL('../src/pages/RestaurantOrdersPage.tsx', import.meta.url),
   'utf8',
 );
+const posStyles = readFileSync(
+  new URL('../src/styles/restaurant-pos.css', import.meta.url),
+  'utf8',
+);
 
 function sectionBetween(source: string, startMarker: string, endMarker: string) {
   const start = source.indexOf(startMarker);
@@ -71,6 +75,12 @@ describe('cashier handoff workflow boundary', () => {
     expect(ordersPage).not.toContain('Start Preparing');
     expect(ordersPage).not.toContain('Mark Served');
     expect(ordersPage).toContain("role === 'kitchen' && nextStatus[selectedOrder.status]");
+  });
+
+  it('uses variable-length 80mm print pages for long thermal receipts', () => {
+    expect(posStyles).toContain('@page{size:80mm auto;margin:0}');
+    expect(posStyles).not.toContain('@page{size:80mm 250mm;margin:0}');
+    expect(posStyles).toContain('height:auto!important;overflow:visible!important');
   });
 
 });
