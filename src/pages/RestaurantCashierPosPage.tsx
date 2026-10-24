@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getMenu, subscribeToCashierMenuChanges } from '../modules/products/productService';
 import { createOrder } from '../modules/ordering/orderService';
-import { applyPosGroupDiscounts, confirmPosCashPayment, getCurrentCashierName, getRestaurantTaxSettings, type PosDiscountIdType, type PosDiscountType, type RestaurantTaxSettings } from '../modules/pos/posService';
+import { applyPosGroupDiscounts, confirmPosCashPayment, getPosOrderTaxSnapshot, getCurrentCashierName, getRestaurantTaxSettings, type PosDiscountIdType, type PosDiscountType, type RestaurantTaxSettings, type PosOrderTaxSnapshot } from '../modules/pos/posService';
 import { allocatePosEqualGroupShares, calculatePosStatutoryDiscountPreview } from '../modules/pos/statutoryDiscountCalculations';
 import { OperationalCustomerReceipt } from '../components/OperationalCustomerReceipt';
 import type { RestaurantProduct } from '../types/menu';
@@ -35,6 +35,7 @@ type PosPrintOrder = {
     vatableSales: number;
     vatAmount: number;
     vatExemptSales: number;
+    zeroRatedSales: number;
     netSales: number;
     total: number;
   };
@@ -405,6 +406,30 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
       }
 
       await confirmPosCashPayment(created.orderId);
+
+      // The receipt must reflect the same server-finalized tax snapshot that the
+      // staff order handoff reads. If that snapshot is unresolved/unavailable,
+      // print the operational subtotal only instead of presenting client preview
+      // values as a finalized VAT breakdown.
+      let finalTaxSnapshot: PosOrderTaxSnapshot | null = null;
+      try {
+        finalTaxSnapshot = await getPosOrderTaxSnapshot(created.orderId);
+      } catch (snapshotError) {
+        console.error('Unable to load the finalized POS tax snapshot for receipt output.', snapshotError);
+      }
+      const finalizedVatBreakdownReady = finalTaxSnapshot?.tax_snapshot_status === 'calculated'
+        && finalTaxSnapshot.tax_vat_registered
+        && Number(finalTaxSnapshot.tax_gross_sales ?? 0) > 0
+        && finalTaxSnapshot.tax_zero_rated_sales != null
+        && finalTaxSnapshot.tax_snapshot_version != null;
+      const receiptFinancials = {
+        ...financials,
+        grossSales: finalizedVatBreakdownReady ? Number(finalTaxSnapshot.tax_gross_sales) : financials.grossSales,
+        vatableSales: finalizedVatBreakdownReady ? Number(finalTaxSnapshot.tax_vatable_sales ?? 0) : financials.vatableSales,
+        vatAmount: finalizedVatBreakdownReady ? Number(finalTaxSnapshot.tax_vat_amount ?? 0) : financials.vatAmount,
+        vatExemptSales: finalizedVatBreakdownReady ? Number(finalTaxSnapshot.tax_vat_exempt_sales ?? 0) : financials.vatExemptSales,
+        zeroRatedSales: finalizedVatBreakdownReady ? Number(finalTaxSnapshot.tax_zero_rated_sales ?? 0) : statutoryPreview.zeroRatedSales,
+      };
       window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
 
       setPrintOrder({
@@ -428,10 +453,10 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             discountAmount: saved?.discountAmount ?? preview.discountAmount,
           };
         }),
-        showTaxBreakdown: taxBreakdownVisible,
-        vatRate: taxSettings?.vatRate ?? 0,
+        showTaxBreakdown: finalizedVatBreakdownReady,
+        vatRate: finalizedVatBreakdownReady ? Number(finalTaxSnapshot?.tax_vat_rate ?? 0) : taxSettings?.vatRate ?? 0,
         financials: {
-          ...financials,
+          ...receiptFinancials,
           loyaltyDiscountAmount,
           total: Math.max(Number((financials.total - loyaltyDiscountAmount).toFixed(2)), 0),
         },
@@ -792,6 +817,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
             vatableSales={printOrder.financials.vatableSales}
             vatAmount={printOrder.financials.vatAmount}
             vatExemptSales={printOrder.financials.vatExemptSales}
+            zeroRatedSales={printOrder.financials.zeroRatedSales}
             vatRate={printOrder.vatRate}
             discountAmount={printOrder.financials.discountAmount}
             loyaltyDiscountAmount={printOrder.financials.loyaltyDiscountAmount}
