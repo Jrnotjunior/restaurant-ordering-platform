@@ -11,7 +11,8 @@ The production Supabase project was updated by migrations `20261024100000_isolat
 - Updated owner-facing RPC authorization so System Admin status alone no longer authorizes access to BIR readiness, taxpayer profiles, POS sales journal/reading previews, tax snapshot statuses/amounts, or taxpayer-profile/tax-basis writes. Existing owner access and explicitly permitted cashier read paths remain.
 - Revoked authenticated execution of System Admin RPCs for restaurant owner/staff identity inspection, restaurant settings, online-payment settings, invoice-series configuration, non-VAT tax-basis review, taxpayer-profile review, tenant deletion, restaurant-specific Mapbox usage, operational monitoring that returns customer/order activity, and staff activation/deletion.
 - Updated the live online-payment and tax/workflow settings triggers so the restaurant owner, rather than System Admin, is authorized to change protected tenant settings. Removed the unused helper function created during the initial isolation migration after confirming no trigger referenced it.
-- Removed the System Admin non-VAT review page from the restaurant application route. The route now directs users to the separate platform administration workspace.
+- Removed the System Admin non-VAT review page and its route from the restaurant application entirely.
+- Added an application-level identity gate before restaurant tenant resolution. It checks the System Admin JWT role and then the database-backed `is_system_admin()` function before loading restaurant data. System Admin identities receive a neutral separation screen; if identity verification fails, authenticated users are shown an error with restaurant data withheld.
 
 ## Live verification performed
 
@@ -19,7 +20,11 @@ Post-migration SQL confirmed:
 - The targeted operational tables have owner-only read policies; no policy named for System Admin remains on the sensitive tax/sales/document tables.
 - Owner-facing tax and sales RPCs remain executable by `authenticated` and their definitions no longer contain a System Admin authorization branch in the access guard.
 - Targeted System Admin tenant-inspection/mutation RPCs, operational monitoring, and staff mutation RPCs have `authenticated` EXECUTE disabled.
-- Existing platform support ticket and System Admin audit/administrative policies were not removed by this migration; they remain separate platform-support/audit functions rather than restaurant order/POS/tax data access.
+- Existing platform support ticket and System Admin audit/administrative policies were not removed by the database migration. The restaurant app no longer exposes the System Admin tax-review route/page, and the app-level gate prevents System Admin identities from reaching restaurant UI through this repository.
+
+## Application verification
+
+GitHub Actions for commit `b6cb8d0cc6d26f0487fd3e9b5a273cef9f44a5a4` passed the architecture/build check, Hostinger production build, and GitHub Pages deployment. The regression suite includes checks that the System Admin identity is verified before tenant lookup and that the retired tax-review route is absent.
 
 ## Scope and limitations
 
