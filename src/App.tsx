@@ -17,7 +17,6 @@ import { RestaurantRecipesPage } from './pages/RestaurantRecipesPage';
 import { RestaurantCashierPosPage } from './pages/RestaurantCashierPosPage';
 import { RestaurantDeliveryDispatchPage } from './pages/RestaurantDeliveryDispatchPage';
 import { RestaurantSettingsPage } from './pages/RestaurantSettingsPage';
-import { SystemAdminNonVatTaxReviewPage } from './pages/SystemAdminNonVatTaxReviewPage';
 import { RestaurantWebsiteCustomizationPage } from './pages/RestaurantWebsiteCustomizationPage';
 import { RestaurantLoyaltyPage } from './pages/RestaurantLoyaltyPage';
 import { RestaurantOwnerLoginPage } from './pages/RestaurantOwnerLoginPage';
@@ -361,7 +360,7 @@ function AppContent() {
     return () => { cancelled = true; };
   }, [restaurant.id, route]);
 
-  if (isSystemAdminNonVatTaxReviewPage) return <SystemAdminNonVatTaxReviewPage />;
+  if (isSystemAdminNonVatTaxReviewPage) return <section className="restaurant-owner-auth-loading" role="alert">This System Admin feature is not available in the Restaurant Ordering Platform. Use the separate platform administration workspace.</section>;
   if (isTenantInviteLandingPage) return <TenantInviteLandingPage />;
   if (isTenantInvitePage) return <TenantOnboardingPage />;
   if (isEmployeeInvitePage) return <RestaurantEmployeeInvitePage />;
