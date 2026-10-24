@@ -113,6 +113,7 @@ export type RestaurantOrder = {
   paymongoNetAmount: number | null;
   status: RestaurantOrderStatus;
   total: number;
+  subtotal?: number;
   shippingFee: number;
   taxVatRegistered: boolean;
   taxPricesVatInclusive: boolean;
@@ -435,6 +436,7 @@ type Row = {
   paymongo_net_amount?: number | string | null;
   status: RestaurantOrderStatus;
   total: number | string;
+  subtotal?: number | string | null;
   shipping_fee?: number | string | null;
   created_at: string;
   mobile_number?: string | null;
@@ -482,6 +484,7 @@ export async function getRestaurantOrders(restaurantId: string): Promise<Restaur
     paymongoNetAmount: row.paymongo_net_amount == null ? null : Number(row.paymongo_net_amount),
     status: row.status,
     total: Number(row.total),
+    subtotal: row.subtotal == null ? undefined : Number(row.subtotal),
     shippingFee: Number(row.shipping_fee ?? 0),
     taxVatRegistered: Boolean(row.tax_vat_registered),
     taxPricesVatInclusive: Boolean(row.tax_prices_vat_inclusive),
