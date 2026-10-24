@@ -361,7 +361,6 @@ function AppContent() {
     isCashierPosPage,
     isRestaurantDeliveryDispatchPage,
     isRestaurantSettingsPage,
-    isSystemAdminNonVatTaxReviewPage,
     isRestaurantWebsiteCustomizationPage,
     isRestaurantLoyaltyPage,
     isRestaurantEmployeesPage,
@@ -426,7 +425,6 @@ function AppContent() {
     return <section className="restaurant-owner-auth-loading" role="status">Verifying application access…</section>;
   }
 
-  if (isSystemAdminNonVatTaxReviewPage) return <section className="restaurant-owner-auth-loading" role="alert">This System Admin feature is not available in the Restaurant Ordering Platform. Use the separate System Admin application.</section>;
   if (isTenantInviteLandingPage) return <TenantInviteLandingPage />;
   if (isTenantInvitePage) return <TenantOnboardingPage />;
   if (isEmployeeInvitePage) return <RestaurantEmployeeInvitePage />;
