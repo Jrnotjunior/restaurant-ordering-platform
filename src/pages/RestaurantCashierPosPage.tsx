@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getMenu, subscribeToCashierMenuChanges } from '../modules/products/productService';
 import { createOrder } from '../modules/ordering/orderService';
-import { applyPosGroupDiscounts, confirmPosCashPayment, getPosOrderTaxSnapshot, getCurrentCashierName, getRestaurantTaxSettings, type PosDiscountIdType, type PosDiscountType, type RestaurantTaxSettings, type PosOrderTaxSnapshot } from '../modules/pos/posService';
+import { applyPosGroupDiscounts, confirmPosCashPayment, getPosOrderReceiptSnapshot, getCurrentCashierName, getRestaurantTaxSettings, type PosDiscountIdType, type PosDiscountType, type RestaurantTaxSettings, type PosOrderReceiptSnapshot } from '../modules/pos/posService';
 import { allocatePosEqualGroupShares, calculatePosStatutoryDiscountPreview } from '../modules/pos/statutoryDiscountCalculations';
 import { OperationalCustomerReceipt } from '../components/OperationalCustomerReceipt';
 import type { RestaurantProduct } from '../types/menu';
@@ -25,6 +25,7 @@ type PosPrintOrder = {
   customerCount: number;
   createdAt: string;
   items: CartItem[];
+  receiptSnapshot: PosOrderReceiptSnapshot | null;
   beneficiaries: PrintedBeneficiary[];
   showTaxBreakdown: boolean;
   vatRate: number;
@@ -414,62 +415,92 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
 
       await confirmPosCashPayment(created.orderId);
 
-      // The receipt must reflect the same server-finalized tax snapshot that the
-      // staff order handoff reads. If that snapshot is unresolved/unavailable,
-      // print the operational subtotal only instead of presenting client preview
-      // values as a finalized VAT breakdown.
-      let finalTaxSnapshot: PosOrderTaxSnapshot | null = null;
+      // Use the persisted receipt snapshot for customer-facing print values. If it
+      // cannot be loaded, retain an operational fallback, but never show client-side
+      // tax previews as final VAT values.
+      let receiptSnapshot: PosOrderReceiptSnapshot | null = null;
       try {
-        finalTaxSnapshot = await getPosOrderTaxSnapshot(created.orderId);
+        receiptSnapshot = await getPosOrderReceiptSnapshot(created.orderId);
       } catch (snapshotError) {
-        console.error('Unable to load the finalized POS tax snapshot for receipt output.', snapshotError);
+        console.error('Unable to load the persisted POS receipt snapshot.', snapshotError);
       }
-      const finalizedVatBreakdownReady = finalTaxSnapshot?.tax_snapshot_status === 'calculated'
-        && finalTaxSnapshot.tax_vat_registered
-        && Number(finalTaxSnapshot.tax_gross_sales ?? 0) > 0
-        && finalTaxSnapshot.tax_zero_rated_sales != null
-        && finalTaxSnapshot.tax_snapshot_version != null;
+      const finalizedVatBreakdownReady = receiptSnapshot?.tax_snapshot_status === 'calculated'
+        && receiptSnapshot.tax_vat_registered
+        && Number(receiptSnapshot.tax_gross_sales ?? 0) > 0
+        && receiptSnapshot.tax_zero_rated_sales != null
+        && receiptSnapshot.tax_snapshot_version != null;
+      const persistedSubtotal = Number(receiptSnapshot?.subtotal ?? created.subtotal);
+      const persistedDiscountTotal = Number(receiptSnapshot?.discount_amount ?? (financials.discountAmount + loyaltyDiscountAmount));
+      const persistedLoyaltyDiscount = Number(receiptSnapshot?.loyalty_discount_amount ?? loyaltyDiscountAmount);
+      const persistedBeneficiaryCount = Number(receiptSnapshot?.discount_beneficiary_count ?? beneficiaries.length);
+      const persistedStatutoryDiscount = persistedBeneficiaryCount > 0
+        ? Math.max(persistedDiscountTotal - persistedLoyaltyDiscount, 0)
+        : 0;
+      const persistedOtherDiscount = Math.max(
+        persistedDiscountTotal - persistedLoyaltyDiscount - persistedStatutoryDiscount,
+        0,
+      );
+      const persistedTotal = Number(receiptSnapshot?.total ?? financials.total);
       const receiptFinancials = {
         ...financials,
-        grossSales: finalizedVatBreakdownReady ? Number(finalTaxSnapshot.tax_gross_sales) : financials.grossSales,
-        vatableSales: finalizedVatBreakdownReady ? Number(finalTaxSnapshot.tax_vatable_sales ?? 0) : financials.vatableSales,
-        vatAmount: finalizedVatBreakdownReady ? Number(finalTaxSnapshot.tax_vat_amount ?? 0) : financials.vatAmount,
-        vatExemptSales: finalizedVatBreakdownReady ? Number(finalTaxSnapshot.tax_vat_exempt_sales ?? 0) : financials.vatExemptSales,
-        zeroRatedSales: finalizedVatBreakdownReady ? Number(finalTaxSnapshot.tax_zero_rated_sales ?? 0) : statutoryPreview.zeroRatedSales,
+        discountAmount: persistedStatutoryDiscount,
+        loyaltyDiscountAmount: persistedLoyaltyDiscount,
+        grossSales: Number(receiptSnapshot?.tax_gross_sales ?? 0) > 0
+          ? Number(receiptSnapshot?.tax_gross_sales)
+          : persistedSubtotal,
+        vatableSales: finalizedVatBreakdownReady ? Number(receiptSnapshot?.tax_vatable_sales ?? 0) : 0,
+        vatAmount: finalizedVatBreakdownReady ? Number(receiptSnapshot?.tax_vat_amount ?? 0) : 0,
+        vatExemptSales: finalizedVatBreakdownReady ? Number(receiptSnapshot?.tax_vat_exempt_sales ?? 0) : 0,
+        zeroRatedSales: finalizedVatBreakdownReady ? Number(receiptSnapshot?.tax_zero_rated_sales ?? 0) : 0,
+        netSales: Number(receiptSnapshot?.tax_net_sales ?? persistedSubtotal),
+        total: persistedTotal,
       };
       window.dispatchEvent(new Event('restaurant-ordering-active-order-change'));
 
+      const snapshotBeneficiaries: PrintedBeneficiary[] = (receiptSnapshot?.beneficiaries ?? []).map((beneficiary) => ({
+        discountType: (beneficiary.discountType === 'pwd' ? 'pwd' : 'senior') as PosDiscountType,
+        idType: (beneficiary.idType || 'other_government_id') as PosDiscountIdType,
+        idNumber: beneficiary.idNumber,
+        beneficiaryName: beneficiary.beneficiaryName ?? '',
+        beneficiaryTin: beneficiary.beneficiaryTin ?? '',
+        beneficiaryAddress: beneficiary.beneficiaryAddress ?? '',
+        eligibleGrossAmount: Number(beneficiary.eligibleGrossAmount ?? 0),
+        eligibleAmount: Number(beneficiary.eligibleAmount ?? 0),
+        discountAmount: Number(beneficiary.discountAmount ?? 0),
+      }));
+      const fallbackBeneficiaries: PrintedBeneficiary[] = beneficiaries.map((beneficiary, index) => {
+        const saved = financials.beneficiaryBreakdown?.find((item) => item.idNumber === beneficiary.idNumber.trim());
+        const preview = getBeneficiaryPreviewAmounts(index);
+        return {
+          ...beneficiary,
+          eligibleGrossAmount: preview.eligibleGrossAmount,
+          eligibleAmount: saved?.eligibleAmount ?? preview.eligibleAmount,
+          discountAmount: saved?.discountAmount ?? preview.discountAmount,
+        };
+      });
+
       setPrintOrder({
-        orderNumber: created.orderNumber,
-        customerName: enteredCustomerName,
-        mobileNumber: orderType === 'delivery' ? mobileNumber.trim() : '',
-        deliveryAddress: orderType === 'delivery' ? deliveryAddress.trim() : '',
-        notes: notes.trim(),
-        cashierName,
-        orderType,
-        customerCount: effectiveGroupSize,
-        createdAt: new Date().toISOString(),
+        orderNumber: receiptSnapshot?.order_number ?? created.orderNumber,
+        customerName: receiptSnapshot?.customer_name ?? enteredCustomerName,
+        mobileNumber: receiptSnapshot?.mobile_number ?? (orderType === 'delivery' ? mobileNumber.trim() : ''),
+        deliveryAddress: receiptSnapshot?.delivery_address ?? (orderType === 'delivery' ? deliveryAddress.trim() : ''),
+        notes: receiptSnapshot?.notes ?? notes.trim(),
+        cashierName: receiptSnapshot?.cashier_name ?? cashierName,
+        orderType: receiptSnapshot?.order_type ?? orderType,
+        customerCount: Number(receiptSnapshot?.discount_group_size ?? effectiveGroupSize),
+        createdAt: receiptSnapshot?.created_at ?? new Date().toISOString(),
         items: cart.map((item) => ({ ...item })),
-        beneficiaries: beneficiaries.map((beneficiary, index) => {
-          const saved = financials.beneficiaryBreakdown?.find((item) => item.idNumber === beneficiary.idNumber.trim());
-          const preview = getBeneficiaryPreviewAmounts(index);
-          return {
-            ...beneficiary,
-            eligibleGrossAmount: preview.eligibleGrossAmount,
-            eligibleAmount: saved?.eligibleAmount ?? preview.eligibleAmount,
-            discountAmount: saved?.discountAmount ?? preview.discountAmount,
-          };
-        }),
+        receiptSnapshot,
+        beneficiaries: receiptSnapshot ? snapshotBeneficiaries : fallbackBeneficiaries,
+        receiptOtherDiscountAmount: persistedOtherDiscount,
         showTaxBreakdown: finalizedVatBreakdownReady,
-        vatRate: finalizedVatBreakdownReady ? Number(finalTaxSnapshot?.tax_vat_rate ?? 0) : taxSettings?.vatRate ?? 0,
+        vatRate: finalizedVatBreakdownReady ? Number(receiptSnapshot?.tax_vat_rate ?? 0) : taxSettings?.vatRate ?? 0,
         financials: {
           ...receiptFinancials,
-          loyaltyDiscountAmount,
-          total: Math.max(Number((financials.total - loyaltyDiscountAmount).toFixed(2)), 0),
         },
-        deliveryFee: orderType === 'delivery' ? created.deliveryFee : 0,
+        deliveryFee: Number(receiptSnapshot?.delivery_fee ?? (orderType === 'delivery' ? created.deliveryFee : 0)),
         cashReceived: cashReceivedAmount,
-        change,
+        change: Math.max(Number((cashReceivedAmount - persistedTotal).toFixed(2)), 0),
       });
 
       setCart([]);
