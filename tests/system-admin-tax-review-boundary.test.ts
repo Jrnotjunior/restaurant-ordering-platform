@@ -22,7 +22,7 @@ describe('System Admin non-VAT tax-basis evidence review boundary', () => {
     expect(noteValidation).toBeGreaterThanOrEqual(0);
     expect(reviewCall).toBeGreaterThan(noteValidation);
     expect(reviewPage).toContain("p_review_note: reviewNote");
-    expect(reviewPage).toContain('disabled={Boolean(reviewingId) || !(notes[request.restaurant_id] ?? \'\').trim()}');
+    expect(reviewPage).toContain(`disabled={Boolean(reviewingId) || !(notes[request.restaurant_id] ?? '').trim()}`);
   });
 
   it('does not describe internal evidence review as BIR approval', () => {
