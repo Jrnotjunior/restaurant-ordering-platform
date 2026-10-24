@@ -764,6 +764,9 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
             orderType={selectedOrder.orderType}
             paymentLabel={paymentLabel(selectedOrder)}
             customerName={selectedOrder.customerName}
+            mobileNumber={selectedOrder.mobileNumber ?? ''}
+            deliveryAddress={selectedOrder.deliveryAddress ?? ''}
+            cashierName={selectedOrder.cashierName ?? ''}
             notes={selectedOrder.notes}
             items={selectedOrder.items.map((item) => ({
               id: item.id,
@@ -780,7 +783,17 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
             vatExemptSales={selectedOrder.taxVatExemptSales}
             zeroRatedSales={selectedOrder.taxZeroRatedSales ?? 0}
             vatRate={selectedOrder.taxVatRate}
-            discountAmount={selectedOrder.discountAmount}
+            discountAmount={selectedOrder.discountBeneficiaryCount > 0
+              ? Math.max(selectedOrder.discountAmount - selectedOrder.loyaltyDiscountAmount, 0)
+              : 0}
+            otherDiscountAmount={Math.max(
+              selectedOrder.discountAmount
+                - selectedOrder.loyaltyDiscountAmount
+                - (selectedOrder.discountBeneficiaryCount > 0
+                  ? Math.max(selectedOrder.discountAmount - selectedOrder.loyaltyDiscountAmount, 0)
+                  : 0),
+              0,
+            )}
             loyaltyDiscountAmount={selectedOrder.loyaltyDiscountAmount}
             deliveryFee={selectedOrder.orderType === 'delivery' ? selectedOrder.shippingFee : 0}
             total={selectedOrder.total}
@@ -791,6 +804,8 @@ export function RestaurantOrdersPage({ restaurantId, role = 'owner' }: Props) {
               beneficiaryName: beneficiary.beneficiaryName,
               beneficiaryAddress: beneficiary.beneficiaryAddress,
               beneficiaryTin: beneficiary.beneficiaryTin,
+              groupSize: beneficiary.groupSize ?? selectedOrder.discountGroupSize,
+              eligibleGrossAmount: beneficiary.eligibleGrossAmount ?? null,
               eligibleAmount: beneficiary.eligibleAmount,
               discountAmount: beneficiary.discountAmount,
             }))}
