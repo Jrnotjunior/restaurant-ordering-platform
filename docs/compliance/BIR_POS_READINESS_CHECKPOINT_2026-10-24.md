@@ -44,7 +44,6 @@ A separate live privilege check of the tax/BIR-related `SECURITY DEFINER` functi
 - CI status for this new commit must be checked after the workflow run completes.
 - No production data was changed by this checkpoint.
 
-
 ## Live recheck — 24 October 2026
 
 A second read-only aggregate query was run against the production Supabase project after the latest route-review documentation commits. The project owner has clarified that **all data currently in this database is test data**. Therefore, the counts below describe the current test dataset and must not be presented as missing real historical sales. The results are unchanged:
@@ -66,7 +65,6 @@ The latest direct-to-`main` ESP-route review commit is `a1a9c8d155d08a14ca792762
 The official BIR site continues to advertise an ESP application window of 16–30 October 2026. As of this checkpoint date (24 October), the platform must urgently verify eligibility, required documents and submission timing with BIR; the advertisement does not establish that Web2Table qualifies or has applied. The official BIR index lists RMC Nos. 110-2026 and 112-2026, but the signed full circulars and annexes still require direct verification before encoding detailed ESP/CWT obligations. Sources: https://www.bir.gov.ph/ and https://www.bir.gov.ph/whats-new.
 
 **Decision remains unchanged:** official invoice issuance and BIR transmission stay disabled. No production rows or issuance configuration were changed during this recheck.
-
 
 ## Test order cleanup — 24 October 2026
 
@@ -90,7 +88,6 @@ No user records were targeted for deletion. The 13 auth users were present after
 
 This cleanup removes the test orders and their cascading child records; it does not establish BIR readiness. Taxpayer profiles and approval evidence still need to be configured and verified before official invoice issuance can be enabled.
 
-
 ### Post-cleanup follow-up: orphaned online payments and loyalty rows
 
 A read-only follow-up on 24 October 2026 found these rows after order deletion:
@@ -102,7 +99,6 @@ No payment, loyalty, or customer rows were modified in this follow-up. The live 
 
 These counts describe the test dataset only and are not evidence of real historical sales.
 
-
 ### Follow-up cleanup of orphaned test online-payment records — 24 October 2026
 
 After the user confirmed the remaining online-payment records were test-order data and authorized their deletion, deleted all 8 rows in `public.pending_online_payments` that remained after order cleanup. Verification in a separate read-only query confirmed:
@@ -113,3 +109,9 @@ After the user confirmed the remaining online-payment records were test-order da
 - Orphaned `loyalty_transactions` rows remaining: 4 (25 points net); left untouched because removing transaction history without reconciling the associated loyalty balances is a separate financial-state change
 
 This cleanup concerns the test dataset only. It does not establish BIR accreditation or enable official invoice issuance.
+
+### Loyalty test-state inspection — 24 October 2026
+
+A further read-only inspection confirmed the four orphaned `earn` transactions belong to one customer loyalty account. The four transaction points are 5, 5, 10 and 5 (25 total), and the account currently has a `points_balance` of 25. The account also reports `eligible_spend_balance = 180` and `eligible_spend_remainder = 180`. The transactions refer in their descriptions to deleted test orders ORD-000008, ORD-000009, ORD-000011 and ORD-000015.
+
+The points total matches the current account balance, but that alone is not enough to safely remove the records: the account's eligible-spend fields and the original award logic also need reconciliation. No loyalty transactions, loyalty balances, customer profiles or auth users were modified. Before cleanup, implement or use a verified, transaction-safe reconciliation procedure that calculates the correct post-test state and preserves auditability; do not simply delete the transaction rows or set balances to zero by guesswork.
