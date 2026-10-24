@@ -20,6 +20,7 @@ const baseReceipt: OperationalCustomerReceiptProps = {
   vatableSales: 0,
   vatAmount: 0,
   vatExemptSales: 0,
+  zeroRatedSales: 0,
   vatRate: 12,
   discountAmount: 0,
   loyaltyDiscountAmount: 0,
@@ -67,6 +68,26 @@ describe('OperationalCustomerReceipt', () => {
     expect(html).toContain('Personal food share: ₱206.66');
   });
 
+  it('shows zero-rated sales only as part of a supplied finalized VAT breakdown', () => {
+    const html = renderToStaticMarkup(<OperationalCustomerReceipt
+      {...baseReceipt}
+      grossSales={200}
+      showTaxBreakdown={true}
+      vatableSales={100}
+      vatAmount={12}
+      vatExemptSales={50}
+      zeroRatedSales={50}
+      deliveryFee={0}
+      total={212}
+    />);
+
+    expect(html).toContain('VATable sales');
+    expect(html).toContain('VAT 12.00%');
+    expect(html).toContain('VAT-exempt sales');
+    expect(html).toContain('Zero-rated sales');
+    expect(html).toContain('₱50.00');
+  });
+
   it('does not show a VAT breakdown on a non-VAT receipt even when the gross-sales snapshot exists', () => {
     const html = renderToStaticMarkup(<OperationalCustomerReceipt
       {...baseReceipt}
@@ -103,7 +124,7 @@ describe('OperationalCustomerReceipt', () => {
 
     expect(posSource).toContain('<OperationalCustomerReceipt');
     expect(staffOrdersSource).toContain('<OperationalCustomerReceipt');
-    expect(staffOrdersSource).toContain('showTaxBreakdown={selectedOrder.taxVatRegistered && selectedOrder.taxGrossSales > 0}');
+    expect(staffOrdersSource).toContain("showTaxBreakdown={selectedOrder.taxVatRegistered && selectedOrder.taxSnapshotStatus === 'calculated' && selectedOrder.taxGrossSales > 0 && selectedOrder.taxZeroRatedSales != null && selectedOrder.itemsTaxClassified === true}");
     expect(staffOrdersSource).toContain('className="restaurant-pos-print-area"');
     expect(staffOrdersSource).not.toContain('restaurant-order-print-receipt restaurant-customer-receipt');
   });
