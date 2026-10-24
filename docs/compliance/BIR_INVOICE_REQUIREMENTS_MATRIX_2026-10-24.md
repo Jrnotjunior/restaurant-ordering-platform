@@ -43,10 +43,11 @@ BIR's RR No. 6-2026 is listed on the official RR index as amending mandatory inv
 - blank, N/A or 0.00 may be allowed where CWT does not apply; and
 - transitory deadlines vary by invoicing/system category, with different treatment for certain electronic-invoicing software and existing POS systems.
 
-Because the official BIR RMC index search result currently does not visibly list RMC No. 112-2026, treat the above as a **provisional engineering interpretation** until the signed official circular and applicable deadline are confirmed. Do not infer that Web2Table falls into a particular category or deadline.
+The official BIR “What’s New” page currently lists RMC No. 112-2026 as clarifying RR No. 6-2026, but the signed full circular text and the applicable transition clause have not yet been validated against a BIR-hosted full-text document in this implementation pass. Treat the detailed interpretation above as **provisional** until the official text and the taxpayer’s coverage/deadline are confirmed. Do not infer that Web2Table falls into a particular category or deadline.
 
 Sources:
 - Official BIR 2026 Revenue Regulations index: https://www.bir.gov.ph/2026-Revenue-Regulations (RR No. 6-2026 listed 1 October 2026).
+- Official BIR “What’s New” index (lists RMC No. 112-2026): https://www.bir.gov.ph/whats-new.
 - Official BIR 2026 Revenue Memorandum Circulars index: https://www.bir.gov.ph/2026-Revenue-Memorandum-Circulars (RMC No. 98-2026 listed 22 September 2026; verify any later circular directly with BIR).
 - Official RMO No. 24-2023 full text: https://bir-cdn.bir.gov.ph/local/pdf/RMO%20No.%2024-2023.pdf
 - Secondary text of RMC No. 112-2026 for verification only: https://www.lexiquire.com/laws/RMC%20No~%20112-2026
