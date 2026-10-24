@@ -156,3 +156,27 @@ These engineering tasks do not require choosing the final BIR transmission route
 ## Immediate next action
 
 Within the current October 16–30 ESP application window, obtain and review the full BIR ESP advisory/checklist and RMC No. 98-2026 full text/annexes; have the product owner decide whether to pursue Route A, Route B, or both based on written BIR/counsel guidance. In parallel, create a **non-production** branch with the direct-order-update inventory and report reconciliation tests. Only after these items are complete should we implement database-hardening and unified sale-finalization changes.
+
+## Urgent route review — RMC No. 110-2026 / multi-tenant service model (24 October 2026)
+
+The official BIR **What's New** index currently lists RMC No. 110-2026 as prescribing accreditation, technical, operational, security, data-governance, institutional, legal and continuing-compliance requirements for Electronic Invoicing Service Providers (ESPs), and RMC No. 112-2026 as clarifying RR No. 6-2026 on separate CWT presentation and transition guidelines. Official index: https://www.bir.gov.ph/whats-new
+
+A current secondary professional summary of RMC No. 110-2026 describes the rule as distinguishing systems used exclusively by one taxpayer on that taxpayer's own infrastructure from systems offered as a service to separate legal entities, and states that ESP accreditation does not replace taxpayer-level POS/CAS registration. See KPMG's 16 October 2026 summary: https://kpmg.com/us/en/taxnewsflash/news/2026/10/philippines-accreditation-framework-e-invoicing-service-providers.html
+
+**Important limitation:** this review confirms the issuances are listed by BIR but has not yet independently obtained and checked the signed full text and all annexes of RMC No. 110-2026 or RMC No. 112-2026. The secondary summary is a lead for legal review, not a substitute for the official circular. Do not treat the summarized coverage test as a final legal determination.
+
+### Impact on this platform
+
+This product is a multi-tenant restaurant ordering/POS platform intended for use by separate restaurant businesses. That service model makes the ESP classification question material if the offered service includes electronic invoice issuance, electronic sales reporting, integration, storage, validation or transmission. The team must not assume that calling the product a “POS” or “SaaS” removes ESP obligations; nor should it assume ESP accreditation is required for every operational POS-only deployment without checking the exact service scope and BIR rules.
+
+### Route decision gate — no production invoice work until resolved
+
+1. Prepare a truthful service-scope description and architecture/data-flow diagram showing whether the platform only records orders and prints operational receipts, generates legally issued invoices, stores structured e-invoice records, integrates with an ESP, or transmits sales data to BIR.
+2. Ask BIR and qualified Philippine tax counsel to determine in writing whether this deployment is under (a) Sales Machine/Software supplier accreditation and tenant-level PTU, (b) ESP accreditation under RMC No. 110-2026 plus taxpayer-level obligations, (c) both, or (d) another route/exemption.
+3. If the ESP route is applicable, request the official current checklist and verify applicant eligibility, including the stated operational track record and all documentary, financial, technical, security, data portability, business continuity, interoperability and BIR-supervised testing requirements against the signed circular and annexes. Do not assert eligibility before reviewing evidence.
+4. The BIR homepage had advertised an ESP application window of 16–30 October 2026. Because this review is dated 24 October 2026, the window is time-sensitive: confirm the exact cutoff, completeness rules and whether the window is still open directly with BIR. Do not submit inaccurate or incomplete claims simply to meet the window.
+5. Keep official invoice issuance and BIR transmission disabled until route-specific approvals, taxpayer-level requirements and the implementation/test evidence are verified.
+
+### Evidence boundary
+
+The official BIR index establishes that RMC Nos. 110-2026 and 112-2026 are listed issuances. The linked KPMG summary helps identify issues to verify, but exact legal coverage, application eligibility, numerical thresholds, transition dates and obligations must be confirmed from signed official text and BIR instructions. No application has been submitted and no accreditation is claimed.
