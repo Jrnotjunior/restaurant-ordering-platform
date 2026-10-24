@@ -68,6 +68,25 @@ describe('OperationalCustomerReceipt', () => {
     expect(html).toContain('Personal food share: ₱206.66');
   });
 
+  it('renders other discounts separately from SC/PWD and loyalty discounts', () => {
+    const html = renderToStaticMarkup(<OperationalCustomerReceipt
+      {...baseReceipt}
+      grossSales={100}
+      showTaxBreakdown={false}
+      discountAmount={0}
+      otherDiscountAmount={8.5}
+      loyaltyDiscountAmount={5}
+      deliveryFee={0}
+      total={86.5}
+    />);
+
+    expect(html).toContain('Other discount');
+    expect(html).toContain('-₱8.50');
+    expect(html).toContain('Loyalty Discount');
+    expect(html).toContain('-₱5.00');
+    expect(html).not.toContain('SC/PWD discount');
+  });
+
   it('shows zero-rated sales only as part of a supplied finalized VAT breakdown', () => {
     const html = renderToStaticMarkup(<OperationalCustomerReceipt
       {...baseReceipt}
@@ -123,7 +142,13 @@ describe('OperationalCustomerReceipt', () => {
     const staffOrdersSource = readFileSync(fileURLToPath(new URL('../pages/RestaurantOrdersPage.tsx', import.meta.url)), 'utf8');
 
     expect(posSource).toContain('<OperationalCustomerReceipt');
+    expect(posSource).toContain('getPosOrderReceiptSnapshot(created.orderId)');
+    expect(posSource).toContain('printOrder.receiptSnapshot.items.map');
     expect(staffOrdersSource).toContain('<OperationalCustomerReceipt');
+    expect(staffOrdersSource).toContain("mobileNumber={selectedOrder.mobileNumber ?? ''}");
+    expect(staffOrdersSource).toContain("deliveryAddress={selectedOrder.deliveryAddress ?? ''}");
+    expect(staffOrdersSource).toContain("cashierName={selectedOrder.cashierName ?? ''}");
+    expect(staffOrdersSource).toContain('eligibleGrossAmount: beneficiary.eligibleGrossAmount ?? null');
     expect(staffOrdersSource).toContain("showTaxBreakdown={selectedOrder.taxVatRegistered && selectedOrder.taxSnapshotStatus === 'calculated' && selectedOrder.taxGrossSales > 0 && selectedOrder.taxZeroRatedSales != null && selectedOrder.itemsTaxClassified === true}");
     expect(staffOrdersSource).toContain('className="restaurant-pos-print-area"');
     expect(staffOrdersSource).not.toContain('restaurant-order-print-receipt restaurant-customer-receipt');
