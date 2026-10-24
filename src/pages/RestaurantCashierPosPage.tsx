@@ -441,7 +441,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
         persistedDiscountTotal - persistedLoyaltyDiscount - persistedStatutoryDiscount,
         0,
       );
-      const persistedTotal = Number(receiptSnapshot?.total ?? financials.total);
+      const persistedTotal = Number(receiptSnapshot?.total ?? Math.max(Number((financials.total - loyaltyDiscountAmount).toFixed(2)), 0));
       const receiptFinancials = {
         ...financials,
         discountAmount: persistedStatutoryDiscount,
