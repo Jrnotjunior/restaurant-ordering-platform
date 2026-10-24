@@ -43,3 +43,26 @@ A separate live privilege check of the tax/BIR-related `SECURITY DEFINER` functi
 - Commit: `09ddab50625cabc3ff8b53d4fadaf6ce21834145`
 - CI status for this new commit must be checked after the workflow run completes.
 - No production data was changed by this checkpoint.
+
+
+## Live recheck — 24 October 2026
+
+A second read-only aggregate query was run against production after the latest route-review documentation commits. The results are unchanged:
+
+| Check | Rechecked result |
+|---|---:|
+| Orders whose tax snapshot status is not `calculated` | 26 |
+| Order lines missing tax-category snapshots | 82 |
+| Products missing tax classification | 18 |
+| Taxpayer profiles configured | 0 |
+| Profiles with recorded BIR accreditation/PTU/Permit-to-Transmit references | 0 |
+| Invoice issuance configurations enabled | 0 |
+| Invoice issuance configurations present | 0 |
+
+The query inspected aggregate counts only and did not read or modify individual customer/order records. No production writes were performed. These counts are a current checkpoint, not a substitute for tenant-specific review or a tax professional's sign-off.
+
+The latest direct-to-`main` ESP-route review commit is `a1a9c8d155d08a14ca79276298043305a37541a9`. Its Hostinger production build and GitHub Pages deployment workflows both completed successfully. The runs were push-triggered and had no pull request attached. This confirms those build/deploy workflows only; it does not establish BIR accreditation or fiscal readiness.
+
+The official BIR site continues to advertise an ESP application window of 16–30 October 2026. As of this checkpoint date (24 October), the platform must urgently verify eligibility, required documents and submission timing with BIR; the advertisement does not establish that Web2Table qualifies or has applied. The official BIR index lists RMC Nos. 110-2026 and 112-2026, but the signed full circulars and annexes still require direct verification before encoding detailed ESP/CWT obligations. Sources: https://www.bir.gov.ph/ and https://www.bir.gov.ph/whats-new.
+
+**Decision remains unchanged:** official invoice issuance and BIR transmission stay disabled. No production rows or issuance configuration were changed during this recheck.
