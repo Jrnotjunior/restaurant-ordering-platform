@@ -2,14 +2,14 @@
 
 ## Change summary
 
-The production Supabase project was updated by migrations `20261024100000_isolate_system_admin_from_restaurant_data` and `20261024101500_owner_controls_restaurant_settings_after_admin_isolation`. Both migrations are committed in this repository. It changes authorization only and does not delete or rewrite users, restaurants, orders, or operational records.
+The production Supabase project was updated by migrations `20261024100000_isolate_system_admin_from_restaurant_data`, `20261024101500_owner_controls_restaurant_settings_after_admin_isolation`, and `20261024103000_remove_admin_operational_monitoring_and_staff_access`. All migrations are committed in this repository. It changes authorization only and does not delete or rewrite users, restaurants, orders, or operational records.
 
 ## Enforced boundaries
 
 - Removed System Admin select/insert/update/delete policies from `public.restaurants`; retained tenant-owner and public storefront behavior.
 - Removed System Admin cross-tenant reads for taxpayer profiles, POS sales journal, POS sales-reading previews, invoice issuance configuration, issued sales documents, and issued-document events. Replaced those read policies with restaurant-owner-scoped policies.
 - Updated owner-facing RPC authorization so System Admin status alone no longer authorizes access to BIR readiness, taxpayer profiles, POS sales journal/reading previews, tax snapshot statuses/amounts, or taxpayer-profile/tax-basis writes. Existing owner access and explicitly permitted cashier read paths remain.
-- Revoked authenticated execution of System Admin RPCs for restaurant owner/staff identity inspection, restaurant settings, online-payment settings, invoice-series configuration, non-VAT tax-basis review, taxpayer-profile review, tenant deletion, and restaurant-specific Mapbox usage.
+- Revoked authenticated execution of System Admin RPCs for restaurant owner/staff identity inspection, restaurant settings, online-payment settings, invoice-series configuration, non-VAT tax-basis review, taxpayer-profile review, tenant deletion, restaurant-specific Mapbox usage, operational monitoring that returns customer/order activity, and staff activation/deletion.
 - Updated the live online-payment and tax/workflow settings triggers so the restaurant owner, rather than System Admin, is authorized to change protected tenant settings. Removed the unused helper function created during the initial isolation migration after confirming no trigger referenced it.
 - Removed the System Admin non-VAT review page from the restaurant application route. The route now directs users to the separate platform administration workspace.
 
@@ -18,7 +18,7 @@ The production Supabase project was updated by migrations `20261024100000_isolat
 Post-migration SQL confirmed:
 - The targeted operational tables have owner-only read policies; no policy named for System Admin remains on the sensitive tax/sales/document tables.
 - Owner-facing tax and sales RPCs remain executable by `authenticated` and their definitions no longer contain a System Admin authorization branch in the access guard.
-- Targeted System Admin tenant-inspection/mutation RPCs have `authenticated` EXECUTE disabled.
+- Targeted System Admin tenant-inspection/mutation RPCs, operational monitoring, and staff mutation RPCs have `authenticated` EXECUTE disabled.
 - Existing platform support ticket and System Admin audit/administrative policies were not removed by this migration; they remain separate platform-support/audit functions rather than restaurant order/POS/tax data access.
 
 ## Scope and limitations
