@@ -30,6 +30,7 @@ type RestaurantBirReadiness = {
   enabled_series_count: number;
   issued_document_count: number;
   unclassified_product_count: number;
+  mismatched_product_tax_category_count: number;
   completed_orders_needing_tax_review: number;
   paid_orders_needing_tax_review: number;
   non_vat_tax_basis: 'unconfirmed' | 'subject_to_percentage_tax' | 'not_subject_to_percentage_tax';
@@ -797,6 +798,7 @@ export function RestaurantBusinessReportsPage({ restaurantId }: Props) {
                 <div className="business-reports-card"><small>Issued document records</small><strong>{birReadiness.issued_document_count}</strong></div>
                 {!taxSettings?.tax_vat_registered && <div className="business-reports-card"><small>Non-VAT tax basis</small><strong>{birReadiness.non_vat_tax_basis_verified ? (birReadiness.non_vat_tax_basis === 'subject_to_percentage_tax' ? 'Percentage-tax basis verified' : 'Not subject to percentage tax') : 'Not verified'}</strong></div>}
                 <div className="business-reports-card"><small>Menu products needing tax classification</small><strong>{birReadiness.unclassified_product_count}</strong></div>
+                <div className="business-reports-card"><small>Products with tax-status mismatch</small><strong>{birReadiness.mismatched_product_tax_category_count}</strong></div>
                 <div className="business-reports-card"><small>Paid orders needing tax review (all-time)</small><strong>{birReadiness.paid_orders_needing_tax_review}</strong></div>
                 <div className="business-reports-card"><small>Platform accreditation status</small><strong>{birReadiness.is_bir_accredited ? 'Verified in app' : 'Not accredited'}</strong></div>
                 <div className="business-reports-card"><small>Official invoice issuance</small><strong>{birReadiness.official_invoice_issuance_api_enabled ? 'Enabled' : 'Disabled'}</strong></div>
