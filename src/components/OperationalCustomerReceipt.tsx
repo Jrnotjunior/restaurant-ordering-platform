@@ -33,6 +33,7 @@ export type OperationalCustomerReceiptProps = {
   zeroRatedSales: number;
   vatRate: number;
   discountAmount: number;
+  otherDiscountAmount?: number;
   loyaltyDiscountAmount: number;
   deliveryFee: number;
   total: number;
@@ -73,6 +74,7 @@ export function OperationalCustomerReceipt({
   zeroRatedSales,
   vatRate,
   discountAmount,
+  otherDiscountAmount = 0,
   loyaltyDiscountAmount,
   deliveryFee,
   total,
@@ -138,6 +140,7 @@ export function OperationalCustomerReceipt({
         <div className="pos-receipt-row"><span>Subtotal</span><span>₱{grossSales.toFixed(2)}</span></div>
       )}
       {discountAmount > 0 && <div className="pos-receipt-row"><span>SC/PWD discount</span><span>-₱{discountAmount.toFixed(2)}</span></div>}
+      {otherDiscountAmount > 0 && <div className="pos-receipt-row"><span>Other discount</span><span>-₱{otherDiscountAmount.toFixed(2)}</span></div>}
       {loyaltyDiscountAmount > 0 && <div className="pos-receipt-row"><span>Loyalty Discount</span><span>-₱{loyaltyDiscountAmount.toFixed(2)}</span></div>}
       {deliveryFee > 0 && <div className="pos-receipt-row"><span>Delivery fee</span><span>₱{deliveryFee.toFixed(2)}</span></div>}
       <div className="pos-receipt-row pos-receipt-total">
