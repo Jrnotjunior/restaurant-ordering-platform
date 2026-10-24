@@ -56,6 +56,72 @@ export async function getPosOrderTaxSnapshot(orderId: string): Promise<PosOrderT
   return rows[0] ?? null;
 }
 
+export type PosReceiptLine = {
+  id: string;
+  name: string;
+  quantity: number | string;
+  unitPrice: number | string;
+  lineTotal: number | string;
+  taxCategory?: 'standard_rate' | 'vat_exempt' | 'zero_rated' | 'percentage_taxable' | 'non_vat_exempt' | null;
+};
+
+export type PosReceiptBeneficiary = {
+  discountType: string;
+  idType: string;
+  idNumber: string;
+  beneficiaryName?: string | null;
+  beneficiaryTin?: string | null;
+  beneficiaryAddress?: string | null;
+  eligibleAmount: number | string;
+  eligibleGrossAmount?: number | string | null;
+  groupSize?: number | string | null;
+  discountAmount: number | string;
+};
+
+export type PosOrderReceiptSnapshot = {
+  order_id: string;
+  order_number: string;
+  created_at: string;
+  order_type: 'delivery' | 'take_out' | 'pickup' | 'dine_in';
+  payment_method: 'cash' | 'gcash';
+  payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
+  status: string;
+  customer_name: string | null;
+  mobile_number: string | null;
+  delivery_address: string | null;
+  notes: string | null;
+  cashier_name: string | null;
+  subtotal: number | string;
+  delivery_fee: number | string;
+  total: number | string;
+  discount_amount: number | string;
+  loyalty_discount_amount: number | string;
+  discount_group_size: number | string;
+  discount_beneficiary_count: number | string;
+  items: PosReceiptLine[];
+  beneficiaries: PosReceiptBeneficiary[];
+  tax_vat_registered: boolean;
+  tax_prices_vat_inclusive: boolean;
+  tax_vat_rate: number | string | null;
+  tax_gross_sales: number | string | null;
+  tax_vatable_sales: number | string | null;
+  tax_vat_amount: number | string | null;
+  tax_vat_exempt_sales: number | string | null;
+  tax_zero_rated_sales: number | string | null;
+  tax_net_sales: number | string | null;
+  tax_percentage_taxable_sales: number | string | null;
+  tax_non_vat_exempt_sales: number | string | null;
+  tax_snapshot_status: 'legacy_unknown' | 'not_calculated' | 'calculated' | 'requires_review' | null;
+  tax_snapshot_version: number | null;
+};
+
+export async function getPosOrderReceiptSnapshot(orderId: string): Promise<PosOrderReceiptSnapshot | null> {
+  const rows = await supabaseRpc<PosOrderReceiptSnapshot>('get_pos_order_receipt_snapshot', {
+    p_order_id: orderId,
+  });
+  return rows[0] ?? null;
+}
+
 
 
 export type PosDiscountIdType =
