@@ -414,7 +414,7 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
         loyaltyDiscountAmount = redemption.discountAmount;
       }
 
-      await confirmPosCashPayment(created.orderId);
+      await confirmPosCashPayment(created.orderId, cashReceivedAmount);
 
       // Use the persisted receipt snapshot for customer-facing print values. If it
       // cannot be loaded, retain an operational fallback, but never show client-side
@@ -502,8 +502,8 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
           ...receiptFinancials,
         },
         deliveryFee: Number(receiptSnapshot?.delivery_fee ?? (orderType === 'delivery' ? created.deliveryFee : 0)),
-        cashReceived: cashReceivedAmount,
-        change: Math.max(Number((cashReceivedAmount - persistedTotal).toFixed(2)), 0),
+        cashReceived: Number(receiptSnapshot?.cash_received_amount ?? cashReceivedAmount),
+        change: Number(receiptSnapshot?.cash_change_amount ?? Math.max(Number((cashReceivedAmount - persistedTotal).toFixed(2)), 0)),
       });
 
       setCart([]);
