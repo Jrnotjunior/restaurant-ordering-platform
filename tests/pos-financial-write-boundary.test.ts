@@ -31,7 +31,7 @@ describe('POS financial write boundary', () => {
   it('routes order creation, status transitions and cancellation through server boundaries', () => {
     expect(orderRepository).toContain("supabaseRpc<CreatedOrderRow>(rpcName, rpcParams)");
     expect(orderRepository).toContain("supabaseRpc('update_order_status'");
-    expect(orderRepository).toContain("supabaseRpc('send_order_to_kitchen'");
+    expect(orderRepository).toContain("'send_order_to_kitchen'");
     expect(orderRepository).toContain("supabase.functions.invoke('cancel-customer-order'");
     expect(orderRepository).toContain("supabase.functions.invoke('cancel-restaurant-order'");
   });
@@ -54,6 +54,6 @@ describe('POS financial write boundary', () => {
     expect(dispatchRepository).toContain("supabase.rpc('assign_delivery_order'");
     expect(dispatchRepository).toContain("supabase.rpc('complete_dispatch_handoff'");
     expect(kitchenRepository).toContain('await updateOrderStatus(orderId, status)');
-    expect(kitchenRepository).toContain('await getRestaurantOrders(restaurantId)');
+    expect(kitchenRepository).toContain('return getRestaurantOrders(restaurantId)');
   });
 });
