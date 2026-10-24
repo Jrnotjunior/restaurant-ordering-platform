@@ -23,7 +23,17 @@ export async function getRestaurantTaxSettings(restaurantId: string): Promise<Re
   };
 }
 
-export async function confirmPosCashPayment(orderId: string) {
+export async function confirmPosCashPayment(orderId: string, cashReceivedAmount?: number) {
+  if (cashReceivedAmount !== undefined) {
+    if (!Number.isFinite(cashReceivedAmount) || cashReceivedAmount < 0) {
+      throw new Error('Cash received must be a valid non-negative amount.');
+    }
+    await supabaseRpc('confirm_pos_cash_payment_with_tender', {
+      p_order_id: orderId,
+      p_cash_received_amount: Number(cashReceivedAmount.toFixed(2)),
+    });
+    return;
+  }
   await supabaseRpc('confirm_dine_in_payment', { p_order_id: orderId });
 }
 
@@ -98,6 +108,8 @@ export type PosOrderReceiptSnapshot = {
   loyalty_discount_amount: number | string;
   discount_group_size: number | string;
   discount_beneficiary_count: number | string;
+  cash_received_amount?: number | string | null;
+  cash_change_amount?: number | string | null;
   items: PosReceiptLine[];
   beneficiaries: PosReceiptBeneficiary[];
   tax_vat_registered: boolean;
