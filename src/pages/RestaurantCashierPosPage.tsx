@@ -446,8 +446,8 @@ export function RestaurantCashierPosPage({ restaurantId }: Props) {
         ...financials,
         discountAmount: persistedStatutoryDiscount,
         loyaltyDiscountAmount: persistedLoyaltyDiscount,
-        grossSales: Number(receiptSnapshot?.tax_gross_sales ?? 0) > 0
-          ? Number(receiptSnapshot?.tax_gross_sales)
+        grossSales: finalizedVatBreakdownReady
+          ? Number(receiptSnapshot?.tax_gross_sales ?? 0)
           : persistedSubtotal,
         vatableSales: finalizedVatBreakdownReady ? Number(receiptSnapshot?.tax_vatable_sales ?? 0) : 0,
         vatAmount: finalizedVatBreakdownReady ? Number(receiptSnapshot?.tax_vat_amount ?? 0) : 0,
