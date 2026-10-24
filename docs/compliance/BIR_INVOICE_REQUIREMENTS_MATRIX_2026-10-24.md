@@ -34,24 +34,28 @@
 | Tenant isolation and permissions | A tenant can only issue/read its own invoices, tax profile, journal and reports; sensitive beneficiary identity is available only to authorized roles. | Existing tenant RLS/RPC protections and restricted beneficiary reads are in place; full adversarial test matrix remains open. | Cross-tenant negative tests for every RPC and export; role tests for owner/cashier/dispatcher/system admin; no direct writes around privileged RPCs. | Security review and release sign-off. |
 | Software version and material changes | Track approved software version and assess changes against the selected route's change-notification/approval rules. | Taxpayer profile has draft version/reference fields; no route-specific release gate is enforced. | Bind release version to route/approval metadata; require change review for invoice numbering, core sales recording, architecture, hosting, security or integration changes. | BIR determination for the selected route. |
 
-## CWT implementation notes (do not overgeneralize)
+## CWT implementation notes and transition timing (24 October 2026)
 
-BIR's RR No. 6-2026 is listed on the official RR index as amending mandatory invoice information to include CWT information. A secondary reproduction of RMC No. 112-2026 dated 22 October 2026 states that:
-- CWT amount is shown separately only when the particular transaction is subject to CWT;
-- the buyer/payor determines withholding-agent status and the applicable income-payment classification, ATC, rate, tax base and amount, communicating applicable details to the seller before invoice finalization;
-- CRM/POS and other invoicing software should have the CWT phrase and field available in the registered/accredited configuration;
-- blank, N/A or 0.00 may be allowed where CWT does not apply; and
-- transitory deadlines vary by invoicing/system category, with different treatment for certain electronic-invoicing software and existing POS systems.
+The official BIR 2026 Revenue Regulations index lists RR No. 6-2026, which amends the mandatory invoice information under RR No. 7-2024 to include applicable CWT information. The official BIR “What's New” page lists RMC No. 112-2026 as clarifying RR No. 6-2026 and providing transitory guidelines, and RMC No. 110-2026 as prescribing ESP accreditation, technical, operational, security, data-governance, institutional, legal and continuing-compliance requirements.
 
-The official BIR “What’s New” page currently lists RMC No. 112-2026 as clarifying RR No. 6-2026, but the signed full circular text and the applicable transition clause have not yet been validated against a BIR-hosted full-text document in this implementation pass. Treat the detailed interpretation above as **provisional** until the official text and the taxpayer’s coverage/deadline are confirmed. Do not infer that Web2Table falls into a particular category or deadline.
+Official sources:
+- RR No. 6-2026 index: https://www.bir.gov.ph/2026-Revenue-Regulations
+- BIR current issuances index (RMC Nos. 110-2026 and 112-2026 listed): https://www.bir.gov.ph/whats-new
+- BIR homepage / current ESP application advisory: https://www.bir.gov.ph/
 
-Sources:
-- Official BIR 2026 Revenue Regulations index: https://www.bir.gov.ph/2026-Revenue-Regulations (RR No. 6-2026 listed 1 October 2026).
-- Official BIR “What’s New” index (lists RMC No. 112-2026): https://www.bir.gov.ph/whats-new.
-- Official BIR 2026 Revenue Memorandum Circulars index: https://www.bir.gov.ph/2026-Revenue-Memorandum-Circulars (RMC No. 98-2026 listed 22 September 2026; verify any later circular directly with BIR).
-- Official RMO No. 24-2023 full text: https://bir-cdn.bir.gov.ph/local/pdf/RMO%20No.%2024-2023.pdf
-- Secondary text of RMC No. 112-2026 for verification only: https://www.lexiquire.com/laws/RMC%20No~%20112-2026
-- Existing Web2Table route decision brief: `docs/compliance/BIR_POS_REGULATORY_ROUTE_DECISION_BRIEF_2026-10-20.md`
+Secondary professional and news summaries of RMC No. 112-2026 say the CWT amount is a separate invoice item only when the specific transaction is subject to CWT; it must not be treated as a generic discount, payment fee or extra charge. They report category-specific transition deadlines: generally 31 December 2026 for CAS/CBA and invoicing software covered by mandatory electronic invoicing, and 31 March 2027 for existing POS/CRM and systems not yet covered by mandatory electronic invoicing, subject to other BIR direction. They also describe a limited-system-change treatment for software changes solely to accommodate CWT, depending on the exact criteria and reporting obligations.
+
+**These deadlines and change classifications are provisional in this engineering matrix** because the signed full circular/annex was not directly retrieved from the BIR-hosted attachment during this pass. Confirm the complete RMC No. 112-2026 text with BIR or Philippine tax counsel and classify each tenant/system before relying on a deadline. Do not assume every Web2Table tenant falls under the same invoicing category.
+
+For implementation acceptance:
+- Model CWT as a distinct, optional fiscal data element—not as an ordinary discount or universal buyer charge.
+- Show the appropriate phrase and a separately recorded amount only when the particular transaction is confirmed to be subject to CWT; use only buyer/payor-supplied and accountant-approved withholding-agent status, ATC, tax base, rate and amount.
+- For non-applicable transactions, follow the official text and approved route for blank, “N/A” or “0.00” presentation.
+- Keep gross invoice sales, CWT withheld/receivable and net amount collectible separate in the invoice snapshot, payment record and accounting/reconciliation outputs.
+- Include positive, not-applicable, malformed/missing buyer-data, rounding, reprint and reconciliation fixtures. Do not infer tax facts from restaurant order type, delivery/pickup, payment method or a generic percentage.
+
+**Route urgency:** the official BIR homepage currently advertises an ESP accreditation application window from 16 through 30 October 2026. As of 24 October, this window is close to ending; Web2Table must obtain the official eligibility checklist and decide promptly whether ESP accreditation is relevant to its multi-tenant service model. An open window does not establish eligibility, a submitted application or accreditation.
+
 
 ## Required acceptance gates before enabling official issuance
 
