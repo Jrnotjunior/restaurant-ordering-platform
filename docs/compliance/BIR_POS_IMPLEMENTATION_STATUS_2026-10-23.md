@@ -11,7 +11,7 @@
 - Added `orders.tax_snapshot_status` and `orders.tax_snapshot_version`.
 - Existing orders are marked `legacy_unknown`; no historical amounts, tax rates, or invoices were inferred or backfilled.
 - New orders default to `not_calculated` until a server-side routine records a calculation.
-- The existing POS tax-finalization routine marks a result `calculated` with version 1 only when the restaurant is VAT-registered and every order line has an explicit `standard_rate` classification. Non-VAT registrations, unclassified lines, VAT-exempt product lines, and zero-rated product lines are marked `requires_review` under the current formula rather than incorrectly treated as complete.
+- The original VAT calculation path remains limited to supported VAT-registered, VAT-inclusive cases. A guarded version-4 non-VAT sales-classification path was added later; it requires a privileged evidence review, supported non-VAT line categories, no discount, no delivery fee, and reconciled totals. All other cases remain `requires_review`.
 - If a later financial update changes subtotal, delivery fee, discount or order total without recalculating the tax snapshot, the status becomes `requires_review`.
 - Tax-support reports now leave tax amounts blank and identify missing/legacy/review-required calculations rather than presenting schema-default zeroes as calculated tax.
 
@@ -94,6 +94,15 @@
 - A test transaction in the isolated Security Test project produced `SALE_CREATED` and `ORDER_ITEM_ADDED` journal events; the transaction was rolled back and no test order was retained.
 - GitHub Actions for the UI/schema work passed at commit `181fa23`: build, deployment, and the Pull Request Build Check. Verify the live deployment and app-to-database paths during release acceptance.
 
+### Current production-only follow-up — 24 October 2026
+
+- Production-only database migrations added the guarded non-VAT sales classification path, an owner-submitted evidence-reference workflow, the manager-only System Admin review queue, tenant VAT-status/category mismatch detection, cashier-scoped tax-snapshot completeness access, and audit-journal fields for the new amounts/categories. These follow-up migrations were applied to the **Restaurant Ordering Platform production project only**; the isolated Security Test project was not accessed or changed in this follow-up.
+- The non-VAT basis review screen is reachable at `#system-admin/non-vat-tax-review`; the global privileged-account gate requires MFA, and the database functions separately enforce System Admin manager access with AAL2. The queue shows only the restaurant name, requested basis, and evidence reference—not TIN or buyer identity data.
+- The product editor offers categories appropriate to the stored VAT-registration status and refuses incompatible categories server-side. The cashier POS blocks checkout when a product’s stored category conflicts with the restaurant’s current VAT route. Readiness now reports any legacy mismatch.
+- Rollback-only production smoke tests verified that a no-discount/no-delivery non-VAT order with all lines temporarily classified and an evidence reference marked reviewed receives a version-4 sales classification (₱310.00 of percentage-taxable sales in the test fixture), while a non-VAT order with a delivery fee remains `requires_review`. The test inserted temporary profile/line values only inside a transaction and rolled it back; no lasting taxpayer profile or classification was created.
+- After rollback, production still has **20 paid sales totalling ₱11,286.66**, all 20 lacking calculated tax snapshots; 11 menu products and 82 historical order lines remain unclassified; no taxpayer profile exists; no invoice series is enabled; and no invoice document is recorded. These are real rollout blockers, not seeded or guessed values.
+- The latest source commit at verification was `261a350b35cf85f9a09ea35ead268a02d31aa7de`. The Pull Request Build Check, Hostinger production build, and GitHub Pages deployment all succeeded for that commit. This is a technical release check only and does not demonstrate BIR approval.
+
 ## Important open gaps — this work does not close them
 
 - **Current invoicing update (24 October 2026):** RR No. 6-2026 requires applicable CWT to be presented as a separate invoice item, and BIR RMC No. 112-2026 dated 22 October 2026 clarifies the requirement and transition treatment. Add this to the selected-route invoice requirements matrix; do not issue an official invoice until the applicable rule and approval route are verified.
@@ -114,6 +123,7 @@
 - BIR Electronic Invoicing System portal/advisories: https://eis.bir.gov.ph/
 - BIR ESP certification portal: https://eis-cert.bir.gov.ph/
 - BIR homepage/current advisories: https://www.bir.gov.ph/
+- The BIR “What’s New” page lists RMC No. 112-2026 as clarifying RR No. 6-2026: https://www.bir.gov.ph/whats-new
 
 The BIR homepage has advertised an ESP application window from 16–30 October 2026. Because this is time-sensitive and eligibility/required attachments must be verified, contact the issuing BIR office immediately if ESP is a possible intended route. Do not treat a window announcement as evidence that Web2Table qualifies or is accredited.
 
