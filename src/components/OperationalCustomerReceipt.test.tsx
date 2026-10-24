@@ -143,11 +143,14 @@ describe('OperationalCustomerReceipt', () => {
 
     expect(posSource).toContain('<OperationalCustomerReceipt');
     expect(posSource).toContain('getPosOrderReceiptSnapshot(created.orderId)');
+    expect(posSource).toContain('confirmPosCashPayment(created.orderId, cashReceivedAmount)');
     expect(posSource).toContain('printOrder.receiptSnapshot.items.map');
     expect(staffOrdersSource).toContain('<OperationalCustomerReceipt');
     expect(staffOrdersSource).toContain("mobileNumber={selectedOrder.mobileNumber ?? ''}");
     expect(staffOrdersSource).toContain("deliveryAddress={selectedOrder.deliveryAddress ?? ''}");
     expect(staffOrdersSource).toContain("cashierName={selectedOrder.cashierName ?? ''}");
+    expect(staffOrdersSource).toContain('cashReceived={selectedOrder.cashReceived ?? undefined}');
+    expect(staffOrdersSource).toContain('change={selectedOrder.cashChange ?? undefined}');
     expect(staffOrdersSource).toContain('eligibleGrossAmount: beneficiary.eligibleGrossAmount ?? null');
     expect(staffOrdersSource).toContain("showTaxBreakdown={selectedOrder.taxVatRegistered && selectedOrder.taxSnapshotStatus === 'calculated' && selectedOrder.taxGrossSales > 0 && selectedOrder.taxZeroRatedSales != null && selectedOrder.itemsTaxClassified === true}");
     expect(staffOrdersSource).toContain('className="restaurant-pos-print-area"');
