@@ -6,6 +6,7 @@ const isolationMigration = readFileSync(
   'utf8',
 );
 const appSource = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
+const routeResolverSource = readFileSync(new URL('../src/app/routing/routeResolver.ts', import.meta.url), 'utf8');
 const operationalAccessMigration = readFileSync(
   new URL('../supabase/migrations/20261024103000_remove_admin_operational_monitoring_and_staff_access.sql', import.meta.url),
   'utf8',
@@ -64,9 +65,10 @@ describe('System Admin / restaurant platform isolation', () => {
   });
 
   it('keeps the System Admin tax-review screen out of the restaurant app', () => {
-    expect(appSource).not.toContain("import { SystemAdminNonVatTaxReviewPage }");
-    expect(appSource).toContain('This System Admin feature is not available in the Restaurant Ordering Platform.');
-    expect(appSource).toContain('Use the separate platform administration workspace.');
+    expect(appSource).not.toContain('SystemAdminNonVatTaxReviewPage');
+    expect(appSource).not.toContain('isSystemAdminNonVatTaxReviewPage');
+    expect(routeResolverSource).not.toContain('system-admin/non-vat-tax-review');
+    expect(routeResolverSource).not.toContain('isSystemAdminNonVatTaxReviewPage');
   });
 
   it('does not delete users or tenant data', () => {
