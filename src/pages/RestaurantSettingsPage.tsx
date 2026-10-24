@@ -1259,7 +1259,7 @@ export function RestaurantSettingsPage({ restaurantId }: Props) {
           </section>
           {!vatRegistered && <section className="restaurant-settings-taxpayer-profile" aria-labelledby="non-vat-tax-basis-heading" style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #e2e8f0' }}>
             <h2 id="non-vat-tax-basis-heading">Non-VAT tax basis evidence</h2>
-            <p className="restaurant-settings-help">Choose a basis only from current registration documents or written Philippine tax advice, and enter a reference. This request must be verified by a privileged System Admin before non-VAT sales classification can be used. It does not create a tax charge and is not BIR approval.</p>
+            <p className="restaurant-settings-help">Save or submit the taxpayer registration profile above first. Then choose a basis only from current registration documents or written Philippine tax advice and enter a reference. This request must be verified by a privileged System Admin before non-VAT sales classification can be used. It does not create a tax charge and is not BIR approval.</p>
             <div className="restaurant-settings-taxpayer-grid">
               <label className="restaurant-settings-field">
                 <span>Documented non-VAT tax basis</span>
