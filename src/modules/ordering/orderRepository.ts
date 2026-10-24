@@ -136,9 +136,12 @@ export type RestaurantOrder = {
   loyaltyDiscountAmount: number;
   discountBeneficiaryCount: number;
   discountGroupSize: number;
-  discountBeneficiaries: { discountType: PosDiscountType; idType: string; idNumber: string; beneficiaryName?: string | null; beneficiaryTin?: string | null; beneficiaryAddress?: string | null; eligibleAmount: number; discountAmount: number }[];
+  discountBeneficiaries: { discountType: PosDiscountType; idType: string; idNumber: string; beneficiaryName?: string | null; beneficiaryTin?: string | null; beneficiaryAddress?: string | null; eligibleAmount: number; eligibleGrossAmount?: number | null; groupSize?: number | null; discountAmount: number }[];
   /** False/undefined means statutory beneficiary support details are incomplete or unknown. */
   discountBeneficiariesComplete?: boolean;
+  mobileNumber?: string | null;
+  deliveryAddress?: string | null;
+  cashierName?: string | null;
   createdAt: string;
   items: { id: string; productName: string; quantity: number; unitPrice: number; lineTotal: number; taxCategory?: 'standard_rate' | 'vat_exempt' | 'zero_rated' | 'percentage_taxable' | 'non_vat_exempt' | null }[];
 };
@@ -434,6 +437,16 @@ type Row = {
   total: number | string;
   shipping_fee?: number | string | null;
   created_at: string;
+  mobile_number?: string | null;
+  delivery_address?: string | null;
+  cashier_name?: string | null;
+  items_tax_classified?: boolean | null;
+  discount_beneficiaries_complete?: boolean | null;
+  tax_snapshot_status?: 'legacy_unknown' | 'not_calculated' | 'calculated' | 'requires_review' | null;
+  tax_snapshot_version?: number | string | null;
+  tax_zero_rated_sales?: number | string | null;
+  tax_percentage_taxable_sales?: number | string | null;
+  tax_non_vat_exempt_sales?: number | string | null;
   items?: RawOrderItem[] | null;
   tax_vat_registered?: boolean | null;
   tax_prices_vat_inclusive?: boolean | null;
@@ -447,7 +460,7 @@ type Row = {
   loyalty_discount_amount?: number | string | null;
   discount_beneficiary_count?: number | null;
   discount_group_size?: number | null;
-  discount_beneficiaries?: { discountType?: string; discount_type?: string; idType?: string; discount_id_type?: string; idNumber?: string; discount_id_number?: string; beneficiaryName?: string | null; beneficiary_name?: string | null; beneficiaryTin?: string | null; beneficiary_tin?: string | null; beneficiaryAddress?: string | null; beneficiary_address?: string | null; eligibleAmount?: number | string; eligible_amount?: number | string; discountAmount?: number | string; discount_amount?: number | string }[] | null;
+  discount_beneficiaries?: { discountType?: string; discount_type?: string; idType?: string; discount_id_type?: string; idNumber?: string; discount_id_number?: string; beneficiaryName?: string | null; beneficiary_name?: string | null; beneficiaryTin?: string | null; beneficiary_tin?: string | null; beneficiaryAddress?: string | null; beneficiary_address?: string | null; eligibleAmount?: number | string; eligible_amount?: number | string; eligibleGrossAmount?: number | string | null; eligible_gross_amount?: number | string | null; groupSize?: number | string | null; group_size?: number | string | null; discountAmount?: number | string; discount_amount?: number | string }[] | null;
 };
 
 export async function getRestaurantOrders(restaurantId: string): Promise<RestaurantOrder[]> {
@@ -478,6 +491,16 @@ export async function getRestaurantOrders(restaurantId: string): Promise<Restaur
     taxVatAmount: Number(row.tax_vat_amount ?? 0),
     taxVatExemptSales: Number(row.tax_vat_exempt_sales ?? 0),
     taxNetSales: Number(row.tax_net_sales ?? 0),
+    taxZeroRatedSales: row.tax_zero_rated_sales == null ? null : Number(row.tax_zero_rated_sales),
+    taxPercentageTaxableSales: row.tax_percentage_taxable_sales == null ? null : Number(row.tax_percentage_taxable_sales),
+    taxNonVatExemptSales: row.tax_non_vat_exempt_sales == null ? null : Number(row.tax_non_vat_exempt_sales),
+    taxSnapshotStatus: row.tax_snapshot_status ?? 'legacy_unknown',
+    taxSnapshotVersion: row.tax_snapshot_version == null ? null : Number(row.tax_snapshot_version),
+    itemsTaxClassified: row.items_tax_classified ?? false,
+    discountBeneficiariesComplete: row.discount_beneficiaries_complete ?? false,
+    mobileNumber: row.mobile_number ?? null,
+    deliveryAddress: row.delivery_address ?? null,
+    cashierName: row.cashier_name ?? null,
     discountAmount: Number(row.discount_amount ?? 0),
     loyaltyDiscountAmount: Number(row.loyalty_discount_amount ?? 0),
     discountBeneficiaryCount: Number(row.discount_beneficiary_count ?? 0),
@@ -490,6 +513,12 @@ export async function getRestaurantOrders(restaurantId: string): Promise<Restaur
       beneficiaryTin: item.beneficiaryTin ?? item.beneficiary_tin ?? null,
       beneficiaryAddress: item.beneficiaryAddress ?? item.beneficiary_address ?? null,
       eligibleAmount: Number(item.eligibleAmount ?? item.eligible_amount ?? 0),
+      eligibleGrossAmount: item.eligibleGrossAmount == null && item.eligible_gross_amount == null
+        ? null
+        : Number(item.eligibleGrossAmount ?? item.eligible_gross_amount),
+      groupSize: item.groupSize == null && item.group_size == null
+        ? null
+        : Number(item.groupSize ?? item.group_size),
       discountAmount: Number(item.discountAmount ?? item.discount_amount ?? 0),
     })),
     createdAt: row.created_at,
