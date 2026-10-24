@@ -306,7 +306,7 @@ function AppContent() {
       cancelled = true;
     };
   }, [authLoading, user?.id]);
-, setShowStoreClosedModal] = useState(false);
+  const [showStoreClosedModal, setShowStoreClosedModal] = useState(false);
 
   async function addToCart(product: RestaurantProduct) {
     let storeOpen = true;
