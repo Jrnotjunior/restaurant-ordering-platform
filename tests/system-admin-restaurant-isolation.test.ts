@@ -11,6 +11,10 @@ const operationalAccessMigration = readFileSync(
   new URL('../supabase/migrations/20261024103000_remove_admin_operational_monitoring_and_staff_access.sql', import.meta.url),
   'utf8',
 );
+const tenantRegistryMigration = readFileSync(
+  new URL('../supabase/migrations/20261024110000_remove_system_admin_tenant_registry_access.sql', import.meta.url),
+  'utf8',
+);
 const ownerSettingsMigration = readFileSync(
   new URL('../supabase/migrations/20261024101500_owner_controls_restaurant_settings_after_admin_isolation.sql', import.meta.url),
   'utf8',
@@ -51,6 +55,12 @@ describe('System Admin / restaurant platform isolation', () => {
     expect(operationalAccessMigration).toContain('system_admin_get_restaurant_monitoring()');
     expect(operationalAccessMigration).toContain('system_admin_set_restaurant_staff_active(uuid, boolean)');
     expect(operationalAccessMigration).toContain('system_admin_delete_restaurant_staff(uuid)');
+    expect(tenantRegistryMigration).toContain('system_admin_get_tenant_registry()');
+    expect(tenantRegistryMigration).toContain('system_admin_get_dashboard_summary()');
+    expect(tenantRegistryMigration).toContain('system_admin_get_audit_logs(uuid, text, integer, integer, text, timestamptz, timestamptz)');
+    expect(tenantRegistryMigration).toContain('system_admin_get_restaurant_package(uuid)');
+    expect(tenantRegistryMigration).toContain('system_admin_create_restaurant_from_invitation(uuid, uuid, text, text, smallint)');
+    expect(tenantRegistryMigration).toContain('system_admin_set_restaurant_module_override(uuid, text, boolean)');
     expect(isolationMigration).toContain('FROM PUBLIC, anon, authenticated');
   });
 
