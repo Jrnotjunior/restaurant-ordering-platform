@@ -24,7 +24,6 @@ export type AppRouteContext = {
   isCashierPosPage: boolean;
   isRestaurantDeliveryDispatchPage: boolean;
   isRestaurantSettingsPage: boolean;
-  isSystemAdminNonVatTaxReviewPage: boolean;
   isRestaurantWebsiteCustomizationPage: boolean;
   isRestaurantLoyaltyPage: boolean;
   isRestaurantEmployeesPage: boolean;
@@ -131,7 +130,6 @@ export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' |
   const isCashierPosPage = route === '#restaurant/cashier-pos';
   const isRestaurantDeliveryDispatchPage = route === '#restaurant/delivery-dispatch';
   const isRestaurantSettingsPage = route === '#restaurant/settings';
-  const isSystemAdminNonVatTaxReviewPage = route === '#system-admin/non-vat-tax-review';
   const isRestaurantWebsiteCustomizationPage = route === '#restaurant/website-customization';
   const isRestaurantLoyaltyPage = route === '#restaurant/loyalty';
   const isRestaurantEmployeesPage = route === '#restaurant/employees';
@@ -227,7 +225,6 @@ export function resolveAppRoute(location: Pick<Location, 'pathname' | 'search' |
     isCashierPosPage,
     isRestaurantDeliveryDispatchPage,
     isRestaurantSettingsPage,
-    isSystemAdminNonVatTaxReviewPage,
     isRestaurantWebsiteCustomizationPage,
     isRestaurantLoyaltyPage,
     isRestaurantEmployeesPage,
