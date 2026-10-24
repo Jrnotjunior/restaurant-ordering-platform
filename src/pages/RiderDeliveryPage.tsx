@@ -365,8 +365,8 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
 
             {!isDelivered && !isFailed ? (
               <div className="rider-delivery-slider" data-status={statusIndex === 0 ? 'start' : statusIndex === 1 ? 'arrive' : 'delivered'}>
-                <input className="rider-delivery-slider-input" type="range" min="0" max="100" value={slideValue} aria-label={statusIndex === 0 ? 'Slide to start delivery' : statusIndex === 1 ? 'Slide to mark arrived' : delivery.paymentMethod === 'cash' ? 'Slide to collect cash' : 'Slide to mark delivered'} onChange={(event) => handleDeliverySlide(Number(event.target.value))} disabled={savingStatus} />
-                <span className="rider-delivery-slider-label" aria-hidden="true">{savingStatus ? 'Updating…' : statusIndex === 0 ? 'Slide to start delivery' : statusIndex === 1 ? 'Slide to mark arrived' : delivery.paymentMethod === 'cash' ? 'Slide to collect cash' : 'Slide to mark delivered'}</span>
+                <input className="rider-delivery-slider-input" type="range" min="0" max="100" value={slideValue} aria-label={statusIndex === 0 ? 'Slide to start delivery' : statusIndex === 1 ? 'Slide to mark arrived' : 'Slide to mark delivered'} onChange={(event) => handleDeliverySlide(Number(event.target.value))} disabled={savingStatus} />
+                <span className="rider-delivery-slider-label" aria-hidden="true">{savingStatus ? 'Updating…' : statusIndex === 0 ? 'Slide to start delivery' : statusIndex === 1 ? 'Slide to mark arrived' : 'Slide to mark delivered'}</span>
                 <span className="rider-delivery-slider-arrow" aria-hidden="true">›</span>
               </div>
             ) : isFailed ? (
