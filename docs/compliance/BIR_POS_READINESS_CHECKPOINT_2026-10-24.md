@@ -66,3 +66,26 @@ The latest direct-to-`main` ESP-route review commit is `a1a9c8d155d08a14ca792762
 The official BIR site continues to advertise an ESP application window of 16–30 October 2026. As of this checkpoint date (24 October), the platform must urgently verify eligibility, required documents and submission timing with BIR; the advertisement does not establish that Web2Table qualifies or has applied. The official BIR index lists RMC Nos. 110-2026 and 112-2026, but the signed full circulars and annexes still require direct verification before encoding detailed ESP/CWT obligations. Sources: https://www.bir.gov.ph/ and https://www.bir.gov.ph/whats-new.
 
 **Decision remains unchanged:** official invoice issuance and BIR transmission stay disabled. No production rows or issuance configuration were changed during this recheck.
+
+
+## Test order cleanup — 24 October 2026
+
+The project owner confirmed the current database contains test data and explicitly authorized deleting orders while preserving users. Executed `DELETE FROM public.orders` against the configured production Supabase project, then verified the result with read-only counts.
+
+| Verification | Result after cleanup |
+|---|---:|
+| Orders remaining | 0 |
+| Order items remaining | 0 |
+| Delivery assignments remaining | 0 |
+| Discount beneficiaries remaining | 0 |
+| Discount beneficiary line allocations remaining | 0 |
+| Inventory order deductions remaining | 0 |
+| Issued sales documents remaining | 0 |
+| Auth users present | 13 |
+| Order-deletion journal events recorded | 26 |
+
+The database's foreign-key rules set `loyalty_transactions.order_id` and `pending_online_payments.order_id` to NULL when their parent order is deleted. The verification found 4 loyalty transaction rows and 8 pending online payment rows with no linked order. These rows were not independently deleted. The POS sales journal retained 26 `ORDER_RECORD_DELETED` events via its existing audit trigger.
+
+No user records were targeted for deletion. The 13 auth users were present after cleanup; because no pre-delete user count was captured in this cleanup operation, this is a post-operation count rather than a before/after comparison. No invoice issuance settings were enabled or changed.
+
+This cleanup removes the test orders and their cascading child records; it does not establish BIR readiness. Taxpayer profiles and approval evidence still need to be configured and verified before official invoice issuance can be enabled.
