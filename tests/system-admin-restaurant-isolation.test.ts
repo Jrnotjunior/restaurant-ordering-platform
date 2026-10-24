@@ -6,6 +6,10 @@ const isolationMigration = readFileSync(
   'utf8',
 );
 const appSource = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
+const operationalAccessMigration = readFileSync(
+  new URL('../supabase/migrations/20261024103000_remove_admin_operational_monitoring_and_staff_access.sql', import.meta.url),
+  'utf8',
+);
 const ownerSettingsMigration = readFileSync(
   new URL('../supabase/migrations/20261024101500_owner_controls_restaurant_settings_after_admin_isolation.sql', import.meta.url),
   'utf8',
@@ -43,6 +47,9 @@ describe('System Admin / restaurant platform isolation', () => {
     expect(isolationMigration).toContain("'system_admin_set_online_payments_enabled'");
     expect(isolationMigration).toContain("'system_admin_review_restaurant_taxpayer_profile'");
     expect(isolationMigration).toContain("'system_admin_configure_disabled_invoice_series'");
+    expect(operationalAccessMigration).toContain('system_admin_get_restaurant_monitoring()');
+    expect(operationalAccessMigration).toContain('system_admin_set_restaurant_staff_active(uuid, boolean)');
+    expect(operationalAccessMigration).toContain('system_admin_delete_restaurant_staff(uuid)');
     expect(isolationMigration).toContain('FROM PUBLIC, anon, authenticated');
   });
 
