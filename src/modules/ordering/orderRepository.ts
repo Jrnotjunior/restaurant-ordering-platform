@@ -115,6 +115,9 @@ export type RestaurantOrder = {
   total: number;
   subtotal?: number;
   shippingFee: number;
+  /** POS cash tender values are NULL for workflows that did not capture a tender amount. */
+  cashReceived?: number | null;
+  cashChange?: number | null;
   taxVatRegistered: boolean;
   taxPricesVatInclusive: boolean;
   taxVatRate: number;
@@ -438,6 +441,8 @@ type Row = {
   total: number | string;
   subtotal?: number | string | null;
   shipping_fee?: number | string | null;
+  cash_received_amount?: number | string | null;
+  cash_change_amount?: number | string | null;
   created_at: string;
   mobile_number?: string | null;
   delivery_address?: string | null;
@@ -486,6 +491,8 @@ export async function getRestaurantOrders(restaurantId: string): Promise<Restaur
     total: Number(row.total),
     subtotal: row.subtotal == null ? undefined : Number(row.subtotal),
     shippingFee: Number(row.shipping_fee ?? 0),
+    cashReceived: row.cash_received_amount == null ? null : Number(row.cash_received_amount),
+    cashChange: row.cash_change_amount == null ? null : Number(row.cash_change_amount),
     taxVatRegistered: Boolean(row.tax_vat_registered),
     taxPricesVatInclusive: Boolean(row.tax_prices_vat_inclusive),
     taxVatRate: Number(row.tax_vat_rate ?? 0),
