@@ -27,6 +27,35 @@ export async function confirmPosCashPayment(orderId: string) {
   await supabaseRpc('confirm_dine_in_payment', { p_order_id: orderId });
 }
 
+export type PosOrderTaxSnapshot = {
+  order_id: string;
+  tax_snapshot_status: 'legacy_unknown' | 'not_calculated' | 'calculated' | 'requires_review' | null;
+  tax_snapshot_version: number | null;
+  tax_vat_registered: boolean;
+  tax_prices_vat_inclusive: boolean;
+  tax_vat_rate: number | string | null;
+  tax_gross_sales: number | string | null;
+  tax_vatable_sales: number | string | null;
+  tax_vat_amount: number | string | null;
+  tax_vat_exempt_sales: number | string | null;
+  tax_zero_rated_sales: number | string | null;
+  tax_net_sales: number | string | null;
+  tax_percentage_taxable_sales: number | string | null;
+  tax_non_vat_exempt_sales: number | string | null;
+  discount_amount: number | string;
+  loyalty_discount_amount: number | string | null;
+  discount_beneficiary_count: number;
+  delivery_fee: number | string;
+  total: number | string;
+};
+
+export async function getPosOrderTaxSnapshot(orderId: string): Promise<PosOrderTaxSnapshot | null> {
+  const rows = await supabaseRpc<PosOrderTaxSnapshot>('get_pos_order_tax_snapshot', {
+    p_order_id: orderId,
+  });
+  return rows[0] ?? null;
+}
+
 
 
 export type PosDiscountIdType =
