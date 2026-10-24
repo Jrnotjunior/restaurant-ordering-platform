@@ -235,8 +235,7 @@ BEGIN
     'generated_by', auth.uid()
   );
 END;
-$function$
-
+$function$;
 
 REVOKE ALL ON FUNCTION public.generate_pos_sales_reading_preview(uuid,date,text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.generate_pos_sales_reading_preview(uuid,date,text) TO authenticated;
