@@ -11,7 +11,7 @@ Read-only aggregate checks were run against the Restaurant Ordering Platform Sup
 
 | Check | Current result | Meaning |
 |---|---:|---|
-| Orders with tax snapshot status other than `calculated` | 26 | Existing sales need review; do not backfill or rewrite historical snapshots just to clear this count. |
+| Orders with tax snapshot status other than `calculated` | 26 | The project owner confirms the current database contains test data only. Treat this as a test-dataset readiness gap, not evidence of missing real historical sales. |
 | Order lines without a tax-category snapshot | 82 | Tax classification provenance is incomplete for existing order lines. |
 | Menu products without a tax classification | 18 | Product categories must be reviewed against the taxpayer's actual registration and tax advice. |
 | Taxpayer profiles configured | 0 | No taxpayer profile is available for route/identity review. |
@@ -47,7 +47,7 @@ A separate live privilege check of the tax/BIR-related `SECURITY DEFINER` functi
 
 ## Live recheck — 24 October 2026
 
-A second read-only aggregate query was run against production after the latest route-review documentation commits. The results are unchanged:
+A second read-only aggregate query was run against the production Supabase project after the latest route-review documentation commits. The project owner has clarified that **all data currently in this database is test data**. Therefore, the counts below describe the current test dataset and must not be presented as missing real historical sales. The results are unchanged:
 
 | Check | Rechecked result |
 |---|---:|
