@@ -14,6 +14,8 @@ describe('POS sales reading compliance gates', () => {
     expect(readingMigration).toContain("NULLIF(trim(b.beneficiary_address), '') IS NULL");
     expect(readingMigration).toContain('v_tax_complete := v_paid_sales_count > 0');
     expect(readingMigration).toContain('v_tax_review_count = 0');
+    expect(readingMigration).toContain("'percentage_taxable_sales_php', v_percentage_taxable");
+    expect(readingMigration).toContain("'non_vat_exempt_sales_php', v_non_vat_exempt");
   });
 
   it('keeps readings as immutable internal previews rather than official BIR readings', () => {
