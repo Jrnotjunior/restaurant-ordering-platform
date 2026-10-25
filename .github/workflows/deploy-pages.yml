@@ -48,6 +48,11 @@ jobs:
           # multi-tenant routing will resolve by custom domain/Hostinger.
           VITE_RESTAURANT_SLUG: solutions
 
+      # GitHub Pages has no server-side SPA routing. Serve the app shell for
+      # direct links and refreshed paths such as /signup.
+      - name: Add SPA route fallback
+        run: cp dist/index.html dist/404.html
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
