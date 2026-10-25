@@ -55,6 +55,14 @@ const restaurantRepository = new SupabaseRestaurantRepository();
 
 
 
+function legacyRoutePathname(): string {
+  const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
+  const base = import.meta.env.BASE_URL.replace(/\/+$/, '');
+  return base && base !== '/' && pathname.startsWith(base + '/')
+    ? pathname.slice(base.length)
+    : pathname;
+}
+
 function withBasePath(path: string) {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   if (path === '/') return `${base}/`;
@@ -103,7 +111,7 @@ function AppContent() {
     const hashRoute = normalizeHashRoute(window.location.hash || '');
     if (hashRoute) return hashRoute;
     // Support direct visits and refreshes on legacy public routes such as /signup.
-    const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
+    const pathname = legacyRoutePathname();
     const legacyRoutes: Record<string, string> = {
       '/signup': '#signup',
       '/account': '#account',
@@ -197,7 +205,7 @@ function AppContent() {
 
     // Convert legacy path URLs to the app's hash routes before the host serves
     // a 404. Preserve deployment base paths and query parameters.
-    const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
+    const pathname = legacyRoutePathname();
     const legacyRoutes: Record<string, string> = {
       '/signup': '#signup',
       '/account': '#account',
