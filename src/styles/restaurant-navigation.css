@@ -457,21 +457,3 @@
 /* Restaurant name initials in the owner brand mark */
 .restaurant-owner-brand-premium .restaurant-owner-brand-mark{font-size:17px;font-weight:800;letter-spacing:.02em;line-height:1}
 @media(max-width:900px){.restaurant-owner-brand-premium .restaurant-owner-brand-mark{font-size:15px}}
-
-
-/* Keep the cashier account icon in place while lifting the cashier work area.
-   The cashier tabs and order panel should start level with the account control. */
-.restaurant-navigation-row:has(a[href="#restaurant/cashier-sales"]) .restaurant-navigation {
-  transform: translateY(-40px);
-}
-.restaurant-navigation-row:has(a[href="#restaurant/cashier-sales"]) + .restaurant-orders-page {
-  margin-top: -40px;
-}
-@media (max-width: 720px) {
-  .restaurant-navigation-row:has(a[href="#restaurant/cashier-sales"]) .restaurant-navigation {
-    transform: translateY(-32px);
-  }
-  .restaurant-navigation-row:has(a[href="#restaurant/cashier-sales"]) + .restaurant-orders-page {
-    margin-top: -32px;
-  }
-}
