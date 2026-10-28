@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { parseMapboxDeliveryAddress, type MapboxDeliveryAddress } from '../modules/location/mapServiceProtocol';
 
 export type { MapboxDeliveryAddress } from '../modules/location/mapServiceProtocol';
@@ -68,7 +68,9 @@ export function MapboxDeliveryLocationPicker({
     target.postMessage(message, service.origin);
   }
 
-  useEffect(() => {
+  // Register the message listener before the iframe can finish loading. Otherwise
+  // a fast cached iframe can emit `ready` before this listener exists.
+  useLayoutEffect(() => {
     function handleMessage(event: MessageEvent<unknown>) {
       if (event.origin !== service.origin || event.source !== iframeRef.current?.contentWindow) return;
       const message = asRecord(event.data);
