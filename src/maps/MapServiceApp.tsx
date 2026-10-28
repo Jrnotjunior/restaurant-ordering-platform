@@ -171,14 +171,29 @@ export function MapServiceApp() {
     }
 
     window.addEventListener('message', handleMessage);
-    // This message contains no tenant or location data; the parent validates
-    // the sender's origin and window before returning initialization options.
-    if (window.parent !== window) {
+
+    // Announce readiness more than once to tolerate a parent listener that
+    // attaches late. The message contains no tenant or location data.
+    let readyInterval: number | undefined;
+    let readyAttempts = 0;
+    const announceReady = () => {
       window.parent.postMessage({ source: MESSAGE_SOURCE, type: 'ready' }, '*');
+    };
+    if (window.parent !== window) {
+      announceReady();
+      readyInterval = window.setInterval(() => {
+        if (setupOriginRef.current || validatedSessionRef.current || readyAttempts >= 20) {
+          if (readyInterval !== undefined) window.clearInterval(readyInterval);
+          return;
+        }
+        readyAttempts += 1;
+        announceReady();
+      }, 500);
     }
 
     return () => {
       disposed = true;
+      if (readyInterval !== undefined) window.clearInterval(readyInterval);
       setupGenerationRef.current += 1;
       window.removeEventListener('message', handleMessage);
       pendingConfirmationsRef.current.forEach((pending) => pending.reject(new Error('The map service was closed.')));
