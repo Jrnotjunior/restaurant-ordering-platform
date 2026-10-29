@@ -201,10 +201,10 @@ export function RiderDashboardPage({ previewMode = false }: { previewMode?: bool
           <p>{activeCount === 0 ? 'You have no active deliveries right now.' : `You have ${activeCount} active ${activeCount === 1 ? 'delivery' : 'deliveries'}.`}</p>
         </div>
         <div className="rider-dashboard-account-menu">
-          <button className="rider-account-button" type="button" aria-label="Open rider account menu" aria-expanded={accountOpen} onClick={() => setAccountOpen((open) => !open)}>
+          <button className="rider-account-button" type="button" aria-label="Open rider account menu" aria-expanded={accountOpen} onClick={() => setAccountOpen((open) => !open)} disabled={previewMode}>
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.8-3.4 3.2-5.2 7-5.2s6.2 1.8 7 5.2" /></svg>
           </button>
-          {accountOpen ? (
+          {accountOpen && !previewMode ? (
             <div className="rider-account-dropdown">
               <div className="rider-account-email">{email || 'Rider account'}</div>
               <button type="button" onClick={openPasswordChange}>Change password</button>
@@ -246,7 +246,7 @@ export function RiderDashboardPage({ previewMode = false }: { previewMode?: bool
               ) : (
                 <div className="rider-dashboard-list">
                   {deliveries.map((delivery) => (
-                    <a className="rider-dashboard-delivery-card" href={previewMode ? undefined : `${import.meta.env.BASE_URL}#rider/delivery/${delivery.id}`} key={delivery.id}>
+                    <a className="rider-dashboard-delivery-card" href={previewMode ? `${import.meta.env.BASE_URL}#rider/delivery-preview/${encodeURIComponent(delivery.orderNumber)}` : `${import.meta.env.BASE_URL}#rider/delivery/${delivery.id}`} key={delivery.id}>
                       <div className="rider-dashboard-delivery-main">
                         <div className="rider-dashboard-delivery-top"><strong>{delivery.orderNumber}</strong><span className={`rider-dashboard-status is-${delivery.status}`}>{statusLabel(delivery.status)}</span>{previewMode ? <span className="rider-dashboard-demo-pill">Sample</span> : null}</div>
                         <h3>{delivery.customerName}</h3>
