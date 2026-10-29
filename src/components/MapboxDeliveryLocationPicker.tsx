@@ -47,6 +47,7 @@ export function MapboxDeliveryLocationPicker({
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const callbacksRef = useRef({ onSelect, onLocationChange, disabled, variant, initialLatitude, initialLongitude });
   const readyRef = useRef(false);
+  const connectedRef = useRef(false);
   const service = mapServiceUrl();
   const [serviceError, setServiceError] = useState('');
   const [frameHeight, setFrameHeight] = useState(520);
@@ -82,9 +83,11 @@ export function MapboxDeliveryLocationPicker({
         sendInit();
         return;
       }
-      if (!readyRef.current) return;
-
+      // A valid message from the configured iframe is enough to process its
+      // response. Do not discard errors or resize events just because `ready`
+      // arrived out of order.
       if (message.type === 'frame-resize') {
+        connectedRef.current = true;
         const height = typeof message.height === 'number' ? message.height : Number(message.height);
         if (Number.isFinite(height) && height >= 320 && height <= 1200) {
           setFrameHeight(Math.ceil(height));
@@ -93,14 +96,17 @@ export function MapboxDeliveryLocationPicker({
       }
 
       if (message.type === 'service-error') {
+        connectedRef.current = true;
         setServiceError(typeof message.message === 'string' ? message.message : 'The central map service is unavailable.');
         return;
       }
       if (message.type === 'location-changed') {
+        connectedRef.current = true;
         callbacksRef.current.onLocationChange?.();
         return;
       }
       if (message.type === 'location-selected') {
+        connectedRef.current = true;
         const requestId = typeof message.requestId === 'string' ? message.requestId : '';
         const address = parseMapboxDeliveryAddress(message.address);
         if (!requestId || !address) {
@@ -139,6 +145,28 @@ export function MapboxDeliveryLocationPicker({
       readyRef.current = false;
     };
     // The message listener is stable for the lifetime of the iframe; callbacks are read from callbacksRef.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Keep sending init until the iframe confirms a usable session or returns
+  // a configuration error. This handles both lost messages and React/load races.
+  useEffect(() => {
+    let attempts = 0;
+    const retryTimer = window.setInterval(() => {
+      if (connectedRef.current) {
+        window.clearInterval(retryTimer);
+        return;
+      }
+      if (attempts >= 40) {
+        window.clearInterval(retryTimer);
+        setServiceError((current) => current || 'The central map did not finish connecting. Please refresh checkout and try again.');
+        return;
+      }
+      attempts += 1;
+      sendInit();
+    }, 500);
+    return () => window.clearInterval(retryTimer);
+    // The adapter and iframe origin are stable; callbacks are read from refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
