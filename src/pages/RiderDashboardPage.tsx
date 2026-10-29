@@ -22,7 +22,26 @@ function localDateKey(value: string | Date) {
   return `${year}-${month}-${day}`;
 }
 
-export function RiderDashboardPage() {
+const sampleDelivery: RiderDelivery = {
+  id: 'demo-order-2026-001',
+  orderNumber: 'DEMO-1001',
+  customerName: 'Alex Reyes',
+  address: 'Sample Street, Sample Barangay, Caloocan City',
+  total: 480,
+  status: 'assigned',
+};
+
+const sampleHistory: RiderHistoryItem = {
+  id: 'demo-history-2026-001',
+  orderNumber: 'DEMO-0998',
+  customerName: 'Jamie Cruz',
+  total: 350,
+  createdAt: new Date().toISOString(),
+  status: 'delivered',
+  failureReason: null,
+};
+
+export function RiderDashboardPage({ previewMode = false }: { previewMode?: boolean }) {
   const [riderName, setRiderName] = useState('Rider');
   const [deliveries, setDeliveries] = useState<RiderDelivery[]>([]);
   const [history, setHistory] = useState<RiderHistoryItem[]>([]);
@@ -72,6 +91,16 @@ export function RiderDashboardPage() {
   }
 
   useEffect(() => {
+    if (previewMode) {
+      setRiderName('Demo Rider');
+      setDeliveries([sampleDelivery]);
+      setHistory([sampleHistory]);
+      setEmail('demo-rider@example.com');
+      setError('');
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     void loadDeliveries();
 
@@ -107,7 +136,7 @@ export function RiderDashboardPage() {
       window.clearInterval(refreshInterval);
       void client.removeChannel(channel);
     };
-  }, []);
+  }, [previewMode]);
 
   function openPasswordChange() {
     setAccountOpen(false);
@@ -160,7 +189,7 @@ export function RiderDashboardPage() {
   const riderAvailability = hasDeliveringOrder ? 'Out for delivery' : 'Available';
 
   return (
-    <section className="rider-dashboard-page">
+    <section className="rider-dashboard-page" data-preview={previewMode ? 'true' : undefined}>
       <header className="rider-dashboard-header">
         <div>
           <p className="eyebrow">Rider dashboard</p>
@@ -185,6 +214,12 @@ export function RiderDashboardPage() {
         </div>
       </header>
 
+      {previewMode ? (
+        <div className="rider-dashboard-preview-notice" role="note">
+          <strong>UI preview · sample data only</strong>
+          <span>This demo delivery is not saved in the live system. Delivery actions and account changes are disabled.</span>
+        </div>
+      ) : null}
       {error ? <div className="rider-dashboard-message" role="alert">{error}</div> : null}
 
       <main>
@@ -211,9 +246,9 @@ export function RiderDashboardPage() {
               ) : (
                 <div className="rider-dashboard-list">
                   {deliveries.map((delivery) => (
-                    <a className="rider-dashboard-delivery-card" href={`${import.meta.env.BASE_URL}#rider/delivery/${delivery.id}`} key={delivery.id}>
+                    <a className="rider-dashboard-delivery-card" href={previewMode ? undefined : "#"} key={delivery.id}>
                       <div className="rider-dashboard-delivery-main">
-                        <div className="rider-dashboard-delivery-top"><strong>{delivery.orderNumber}</strong><span className={`rider-dashboard-status is-${delivery.status}`}>{statusLabel(delivery.status)}</span></div>
+                        <div className="rider-dashboard-delivery-top"><strong>{delivery.orderNumber}</strong><span className={`rider-dashboard-status is-${delivery.status}`}>{statusLabel(delivery.status)}</span>{previewMode ? <span className="rider-dashboard-demo-pill">Sample</span> : null}</div>
                         <h3>{delivery.customerName}</h3>
                         <p>{delivery.address}</p>
                       </div>
@@ -253,9 +288,9 @@ export function RiderDashboardPage() {
               ) : (
                 <div className="rider-dashboard-list">
                   {(showAllHistoryDates ? history : history.filter((order) => localDateKey(order.createdAt) === historyDate)).map((order) => (
-                    <a className="rider-dashboard-delivery-card rider-dashboard-history-card" href={`${import.meta.env.BASE_URL}#rider/delivery/${order.id}`} key={order.id}>
+                    <a className="rider-dashboard-delivery-card rider-dashboard-history-card" href={previewMode ? undefined : "#"} key={order.id}>
                       <div className="rider-dashboard-delivery-main">
-                        <div className="rider-dashboard-delivery-top"><strong>{order.orderNumber}</strong><span className={`rider-dashboard-status is-${order.status}`}>{order.status === 'failed' ? 'Delivery failed' : 'Delivered'}</span></div>
+                        <div className="rider-dashboard-delivery-top"><strong>{order.orderNumber}</strong><span className={`rider-dashboard-status is-${order.status}`}>{order.status === 'failed' ? 'Delivery failed' : 'Delivered'}</span>{previewMode ? <span className="rider-dashboard-demo-pill">Sample</span> : null}</div>
                         <h3>{order.customerName}</h3>
                         <p>{order.status === 'failed' ? `Failed on ${formatHistoryDate(order.createdAt)}${order.failureReason ? ` · ${order.failureReason}` : ''}` : `Delivered on ${formatHistoryDate(order.createdAt)}`}</p>
                       </div>
