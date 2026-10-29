@@ -35,19 +35,38 @@ const deliveryStatuses = [
   { label: 'Delivered', detail: 'The order was delivered to the customer.' },
 ];
 
+const sampleDeliveryDetail: Delivery = {
+  id: 'demo-order-2026-001',
+  orderNumber: 'DEMO-1001',
+  customerName: 'Alex Reyes',
+  mobileNumber: '0917 000 1001',
+  address: 'Sample Street, Sample Barangay, Caloocan City',
+  subtotal: 430,
+  deliveryFee: 50,
+  total: 480,
+  items: [
+    { id: 'demo-item-1', name: 'Chicken rice meal', quantity: 2, total: 360 },
+    { id: 'demo-item-2', name: 'Fries and drink', quantity: 1, total: 70 },
+  ],
+  status: 'assigned',
+  paymentMethod: 'cash',
+  paymentStatus: 'pending',
+  failureReason: null,
+};
+
 function statusIndexFor(status: DeliveryStatus) {
   // A failed delivery can only be reported after the rider reaches the customer,
   // so keep Assigned → Out for delivery → Arrived at customer completed.
   return status === 'delivering' ? 1 : status === 'arrived' || status === 'failed' ? 2 : status === 'delivered' ? 3 : 0;
 }
 
-export function RiderDeliveryPage({ orderId }: { orderId: string }) {
+export function RiderDeliveryPage({ orderId, previewMode = false }: { orderId: string; previewMode?: boolean }) {
   const [delivery, setDelivery] = useState<Delivery | null>(null);
   const [loading, setLoading] = useState(true);
   const [statusIndex, setStatusIndex] = useState(0);
   const [accountOpen, setAccountOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
-  const [orderDetailsOpen, setOrderDetailsOpen] = useState(false);
+  const [orderDetailsOpen, setOrderDetailsOpen] = useState(previewMode);
   const [slideValue, setSlideValue] = useState(0);
   const [failureOpen, setFailureOpen] = useState(false);
   const [failureReason, setFailureReason] = useState('');
@@ -138,6 +157,15 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
   }
 
   useEffect(() => {
+    if (previewMode) {
+      setDelivery(sampleDeliveryDetail);
+      setStatusIndex(0);
+      setEmail('demo-rider@example.com');
+      setError('');
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     void loadDelivery();
 
@@ -157,10 +185,10 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
     return () => {
       void client.removeChannel(channel);
     };
-  }, [orderId]);
+  }, [orderId, previewMode]);
 
   async function updateDeliveryStatus(nextStatus: DeliveryStatus, failedReason?: string) {
-    if (!supabase || !delivery || savingStatus) return;
+    if (previewMode || !supabase || !delivery || savingStatus) return;
 
     setSavingStatus(true);
     setError('');
@@ -185,7 +213,7 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
   }
 
   async function confirmCashCollected() {
-    if (!supabase || !delivery || delivery.paymentMethod !== 'cash' || delivery.paymentStatus === 'paid' || delivery.status !== 'delivered' || collectingCash) return;
+    if (previewMode || !supabase || !delivery || delivery.paymentMethod !== 'cash' || delivery.paymentStatus === 'paid' || delivery.status !== 'delivered' || collectingCash) return;
 
     setCollectingCash(true);
     setError('');
@@ -200,7 +228,7 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
   }
 
   async function reportFailedDelivery(reason: string) {
-    if (!delivery || savingStatus || !reason) return;
+    if (previewMode || !delivery || savingStatus || !reason) return;
     setFailureReason(reason);
     setFailureOpen(false);
     setSlideValue(0);
@@ -208,7 +236,7 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
   }
 
   function handleDeliverySlide(value: number) {
-    if (isDelivered || savingStatus || slideCompletionLock.current) return;
+    if (previewMode || isDelivered || savingStatus || slideCompletionLock.current) return;
     setSlideValue(value);
 
     if (value >= 95) {
@@ -286,20 +314,20 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
     <section className="rider-delivery-page">
       <header className="rider-delivery-header">
         <div>
-          <a className="rider-delivery-back" href={`${import.meta.env.BASE_URL}#rider/dashboard`}>← My deliveries</a>
+          <a className="rider-delivery-back" href={previewMode ? `${import.meta.env.BASE_URL}#rider/delivery-preview` : `${import.meta.env.BASE_URL}#rider/dashboard`}>← My deliveries</a>
           <h1>{delivery.orderNumber}</h1>
           <p>Deliver this order to the customer.</p>
         </div>
         <div className="rider-delivery-header-actions">
           <span className="rider-delivery-status">{currentStatus.label}</span>
           <div className="rider-account-menu">
-            <button className="rider-account-button" type="button" aria-label="Open rider account menu" aria-expanded={accountOpen} onClick={() => setAccountOpen((open) => !open)}>
+            <button className="rider-account-button" type="button" aria-label="Open rider account menu" aria-expanded={accountOpen} onClick={() => setAccountOpen((open) => !open)} disabled={previewMode}>
               <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <circle cx="12" cy="8" r="3.5" />
                 <path d="M5 20c.8-3.4 3.2-5.2 7-5.2s6.2 1.8 7 5.2" />
               </svg>
             </button>
-            {accountOpen ? (
+            {accountOpen && !previewMode ? (
               <div className="rider-account-dropdown">
                 <div className="rider-account-email">{email || 'Rider account'}</div>
                 <button type="button" onClick={openPasswordChange}>Change password</button>
@@ -310,6 +338,12 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
         </div>
       </header>
 
+      {previewMode ? (
+        <div className="rider-dashboard-preview-notice" role="note">
+          <strong>UI preview · sample data only</strong>
+          <span>This order is for viewing the rider screen only. Navigation, delivery updates, and account changes are disabled.</span>
+        </div>
+      ) : null}
       {error ? <div className="rider-delivery-error" role="alert">{error}</div> : null}
 
       <div className="rider-delivery-layout">
@@ -320,7 +354,7 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
               <span className="rider-delivery-customer-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.8-3.4 3.2-5.2 7-5.2s6.2 1.8 7 5.2" /></svg></span>
             </div>
             <p className="rider-delivery-phone">{delivery.mobileNumber}</p>
-            <CustomerContactActions mobileNumber={delivery.mobileNumber} />
+            {previewMode ? <p className="rider-delivery-helper">Sample contact · calling and messaging are disabled in preview.</p> : <CustomerContactActions mobileNumber={delivery.mobileNumber} />}
           </section>
 
           <section className="rider-delivery-card">
@@ -328,7 +362,7 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
               <div><p className="rider-delivery-label">Delivery destination</p><h2>Customer address</h2></div>
               <span className="rider-delivery-location-icon" aria-hidden="true">⌖</span>
             </div>
-            <DeliveryNavigation address={delivery.address} />
+            {previewMode ? <p className="rider-delivery-address">{delivery.address}</p> : <DeliveryNavigation address={delivery.address} />}
             <p className="rider-delivery-helper">Tap the address to open Google Maps or Waze.</p>
           </section>
 
@@ -363,7 +397,9 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
               ))}
             </div>
 
-            {!isDelivered && !isFailed ? (
+            {previewMode ? (
+              <p className="rider-delivery-helper">UI preview only. Delivery status actions are disabled.</p>
+            ) : !isDelivered && !isFailed ? (
               <div className="rider-delivery-slider" data-status={statusIndex === 0 ? 'start' : statusIndex === 1 ? 'arrive' : 'delivered'}>
                 <input className="rider-delivery-slider-input" type="range" min="0" max="100" value={slideValue} aria-label={statusIndex === 0 ? 'Slide to start delivery' : statusIndex === 1 ? 'Slide to mark arrived' : 'Slide to mark delivered'} onChange={(event) => handleDeliverySlide(Number(event.target.value))} disabled={savingStatus} />
                 <span className="rider-delivery-slider-label" aria-hidden="true">{savingStatus ? 'Updating…' : statusIndex === 0 ? 'Slide to start delivery' : statusIndex === 1 ? 'Slide to mark arrived' : 'Slide to mark delivered'}</span>
@@ -382,7 +418,7 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
               </>
             )}
 
-            {!isDelivered && !isFailed && statusIndex >= 2 ? (
+            {!previewMode && !isDelivered && !isFailed && statusIndex >= 2 ? (
               <button className="rider-delivery-failed-button" type="button" onClick={() => setFailureOpen(true)} disabled={savingStatus}>
                 Customer unavailable / refused
               </button>
@@ -407,7 +443,7 @@ export function RiderDeliveryPage({ orderId }: { orderId: string }) {
         </div>
       ) : null}
 
-      {passwordOpen ? (
+      {passwordOpen && !previewMode ? (
         <div className="rider-password-overlay" role="presentation" onMouseDown={() => setPasswordOpen(false)}>
           <section className="rider-password-modal" role="dialog" aria-modal="true" aria-labelledby="rider-password-title" onMouseDown={(event) => event.stopPropagation()}>
             <div className="rider-password-modal-header">
