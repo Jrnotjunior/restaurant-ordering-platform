@@ -172,6 +172,15 @@ export function MapServiceApp() {
 
     window.addEventListener('message', handleMessage);
 
+    // If the parent handshake never arrives, replace the endless waiting state
+    // with an actionable error. The storefront adapter retries init meanwhile.
+    const handshakeTimeout = window.setTimeout(() => {
+      if (window.parent !== window && !setupOriginRef.current && !validatedSessionRef.current) {
+        setServiceError('The checkout page has not connected to the central map. Refresh checkout to reconnect.');
+        setStatus('');
+      }
+    }, 15000);
+
     // Announce readiness more than once to tolerate a parent listener that
     // attaches late. The message contains no tenant or location data.
     let readyInterval: number | undefined;
@@ -194,6 +203,7 @@ export function MapServiceApp() {
     return () => {
       disposed = true;
       if (readyInterval !== undefined) window.clearInterval(readyInterval);
+      window.clearTimeout(handshakeTimeout);
       setupGenerationRef.current += 1;
       window.removeEventListener('message', handleMessage);
       pendingConfirmationsRef.current.forEach((pending) => pending.reject(new Error('The map service was closed.')));
