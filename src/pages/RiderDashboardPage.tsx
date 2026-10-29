@@ -246,7 +246,7 @@ export function RiderDashboardPage({ previewMode = false }: { previewMode?: bool
               ) : (
                 <div className="rider-dashboard-list">
                   {deliveries.map((delivery) => (
-                    <a className="rider-dashboard-delivery-card" href={previewMode ? undefined : "#"} key={delivery.id}>
+                    <a className="rider-dashboard-delivery-card" href={previewMode ? undefined : `${import.meta.env.BASE_URL}#rider/delivery/${delivery.id}`} key={delivery.id}>
                       <div className="rider-dashboard-delivery-main">
                         <div className="rider-dashboard-delivery-top"><strong>{delivery.orderNumber}</strong><span className={`rider-dashboard-status is-${delivery.status}`}>{statusLabel(delivery.status)}</span>{previewMode ? <span className="rider-dashboard-demo-pill">Sample</span> : null}</div>
                         <h3>{delivery.customerName}</h3>
@@ -288,7 +288,7 @@ export function RiderDashboardPage({ previewMode = false }: { previewMode?: bool
               ) : (
                 <div className="rider-dashboard-list">
                   {(showAllHistoryDates ? history : history.filter((order) => localDateKey(order.createdAt) === historyDate)).map((order) => (
-                    <a className="rider-dashboard-delivery-card rider-dashboard-history-card" href={previewMode ? undefined : "#"} key={order.id}>
+                    <a className="rider-dashboard-delivery-card rider-dashboard-history-card" href={previewMode ? undefined : `${import.meta.env.BASE_URL}#rider/delivery/${order.id}`} key={order.id}>
                       <div className="rider-dashboard-delivery-main">
                         <div className="rider-dashboard-delivery-top"><strong>{order.orderNumber}</strong><span className={`rider-dashboard-status is-${order.status}`}>{order.status === 'failed' ? 'Delivery failed' : 'Delivered'}</span>{previewMode ? <span className="rider-dashboard-demo-pill">Sample</span> : null}</div>
                         <h3>{order.customerName}</h3>
