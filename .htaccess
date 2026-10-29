@@ -1,0 +1,8 @@
+# Web2Table SPA fallback for Hostinger/Apache.
+# Serve real assets and files normally; route app URLs to the React entry point.
+Options -MultiViews
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+RewriteRule ^ index.html [L]
