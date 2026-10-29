@@ -379,6 +379,7 @@ function AppContent() {
     restaurantRoleRoute,
     isRiderDashboardPage,
     riderDeliveryMatch,
+    riderDeliveryPreviewMatch,
     isLegacyEmployeeInvitePage,
     isEmployeeInvitePage,
     isTenantInviteLandingPage,
@@ -455,7 +456,8 @@ function AppContent() {
   if (isAccountPage) return <RestaurantProvider restaurant={restaurant}><ThemeProvider restaurant={restaurant}><RestaurantOwnerLoginPage /></ThemeProvider></RestaurantProvider>;
   if (isStaffLoginPage) return <RestaurantOwnerLoginPage staffOnly />;
   if (route === '#rider/preview') return <RiderDashboardPage previewMode />;
-  if (isRiderDashboardPage) return <RiderRouteGuard><RiderDashboardPage /></RiderRouteGuard>;
+  if (isRiderDashboardPage) return route === '#rider/delivery-preview' ? <RiderDashboardPage previewMode /> : <RiderRouteGuard><RiderDashboardPage /></RiderRouteGuard>;
+  if (riderDeliveryPreviewMatch) return <RiderDeliveryPage orderId={decodeURIComponent(riderDeliveryPreviewMatch[1])} previewMode />;
   if (riderDeliveryMatch) return <RiderRouteGuard><RiderDeliveryPage orderId={decodeURIComponent(riderDeliveryMatch[1])} /></RiderRouteGuard>;
 
   let savedActiveOrderId: string | null = null;
